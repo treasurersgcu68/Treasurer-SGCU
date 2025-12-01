@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>SGCU ProjectStatus</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- ฟอนต์ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <!-- CSS หลัก -->
+  <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Top Bar -->
+    <header>
+      <div class="logo">
+        <div class="logo-circle">
+          <img src="sucu logo.png" alt="SGCU Logo">
+        </div>
+        <div>
+          <h1>Treasurer SGCU</h1>
+          <div style="font-size: 12px; color:#ffe4f4;">
+            ฝ่ายเหรัญญิก องค์การบริหารสโมสรนิสิตจุฬาฯ
+          </div>
+        </div>
+      </div>
+      <nav>
+        <a href="#" data-page="about" class="active">เกี่ยวกับเรา</a>
+        <a href="#" data-page="ProjectStatus">Project Status</a>
+        <a href="#" data-page="assets">ยืม - คืนพัสดุ</a>
+        <a href="#" data-page="calendar">ปฏิทิน</a>
+        <a href="#" data-page="downloads">ดาวน์โหลดเอกสารทางการเงิน</a>
+      </nav>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page">
+
+      <!-- หน้า เกี่ยวกับเรา -->
+      <section class="page-view active" data-page="about">
+        <div class="page-title">เกี่ยวกับเรา</div>
+        <section class="about-hero-card">
+          <h2 class="about-hero-title">
+            ฝ่ายเหรัญญิก องค์การบริหารสโมสรนิสิตจุฬาฯ
+          </h2>
+
+          <p class="about-hero-subtitle">
+            ฝ่ายที่ควบคุมดูแลระบบการเงิน งบประมาณ และพัสดุขององค์การบริหารสโมสรนิสิต
+            ครอบคลุมตั้งแต่การเสนอขอโครงการ การอนุมัติงบประมาณ การเบิกจ่าย
+            ไปจนถึงการสรุปปิดโครงการ เพื่อให้ทุกกิจกรรมของนิสิตดำเนินไปอย่างมีวินัย
+            และโปร่งใส
+          </p>
+
+          <div class="about-hero-actions">
+            <button
+              type="button"
+              class="about-hero-btn primary"
+              data-goto-page="ProjectStatus"
+            >
+              ดูสถานะโครงการทั้งหมด
+            </button>
+
+            <button
+              type="button"
+              class="about-hero-btn ghost"
+              data-goto-page="downloads"
+            >
+              ดาวน์โหลดแบบฟอร์มการเงิน
+            </button>
+          </div>
+        </section>
+
+        <!-- Combined: ฝ่ายเหรัญญิกดูแลเรื่องอะไรบ้าง + ทีมที่รับผิดชอบ -->
+        <section class="panel about-scope-combined" style="margin-top:16px; margin-bottom:20px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">ฝ่ายเหรัญญิกดูแลเรื่องอะไรบ้าง</div>
+              <div class="panel-caption">
+                สี่เสาหลักด้านการเงิน งบประมาณ ทุน และพัสดุ · แต่ละเสามีทีมหลักที่รับผิดชอบโดยตรง
+              </div>
+            </div>
+          </div>
+
+          <!-- แถวบน: ประเภทงานแบบปุ่ม pill -->
+          <div class="scope-pills">
+            <button class="scope-pill scope-pill-active" data-scope-target="money">
+              การเงินและเอกสาร
+            </button>
+            <button class="scope-pill" data-scope-target="budget">
+              งบประมาณและภาพรวมการใช้เงิน
+            </button>
+            <button class="scope-pill" data-scope-target="fundraising">
+              หาทุนและสิทธิประโยชน์
+            </button>
+            <button class="scope-pill" data-scope-target="assets">
+              กายภาพและพัสดุ
+            </button>
+          </div>
+
+          <!-- แถวล่าง: การ์ดทีมหลัก 4 ทีม (แนว B) ผูกกับประเภทงานด้านบน (แนว A) -->
+          <div class="scope-team-grid">
+
+            <!-- ฤญ: การเงินและเอกสาร -->
+            <article class="scope-team-card scope-team-active" data-scope="money">
+              <div class="scope-team-header">
+                <div class="scope-team-avatar">T</div>
+                <div>
+                  <div class="scope-team-position">ฝ่ายเหรัญญิก</div>
+                  <div class="scope-team-name">งานการเงินและเอกสาร</div>
+                  <div class="scope-team-tagline">
+                    ดูแลงานเบิก–จ่าย การตรวจเอกสาร และการปิดโครงการให้ถูกต้องตามระเบียบ
+                  </div>
+                </div>
+              </div>
+              <ul class="scope-team-list">
+                <li>ตรวจสอบความครบถ้วนของเอกสารเบิก–จ่ายของโครงการและชมรม</li>
+                <li>ให้คำปรึกษาขั้นตอนการเงิน การกรอกเอกสาร และการสั่งจ่ายเงิน</li>
+                <li>ติดตามการปิดโครงการให้เป็นไปตามระเบียบมหาวิทยาลัยและกำหนดเวลา</li>
+              </ul>
+              <div class="scope-team-tags">
+                <span class="scope-chip">การเบิก–จ่าย</span>
+                <span class="scope-chip">ตรวจเอกสาร</span>
+                <span class="scope-chip">ปิดโครงการ</span>
+              </div>
+            </article>
+
+            <!-- งบ: งบประมาณและภาพรวมการใช้เงิน -->
+            <article class="scope-team-card" data-scope="budget">
+              <div class="scope-team-header">
+                <div class="scope-team-avatar scope-team-avatar-budget">B</div>
+                <div>
+                  <div class="scope-team-position">ฝ่ายบริหารและพัฒนางบประมาณ</div>
+                  <div class="scope-team-name">วางแผนและติดตามภาพรวมงบประมาณ</div>
+                  <div class="scope-team-tagline">
+                    ดูภาพรวมงบประมาณทั้งระบบขององค์การ เพื่อลดความเสี่ยงและใช้งบให้คุ้มค่า
+                  </div>
+                </div>
+              </div>
+              <ul class="scope-team-list">
+                <li>จัดทำกรอบงบประมาณประจำปีขององค์การและองค์กรต่าง ๆ</li>
+                <li>ติดตามการใช้งบของแต่ละฝ่ายและวิเคราะห์ประสิทธิภาพการใช้เงิน</li>
+                <li>สรุปรายงานภาพรวมการใช้จ่าย เสนอผู้บริหารและสภานิสิต</li>
+              </ul>
+              <div class="scope-team-tags">
+                <span class="scope-chip">กรอบงบประมาณ</span>
+                <span class="scope-chip">วิเคราะห์งบ</span>
+                <span class="scope-chip">รายงานภาพรวม</span>
+              </div>
+            </article>
+
+            <!-- ทน: หาทุนและสิทธิประโยชน์ -->
+            <article class="scope-team-card" data-scope="fundraising">
+              <div class="scope-team-header">
+                <div class="scope-team-avatar scope-team-avatar-fund">S</div>
+                <div>
+                  <div class="scope-team-position">ฝ่ายหาทุนและสิทธิประโยชน์</div>
+                  <div class="scope-team-name">สร้างรายได้และความร่วมมือจากภายนอก</div>
+                  <div class="scope-team-tagline">
+                    ติดต่อผู้สนับสนุน และออกแบบสิทธิประโยชน์ที่เป็นธรรมทั้งต่อองค์กรและภาคี
+                  </div>
+                </div>
+              </div>
+              <ul class="scope-team-list">
+                <li>ประสานผู้สนับสนุนจากภายนอกและสร้างความร่วมมือในระยะยาว</li>
+                <li>ออกแบบชุดสิทธิประโยชน์สำหรับโครงการและผู้สนับสนุนแต่ละกลุ่ม</li>
+                <li>จัดการรายรับเข้าระบบการเงินขององค์การอย่างเป็นระบบและตรวจสอบได้</li>
+              </ul>
+              <div class="scope-team-tags">
+                <span class="scope-chip">Sponsor</span>
+                <span class="scope-chip">สิทธิประโยชน์</span>
+                <span class="scope-chip">รายรับโครงการ</span>
+              </div>
+            </article>
+
+            <!-- พส: กายภาพและพัสดุ -->
+            <article class="scope-team-card" data-scope="assets">
+              <div class="scope-team-header">
+                <div class="scope-team-avatar scope-team-avatar-asset">P</div>
+                <div>
+                  <div class="scope-team-position">ฝ่ายกายภาพและพัสดุ</div>
+                  <div class="scope-team-name">ดูแลทรัพย์สินและระบบยืม–คืนพัสดุ</div>
+                  <div class="scope-team-tagline">
+                    ทำให้ของกลาง “พร้อมใช้ – ไม่หาย – มีคนรับผิดชอบ” เชื่อมโยงกับงานบัญชีและงบประมาณ
+                  </div>
+                </div>
+              </div>
+              <ul class="scope-team-list">
+                <li>ดูแลคลังพัสดุและระบบยืม–คืนอุปกรณ์ส่วนกลางขององค์การ</li>
+                <li>ตรวจเช็คสภาพ ติดตามทรัพย์สินไม่ให้สูญหาย และบริหารพื้นที่จัดเก็บ</li>
+                <li>เชื่อมข้อมูลพัสดุกับการวางแผนงบประมาณและการทำบัญชีในระยะยาว</li>
+              </ul>
+              <div class="scope-team-tags">
+                <span class="scope-chip">ระบบยืม–คืน</span>
+                <span class="scope-chip">ดูแลทรัพย์สิน</span>
+                <span class="scope-chip">ข้อมูลพัสดุ</span>
+              </div>
+            </article>
+
+          </div>
+        </section>
+
+        <!-- โครงสร้างองค์กร -->
+        <div class="panel" style="margin-bottom:20px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">โครงสร้างองค์กรฝ่ายเหรัญญิก</div>
+              <div class="panel-caption">คณะผู้บริหาร (Executive Committee)</div>
+            </div>
+          </div>
+          <div id="org-structure-content">
+            <p style="font-size:14px; color:#4b5563;">กำลังโหลดข้อมูลโครงสร้างองค์กร…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- หน้า ProjectStatus -->
+      <section class="page-view" data-page="ProjectStatus">
+        <div class="page-title">Project Status of SUCU</div>
+        <div class="page-subtitle">
+          สรุปภาพรวมจำนวนโครงการและงบประมาณ
+        </div>
+
+        <!-- Filters -->
+        <section class="filters">
+          <div class="filter-group">
+            <label for="yearSelect">ปีการศึกษา</label>
+            <select id="yearSelect">
+              <option value="all">ทุกปีการศึกษา</option>
+              <option value="2568">2568</option>
+              <option value="2567">2567</option>
+              <option value="2566">2566</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="orgTypeSelect">ประเภทองค์กร (ฝ่ายใหญ่)</label>
+            <select id="orgTypeSelect">
+              <option value="all">ทุกประเภทองค์กร</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="orgSelect">องค์กร (ฝ่ายที่รับผิดชอบโครงการ)</label>
+            <select id="orgSelect">
+              <option value="all">ทุกฝ่าย / ทุกชมรม</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- Summary Cards -->
+        <section class="cards">
+          <div class="card card-accent-pink-main">
+            <div class="card-title">รวมโครงการทั้งหมด</div>
+            <div class="card-value" id="totalProjects">0</div>
+            <div class="card-caption">เฉพาะตามเงื่อนไขที่เลือก</div>
+          </div>
+          <div class="card card-accent-orange">
+            <div class="card-title">โครงการที่รออนุมัติ</div>
+            <div class="card-value" id="pendingProjects">0</div>
+          </div>
+          <div class="card card-accent-yellow">
+            <div class="card-title">โครงการที่อนุมัติแล้ว</div>
+            <div class="card-value" id="approvedProjects">0</div>
+          </div>
+          <div class="card card-accent-green-soft">
+            <div class="card-title">โครงการที่ปิดแล้ว</div>
+            <div class="card-value" id="closedProjects">0</div>
+          </div>
+          <div class="card card-accent-red-soft">
+            <div class="card-title">งบประมาณรวม</div>
+            <div class="card-value" id="totalBudget">0</div>
+            <div class="card-caption">บาท (ตามเงื่อนไขที่เลือก)</div>
+          </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="charts">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">ตารางสถานะการปิดโครงการ</div>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <div id="budgetChartSkeleton" class="skeleton skeleton-chart"></div>
+              <canvas id="budgetByMonthChart"></canvas>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">สัดส่วนงบประมาณที่ได้รับอนุมัติ</div>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <div id="statusPieSkeleton" class="skeleton skeleton-chart"></div>
+              <canvas id="statusPieChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Table -->
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">รายการโครงการ</div>
+              <div class="panel-caption" id="tableCaption">
+                แสดง 0 โครงการ
+              </div>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="text-align:center;">รหัสโครงการ</th>
+                  <th style="text-align:center;">ชื่อโครงการ</th>
+                  <th style="text-align:center;">องค์กร</th>
+                  <th class="sortable" data-sort="year" style="text-align:center;">ปีการศึกษา</th>
+                  <th class="sortable" data-sort="status" style="text-align:center;">สถานะ</th>
+                  <th class="sortable" data-sort="budget" style="text-align:center;">งบประมาณ (บาท)</th>
+                </tr>
+              </thead>
+              <tbody id="projectTableBody"></tbody>
+            </table>
+
+            <!-- Skeleton Loading Table -->
+            <div id="projectTableSkeleton" class="table-skeleton">
+              <div class="table-skeleton-row">
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+              </div>
+              <div class="table-skeleton-row">
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+              </div>
+              <div class="table-skeleton-row">
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Modal รายละเอียดโครงการ -->
+        <div class="modal" id="projectModal">
+          <div class="modal-card">
+            <div class="modal-header">
+              <div class="modal-title">
+                <span id="projectModalTitle">รายละเอียดโครงการ</span>
+                <span class="modal-title-badge" id="projectModalTitleBadge"></span>
+              </div>
+              <button class="modal-close-btn" id="projectModalClose" aria-label="ปิด">×</button>
+            </div>
+            <div class="modal-header-row" id="projectModalHeaderRow"></div>
+            <div class="modal-body" id="projectModalBody"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- หน้า ยืม - คืนพัสดุ -->
+      <section class="page-view" data-page="assets">
+        <div class="page-title">ยืม - คืนพัสดุ</div>
+        <div class="page-subtitle">
+          หน้านี้สำหรับระบบจัดการคำขอยืม – คืนพัสดุ (ตัวอย่างหน้า Placeholder)
+        </div>
+        <div class="panel">
+          <p style="font-size:14px; color:#4b5563; margin:0 0 8px;">
+            กำลังพัฒนา ✨ ในอนาคตสามารถใส่ฟอร์มยืมพัสดุ / ตารางรายการยืม-คืน / สถานะอนุมัติ ได้ที่นี่
+          </p>
+        </div>
+      </section>
+
+      <!-- หน้า ปฏิทิน -->
+      <section class="page-view" data-page="calendar">
+        <div class="page-title">ปฏิทินโครงการ</div>
+        <div class="page-subtitle">
+          ปฏิทินกิจกรรม · กำหนดส่งเอกสาร · Timeline โครงการจาก Google Sheets
+        </div>
+
+        <!-- Filters -->
+        <section class="filters">
+          <div class="filter-group">
+            <label for="calendarYearSelect">ปีการศึกษา</label>
+            <select id="calendarYearSelect">
+              <option value="all">ทุกปีการศึกษา</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="calendarOrgSelect">องค์กร</label>
+            <select id="calendarOrgSelect">
+              <option value="all">ทุกฝ่าย/ชมรม</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="calendarStatusSelect">สถานะ</label>
+            <select id="calendarStatusSelect">
+              <option value="all">ทั้งหมด</option>
+              <option value="pending">รออนุมัติ</option>
+              <option value="approved">อนุมัติแล้ว</option>
+              <option value="closed">ปิดโครงการ</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- Calendar View -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">ปฏิทินกิจกรรมตามเดือน</div>
+              <div class="panel-caption">ข้อมูลดึงจาก Google Sheets อัตโนมัติ</div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <button id="prevMonthBtn" class="calendar-nav-btn">‹</button>
+              <button id="nextMonthBtn" class="calendar-nav-btn">›</button>
+            </div>
+          </div>
+
+          <!-- แถวชื่อวัน -->
+          <div class="calendar-weekdays">
+            <div>อา</div>
+            <div>จ</div>
+            <div>อ</div>
+            <div>พ</div>
+            <div>พฤ</div>
+            <div>ศ</div>
+            <div>ส</div>
+          </div>
+
+          <!-- ปฏิทินจะถูก generate ด้วย JS -->
+          <div id="calendarContainer" class="calendar-grid"></div>
+        </div>
+
+        <!-- Modal ปฏิทิน -->
+        <div class="modal" id="calendarModal">
+          <div class="modal-card">
+            <div class="modal-header">
+              <div class="modal-title" id="calendarModalTitle"></div>
+              <button class="modal-close-btn" id="calendarModalClose" aria-label="ปิด">×</button>
+            </div>
+            <div class="modal-body" id="calendarModalBody"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- หน้า ดาวน์โหลดเอกสารทางการเงิน -->
+      <section class="page-view" data-page="downloads">
+        <div class="page-title">ดาวน์โหลดเอกสารทางการเงิน</div>
+        <div class="page-subtitle">
+          รวมแบบฟอร์มและเอกสารมาตรฐานด้านการเงินของฝ่ายเหรัญญิก · สำหรับโครงการและชมรม
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">แบบฟอร์มการเงินที่ใช้บ่อย</div>
+            </div>
+          </div>
+
+          <!-- รายการดาวน์โหลดจะถูกเติมโดย JS จาก Google Sheets -->
+          <ul id="downloadList" class="download-list"></ul>
+
+        </div>
+      </section>
+
+    </main>
+
+    <footer>
+      สงวนลิขสิทธิ์ © <span id="footerYear"></span> ฝ่ายเหรัญญิก องค์การบริหารสโมสรนิสิตจุฬาฯ (SGCU)
+    </footer>
+
+    <!-- JS Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
+    <!-- JS หลัก -->
+    <script src="js/app.js" defer></script>
+
+  </body>
+</html>

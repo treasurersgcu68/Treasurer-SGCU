@@ -1505,41 +1505,44 @@ footer {
   color: #6b7280;
 }
 
-/* ให้ home-hero-card เป็น Full-width section */
+/* Full-width hero */
 .home-hero-card {
-  width: 100vw;               /* เต็มหน้าจอ */
+  width: 100vw;
   position: relative;
   left: 50%;
   right: 50%;
-  margin-left: -50vw;         /* ดึงออกจาก container */
-  margin-right: -50vw;        /* ดึงออกด้านขวา */
-  padding: 40px 32px;
+  margin-left: -50vw;
+  margin-right: -50vw;
+
+  /* ความสูง: ไม่เตี้ยไป ไม่สูงเกินจนต้องเลื่อนเยอะ */
+  min-height: clamp(420px, 70vh, 720px);   /* <-- แทน 100vh */
+
+  padding: 56px 40px 48px;
   box-sizing: border-box;
-  border-radius: 0;           /* แนะนำ: full-width ไม่ควรมีมุมโค้ง */
-  border: none;               /* เอากรอบออกให้ดูล้นเต็มจริง */
-  box-shadow: none;           /* เอาเงาออกเพื่อความเป็น hero */
+
+  display: flex;
+  align-items: flex-start;  /* ให้เนื้อหาเริ่มด้านบน ไม่ลอยกลางจอ */
+  justify-content: space-between;
+  gap: 40px;
+
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
   background: linear-gradient(
     135deg,
     #fdf2f8 0%,
     #ffe6f5 40%,
     #ffffff 100%
   );
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 40px;
 }
 
-/* ป้องกันการบีบในมือถือ */
+/* มือถือ: ซ้อนเป็นคอลัมน์ & จัดกลาง */
 @media (max-width: 900px) {
   .home-hero-card {
     flex-direction: column;
+    align-items: center;
     text-align: center;
-    gap: 30px;
-    padding: 40px 20px;
+    padding: 40px 20px 32px;
   }
 }
 
-.home-hero-card {
-  min-height: 100vh;
-}

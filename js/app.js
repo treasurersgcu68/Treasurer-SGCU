@@ -1879,9 +1879,6 @@ function renderOrgStructure(rows) {
   container.innerHTML = html;
 }
 
-
-const AVATAR_BASE_PATH = "img/org/";
-
 function buildAvatarUrlFromCell(raw) {
   if (!raw) return "";
 
@@ -1901,19 +1898,20 @@ function buildAvatarUrlFromCell(raw) {
   return `${AVATAR_BASE_PATH}${val}`;
 }
 
+const AVATAR_BASE_PATH = "img/org/"; // ชี้เข้าโฟลเดอร์
+
 const avatarHTML = (r, size = "lg") => {
-  const rawPhoto = r[COL_PHOTO];
-  const url = buildAvatarUrlFromCell(rawPhoto);
+  const photoFile = (r[COL_PHOTO] || "").toString().trim();
   const baseClass = size === "sm" ? "org-avatar-sm" : "org-avatar";
 
-  if (url) {
+  if (photoFile) {
+    const url = `${AVATAR_BASE_PATH}${photoFile}`; // => "img/org/10.jpg"
     return `
       <div class="${baseClass}">
-        <img src="${url}" class="org-avatar-img" loading="lazy">
-      </div>`;
+        <img src="${url}" alt="${fullName(r)}" class="org-avatar-img" loading="lazy">
+      </div>
+    `;
   }
-
-  // ไม่มีรูป → fallback initial
   return `<div class="${baseClass}">${initials(r)}</div>`;
 };
 
@@ -2017,7 +2015,7 @@ async function loadDownloadDocuments() {
     }
 
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2020", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2018", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

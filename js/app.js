@@ -1678,7 +1678,7 @@ function renderOrgStructure(rows) {
   const COL_NICK   = 7;   // (คอลัมน์ H) ใช้เป็น key สำหรับ contact
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
-  const COL_PHOTO  = 26;
+  const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
 
   const COL_ASSISTANT_KEY = COL_NICK; // ใช้ H เป็น key
 
@@ -1727,25 +1727,58 @@ function renderOrgStructure(rows) {
     return html;
   };
 
-    const AVATAR_BASE_PATH = "img/org/";  // relative จาก index.html
+  // ====== สร้าง URL รูปจากค่าคอลัมน์รูป ======
+  const AVATAR_BASE_PATH = "img/org/";  // relative จาก index.html
 
-    const avatarHTML = (r, size = "lg") => {
-      const photoFile = (r[COL_PHOTO] || "").toString().trim(); // ชื่อไฟล์จากชีต เช่น "treasurer-tuwanon.jpg"
-      const baseClass = size === "sm" ? "org-avatar-sm" : "org-avatar";
+  function buildAvatarUrlFromCell(raw) {
+    if (!raw) return "";
 
-      // ถ้ามีชื่อไฟล์รูปในชีต → ใช้รูปจากโฟลเดอร์ img/org/
-      if (photoFile) {
-        const url = `${AVATAR_BASE_PATH}${photoFile}`;
-        return `
-          <div class="${baseClass}">
-            <img src="${url}" alt="${fullName(r)}" class="org-avatar-img" loading="lazy">
-          </div>
-        `;
+    let val = raw.toString().trim();
+    if (!val) return "";
+
+    // เคสเป็น URL (http/https)
+    if (/^https?:\/\//i.test(val)) {
+      // รองรับ Google Drive แบบ /file/d/.../view และ ?id=...
+      const mFile = val.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
+      if (mFile && mFile[1]) {
+        return `https://drive.google.com/uc?export=view&id=${mFile[1]}`;
       }
+      const mId = val.match(/[?&]id=([^&]+)/);
+      if (mId && mId[1]) {
+        return `https://drive.google.com/uc?export=view&id=${mId[1]}`;
+      }
+      // URL อื่น ๆ ใช้ตรง ๆ
+      return val;
+    }
 
-      // ถ้าไม่มีรูป → ตกไปใช้ initial เหมือนเดิม
-      return `<div class="${baseClass}">${initials(r)}</div>`;
-    };
+    // เคสเป็นชื่อไฟล์โลคัล เช่น "10", "10.jpg", "10.01.01-002.jpg"
+    // ตัด whitespace แปลก ๆ
+    val = val.replace(/\s+/g, "");
+
+    // ถ้าไม่มีจุดเลย (ไม่มีนามสกุลไฟล์) → เติม .jpg ให้
+    if (!val.includes(".")) {
+      val = `${val}.jpg`;
+    }
+
+    return `${AVATAR_BASE_PATH}${val}`;
+  }
+
+  const avatarHTML = (r, size = "lg") => {
+    const rawPhoto = r[COL_PHOTO];
+    const url = buildAvatarUrlFromCell(rawPhoto);
+    const baseClass = size === "sm" ? "org-avatar-sm" : "org-avatar";
+
+    if (url) {
+      return `
+        <div class="${baseClass}">
+          <img src="${url}" alt="${fullName(r)}" class="org-avatar-img" loading="lazy">
+        </div>
+      `;
+    }
+
+    // ถ้าไม่มีรูป → fallback เป็น initial
+    return `<div class="${baseClass}">${initials(r)}</div>`;
+  };
 
   // ====== สร้าง map จาก "ค่าคอลัมน์ H" → contact (ทุกตำแหน่ง) ======
   assistantContactsByName = {};   // reset global map
@@ -1816,6 +1849,7 @@ function renderOrgStructure(rows) {
     }
 
     const person = items.shift();
+
     // รายชื่อ Position ที่ต้องเป็นสี Highlight
     const HIGHLIGHT_POS = new Set([
       "ประธานฝ่ายบริหารและพัฒนางบประมาณ",
@@ -1844,6 +1878,7 @@ function renderOrgStructure(rows) {
 
   container.innerHTML = html;
 }
+
 
 /* Helper: สร้างลิงก์ดาวน์โหลดจาก Google Drive / Docs / Sheets */
 function toDownloadUrl(url, typeHint) {
@@ -1975,7 +2010,7 @@ async function loadDownloadDocuments() {
     }
 
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1978", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2013", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

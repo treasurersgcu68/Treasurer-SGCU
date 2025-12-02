@@ -1879,6 +1879,29 @@ function addDownloadButton(wrapper, label, url) {
   wrapper.appendChild(a);
 }
 
+// แปลง URL จากชีตเป็น URL สำหรับดาวน์โหลด
+function toDownloadUrl(rawUrl, type) {
+  if (!rawUrl) return "#";
+
+  const url = rawUrl.trim();
+
+  // ถ้าเป็น Google Drive แบบ file/d/xxx/view
+  const mFile = url.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
+  if (mFile && mFile[1]) {
+    return `https://drive.google.com/uc?export=download&id=${mFile[1]}`;
+  }
+
+  // ถ้าเป็น Google Drive แบบ ?id=xxx
+  const mId = url.match(/[?&]id=([^&]+)/);
+  if (mId && mId[1]) {
+    return `https://drive.google.com/uc?export=download&id=${mId[1]}`;
+  }
+
+  // กรณีอื่น ๆ (ลิงก์ธรรมดา / GitHub / direct link) → ใช้ตรง ๆ
+  return url;
+}
+
+
 
 async function loadDownloadDocuments() {
   const listEl = document.getElementById("downloadList");
@@ -1966,7 +1989,7 @@ async function loadDownloadDocuments() {
     }
 
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1969", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1992", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

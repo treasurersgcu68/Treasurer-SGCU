@@ -1880,36 +1880,43 @@ function renderOrgStructure(rows) {
 }
 
 
-/* Helper: สร้างลิงก์ดาวน์โหลดจาก Google Drive / Docs / Sheets */
-function toDownloadUrl(url, typeHint) {
-  if (!url) return "#";
+const AVATAR_BASE_PATH = "img/org/";
 
-  // Google Drive file (/file/d/.../view)
-  const mFile = url.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
-  if (mFile) {
-    const id = mFile[1];
-    return `https://drive.google.com/uc?export=download&id=${id}`;
+function buildAvatarUrlFromCell(raw) {
+  if (!raw) return "";
+
+  let val = raw.toString().trim();
+
+  // เคสเป็น URL → ใช้ตามเดิม
+  if (/^https?:\/\//i.test(val)) return val;
+
+  // ตัด space แปลก ๆ
+  val = val.replace(/\s+/g, "");
+
+  // ถ้าไม่มี .jpg → เติมให้
+  if (!val.includes(".")) {
+    val += ".jpg";
   }
 
-  // Google Docs
-  const mDoc = url.match(/https:\/\/docs\.google\.com\/document\/d\/([^/]+)\//);
-  if (mDoc) {
-    const id = mDoc[1];
-    const fmt = typeHint === "pdf" ? "pdf" : "docx";
-    return `https://docs.google.com/document/d/${id}/export?format=${fmt}`;
-  }
-
-  // Google Sheets
-  const mSheet = url.match(/https:\/\/docs\.google\.com\/spreadsheets\/d\/([^/]+)\//);
-  if (mSheet) {
-    const id = mSheet[1];
-    const fmt = typeHint === "pdf" ? "pdf" : "xlsx";
-    return `https://docs.google.com/spreadsheets/d/${id}/export?format=${fmt}`;
-  }
-
-  // ไม่ใช่ Google → ใช้ลิงก์ตรง ๆ
-  return url;
+  return `${AVATAR_BASE_PATH}${val}`;
 }
+
+const avatarHTML = (r, size = "lg") => {
+  const rawPhoto = r[COL_PHOTO];
+  const url = buildAvatarUrlFromCell(rawPhoto);
+  const baseClass = size === "sm" ? "org-avatar-sm" : "org-avatar";
+
+  if (url) {
+    return `
+      <div class="${baseClass}">
+        <img src="${url}" class="org-avatar-img" loading="lazy">
+      </div>`;
+  }
+
+  // ไม่มีรูป → fallback initial
+  return `<div class="${baseClass}">${initials(r)}</div>`;
+};
+
 
 /* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
 function addDownloadButton(wrapper, label, url) {
@@ -2010,7 +2017,7 @@ async function loadDownloadDocuments() {
     }
 
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2013", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2020", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

@@ -1539,3 +1539,7 @@ footer {
     padding: 40px 20px;
   }
 }
+
+.home-hero-card {
+  min-height: 70vh;
+}

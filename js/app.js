@@ -515,6 +515,13 @@ function updateSummaryCards(filtered) {
   approvedProjectsEl.textContent = approved;
   closedProjectsEl.textContent = closed;
   totalBudgetEl.textContent = totalBudget.toLocaleString("th-TH");
+
+  const homeTotal = document.getElementById("homeTotalProjects");
+  const homeApproved = document.getElementById("homeApprovedProjects");
+  const homePending = document.getElementById("homePendingProjects");
+  if (homeTotal)   homeTotal.textContent = total;
+  if (homeApproved) homeApproved.textContent = approved;
+  if (homePending) homePending.textContent = pending;
 }
 
 function statusMainToBadgeClass(statusMain) {
@@ -1621,7 +1628,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1624", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1631", err);
     const el = document.getElementById("org-structure-content");
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
@@ -1975,7 +1982,7 @@ async function loadDownloadDocuments() {
     }
 
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1978", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1985", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

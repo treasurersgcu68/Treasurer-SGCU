@@ -102,6 +102,8 @@ header nav a.active {
   max-width: 1180px;
   margin: 0 auto;
   padding: 24px 18px 40px;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 .page-title {
   font-size: 22px;
@@ -868,6 +870,18 @@ th.sort-desc::after { content: "▼"; opacity: 1; }
 .org-role-legend-dot.level-1 { background: #bc6aff97; }
 .org-role-legend-dot.level-0 { background: #e5e7eb; }
 
+/* Grid 2x2 สำหรับ “โครงสร้างการทำงานภายในฝ่ายเหรัญญิก” */
+.org-grid-2x2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .org-grid-2x2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ---------- Skeleton Loading ---------- */
 @keyframes skeleton-shimmer {
   0%   { background-position: -200% 0; }
@@ -919,18 +933,9 @@ footer {
   text-align: center;
   padding: 14px 0 10px;
   opacity: 0.85;
-}
-
-/* Grid 2x2 สำหรับ “โครงสร้างการทำงานภายในฝ่ายเหรัญญิก” */
-.org-grid-2x2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-@media (max-width: 900px) {
-  .org-grid-2x2 {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* ---------- Calendar UI ---------- */
@@ -1127,7 +1132,7 @@ footer {
 .about-hero-card {
   width: 100%;
   background: white;
-  border: 2px solid #f9a8d4;   /* กรอบชมพูอ่อนแบบเดิม */
+  border: 2px solid #f9a8d4;
   border-radius: 16px;
   padding: 40px 32px;
   margin: 0 auto 32px auto;
@@ -1352,245 +1357,13 @@ footer {
 
 /* ========== Home (Landing Page) ========== */
 
-.home-hero-card {
-  /* ของเดิมที่ใช้ full width ให้อยู่เหมือนเดิมได้เลย ถ้ามีอยู่แล้วไม่ต้องซ้ำ */
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
-
-  display: flex;
-  justify-content: space-between;
-  gap: 40px;
-
-  /* ตรงนี้คือ key ใหม่ */
-  min-height: calc(100vh - 90px);  /* ปรับ 90 เป็นสูง header คร่าว ๆ */
-  align-items: center;             /* จัดเนื้อหาให้กลางแนวตั้ง */
-
-  padding: 56px 40px 48px;
-  box-sizing: border-box;
-}
-
 .page-view[data-page="home"] {
   padding-top: 16px;
   padding-bottom: 0;
 }
 
-
-@media (max-width: 900px) {
-  .home-hero-card {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.home-hero-title {
-  font-size: 26px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  color: #111827;
-}
-
-.home-hero-subtitle {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #4b5563;
-  margin-bottom: 16px;
-}
-
-.home-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.home-hero-mini {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-/* ไฮไลต์ metrics ด้านขวา */
-.home-hero-highlight {
-  border-radius: 18px;
-  padding: 14px 14px 12px;
-  background: linear-gradient(145deg, #fce7f3, #f5f3ff);
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.18);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.home-highlight-tag {
-  align-self: flex-start;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(79, 70, 229, 0.12);
-  color: #4338ca;
-}
-
-.home-highlight-metric {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.home-highlight-number {
-  font-size: 30px;
-  font-weight: 700;
-  color: #be185d;
-}
-
-.home-highlight-label {
-  font-size: 12px;
-  color: #4b5563;
-}
-
-.home-highlight-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.home-highlight-subnumber {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1d4ed8;
-}
-
-.home-highlight-sublabel {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.home-highlight-footnote {
-  font-size: 10px;
-  color: #6b7280;
-  margin-top: 4px;
-}
-
-/* Quick access cards */
-.home-quick-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.home-quick-card {
-  cursor: pointer;
-  border-radius: 16px;
-  padding: 12px 14px;
-  background: #ffffff;
-  border: 1px solid #fcd1e4;
-  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.1);
-  transition:
-    transform 0.18s ease-out,
-    box-shadow 0.18s ease-out,
-    border-color 0.18s ease-out,
-    background 0.18s ease-out;
-}
-
-.home-quick-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
-  border-color: #ec4899;
-  background: linear-gradient(135deg, #ffffff, #fdf2ff);
-}
-
-.home-quick-title {
-  font-size: 15px;
-  font-weight: 700;
-  margin-bottom: 4px;
-  color: #be185d;
-}
-
-.home-quick-text {
-  font-size: 13px;
-  color: #4b5563;
-  margin-bottom: 6px;
-}
-
-.home-quick-meta {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-/* Full-width hero */
-.home-hero-card {
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
-
-  /* ความสูง: ไม่เตี้ยไป ไม่สูงเกินจนต้องเลื่อนเยอะ */
-  min-height: clamp(420px, 70vh, 720px);   /* <-- แทน 100vh */
-
-  padding: 56px 40px 48px;
-  box-sizing: border-box;
-
-  display: flex;
-  align-items: flex-start;  /* ให้เนื้อหาเริ่มด้านบน ไม่ลอยกลางจอ */
-  justify-content: space-between;
-  gap: 40px;
-
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
-  background: linear-gradient(
-    135deg,
-    #fdf2f8 0%,
-    #ffe6f5 40%,
-    #ffffff 100%
-  );
-}
-
-/* มือถือ: ซ้อนเป็นคอลัมน์ & จัดกลาง */
-@media (max-width: 900px) {
-  .home-hero-card {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 40px 20px 32px;
-  }
-}
-
-/* เอาพื้นหลังของ container ออก เพื่อให้เห็นพื้นหลังของ body แบบเต็ม */
-.page {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-footer {
-  background: transparent !important;
-}
-
-footer {
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* ให้ container หลักไม่ทับพื้นหลัง gradient ของ body */
-.page {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-/* footer กลืนไปกับพื้นหลังหลัก */
-footer {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
 /* ===== Home: Full-page Hero ===== */
 
-/* ดึง hero หลุดออกจากกรอบ max-width ของ .page → กว้างเต็ม 100vw */
 .home-hero-card {
   position: relative;
   left: 50%;
@@ -1599,7 +1372,7 @@ footer {
   margin-right: -50vw;
   width: 100vw;
 
-  min-height: calc(100vh - 80px); /* สูงประมาณเต็มจอ (เผื่อ header) */
+  min-height: calc(100vh - 80px);
   padding: 52px clamp(24px, 6vw, 80px) 72px;
 
   display: flex;
@@ -1608,19 +1381,18 @@ footer {
   gap: 40px;
   box-sizing: border-box;
 
-  /* ใช้พื้นหลังกลืนกับ body + เติม glow เล็ก ๆ */
   background:
     radial-gradient(circle at 20% 0%, rgba(236,72,153,0.18), transparent 55%),
     radial-gradient(circle at 85% 100%, rgba(236,72,153,0.16), transparent 60%),
     #ffeef8;
 }
 
-/* จำกัดความกว้างฝั่งข้อความ + ให้คอนเทนต์ไม่ล้น */
+/* จำกัดความกว้างฝั่งข้อความ */
 .home-hero-content {
   max-width: 560px;
 }
 
-/* ใช้ style เดียวกับ about hero แต่เข้มขึ้นนิดหน่อย */
+/* ตัวหนังสือหลัก */
 .home-hero-title {
   font-size: 32px;
   font-weight: 800;
@@ -1726,4 +1498,48 @@ footer {
   }
 }
 
+/* Quick access cards */
+.home-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
 
+.home-quick-card {
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #fcd1e4;
+  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.1);
+  transition:
+    transform 0.18s ease-out,
+    box-shadow 0.18s ease-out,
+    border-color 0.18s ease-out,
+    background 0.18s ease-out;
+}
+
+.home-quick-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+  border-color: #ec4899;
+  background: linear-gradient(135deg, #ffffff, #fdf2ff);
+}
+
+.home-quick-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #be185d;
+}
+
+.home-quick-text {
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+
+.home-quick-meta {
+  font-size: 11px;
+  color: #6b7280;
+}

@@ -1572,6 +1572,17 @@ function sortProjects(projects, key, direction) {
   return sorted;
 }
 
+function updateHomeHeroSummary(total, approved, pending) {
+  const totalEl = document.getElementById("homeTotalProjects");
+  const approvedEl = document.getElementById("homeApprovedProjects");
+  const pendingEl = document.getElementById("homePendingProjects");
+  if (!totalEl || !approvedEl || !pendingEl) return;
+
+  totalEl.textContent = total;
+  approvedEl.textContent = approved;
+  pendingEl.textContent = pending;
+}
+
 function refreshProjectStatus() {
   let filtered = filterProjects();
 
@@ -1587,6 +1598,18 @@ function refreshProjectStatus() {
   if (tableCaptionEl) {
     tableCaptionEl.textContent = `แสดง ${filtered.length} โครงการ`;
   }
+
+  // ★ อัปเดต Hero บนหน้า Home
+  const total = filtered.length;
+  const approved = filtered.filter(
+    (p) => (p.statusMain || "").trim() === "อนุมัติโครงการ"
+  ).length;
+  const pending = filtered.filter((p) => {
+    const s = (p.statusMain || "").trim();
+    return s !== "" && s !== "อนุมัติโครงการ";
+  }).length;
+
+  updateHomeHeroSummary(total, approved, pending);
 }
 
 function setLoading(isLoading) {
@@ -1628,7 +1651,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1631", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1654", err);
     const el = document.getElementById("org-structure-content");
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
@@ -1982,7 +2005,7 @@ async function loadDownloadDocuments() {
     }
 
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1985", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2008", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

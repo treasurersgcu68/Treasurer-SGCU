@@ -1575,4 +1575,155 @@ footer {
   box-shadow: none !important;
 }
 
+/* ให้ container หลักไม่ทับพื้นหลัง gradient ของ body */
+.page {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* footer กลืนไปกับพื้นหลังหลัก */
+footer {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ===== Home: Full-page Hero ===== */
+
+/* ดึง hero หลุดออกจากกรอบ max-width ของ .page → กว้างเต็ม 100vw */
+.home-hero-card {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+
+  min-height: calc(100vh - 80px); /* สูงประมาณเต็มจอ (เผื่อ header) */
+  padding: 52px clamp(24px, 6vw, 80px) 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  box-sizing: border-box;
+
+  /* ใช้พื้นหลังกลืนกับ body + เติม glow เล็ก ๆ */
+  background:
+    radial-gradient(circle at 20% 0%, rgba(236,72,153,0.18), transparent 55%),
+    radial-gradient(circle at 85% 100%, rgba(236,72,153,0.16), transparent 60%),
+    #ffeef8;
+}
+
+/* จำกัดความกว้างฝั่งข้อความ + ให้คอนเทนต์ไม่ล้น */
+.home-hero-content {
+  max-width: 560px;
+}
+
+/* ใช้ style เดียวกับ about hero แต่เข้มขึ้นนิดหน่อย */
+.home-hero-title {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #1f2937;
+}
+
+.home-hero-subtitle {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #4b5563;
+  margin-bottom: 22px;
+}
+
+.home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+/* ตัวหนังสือแถวล่าง “Designed for …” */
+.home-hero-mini {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* กล่อง Live Overview ด้านขวา */
+.home-hero-highlight {
+  width: 260px;
+  max-width: 40%;
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 18px 60px rgba(236,72,153,0.28);
+  border: 1px solid #fde4f1;
+  box-sizing: border-box;
+}
+
+.home-highlight-tag {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #be185d;
+  background: #ffe4f1;
+  margin-bottom: 10px;
+}
+
+.home-highlight-metric {
+  margin-bottom: 8px;
+}
+
+.home-highlight-number {
+  font-size: 32px;
+  font-weight: 800;
+  color: #db2777;
+  line-height: 1.1;
+}
+
+.home-highlight-label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.home-highlight-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.home-highlight-subnumber {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.home-highlight-sublabel {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.home-highlight-footnote {
+  font-size: 10px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+/* Responsive: จอเล็กให้ hero เรียงบน-ล่าง */
+@media (max-width: 900px) {
+  .home-hero-card {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: auto;
+    padding-top: 32px;
+  }
+
+  .home-hero-highlight {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
 

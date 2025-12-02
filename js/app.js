@@ -1659,40 +1659,6 @@ async function loadOrgStructure() {
   }
 }
 
-function convertDriveLink(url) {
-  if (!url) return "";
-  // จับไฟล์ไอดีจากลิงก์แบบ /file/d/xxxxx/view
-  const m = url.match(/\/d\/([^/]+)\//);
-  if (m && m[1]) {
-    return `https://drive.google.com/uc?export=view&id=${m[1]}`;
-  }
-  // ถ้าไม่ใช่ลิงก์รูปแบบนั้นก็คืน url เดิม
-  return url;
-}
-
-function normalizePhotoUrl(url) {
-  if (!url) return "";
-
-  const trimmed = url.trim();
-
-  // ลิงก์ Google Drive แบบ /file/d/.../view
-  const mFile = trimmed.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
-  if (mFile) {
-    const id = mFile[1];
-    return `https://drive.google.com/uc?export=view&id=${id}`;
-  }
-
-  // ลิงก์แบบ ?id=...
-  const mId = trimmed.match(/[?&]id=([^&]+)/);
-  if (mId) {
-    const id = mId[1];
-    return `https://drive.google.com/uc?export=view&id=${id}`;
-  }
-
-  // ไม่ใช่ Google Drive → ใช้ตรง ๆ
-  return trimmed;
-}
-
 function renderOrgStructure(rows) {
   const container = document.getElementById("org-structure-content");
   if (!container) return;
@@ -1761,21 +1727,25 @@ function renderOrgStructure(rows) {
     return html;
   };
 
-  const avatarHTML = (r, size = "lg") => {
-  const rawUrl = (r[COL_PHOTO] || "").toString().trim();
-  const url = convertDriveLink(rawUrl);
-  const baseClass = size === "sm" ? "org-avatar-sm" : "org-avatar";
+    const AVATAR_BASE_PATH = "img/org/";  // relative จาก index.html
 
-  if (url) {
-    return `
-      <div class="${baseClass}">
-        <img src="${url}" alt="${fullName(r)}" class="org-avatar-img">
-      </div>
-    `;
-  }
-  return `<div class="${baseClass}">${initials(r)}</div>`;
-};
+    const avatarHTML = (r, size = "lg") => {
+      const photoFile = (r[COL_PHOTO] || "").toString().trim(); // ชื่อไฟล์จากชีต เช่น "treasurer-tuwanon.jpg"
+      const baseClass = size === "sm" ? "org-avatar-sm" : "org-avatar";
 
+      // ถ้ามีชื่อไฟล์รูปในชีต → ใช้รูปจากโฟลเดอร์ img/org/
+      if (photoFile) {
+        const url = `${AVATAR_BASE_PATH}${photoFile}`;
+        return `
+          <div class="${baseClass}">
+            <img src="${url}" alt="${fullName(r)}" class="org-avatar-img" loading="lazy">
+          </div>
+        `;
+      }
+
+      // ถ้าไม่มีรูป → ตกไปใช้ initial เหมือนเดิม
+      return `<div class="${baseClass}">${initials(r)}</div>`;
+    };
 
   // ====== สร้าง map จาก "ค่าคอลัมน์ H" → contact (ทุกตำแหน่ง) ======
   assistantContactsByName = {};   // reset global map
@@ -2005,7 +1975,7 @@ async function loadDownloadDocuments() {
     }
 
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2008", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1978", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

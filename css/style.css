@@ -1504,3 +1504,38 @@ footer {
   font-size: 11px;
   color: #6b7280;
 }
+
+/* ให้ home-hero-card เป็น Full-width section */
+.home-hero-card {
+  width: 100vw;               /* เต็มหน้าจอ */
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;         /* ดึงออกจาก container */
+  margin-right: -50vw;        /* ดึงออกด้านขวา */
+  padding: 40px 32px;
+  box-sizing: border-box;
+  border-radius: 0;           /* แนะนำ: full-width ไม่ควรมีมุมโค้ง */
+  border: none;               /* เอากรอบออกให้ดูล้นเต็มจริง */
+  box-shadow: none;           /* เอาเงาออกเพื่อความเป็น hero */
+  background: linear-gradient(
+    135deg,
+    #fdf2f8 0%,
+    #ffe6f5 40%,
+    #ffffff 100%
+  );
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 40px;
+}
+
+/* ป้องกันการบีบในมือถือ */
+@media (max-width: 900px) {
+  .home-hero-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 30px;
+    padding: 40px 20px;
+  }
+}

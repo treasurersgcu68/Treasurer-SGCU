@@ -1730,38 +1730,7 @@ function renderOrgStructure(rows) {
   // ====== สร้าง URL รูปจากค่าคอลัมน์รูป ======
   const AVATAR_BASE_PATH = "img/org/";  // relative จาก index.html
 
-  function buildAvatarUrlFromCell(raw) {
-    if (!raw) return "";
-
-    let val = raw.toString().trim();
-    if (!val) return "";
-
-    // เคสเป็น URL (http/https)
-    if (/^https?:\/\//i.test(val)) {
-      // รองรับ Google Drive แบบ /file/d/.../view และ ?id=...
-      const mFile = val.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
-      if (mFile && mFile[1]) {
-        return `https://drive.google.com/uc?export=view&id=${mFile[1]}`;
-      }
-      const mId = val.match(/[?&]id=([^&]+)/);
-      if (mId && mId[1]) {
-        return `https://drive.google.com/uc?export=view&id=${mId[1]}`;
-      }
-      // URL อื่น ๆ ใช้ตรง ๆ
-      return val;
-    }
-
-    // เคสเป็นชื่อไฟล์โลคัล เช่น "10", "10.jpg", "10.01.01-002.jpg"
-    // ตัด whitespace แปลก ๆ
-    val = val.replace(/\s+/g, "");
-
-    // ถ้าไม่มีจุดเลย (ไม่มีนามสกุลไฟล์) → เติม .jpg ให้
-    if (!val.includes(".")) {
-      val = `${val}.jpg`;
-    }
-
-    return `${AVATAR_BASE_PATH}${val}`;
-  }
+  
 
   const avatarHTML = (r, size = "lg") => {
     const rawPhoto = r[COL_PHOTO];
@@ -1898,24 +1867,6 @@ function buildAvatarUrlFromCell(raw) {
   return `${AVATAR_BASE_PATH}${val}`;
 }
 
-const AVATAR_BASE_PATH = "img/org/"; // ชี้เข้าโฟลเดอร์
-
-const avatarHTML = (r, size = "lg") => {
-  const photoFile = (r[COL_PHOTO] || "").toString().trim();
-  const baseClass = size === "sm" ? "org-avatar-sm" : "org-avatar";
-
-  if (photoFile) {
-    const url = `${AVATAR_BASE_PATH}${photoFile}`; // => "img/org/10.jpg"
-    return `
-      <div class="${baseClass}">
-        <img src="${url}" alt="${fullName(r)}" class="org-avatar-img" loading="lazy">
-      </div>
-    `;
-  }
-  return `<div class="${baseClass}">${initials(r)}</div>`;
-};
-
-
 /* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
 function addDownloadButton(wrapper, label, url) {
   if (!url || url === "-" || url === "--" || url === "") return;
@@ -2015,7 +1966,7 @@ async function loadDownloadDocuments() {
     }
 
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2018", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1969", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

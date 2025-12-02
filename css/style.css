@@ -1353,18 +1353,32 @@ footer {
 /* ========== Home (Landing Page) ========== */
 
 .home-hero-card {
-  width: 100%;
-  max-width: 980px;
-  margin: 0 auto 26px auto;
-  padding: 26px 26px 22px;
-  border-radius: 20px;
-  border: 2px solid #f9a8d4;
-  background: radial-gradient(circle at top left, #ffffff, #fdf2f8);
-  box-shadow: 0 12px 30px rgba(236, 72, 153, 0.22);
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(260px, 1.2fr);
-  gap: 20px;
+  /* ของเดิมที่ใช้ full width ให้อยู่เหมือนเดิมได้เลย ถ้ามีอยู่แล้วไม่ต้องซ้ำ */
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+
+  /* ตรงนี้คือ key ใหม่ */
+  min-height: calc(100vh - 90px);  /* ปรับ 90 เป็นสูง header คร่าว ๆ */
+  align-items: center;             /* จัดเนื้อหาให้กลางแนวตั้ง */
+
+  padding: 56px 40px 48px;
+  box-sizing: border-box;
 }
+
+.page-view[data-page="home"] {
+  padding-top: 16px;
+  padding-bottom: 0;
+}
+
+
 @media (max-width: 900px) {
   .home-hero-card {
     grid-template-columns: minmax(0, 1fr);

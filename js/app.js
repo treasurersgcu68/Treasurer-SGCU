@@ -8,9 +8,14 @@ const ORG_SHEET_CSV =
 const DOWNLOAD_SHEET =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTburYaUshqF-DOvbwOEinWik0KXNwqqJLfO6frlxUn1iEsLu5RzkNoum4KgnWeSwBdo4--B1eScRD5/pub?output=csv";
 
+const SCORE_SHEET =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_oiV1Ntv0x8UuRBKyvl9tTaUxrKkvImEmyFUU4oPp0pSKnLHOjJIz574Te4l25Y2IKFbLMaFlp3UW/pub?gid=968526742&single=true&output=csv";
+  
 /* cache สำหรับข้อมูลโครงการจาก Google Sheets */
-const SHEET_CACHE_KEY = "sgcu_projects_cache_v1";
 const SHEET_CACHE_TTL_MS = 1000 * 60 * 15; // อายุ cache 15 นาที
+const CACHE_VERSION = 2;
+const SHEET_CACHE_KEY = "sgcu_projects_cache_v2";
+
 
 /* 2) Globals */
 let projects = [];
@@ -39,6 +44,10 @@ let projectModalBodyEl;
 let projectModalCloseEl;
 let currentSort = { key: null, direction: "asc" };
 let assistantContactsByName = {};
+
+// Motion globals
+let sectionObserver = null;
+let hasInitCountup = false;
 
 /* 3) Plugin: Center Text in Doughnut */
 const centerTextPlugin = {
@@ -322,37 +331,10 @@ function extractProjectsFromRows(dataRows, headerRow) {
 }
 
 /* 5) Load from Google Sheets (with localStorage cache) */
+// เวอร์ชันไม่ใช้ localStorage cache ชั่วคราว
 async function loadProjectsFromSheet() {
-  // 1) ลองอ่านจาก localStorage ก่อน
   try {
-    const cachedRaw = localStorage.getItem(SHEET_CACHE_KEY);
-    if (cachedRaw) {
-      const cached = JSON.parse(cachedRaw);
-      if (
-        cached &&
-        Array.isArray(cached.projects) &&
-        typeof cached.timestamp === "number"
-      ) {
-        const age = Date.now() - cached.timestamp;
-        if (age >= 0 && age <= SHEET_CACHE_TTL_MS) {
-          // cache ยังไม่หมดอายุ → ใช้เลย
-          projects = cached.projects;
-          console.log(
-            "[SGCU] ใช้ข้อมูลโครงการจาก localStorage cache (อายุ",
-            Math.round(age / 1000),
-            "วินาที)"
-          );
-          return;
-        }
-      }
-    }
-  } catch (e) {
-    console.warn("[SGCU] อ่าน cache จาก localStorage ไม่ได้ / format ผิด - app.js:350", e);
-  }
-
-  // 2) ถ้าไม่มี cache หรือ cache หมดอายุ → ดึงจาก Google Sheets ตามปกติ
-  try {
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:355");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets (nocache) ... - app.js:337");
     const res = await fetch(SHEET_CSV_URL);
     const csvText = await res.text();
 
@@ -369,25 +351,14 @@ async function loadProjectsFromSheet() {
       const dataRows = rows.slice(2);
       projects = extractProjectsFromRows(dataRows, headerRow);
     }
-
-    // 3) เซฟลง localStorage เพื่อใช้ในรอบต่อไป
-    try {
-      const payload = {
-        timestamp: Date.now(),
-        projects
-      };
-      localStorage.setItem(SHEET_CACHE_KEY, JSON.stringify(payload));
-    } catch (e) {
-      console.warn("[SGCU] เซฟ cache ลง localStorage ไม่ได้ - app.js:381", e);
-    }
   } catch (err) {
-    console.error(
-      "โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน",
-      err
-    );
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:355", err);
     projects = getFallbackProjects();
   }
 }
+
+
+
 
 
 function getFallbackProjects() {
@@ -436,6 +407,8 @@ function getFallbackProjects() {
 
 /* 6) Filter + Summary + Table */
 function initOrgTypeOptions() {
+  if (!orgTypeSelect) return;  // ✅ กัน null
+
   while (orgTypeSelect.options.length > 1) {
     orgTypeSelect.remove(1);
   }
@@ -450,6 +423,8 @@ function initOrgTypeOptions() {
 }
 
 function initOrgOptions() {
+  if (!orgSelect || !orgTypeSelect) return;  // ✅ กัน null
+
   while (orgSelect.options.length > 1) {
     orgSelect.remove(1);
   }
@@ -467,10 +442,11 @@ function initOrgOptions() {
   });
 }
 
+
 function filterProjects() {
-  const year = yearSelect.value;
-  const orgGroup = orgTypeSelect.value;
-  const org = orgSelect.value;
+  const year = yearSelect ? yearSelect.value : "all";
+  const orgGroup = orgTypeSelect ? orgTypeSelect.value : "all";
+  const org = orgSelect ? orgSelect.value : "all";
 
   return projects.filter((p) => {
     const yearMatch = year === "all" || p.year === year;
@@ -479,6 +455,8 @@ function filterProjects() {
     return yearMatch && groupMatch && orgMatch;
   });
 }
+
+
 
 function updateSummaryCards(filtered) {
   const total = filtered.length;
@@ -510,19 +488,22 @@ function updateSummaryCards(filtered) {
 
   const totalBudget = filtered.reduce((sum, p) => sum + (p.budget || 0), 0);
 
-  totalProjectsEl.textContent = total;
-  pendingProjectsEl.textContent = pending;
-  approvedProjectsEl.textContent = approved;
-  closedProjectsEl.textContent = closed;
-  totalBudgetEl.textContent = totalBudget.toLocaleString("th-TH");
+  // 🔧 เช็คว่ามี element ก่อน
+  if (totalProjectsEl)   totalProjectsEl.textContent   = total;
+  if (pendingProjectsEl) pendingProjectsEl.textContent = pending;
+  if (approvedProjectsEl) approvedProjectsEl.textContent = approved;
+  if (closedProjectsEl)  closedProjectsEl.textContent  = closed;
+  if (totalBudgetEl)     totalBudgetEl.textContent     = totalBudget.toLocaleString("th-TH");
 
+  // Home hero (เดิมคุณเช็ค null ไว้แล้ว ใช้ต่อได้เลย)
   const homeTotal = document.getElementById("homeTotalProjects");
   const homeApproved = document.getElementById("homeApprovedProjects");
   const homePending = document.getElementById("homePendingProjects");
-  if (homeTotal)   homeTotal.textContent = total;
+  if (homeTotal)    homeTotal.textContent    = total;
   if (homeApproved) homeApproved.textContent = approved;
-  if (homePending) homePending.textContent = pending;
+  if (homePending)  homePending.textContent  = pending;
 }
+
 
 function statusMainToBadgeClass(statusMain) {
   const s = (statusMain || "").trim();
@@ -634,12 +615,12 @@ function updateTable(filteredProjects) {
     `;
 
     tr.innerHTML = `
-      <td>${p.code || ""}</td>
-      <td>${p.name || ""}</td>
-      <td>${p.orgName || ""}</td>
-      <td style="text-align:center;">${p.year || ""}</td>
-      <td style="text-align:center;">${statusBadge}</td>
-      <td style="text-align:right; ${budgetColor}">${budgetText}</td>
+      <td class="col-code">${p.code || ""}</td>
+      <td class="col-name">${p.name || ""}</td>
+      <td class="col-org">${p.orgName || ""}</td>
+      <td class="col-year">${p.year || ""}</td>
+      <td class="col-status">${statusBadge}</td>
+      <td class="col-budget" style="${budgetColor}">${budgetText}</td>
     `;
 
     tr.addEventListener("click", () => openProjectModal(p));
@@ -665,6 +646,7 @@ function openProjectModal(project) {
   const orgGroup = project.orgGroup || "-";
   const approveStatus = project.approvalStatus || project.statusMain || "-";
 
+  // title + badge ด้านบน
   projectModalTitleEl.textContent = name;
   projectModalTitleBadgeEl.textContent = code || "";
 
@@ -681,6 +663,7 @@ function openProjectModal(project) {
     </div>
   `;
 
+  // เตรียมข้อมูลที่ใช้ต่อ
   const councilSessionText = project.councilSessionText || "-";
   const approveDate = project.approveDate || "-";
   const lastWorkDate = project.lastWorkDate || "-";
@@ -730,7 +713,7 @@ function openProjectModal(project) {
   const closeStatusAdvance = project.closeStatusAdvance || "-";
   const closeStatusDecree = project.closeStatusDecree || project.statusClose || "-";
 
-  // สร้าง HTML สำหรับ "ผู้สอบตรวจสอบเอกสาร"
+  // ผู้สอบตรวจเอกสาร + contact box
   let closeCheckerHtml = "-";
   if (closeChecker) {
     const contact = assistantContactsByName[closeChecker];
@@ -776,18 +759,26 @@ function openProjectModal(project) {
         </div>
       `;
     } else {
-      // ถ้าไม่มี contact map ให้แสดงชื่อเฉย ๆ
       closeCheckerHtml = closeChecker;
     }
   }
 
-
+  // === layout แบบการ์ดตามภาพ ===
   const html = `
     <div class="modal-sections">
+
       <!-- 1) ข้อมูลโครงการ -->
       <section class="modal-section">
-        <div class="modal-section-title">
-          <span class="icon">📁</span> ข้อมูลโครงการ
+        <div class="modal-section-header">
+          <div class="modal-section-icon icon-info">
+            <span>📁</span>
+          </div>
+          <div class="modal-section-header-text">
+            <div class="modal-section-title">ข้อมูลโครงการ</div>
+            <div class="modal-section-caption">
+              ข้อมูลพื้นฐานของโครงการจากระบบจัดทำโครงการ
+            </div>
+          </div>
         </div>
         <div class="modal-section-grid">
           <div>
@@ -812,11 +803,21 @@ function openProjectModal(project) {
           </div>
         </div>
       </section>
+      
+      <div> <br/> </div>
 
       <!-- 2) อนุมัติ -->
       <section class="modal-section">
-        <div class="modal-section-title">
-          <span class="icon">✅</span> อนุมัติ
+        <div class="modal-section-header">
+          <div class="modal-section-icon icon-approve">
+            <span>✅</span>
+          </div>
+          <div class="modal-section-header-text">
+            <div class="modal-section-title">อนุมัติ</div>
+            <div class="modal-section-caption">
+              สถานะการอนุมัติและรายละเอียดจากที่ประชุมสภา
+            </div>
+          </div>
         </div>
         <div class="modal-section-grid">
           <div>
@@ -846,10 +847,20 @@ function openProjectModal(project) {
         </div>
       </section>
 
+      <div> <br/> </div>
+
       <!-- 3) โอนงบประมาณ -->
       <section class="modal-section">
-        <div class="modal-section-title">
-          <span class="icon">💸</span> โอนงบประมาณ
+        <div class="modal-section-header">
+          <div class="modal-section-icon icon-transfer">
+            <span>💸</span>
+          </div>
+          <div class="modal-section-header-text">
+            <div class="modal-section-title">โอนงบประมาณ</div>
+            <div class="modal-section-caption">
+              สถานะการโอนงบประมาณและส่วนต่างของการโอน
+            </div>
+          </div>
         </div>
         <div class="modal-section-grid">
           <div>
@@ -871,10 +882,20 @@ function openProjectModal(project) {
         </div>
       </section>
 
+      <div> <br/> </div>
+
       <!-- 4) ยืมรองจ่าย -->
       <section class="modal-section">
-        <div class="modal-section-title">
-          <span class="icon">🧾</span> ยืมรองจ่าย
+        <div class="modal-section-header">
+          <div class="modal-section-icon icon-advance">
+            <span>🧾</span>
+          </div>
+          <div class="modal-section-header-text">
+            <div class="modal-section-title">ยืมรองจ่าย</div>
+            <div class="modal-section-caption">
+              รายละเอียดการยืมรองจ่ายและกำหนดคืนรองจ่าย
+            </div>
+          </div>
         </div>
         <div class="modal-section-grid">
           <div>
@@ -900,10 +921,20 @@ function openProjectModal(project) {
         </div>
       </section>
 
+      <div> <br/> </div>
+
       <!-- 5) ส่งปิดโครงการ -->
       <section class="modal-section">
-        <div class="modal-section-title">
-          <span class="icon">📚</span> ส่งปิดโครงการ
+        <div class="modal-section-header">
+          <div class="modal-section-icon icon-close">
+            <span>📚</span>
+          </div>
+          <div class="modal-section-header-text">
+            <div class="modal-section-title">ส่งปิดโครงการ</div>
+            <div class="modal-section-caption">
+              สถานะการส่งปิดโครงการและข้อมูลการใช้งบประมาณจริง
+            </div>
+          </div>
         </div>
         <div class="modal-section-grid">
           <div>
@@ -944,13 +975,14 @@ function openProjectModal(project) {
           </div>
         </div>
       </section>
+
     </div>
   `;
 
   projectModalBodyEl.innerHTML = html;
   projectModalEl.classList.add("show");
 
-  // ติด event toggle ให้ลิงก์ผู้ช่วยเหรัญญิก
+  // toggle กล่อง contact ผู้ช่วยเหรัญญิก
   const links = projectModalBodyEl.querySelectorAll(".assistant-contact-link");
   links.forEach((link) => {
     link.addEventListener("click", () => {
@@ -964,6 +996,7 @@ function openProjectModal(project) {
     });
   });
 }
+
 
 function closeProjectModal() {
   if (!projectModalEl) return;
@@ -1345,8 +1378,8 @@ function updateApprovedBudgetPie(filtered) {
   ];
 
   const yearFilter = yearSelect ? yearSelect.value : "all";
-  const orgGroupFilter = orgTypeSelect.value;
-  const orgFilter = orgSelect.value;
+  const orgGroupFilter = orgTypeSelect ? orgTypeSelect.value : "all";
+  const orgFilter = orgSelect ? orgSelect.value : "all";
 
   let baseAllProjects = projects.filter(
     (p) => yearFilter === "all" || p.year === yearFilter
@@ -1538,6 +1571,143 @@ function updateApprovedBudgetPie(filtered) {
   statusPieChart.update();
 }
 
+/* ================= SCOREBOARD SGCU-10.001 ================= */
+
+function initScoreboard() {
+  const podiumEl = document.getElementById("scorePodium");
+  const runnersEl = document.getElementById("scoreRunners");
+  if (!podiumEl || !runnersEl) return;
+
+  // ข้อความโหลดครั้งแรก (เผื่อยังไม่มี)
+  podiumEl.innerHTML = `<div class="score-loading">กำลังโหลดผลคะแนน...</div>`;
+  runnersEl.innerHTML = "";
+
+  Papa.parse(SCORE_SHEET, {
+    download: true,
+    complete: (results) => {
+      const rows = results.data || [];
+      if (rows.length < 2) return;
+
+      const items = [];
+
+      // ข้าม header แถวแรก
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row) continue;
+
+        // AB, AC  → index 27, 28 (0-based)
+        const org = (row[27] || "").trim();
+        const scoreVal = parseFloat(row[28]);
+
+        if (!org || Number.isNaN(scoreVal)) continue;
+        items.push({ org, score: scoreVal });
+      }
+
+      if (!items.length) return;
+
+      // เรียงคะแนนมากไปน้อย
+      items.sort((a, b) => b.score - a.score);
+
+      const podium = items.slice(0, 3);   // อันดับ 1–3
+      const runners = items.slice(3, 8);  // อันดับ 4–8 เป็น runners-up
+
+      renderScorePodium(podiumEl, podium);
+      renderScoreRunners(runnersEl, runners);
+    },
+    error: (err) => {
+      console.error("Error loading SCORE_SHEET - app.js:1618", err);
+    }
+  });
+}
+
+function renderScorePodium(container, podium) {
+  if (!podium.length) return;
+
+  const first = podium[0];
+  const second = podium[1];
+  const third = podium[2];
+
+  container.innerHTML = `
+    ${second ? `
+      <div class="score-podium-card second">
+        <div class="score-medal second">2</div>
+        <div class="score-rank-label">รองชนะเลิศอันดับ 1</div>
+        <div class="score-org-name">${second.org}</div>
+        <div class="score-org-score">${second.score.toLocaleString()} คะแนน</div>
+      </div>
+    ` : ""}
+
+    ${first ? `
+      <div class="score-podium-card first">
+        <div class="score-medal first">1</div>
+        <div class="score-rank-label">ชนะเลิศ</div>
+        <div class="score-org-name">${first.org}</div>
+        <div class="score-org-score">${first.score.toLocaleString()} คะแนน</div>
+      </div>
+    ` : ""}
+
+    ${third ? `
+      <div class="score-podium-card third">
+        <div class="score-medal third">3</div>
+        <div class="score-rank-label">รองชนะเลิศอันดับ 2</div>
+        <div class="score-org-name">${third.org}</div>
+        <div class="score-org-score">${third.score.toLocaleString()} คะแนน</div>
+      </div>
+    ` : ""}
+  `;
+
+  // ★ ให้ JS ไปเช็คความยาวชื่อแล้วลดฟอนต์ให้
+  adjustScoreOrgNameFont();
+}
+
+
+function renderScoreRunners(container, runners) {
+  if (!runners.length) {
+    container.style.display = "none";
+    return;
+  }
+
+  const chips = runners
+    .map((item, idx) => {
+      const rank = idx + 4; // 4,5,6,...
+      return `
+        <div class="score-runner-chip">
+          <span class="score-runner-rank">${rank}</span>
+          <span>${item.org}</span>
+          <span style="opacity:0.85;">· ${item.score.toLocaleString()} คะแนน</span>
+        </div>
+      `;
+    })
+    .join("");
+
+  container.innerHTML = `
+    <span class="score-runners-title">Runners-up</span>
+    ${chips}
+  `;
+}
+
+
+function adjustScoreOrgNameFont() {
+  const names = document.querySelectorAll(".score-org-name");
+
+  names.forEach((el) => {
+    const len = el.textContent.trim().length;
+
+    // ล้างคลาสเดิมก่อน
+    el.classList.remove("score-org-name--long", "score-org-name--very-long");
+
+    if (len > 40) {
+      // ยาวมาก → ฟอนต์เล็กสุด
+      el.classList.add("score-org-name--very-long");
+    } else if (len > 25) {
+      // เริ่มยาว → ฟอนต์ย่อกลาง ๆ
+      el.classList.add("score-org-name--long");
+    }
+  });
+}
+
+
+
 /* 10) Sorting + refresh */
 function sortProjects(projects, key, direction) {
   const sorted = [...projects];
@@ -1578,12 +1748,19 @@ function updateHomeHeroSummary(total, approved, pending) {
   const pendingEl = document.getElementById("homePendingProjects");
   if (!totalEl || !approvedEl || !pendingEl) return;
 
-  totalEl.textContent = total;
-  approvedEl.textContent = approved;
-  pendingEl.textContent = pending;
+  // เตรียมสำหรับ CountUp + ค่า fallback ทันที
+  totalEl.dataset.countup = total.toString();
+  approvedEl.dataset.countup = approved.toString();
+  pendingEl.dataset.countup = pending.toString();
+
+  totalEl.textContent = total.toLocaleString("th-TH");
+  approvedEl.textContent = approved.toLocaleString("th-TH");
+  pendingEl.textContent = pending.toLocaleString("th-TH");
 }
 
 function refreshProjectStatus() {
+  if (!Array.isArray(projects)) return;
+
   let filtered = filterProjects();
 
   if (currentSort && currentSort.key) {
@@ -1599,7 +1776,6 @@ function refreshProjectStatus() {
     tableCaptionEl.textContent = `แสดง ${filtered.length} โครงการ`;
   }
 
-  // ★ อัปเดต Hero บนหน้า Home
   const total = filtered.length;
   const approved = filtered.filter(
     (p) => (p.statusMain || "").trim() === "อนุมัติโครงการ"
@@ -1611,6 +1787,7 @@ function refreshProjectStatus() {
 
   updateHomeHeroSummary(total, approved, pending);
 }
+
 
 function setLoading(isLoading) {
   const budgetCanvas = document.getElementById("budgetByMonthChart");
@@ -1651,7 +1828,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1654", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1831", err);
     const el = document.getElementById("org-structure-content");
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
@@ -1675,97 +1852,88 @@ function renderOrgStructure(rows) {
   const COL_PREFIX = 4;   // คำนำหน้า
   const COL_FIRST  = 5;   // ชื่อ
   const COL_LAST   = 6;   // นามสกุล
-  const COL_NICK   = 7;   // (คอลัมน์ H) ใช้เป็น key สำหรับ contact
+  const COL_NICK   = 7;   // ชื่อเล่น (ใช้เป็น key)
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
   const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
 
-  const COL_ASSISTANT_KEY = COL_NICK; // ใช้ H เป็น key
-
-  const SLOT = {
-    R1C1: "เลขานุการฝ่ายเหรัญญิก",
-    R1C2: "ประธานฝ่ายบริหารและพัฒนางบประมาณ",
-    R1C3: "ประธานฝ่ายหาทุนและสิทธิประโยชน์",
-    R1C4: "ประธานฝ่ายกายภาพและพัสดุ",
-
-    R2C1: "เลขานุการฝ่ายเหรัญญิก",
-    R2C2: "รองประธานฝ่ายบริหารและพัฒนางบประมาณ",
-    R2C3: "รองประธานฝ่ายหาทุนและสิทธิประโยชน์",
-    R2C4: "ประธานฝ่ายกายภาพและพัสดุ",
-
-    R3C3: "รองประธานฝ่ายหาทุนและสิทธิประโยชน์"
-  };
-
-  const MAIN_POSITION = "เหรัญญิก";
+  const COL_ASSISTANT_KEY = COL_NICK; // ใช้ชื่อเล่นเป็น key
 
   const fullName = (r) =>
-    [r[COL_PREFIX], r[COL_FIRST], r[COL_LAST]].filter(Boolean).join(" ");
+    [r[COL_PREFIX], r[COL_FIRST], r[COL_LAST]].filter(Boolean).join(" ").trim();
 
-  const nickName = (r) => (r[COL_NICK] ? `(${r[COL_NICK]})` : "");
+  const nickNameText = (r) =>
+    r[COL_NICK] ? `(${r[COL_NICK]})` : "";
 
   const initials = (r) => {
     const f = (r[COL_FIRST] || "").charAt(0);
     const l = (r[COL_LAST] || "").charAt(0);
-    return (f + l).toUpperCase();
+    const s = (f + l).toUpperCase();
+    return s || "SG";
   };
 
-  const contactBlock = (r) => {
-    let html = `<div class="org-contact">`;
-    if (r[COL_PHONE]) {
-      html += `<div class="org-contact-row">
-        <span class="org-contact-label">โทร.</span>
-        <a class="org-contact-text" href="tel:${r[COL_PHONE]}">${r[COL_PHONE]}</a>
-      </div>`;
+  const AVATAR_BASE_PATH = "img/org/";
+
+  function buildAvatarUrlFromCell(raw) {
+    if (!raw) return "";
+
+    let val = raw.toString().trim();
+    if (!val) return "";
+
+    // ถ้าเป็นลิงก์ Google Drive / URL
+    if (/^https?:\/\//i.test(val)) {
+      const mFile = val.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
+      if (mFile && mFile[1]) {
+        return `https://drive.google.com/uc?export=view&id=${mFile[1]}`;
+      }
+      const mId = val.match(/[?&]id=([^&]+)/);
+      if (mId && mId[1]) {
+        return `https://drive.google.com/uc?export=view&id=${mId[1]}`;
+      }
+      return val;
     }
-    if (r[COL_LINE]) {
-      html += `<div class="org-contact-row">
-        <span class="org-contact-label">LINE</span>
-        <span class="org-contact-text">${r[COL_LINE]}</span>
-      </div>`;
+
+    // ถ้าเป็นชื่อไฟล์ธรรมดา
+    val = val.replace(/\s+/g, "");
+    if (!val.includes(".")) {
+      val = `${val}.jpg`;
     }
-    html += `</div>`;
-    return html;
-  };
+    return `${AVATAR_BASE_PATH}${val}`;
+  }
 
-  // ====== สร้าง URL รูปจากค่าคอลัมน์รูป ======
-  const AVATAR_BASE_PATH = "img/org/";  // relative จาก index.html
-
-  
-
-  const avatarHTML = (r, size = "lg") => {
-    const rawPhoto = r[COL_PHOTO];
-    const url = buildAvatarUrlFromCell(rawPhoto);
-    const baseClass = size === "sm" ? "org-avatar-sm" : "org-avatar";
-
+  function avatarHTML(r, size) {
+    const url = buildAvatarUrlFromCell(r[COL_PHOTO]);
+    const cls = size === "sm" ? "org-node-circle sm" : "org-node-circle";
     if (url) {
       return `
-        <div class="${baseClass}">
-          <img src="${url}" alt="${fullName(r)}" class="org-avatar-img" loading="lazy">
+        <div class="${cls}">
+          <img src="${url}" alt="${fullName(r)}" loading="lazy">
         </div>
       `;
     }
+    return `<div class="${cls}">${initials(r)}</div>`;
+  }
 
-    // ถ้าไม่มีรูป → fallback เป็น initial
-    return `<div class="${baseClass}">${initials(r)}</div>`;
-  };
-
-  // ====== สร้าง map จาก "ค่าคอลัมน์ H" → contact (ทุกตำแหน่ง) ======
-  assistantContactsByName = {};   // reset global map
+  // ====== peopleByPos + assistantContactsByName (global) ======
+  assistantContactsByName = {}; // reset global
 
   const peopleByPos = {};
   for (const r of dataRows) {
     const pos = (r[COL_POS] || "").trim();
     if (!pos) continue;
 
-    // ใครก็ตามที่มีค่าในคอลัมน์ H ให้ map ไว้ใช้เป็น contact
     const key = (r[COL_ASSISTANT_KEY] || "").toString().trim();
+    const avatarUrl = buildAvatarUrlFromCell(r[COL_PHOTO]);
+
     if (key) {
       assistantContactsByName[key] = {
         key,
         fullName: fullName(r),
+        nick: r[COL_NICK] || "",
         position: pos,
         phone: (r[COL_PHONE] || "").toString().trim(),
-        line: (r[COL_LINE] || "").toString().trim()
+        line: (r[COL_LINE] || "").toString().trim(),
+        avatarUrl
       };
     }
 
@@ -1773,98 +1941,273 @@ function renderOrgStructure(rows) {
     peopleByPos[pos].push(r);
   }
 
-  // ====== เริ่มประกอบ HTML แสดงโครงสร้าง ======
-  let html = ``;
+  function getPerson(position, index = 0) {
+    const list = peopleByPos[position] || [];
+    return list[index] || null;
+  }
 
-  const main = peopleByPos[MAIN_POSITION]?.[0];
-  if (main) {
-    html += `
-      <section class="org-main-section">
-        <article class="org-main-card">
-          ${avatarHTML(main, "lg")}
-          <div>
-            <div class="org-main-position">${MAIN_POSITION}</div>
-            <div class="org-main-name">
-              ${fullName(main)}
-              <span class="org-main-nickname-inline">${nickName(main)}</span>
-            </div>
-            ${contactBlock(main)}
-          </div>
-        </article>
-      </section>
+  function personKey(r) {
+    const nick = (r[COL_NICK] || "").toString().trim();
+    if (nick) return nick;
+    return fullName(r);
+  }
+
+  function renderPersonNode(r, opts = {}) {
+    if (!r) return "";
+
+    const key = personKey(r);
+    const size = opts.size || "lg";
+
+    return `
+      <button class="org-node" type="button" data-person-key="${key}">
+        ${avatarHTML(r, size === "sm" ? "sm" : "lg")}
+        <div class="org-node-role">${(r[COL_POS] || "").trim()}</div>
+        <div class="org-node-name">${fullName(r)}</div>
+        <div class="org-node-nick">${nickNameText(r)}</div>
+      </button>
     `;
   }
 
-  html += `<div class="org-grid-4">`;
+  // กล่องผู้ช่วย: fixed label ตามรูป, ไม่ผูก popup
+  function renderAssistantBox(labelText) {
+    if (!labelText) return "";
+    return `
+      <div class="org-node-assistant-box">
+        ${labelText}
+      </div>
+    `;
+  }
 
-  const GRID_ORDER = [
-    "R1C1","R1C2","R1C3","R1C4",
-    "R2C1","R2C2","R2C3","R2C4",
-    "BLANK","BLANK","R3C3","BLANK"
-  ];
+  // ====== ดึงคนตามตำแหน่งหลัก ๆ ตามรูปโครงสร้าง ======
+  const treasurer   = getPerson("เหรัญญิก", 0);
 
-  for (const slot of GRID_ORDER) {
-    if (slot === "BLANK") {
-      html += `<div></div>`;
-      continue;
-    }
+  const secretary1  = getPerson("เลขานุการฝ่ายเหรัญญิก", 0);
+  const secretary2  = getPerson("เลขานุการฝ่ายเหรัญญิก", 1);
 
-    const posName = SLOT[slot];
-    const items = peopleByPos[posName] || [];
+  const headBudget  = getPerson("ประธานฝ่ายบริหารและพัฒนางบประมาณ", 0);
+  const headFund    = getPerson("ประธานฝ่ายหาทุนและสิทธิประโยชน์", 0);
 
-    if (items.length === 0) {
-      html += `<div></div>`;
-      continue;
-    }
+  // ประธานฝ่ายกายภาพและพัสดุ 2 คน
+  const headAsset1  = getPerson("ประธานฝ่ายกายภาพและพัสดุ", 0);
+  const headAsset2  = getPerson("ประธานฝ่ายกายภาพและพัสดุ", 1);
 
-    const person = items.shift();
+  const depBudget   = getPerson("รองประธานฝ่ายบริหารและพัฒนางบประมาณ", 0);
+  const depFunds    = peopleByPos["รองประธานฝ่ายหาทุนและสิทธิประโยชน์"] || []; // อาจมีหลายคน
+  const depAsset    = getPerson("รองประธานฝ่ายกายภาพและพัสดุ", 0);
 
-    // รายชื่อ Position ที่ต้องเป็นสี Highlight
-    const HIGHLIGHT_POS = new Set([
-      "ประธานฝ่ายบริหารและพัฒนางบประมาณ",
-      "ประธานฝ่ายหาทุนและสิทธิประโยชน์",
-      "ประธานฝ่ายกายภาพและพัสดุ"
-    ]);
+  // ====== ประกอบ HTML Org Tree ======
+  let html = `
+    <div class="org-tree">
 
-    const isHighlight = HIGHLIGHT_POS.has(posName);
+      <!-- Level 1: เหรัญญิก -->
+      <div class="org-level">
+        ${treasurer
+          ? renderPersonNode(treasurer, { size: "lg" })
+          : "<p>ไม่พบข้อมูลเหรัญญิก</p>"}
+      </div>
 
-    html += `
-      <article class="org-card ${isHighlight ? "org-card-highlight" : ""}">
-        ${avatarHTML(person, "sm")}
-        <div>
-          <div class="org-card-position">${posName}</div>
-          <div class="org-card-name">
-            ${fullName(person)}
-            <span class="org-card-nickname-inline">${nickName(person)}</span>
-          </div>
-          ${contactBlock(person)}
+      <!-- เส้นลงมาเชื่อมกับเลขาฯ -->
+      <div class="org-line-vertical"></div>
+
+      <!-- Level 2: เลขานุการ 2 คน -->
+      <div class="org-level org-level-secretaries">
+        ${secretary1 ? renderPersonNode(secretary1, { size: "sm" }) : ""}
+        ${secretary2 ? renderPersonNode(secretary2, { size: "sm" }) : ""}
+      </div>
+
+      <!-- เส้นแนวนอนเชื่อมไปยัง 3 ประธาน -->
+      <div class="org-connector-wide"></div>
+
+      <!-- Level 3: ผู้ช่วยเหรัญญิกส่วนกลาง + สามประธาน -->
+      <div class="org-level org-level-main-branches">
+
+        <!-- LEFT: ผู้ช่วยเหรัญญิกส่วนกลาง -->
+        <div class="org-left-asst">
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิกส่วนกลาง")}
         </div>
-      </article>
-    `;
-  }
 
-  html += `</div>`;
+        <!-- RIGHT: สามสาขา -->
+        <div class="org-right-branches">
+
+          <!-- Branch: บริหารและพัฒนางบประมาณ -->
+          <div class="org-branch org-branch-budget">
+            <div class="org-branch-head">
+              ${headBudget ? renderPersonNode(headBudget, { size: "lg" }) : ""}
+            </div>
+            <div class="org-branch-dep">
+              ${depBudget ? renderPersonNode(depBudget, { size: "sm" }) : ""}
+            </div>
+            <div class="org-branch-assistant">
+              ${renderAssistantBox("ผู้ช่วยฝ่ายบริหารและพัฒนางบประมาณ")}
+            </div>
+          </div>
+
+          <!-- Branch: หาทุนและสิทธิประโยชน์ -->
+          <div class="org-branch org-branch-fund">
+            <div class="org-branch-head">
+              ${headFund ? renderPersonNode(headFund, { size: "lg" }) : ""}
+            </div>
+            <div class="org-branch-dep org-level-depfund">
+              ${depFunds.map(p => renderPersonNode(p, { size: "sm" })).join("")}
+            </div>
+            <div class="org-branch-assistant">
+              ${renderAssistantBox("ผู้ช่วยฝ่ายหาทุนและสิทธิประโยชน์")}
+            </div>
+          </div>
+
+          <!-- Branch: กายภาพและพัสดุ (ประธาน 2 คน) -->
+          <div class="org-branch org-branch-asset">
+            <div class="org-branch-head org-level-asset-heads">
+              ${headAsset1 ? renderPersonNode(headAsset1, { size: "lg" }) : ""}
+              ${headAsset2 ? renderPersonNode(headAsset2, { size: "lg" }) : ""}
+            </div>
+            <div class="org-branch-dep">
+              ${depAsset ? renderPersonNode(depAsset, { size: "sm" }) : ""}
+            </div>
+            <div class="org-branch-assistant">
+              ${renderAssistantBox("ผู้ช่วยฝ่ายกายภาพและพัสดุ")}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
 
   container.innerHTML = html;
+
+  // ผูก popup ให้เฉพาะปุ่มคน (วงกลม)
+  initOrgPersonPopup();
 }
 
-function buildAvatarUrlFromCell(raw) {
-  if (!raw) return "";
 
-  let val = raw.toString().trim();
 
-  // เคสเป็น URL → ใช้ตามเดิม
-  if (/^https?:\/\//i.test(val)) return val;
+function initOrgPersonPopup() {
+  const modal = document.getElementById("personModal");
+  if (!modal) return;
 
-  // ตัด space แปลก ๆ
-  val = val.replace(/\s+/g, "");
+  const closeBtn = document.getElementById("personModalClose");
+  const avatarEl = document.getElementById("personModalAvatar");
+  const nameEl   = document.getElementById("personModalName");
+  const nickEl   = document.getElementById("personModalNick");
+  const posEl    = document.getElementById("personModalPosition");
+  const contactEl= document.getElementById("personModalContact");
 
-  // ถ้าไม่มี .jpg → เติมให้
-  if (!val.includes(".")) {
-    val += ".jpg";
+  function openModalForKey(key) {
+    const info = assistantContactsByName[key];
+    if (!info) return;
+
+    // avatar
+    avatarEl.innerHTML = "";
+    if (info.avatarUrl) {
+      avatarEl.innerHTML = `<img src="${info.avatarUrl}" alt="${info.fullName}">`;
+    } else {
+      const initials = (info.fullName || "SG")
+        .split(" ")
+        .map((s) => s.charAt(0))
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+      avatarEl.textContent = initials;
+    }
+
+    posEl.textContent  = info.position || "";
+    nameEl.textContent = info.fullName || key;
+    nickEl.textContent = info.nick ? `(${info.nick})` : "";
+
+    const rows = [];
+
+    if (info.phone) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-label">โทร</div>
+          <div class="person-modal-contact-value">
+            <a href="tel:${info.phone}">${info.phone}</a>
+          </div>
+        </div>
+      `);
+    }
+
+    if (info.line) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-label">LINE</div>
+          <div class="person-modal-contact-value">${info.line}</div>
+        </div>
+      `);
+    }
+
+    if (!rows.length) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-value">
+            ยังไม่มีข้อมูลช่องทางการติดต่อเพิ่มเติม
+          </div>
+        </div>
+      `);
+    }
+
+    contactEl.innerHTML = rows.join("");
+
+    modal.classList.add("show");
   }
 
-  return `${AVATAR_BASE_PATH}${val}`;
+  // ผูก event กับทุก node ที่มี data-person-key
+  document
+  .querySelectorAll(".org-node[data-person-key]")
+  .forEach((el) => {
+    el.addEventListener("click", () => {
+      const key = el.dataset.personKey;
+      if (!key) return;
+      openModalForKey(key);
+    });
+  });
+
+  function closeModal() {
+    modal.classList.remove("show");
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeModal);
+  }
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal || e.target.classList.contains("person-modal-backdrop")) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+}
+
+
+// แปลงลิงก์ให้พร้อมดาวน์โหลด / เปิดใช้งาน
+function toDownloadUrl(url, label) {
+  if (!url) return "#";
+  const trimmed = url.trim();
+
+  // ถ้าเป็นลิงก์ Google Drive → แปลงเป็น uc?export=download
+  if (trimmed.includes("drive.google.com")) {
+    // /file/d/FILE_ID/view
+    const mFile = trimmed.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
+    if (mFile && mFile[1]) {
+      return `https://drive.google.com/uc?export=download&id=${mFile[1]}`;
+    }
+
+    // ?id=FILE_ID
+    const mId = trimmed.match(/[?&]id=([^&]+)/);
+    if (mId && mId[1]) {
+      return `https://drive.google.com/uc?export=download&id=${mId[1]}`;
+    }
+
+    // ถ้าเป็น drive แบบอื่น ๆ เปิดดูเฉย ๆ
+    return trimmed;
+  }
+
+  // ลิงก์ปกติ (.pdf, .docx ฯลฯ) → ใช้ตามเดิม
+  return trimmed;
 }
 
 /* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
@@ -1879,29 +2222,6 @@ function addDownloadButton(wrapper, label, url) {
   wrapper.appendChild(a);
 }
 
-// แปลง URL จากชีตเป็น URL สำหรับดาวน์โหลด
-function toDownloadUrl(rawUrl, type) {
-  if (!rawUrl) return "#";
-
-  const url = rawUrl.trim();
-
-  // ถ้าเป็น Google Drive แบบ file/d/xxx/view
-  const mFile = url.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
-  if (mFile && mFile[1]) {
-    return `https://drive.google.com/uc?export=download&id=${mFile[1]}`;
-  }
-
-  // ถ้าเป็น Google Drive แบบ ?id=xxx
-  const mId = url.match(/[?&]id=([^&]+)/);
-  if (mId && mId[1]) {
-    return `https://drive.google.com/uc?export=download&id=${mId[1]}`;
-  }
-
-  // กรณีอื่น ๆ (ลิงก์ธรรมดา / GitHub / direct link) → ใช้ตรง ๆ
-  return url;
-}
-
-
 
 async function loadDownloadDocuments() {
   const listEl = document.getElementById("downloadList");
@@ -1910,7 +2230,6 @@ async function loadDownloadDocuments() {
   try {
     const res = await fetch(DOWNLOAD_SHEET);
     const csvText = await res.text();
-
     const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: true });
     const rows = parsed.data;
 
@@ -1922,15 +2241,15 @@ async function loadDownloadDocuments() {
     // โครงสร้างกลุ่มหมวดหมู่
     const categories = {};
 
-    rows.slice(1).forEach(row => {
-      const name      = (row[0] || "").trim();            // A ชื่อเอกสาร
-      const desc      = (row[1] || "").trim();            // B รายละเอียด
-      const org       = (row[2] || "").trim();            // C องค์กร
-      const exUrl     = (row[3] || "").trim();            // D EX URL
-      const pdfUrl    = (row[4] || "").trim();            // E PDF URL
-      const docxUrl   = (row[5] || "").trim();            // F DOCX URL
-      const xlsxUrl   = (row[6] || "").trim();            // G XLSX URL
-      const category  = (row[7] || "").trim() || "อื่น ๆ";  // H หมวดหมู่
+    rows.slice(1).forEach((row) => {
+      const name = (row[0] || "").trim(); // A ชื่อเอกสาร
+      const desc = (row[1] || "").trim(); // B รายละเอียด
+      const org = (row[2] || "").trim(); // C องค์กร
+      const exUrl = (row[3] || "").trim(); // D EX URL
+      const pdfUrl = (row[4] || "").trim(); // E PDF URL
+      const docxUrl = (row[5] || "").trim(); // F DOCX URL
+      const xlsxUrl = (row[6] || "").trim(); // G XLSX URL
+      const category = (row[7] || "").trim() || "อื่น ๆ"; // H หมวดหมู่
 
       if (!name) return;
 
@@ -1939,58 +2258,142 @@ async function loadDownloadDocuments() {
       }
 
       categories[category].push({
-        name, desc, org, exUrl, pdfUrl, docxUrl, xlsxUrl
+        name,
+        desc,
+        org,
+        exUrl,
+        pdfUrl,
+        docxUrl,
+        xlsxUrl
       });
     });
 
-    // Render ออกหน้าเว็บ
+    // Render ออกหน้าเว็บ – 1 การ์ดต่อ 1 หมวด
     for (const categoryName in categories) {
-      // ชื่อหมวด
-      const categoryHeader = document.createElement("h3");
-      categoryHeader.className = "download-category";
-      categoryHeader.textContent = categoryName;
+      const section = document.createElement("section");
+      section.className = "download-section-card";
 
-      // รายการในหมวดนี้
-      const ul = document.createElement("ul");
-      ul.className = "download-list";
+      section.innerHTML = `
+        <div class="download-card-header">
+          <span class="download-card-bar"></span>
+          <h3 class="download-card-title">${categoryName}</h3>
+        </div>
+        <ul class="download-card-list"></ul>
+      `;
 
-      categories[categoryName].forEach(doc => {
+      const ul = section.querySelector(".download-card-list");
+
+      categories[categoryName].forEach((doc) => {
         const li = document.createElement("li");
         li.className = "download-item";
 
         li.innerHTML = `
-          <div class="download-main">
-            <div class="download-title">${doc.name}</div>
+          <div class="download-item">
+            <div class="download-main">
+              <!-- ซ้าย: ชื่อไฟล์ -->
+              <div class="download-title">
+                ${doc.name} ${doc.org ? `(${doc.org})` : ""}
+              </div>
+
+              <!-- ขวา: ปุ่มดาวน์โหลด -->
+              <div class="download-buttons">
+                <!-- ใส่ปุ่มด้วย JS ภายหลัง -->
+              </div>
+            </div>
+
+            <!-- แถวล่าง: คำอธิบาย -->
             <div class="download-desc">
-              ${doc.desc ? `${doc.desc}<br>` : ""}
-              ${doc.org ? `เอกสารสำหรับ: <strong>${doc.org}</strong>` : ""}
+              ${doc.desc ? doc.desc : ""}
             </div>
           </div>
-
-          <!-- แบบตัวอักษรเรียงขวา -->
-          <div class="download-inline"></div>
-
-          <!-- ปุ่มแบบเดิม (อยู่ด้านล่าง) -->
-          <div class="download-buttons"></div>
-        `;
+        `;     
 
         const btnWrap = li.querySelector(".download-buttons");
 
-        addDownloadButton(btnWrap, "EX",   doc.exUrl);
-        addDownloadButton(btnWrap, "PDF",  doc.pdfUrl);
+        addDownloadButton(btnWrap, "EX", doc.exUrl);
+        addDownloadButton(btnWrap, "PDF", doc.pdfUrl);
         addDownloadButton(btnWrap, "DOCX", doc.docxUrl);
         addDownloadButton(btnWrap, "XLSX", doc.xlsxUrl);
 
         ul.appendChild(li);
       });
 
-      listEl.appendChild(categoryHeader);
-      listEl.appendChild(ul);
+      listEl.appendChild(section);
     }
-
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:1992", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2324", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
+  }
+}
+
+
+/* ===== Motion Helpers: section appear + count up ===== */
+
+function initSectionAppearObserver() {
+  const sections = document.querySelectorAll(".section-appear");
+  if (!sections.length) return;
+
+  if (sectionObserver) {
+    sectionObserver.disconnect();
+  }
+
+  sectionObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("section-visible");
+          sectionObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.15 }
+  );
+
+  sections.forEach((sec) => sectionObserver.observe(sec));
+}
+
+function initCountupOnVisible() {
+  const elements = document.querySelectorAll("[data-countup]");
+  if (!elements.length) return;
+
+  const observer = new IntersectionObserver(
+    (entries, obs) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+
+        const el = entry.target;
+        const target = parseFloat(el.dataset.countup || "0") || 0;
+        const duration = 900;
+        const startTime = performance.now();
+
+        function animate(now) {
+          const t = Math.min((now - startTime) / duration, 1);
+          const eased = t * (2 - t); // ease-out
+          const value = Math.floor(target * eased);
+          el.textContent = value.toLocaleString("th-TH");
+          if (t < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            el.textContent = target.toLocaleString("th-TH");
+          }
+        }
+        requestAnimationFrame(animate);
+
+        obs.unobserve(el);
+      });
+    },
+    { threshold: 0.5 }
+  );
+
+  elements.forEach((el) => observer.observe(el));
+  hasInitCountup = true;
+}
+
+/* เรียกใหม่ทุกครั้งที่เปลี่ยนหน้า (เผื่อ DOM เปลี่ยน) */
+function refreshMotionForActivePage() {
+  initSectionAppearObserver();
+  if (!hasInitCountup) {
+    initCountupOnVisible();
   }
 }
 
@@ -2031,15 +2434,37 @@ window.addEventListener("load", async () => {
   const navLinks = document.querySelectorAll("header nav a[data-page]");
   const pageViews = document.querySelectorAll(".page-view");
 
-  function switchPage(page) {
-    // สลับเนื้อหา
+  function switchPage(page, { fromHash = false } = {}) {
     pageViews.forEach((section) => {
-      section.classList.toggle("active", section.dataset.page === page);
+      const isTarget = section.dataset.page === page;
+      if (isTarget) {
+        section.classList.add("active");
+        // reset animation state ให้เล่นใหม่ทุกครั้ง
+        section.classList.remove("section-visible");
+        section.classList.add("section-appear");
+        requestAnimationFrame(() => {
+          section.classList.add("section-visible");
+        });
+      } else {
+        section.classList.remove("active");
+        section.classList.remove("section-visible");
+      }
     });
-    // สลับ active บนเมนู
+
     navLinks.forEach((link) => {
       link.classList.toggle("active", link.dataset.page === page);
     });
+
+    // sync URL hash กับ page ปัจจุบัน (ไม่ทำตอนมาจาก hashchange)
+    if (!fromHash) {
+      if (history.replaceState) {
+        history.replaceState(null, "", "#" + page);
+      } else {
+        window.location.hash = "#" + page;
+      }
+    }
+
+    refreshMotionForActivePage();
   }
 
   // คลิกเมนูด้านบน
@@ -2051,6 +2476,58 @@ window.addEventListener("load", async () => {
       switchPage(page);
     });
   });
+
+  // ตั้งค่าหน้าเริ่มจาก URL hash หรือจาก .page-view.active
+  const initialHash = window.location.hash.replace("#", "");
+  const defaultPage =
+    document.querySelector(".page-view.active")?.dataset.page ||
+    navLinks[0]?.dataset.page ||
+    "home";
+
+  const initialPage = Array.from(pageViews).some(
+    (sec) => sec.dataset.page === initialHash
+  )
+    ? initialHash
+    : defaultPage;
+
+  switchPage(initialPage, { fromHash: true });
+
+  // รองรับเปลี่ยน hash ด้วยตนเอง (#about, #status ฯลฯ)
+  window.addEventListener("hashchange", () => {
+    const hashPage = window.location.hash.replace("#", "");
+    if (!hashPage) return;
+    if (Array.from(pageViews).some((sec) => sec.dataset.page === hashPage)) {
+      switchPage(hashPage, { fromHash: true });
+    }
+  });
+
+  // ===== 10) Hamburger + เมนูสามขีด =====
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const mobileMenu = document.getElementById("mobileMenu");
+  const mobileNavLinks = mobileMenu
+    ? mobileMenu.querySelectorAll("a[data-page]")
+    : [];
+
+  if (hamburgerBtn && mobileMenu) {
+    // เปิด/ปิดกล่องเมนู
+    hamburgerBtn.addEventListener("click", () => {
+      hamburgerBtn.classList.toggle("open");
+      mobileMenu.classList.toggle("show");
+    });
+
+    // เวลาเลือกเมนูจากกล่อง ให้สลับหน้า + ปิดกล่อง
+    mobileNavLinks.forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const page = link.dataset.page;
+        if (!page) return;
+        switchPage(page);
+        hamburgerBtn.classList.remove("open");
+        mobileMenu.classList.remove("show");
+      });
+    });
+  }
+
 
   // ปุ่มลัดที่หน้า Hero: มี data-goto-page (เช่น “ดูสถานะโครงการทั้งหมด”)
   document.querySelectorAll("[data-goto-page]").forEach((btn) => {
@@ -2085,6 +2562,7 @@ window.addEventListener("load", async () => {
   initCharts();                     // สร้างกราฟ Chart.js
   refreshProjectStatus();           // อัปเดตการ์ดสรุป + ตาราง + กราฟสถานะปิดโครงการ
   initCalendar();                   // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
+  initScoreboard();                 // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
 
   setLoading(false);
 
@@ -2129,7 +2607,84 @@ window.addEventListener("load", async () => {
     });
   });
 
-    // === Scope pills: คลิกแล้ว highlight การ์ดทีมที่เกี่ยวข้อง ===
+  // ===== 10) Toggle ระหว่าง Status / Calendar ในหน้า Project Status =====
+  const toggleBtns = document.querySelectorAll(".view-toggle-btn");
+  const statusViewEl = document.getElementById("statusView");
+  const calendarViewEl = document.getElementById("calendarView");
+
+  if (toggleBtns.length && statusViewEl && calendarViewEl) {
+    toggleBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.view; // 'status' หรือ 'calendar'
+
+        // เปลี่ยนปุ่ม active
+        toggleBtns.forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+
+        if (target === "calendar") {
+          // โชว์เฉพาะปฏิทิน
+          statusViewEl.style.display = "none";
+          calendarViewEl.style.display = "block";
+
+          // เผื่อมี filter เปลี่ยน → วาดใหม่อีกรอบก็ได้
+          generateCalendar();
+        } else {
+          // โชว์เฉพาะสรุปสถานะโครงการ
+          statusViewEl.style.display = "block";
+          calendarViewEl.style.display = "none";
+        }
+      });
+    });
+  }
+
+
+  // ===== 11) Tabs Borrow & Return Assets =====
+  const assetTabBtns = document.querySelectorAll(".tab-btn[data-assets-tab]");
+  const assetsOverview = document.getElementById("assetsOverview");
+  const assetsList = document.getElementById("assetsList");
+
+  if (assetTabBtns.length && assetsOverview && assetsList) {
+    assetTabBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.assetsTab; // 'overview' | 'list'
+        assetTabBtns.forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+
+        if (target === "overview") {
+          assetsOverview.style.display = "block";
+          assetsList.style.display = "none";
+        } else {
+          assetsOverview.style.display = "none";
+          assetsList.style.display = "block";
+        }
+      });
+    });
+  }
+
+  // ===== 12) Tabs Meeting Room =====
+  const meetingTabBtns = document.querySelectorAll(".tab-btn[data-meeting-tab]");
+  const meetingToday = document.getElementById("meetingToday");
+  const meetingWeek = document.getElementById("meetingWeek");
+
+  if (meetingTabBtns.length && meetingToday && meetingWeek) {
+    meetingTabBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.meetingTab; // 'today' | 'week'
+        meetingTabBtns.forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+
+        if (target === "today") {
+          meetingToday.style.display = "block";
+          meetingWeek.style.display = "none";
+        } else {
+          meetingToday.style.display = "none";
+          meetingWeek.style.display = "block";
+        }
+      });
+    });
+  }
+
+  // === Scope pills: คลิกแล้ว highlight การ์ดทีมที่เกี่ยวข้อง ===
   const scopePills = document.querySelectorAll(".scope-pill[data-scope-target]");
   const scopeCards = document.querySelectorAll(".scope-team-card[data-scope]");
 
@@ -2159,6 +2714,8 @@ window.addEventListener("load", async () => {
     });
   });
 
+  // เรียก motion ครั้งแรกสำหรับหน้าเริ่มต้น
+  refreshMotionForActivePage();
 });
 
 /*******************************************************
@@ -2317,7 +2874,7 @@ function getEventsForDate(date) {
  * อัปเดตหัวปฏิทิน (ชื่อเดือน + ปี)
  */
 function updateCalendarHeader() {
-  const panel = document.querySelector('[data-page="calendar"] .panel-header .panel-title');
+  const panel = document.getElementById("calendarPanelTitle");
   if (!panel) return;
 
   const monthNames = [

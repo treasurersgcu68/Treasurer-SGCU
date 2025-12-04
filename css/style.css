@@ -975,7 +975,6 @@ th.sortable.sort-desc::after {
 
 .home-hero {
   padding: 56px 0 48px;
-  background: radial-gradient(circle at top left, #fee2f2, #fdf2ff 45%, #f9fafb 100%);
 }
 
 .home-hero-inner {
@@ -1498,6 +1497,13 @@ th.sortable.sort-desc::after {
   font-family: inherit;   /* ดึงจาก .org-tree ด้านบน */
 }
 
+.org-node-role,
+.org-node-name,
+.org-node-nick {
+  text-align: center;
+  width: 100%;
+}
+
 .org-structure-wrapper {
   margin-top: 10px;
 }
@@ -1655,12 +1661,17 @@ th.sortable.sort-desc::after {
 /* node (วงกลม + text) */
 
 .org-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* ▲ จากเดิมถ้าเป็น flex-start ให้เปลี่ยนเป็น center */
   border: none;
   background: transparent;
   cursor: pointer;
   text-align: center;
   padding: 0;
+  max-width: 220px;
 }
+
 
 .org-node-circle {
   width: 160px;
@@ -1791,6 +1802,43 @@ th.sortable.sort-desc::after {
   justify-content: center;
 }
 
+/* แถวรองประธาน บริหารงบ + หาทุนฯ ให้อยู่บรรทัดเดียวกันและไม่ทับกัน */
+.org-level-depfund {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;          /* ระยะห่างระหว่างสองวงกลม ปรับได้ */
+  flex-wrap: nowrap;  /* บังคับให้อยู่บรรทัดเดียวกันบนจอใหญ่ */
+  margin-top: 12px;
+}
+
+/* จำกัดความกว้าง node ให้ตัวอักษรไม่ล้ำไปทับกัน */
+.org-level-depfund .org-node {
+  max-width: 220px;   /* กว้างพอให้ชื่อ 2–3 บรรทัด แต่ไม่ล้ำไปหาอีกวงกลม */
+  /* flex: 0 0 auto; */
+}
+
+
+/* กล่องรองประธานฝ่ายหาทุนและสิทธิประโยชน์ – ให้ 2 คนอยู่บรรทัดเดียวกัน */
+.org-branch-dep.org-level-depfund {
+  display: flex;
+  flex-direction: row;      /* วางแนวนอน */
+  justify-content: center;  /* จัดกลาง */
+  align-items: flex-start;
+  gap: 2rem;                /* ระยะห่างระหว่างสองคน */
+  flex-wrap: nowrap;        /* ▲ บังคับไม่ให้ตกรอบ */
+  margin-top: 12px;
+}
+
+
+
+/* ถ้าจอเล็กมาก ค่อยอนุญาตให้หักบรรทัดได้ */
+@media (max-width: 640px) {
+  .org-branch-dep.org-level-depfund {
+    flex-wrap: wrap;
+  }
+}
+
+
 /* ประธานกายภาพ 2 คน */
 
 .org-level-asset-heads {
@@ -1802,20 +1850,6 @@ th.sortable.sort-desc::after {
   margin-bottom: 12px;
 }
 
-/* ===== กลุ่มรองประธานฝ่ายหาทุนฯ ===== */
-/* เพิ่ม gap ให้ห่างกันขึ้น ไม่เบียด */
-
-.org-level-depfund {
-  display: flex;
-  justify-content: center;
-  gap: 2.5rem;        /* ปรับระยะห่างรูปตรงนี้ได้ */
-  flex-wrap: wrap;    /* จอเล็กให้ลงบรรทัดใหม่ได้ */
-  margin-top: 12px;
-}
-
-.org-level-depfund .org-node {
-  flex: 0 0 auto;
-}
 
 /* เส้นทั้งหมดใน org-tree ปิดการแสดงผล */
 
@@ -1868,6 +1902,80 @@ th.sortable.sort-desc::after {
   }
 }
 
+/* มือถือ / แท็บเล็ตแนวตั้ง: วาง Org Chart เป็นแนวตั้งทีละแถว */
+@media (max-width: 768px) {
+
+  /* แต่ละ level ไม่ต้องกางกว้างมาก */
+  .org-level {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* กลุ่ม main branches: จาก 2 คอลัมน์ → 1 คอลัมน์ */
+  .org-level-main-branches {
+    grid-template-columns: 1fr;
+    row-gap: 24px;
+  }
+
+  /* กล่องผู้ช่วยส่วนกลางอยู่แถวบนสุด ตรงกลาง */
+  .org-left-asst {
+    justify-content: center;
+    padding-top: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* สาม branch (บริหารงบ / หาทุนฯ / กายภาพฯ) ซ้อนกันทีละแถว */
+  .org-right-branches {
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding-top: 0;
+  }
+
+  .org-branch {
+    width: 100%;
+    align-items: center;
+  }
+
+  .org-branch-head,
+  .org-branch-dep {
+    justify-content: center;
+  }
+
+  /* รองประธานฝ่ายหาทุนฯ: จอเล็กให้ซ้อนแนวตั้งแทนแนวนอน */
+  .org-level-depfund {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  /* ประธานกายภาพ 2 คน: จอเล็กให้ซ้อนกันทีละแถว */
+  .org-level-asset-heads {
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  /* จำกัดความกว้าง node ไม่ให้กินจอทั้งแถบ */
+  .org-node {
+    max-width: 200px;
+    margin-inline: auto;
+  }
+}
+
+/* จอเล็กมาก เพิ่มย่อวงกลมลงอีกนิด */
+@media (max-width: 600px) {
+  .org-node-circle {
+    width: 100px;
+    height: 100px;
+  }
+  .org-node-circle.sm {
+    width: 80px;
+    height: 80px;
+  }
+}
+
 /* =========================================
    12) PERSON MODAL
 ========================================= */
@@ -1894,10 +2002,10 @@ th.sortable.sort-desc::after {
 .person-modal-dialog {
   position: relative;
   background: #ffffff;
-  border-radius: 16px;
-  padding: 20px 24px 18px;
-  max-width: 380px;
-  width: 100%;
+  border-radius: 20px;
+  padding: 24px 28px;;
+  max-width: 90vw;
+  width: 420px;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
   z-index: 1;
 }
@@ -1920,10 +2028,11 @@ th.sortable.sort-desc::after {
 }
 
 .person-modal-avatar {
-  width: 72px;
-  height: 72px;
+  width: 120px;
+  height: 120px;
   border-radius: 999px;
   overflow: hidden;
+  margin-right: 18px;
   border: 3px solid #ec4899;
   background: #f3f4f6;
   display: flex;
@@ -1938,20 +2047,39 @@ th.sortable.sort-desc::after {
 }
 
 .person-modal-position {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 600;
   color: #ec4899;
 }
 
 .person-modal-name {
-  font-size: 17px;
+  font-size: 20px;              /* ▲ ใหญ่ขึ้น */
   font-weight: 700;
   color: #111827;
 }
 
 .person-modal-nick {
-  font-size: 13px;
+  font-size: 14px;
   color: #6b7280;
+}
+
+.person-modal-extra {
+  margin-top: 18px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.person-modal-extra div {
+  margin-bottom: 6px;
+}
+
+.person-modal-extra-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.person-modal-extra-value {
+  color: #111827;
 }
 
 .person-modal-contact {

@@ -1853,6 +1853,8 @@ function renderOrgStructure(rows) {
   const COL_FIRST  = 5;   // ชื่อ
   const COL_LAST   = 6;   // นามสกุล
   const COL_NICK   = 7;   // ชื่อเล่น (ใช้เป็น key)
+  const COL_YEAR   = 9;   // J ชั้นปี
+  const COL_FAC    = 10;  // K คณะ
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
   const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
@@ -1933,6 +1935,8 @@ function renderOrgStructure(rows) {
         position: pos,
         phone: (r[COL_PHONE] || "").toString().trim(),
         line: (r[COL_LINE] || "").toString().trim(),
+        faculty: (r[COL_FAC] || "").toString().trim(),
+        year: (r[COL_YEAR] || "").toString().trim(), 
         avatarUrl
       };
     }
@@ -2117,6 +2121,25 @@ function initOrgPersonPopup() {
 
     const rows = [];
 
+    if (info.faculty) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-label">คณะ</div>
+          <div class="person-modal-contact-value">${info.faculty}</div>
+        </div>
+      `);
+    }
+
+    // ✅ แถวชั้นปี
+    if (info.year) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-label">ชั้นปี</div>
+          <div class="person-modal-contact-value">ปี ${info.year}</div>
+        </div>
+      `);
+    }
+
     if (info.phone) {
       rows.push(`
         <div class="person-modal-contact-row">
@@ -2180,6 +2203,36 @@ function initOrgPersonPopup() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeModal();
   });
+}
+
+function openPersonModal(person) {
+  // Avatar
+  const avatar = document.getElementById("personModalAvatar");
+  avatar.innerHTML = person.img
+    ? `<img src="${person.img}" />`
+    : `<div class="avatar-initial">${person.initial || "?"}</div>`;
+
+  // Text fields
+  document.getElementById("personModalPosition").textContent = person.position || "";
+  document.getElementById("personModalName").textContent = person.name || "";
+  document.getElementById("personModalNick").textContent = person.nick ? `(${person.nick})` : "";
+
+  // Contact
+  const contact = document.getElementById("personModalContact");
+  contact.innerHTML = person.contact
+    ? `<div><strong>ติดต่อ:</strong> ${person.contact}</div>`
+    : "";
+
+  // ⭐ NEW: Extra info
+  const extra = document.getElementById("personModalExtra");
+  extra.innerHTML = `
+    ${person.faculty ? `<div><span class="person-modal-extra-label">คณะ:</span> <span class="person-modal-extra-value">${person.faculty}</span></div>` : ""}
+    ${person.year ? `<div><span class="person-modal-extra-label">ชั้นปี:</span> <span class="person-modal-extra-value">${person.year}</span></div>` : ""}
+    ${person.note ? `<div><span class="person-modal-extra-label">หมายเหตุ:</span> <span class="person-modal-extra-value">${person.note}</span></div>` : ""}
+  `;
+
+  // Show modal
+  document.getElementById("personModal").classList.add("show");
 }
 
 
@@ -2321,7 +2374,7 @@ async function loadDownloadDocuments() {
       listEl.appendChild(section);
     }
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2324", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2377", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

@@ -1,939 +1,228 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="UTF-8" />
-    <title>SGCU Treasurer Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="css/style.css" />
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- PapaParse -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  </head>
-  <body>
-    <header class="site-header">
-      <div class="header-inner">
-        <div class="logo">
-          <div class="logo-mark">SG</div>
-          <div class="logo-text">
-            <div class="logo-title">Treasurer SGCU</div>
-            <div class="logo-subtitle">ฝ่ายเหรัญญิก องค์การบริหารสโมสรนิสิตจุฬาฯ</div>
-          </div>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Treasurer SGCU Dashboard</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="img/favicon.png" />
+
+  <!-- Google Font: Kanit -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+  <!-- ============================================================
+       1) HEADER
+  =============================================================== -->
+  <header class="site-header">
+    <div class="header-inner">
+
+      <!-- Logo -->
+      <a class="logo" href="#" data-page="home">
+        <div class="logo-mark">SG</div>
+        <div class="logo-text">
+          <div class="logo-title">Treasurer SGCU</div>
+          <div class="logo-subtitle">Financial Dashboard</div>
         </div>
-
-        <nav class="desktop-nav">
-          <a href="#" data-page="home" class="active">Home</a>
-          <a href="#" data-page="project-status">Project Status</a>
-          <a href="#" data-page="financial-docs">Financial Documents</a>
-          <a href="#" data-page="borrow-assets">Borrow &amp; Return Assets</a>
-          <a href="#" data-page="meeting-room">Meeting Room</a>
-        </nav>
-
-        <button id="hamburgerBtn" class="hamburger" aria-label="Toggle menu">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
-
-      <div id="mobileMenu" class="mobile-menu">
-        <nav>
-          <a href="#" data-page="home">Home</a>
-          <a href="#" data-page="project-status">Project Status</a>
-          <a href="#" data-page="financial-docs">Financial Documents</a>
-          <a href="#" data-page="borrow-assets">Borrow &amp; Return Assets</a>
-          <a href="#" data-page="meeting-room">Meeting Room</a>
-        </nav>
-      </div>
-    </header>
-
-    <main class="main">
-      <!-- HOME PAGE -->
-      <section class="page-view active section-appear" data-page="home">
-        <!-- HOME PAGE -->
-        <section class="page-view active section-appear" data-page="home">
-          <!-- 1. HERO -->
-          <div class="home-hero">
-            <div class="home-hero-inner">
-              <!-- ซ้าย: ข้อความหลัก -->
-              <div class="home-hero-text">
-                <div class="home-hero-eyebrow">เหรัญญิก SGCU68</div>
-                <h1 class="home-hero-title">
-                  การเงินโปร่งใส<br />ข้อมูลโครงการครบในที่เดียว
-                </h1>
-                <p class="home-hero-subtitle">
-                  ดูสถานะโครงการ งบประมาณ เอกสารสำคัญ และผลการดำเนินงานขององค์กรนิสิต
-                  ได้จากหน้ากลางหน้าเดียว เหมาะทั้งสำหรับกรรมการ ชมรม และนิสิตทั่วไป
-                </p>
-
-                <!-- ปุ่มหลัก -->
-                <div class="home-hero-actions">
-                  <button
-                    class="btn-primary"
-                    type="button"
-                    data-goto-page="project-status"
-                  >
-                    ดูสถานะโครงการทั้งหมด
-                  </button>
-                  <button
-                    class="btn-secondary"
-                    type="button"
-                    data-goto-page="financial-docs"
-                  >
-                    ดาวน์โหลดเอกสารการเงิน
-                  </button>
-                </div>
-              </div>
-
-              <!-- ขวา: เหรียญ Treasurer -->
-              <div class="home-hero-badge-wrap">
-                <div class="home-hero-badge">
-                  <div class="home-hero-highlight">
-                    <img src="./img/sucu logo.png" alt="Treasurer SGCU68" class="home-hero-badge-img" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-
-          <!-- 2. ขอบเขตงานของทีมเหรัญญิก -->
-          <section class="home-scope section-appear">
-            <header class="home-section-header">
-              <h2>ทีมเหรัญญิกดูแลเรื่องอะไรบ้าง?</h2>
-              <p>เลือกหัวข้อเพื่อดูว่าทีมไหนดูแลเรื่องใดในฝ่ายเหรัญญิก SGCU68</p>
-            </header>
-
-            <!-- Pills -->
-            <div class="home-scope-pills">
-              <button
-                class="scope-pill scope-pill-active"
-                type="button"
-                data-scope-target="treasurer"
-              >
-                เหรัญญิก
-              </button>
-              <button
-                class="scope-pill"
-                type="button"
-                data-scope-target="budget"
-              >
-                บริหารและพัฒนางบประมาณ
-              </button>
-              <button
-                class="scope-pill"
-                type="button"
-                data-scope-target="fundraising"
-              >
-                หาทุนและสิทธิประโยชน์
-              </button>
-              <button
-                class="scope-pill"
-                type="button"
-                data-scope-target="assets"
-              >
-                กายภาพและพัสดุ
-              </button>
-            </div>
-
-            <!-- การ์ดทีม -->
-            <div class="home-scope-grid">
-              <!-- การ์ดใหม่: เหรัญญิก (ค่า default) -->
-              <div class="scope-team-card scope-team-active" data-scope="treasurer">
-                <h3>เหรัญญิก</h3>
-                <p>
-                  ดูแลระบบการเงินทั้งหมดขององค์การบริหารสโมสรนิสิต ตั้งแต่การวางแผนงบประมาณ
-                  ตรวจสอบคำของบ ดูแลการใช้จ่าย ไปจนถึงการปิดโครงการและรายงานต่อสภานิสิต
-                </p>
-                <ul>
-                  <li>กำกับดูแลการทำงานของทุกฝ่ายในทีมเหรัญญิก</li>
-                  <li>ตรวจสอบให้การใช้จ่ายเป็นไปตามระเบียบมหาวิทยาลัย</li>
-                  <li>สื่อสารนโยบายและคู่มือการเงินให้ชมรมและนิสิตเข้าใจตรงกัน</li>
-                </ul>
-              </div>
-
-              <div class="scope-team-card" data-scope="budget">
-                <h3>ฝ่ายบริหารและพัฒนางบประมาณ</h3>
-                <p>
-                  ดูแลภาพรวมงบประมาณของ SGCU68 วางแผน แบ่งสัดส่วนงบ
-                  และติดตามการใช้จ่ายของโครงการทุกฝ่ายให้เป็นไปตามระเบียบมหาวิทยาลัย
-                </p>
-                <ul>
-                  <li>กำหนดกรอบงบประมาณรายปี</li>
-                  <li>ตรวจสอบความครบถ้วนของคำของบประมาณโครงการ</li>
-                  <li>สรุปภาพรวมการใช้จ่ายให้คณะกรรมการบริหารและสภานิสิต</li>
-                </ul>
-              </div>
-
-              <div class="scope-team-card" data-scope="fundraising">
-                <h3>ฝ่ายหาทุนและสิทธิประโยชน์</h3>
-                <p>
-                  ประสานงานการหาทุน สปอนเซอร์ และสิทธิประโยชน์ต่าง ๆ
-                  เพื่อสนับสนุนกิจกรรมของสโมสรนิสิตและชมรม
-                </p>
-                <ul>
-                  <li>จัดทำแพ็กเกจสปอนเซอร์</li>
-                  <li>ประสานกับบริษัท / หน่วยงานภายนอก</li>
-                  <li>ติดตามการใช้โลโก้และสิทธิประโยชน์ให้ถูกต้องตามข้อตกลง</li>
-                </ul>
-              </div>
-
-              <div class="scope-team-card" data-scope="assets">
-                <h3>ฝ่ายกายภาพและพัสดุ</h3>
-                <p>
-                  ดูแลครุภัณฑ์ อุปกรณ์ และทรัพย์สินของสโมสรนิสิต รวมถึงระบบการยืมคืน
-                  และการบำรุงรักษาให้อยู่ในสภาพพร้อมใช้งาน
-                </p>
-                <ul>
-                  <li>จัดเก็บข้อมูลพัสดุและสถานะการใช้งาน</li>
-                  <li>ดูแลการยืมคืนอุปกรณ์ให้เป็นระบบ</li>
-                  <li>ประสานงานซ่อมบำรุงเมื่ออุปกรณ์ชำรุด</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          <!-- 3. โครงสร้างทีมเหรัญญิก -->
-          <section class="home-org section-appear">
-            <header class="home-section-header">
-              <h2>โครงสร้างทีมเหรัญญิก SGCU68</h2>
-              <p>ดูภาพรวมโครงสร้างทีมเหรัญญิกและสายการทำงานของแต่ละฝ่าย</p>
-            </header>
-
-            <!-- container ที่ JS จะเติมแผนผังทีมเหรัญญิก -->
-            <div id="org-structure-content" class="org-structure-wrapper"></div>
-          </section>
-
-          <!-- 4. SCOREBOARD SGCU-10.001 -->
-          <section class="home-scoreboard section-appear">
-            <header class="home-section-header">
-              <h2>ผลการแข่งขันโครงการ SGCU-10.001</h2>
-              <p>
-                โครงการส่งเสริมการปิดโครงการอย่างมีประสิทธิภาพขององค์กรนิสิตภายใต้สโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย<br />
-                ประจำปีการศึกษา 2568
-              </p>
-            </header>
-
-            <div class="scoreboard-wrapper">
-              <!-- Podium 3 อันดับแรก -->
-              <div id="scorePodium" class="score-podium">
-                <!-- JS จะเติมเนื้อหา -->
-                <div class="score-loading">กำลังโหลดผลคะแนน...</div>
-              </div>
-
-              <!-- Runners-up -->
-              <div id="scoreRunners" class="score-runners">
-                <!-- JS จะเติมเนื้อหา -->
-              </div>
-            </div>
-          </section>
-
-          <!-- 5. บล็อกบริการหลัก (ลิงก์ไปยังแต่ละหน้า) -->
-          <section class="home-services section-appear">
-            <header class="home-section-header">
-              <h2>เมนูใช้งานสำหรับทีมงานและชมรม</h2>
-              <p>เลือกใช้งานฟังก์ชันที่ต้องการได้จากการ์ดด้านล่าง</p>
-            </header>
-            <div class="home-services-grid">
-              <button
-                class="home-service-card"
-                type="button"
-                data-goto-page="project-status"
-              >
-                <div class="home-service-icon">📊</div>
-                <h3>Project Status</h3>
-                <p>ดูสถานะการอนุมัติ การโอนงบ และการส่งปิดโครงการของทุกหน่วยงาน</p>
-              </button>
-
-              <button
-                class="home-service-card"
-                type="button"
-                data-goto-page="financial-docs"
-              >
-                <div class="home-service-icon">📁</div>
-                <h3>Financial Documents</h3>
-                <p>ดาวน์โหลดแบบฟอร์ม ตัวอย่างเอกสาร และประกาศที่เกี่ยวข้องกับการเงิน</p>
-              </button>
-
-              <button
-                class="home-service-card"
-                type="button"
-                data-goto-page="borrow-assets"
-              >
-                <div class="home-service-icon">📦</div>
-                <h3>Borrow &amp; Return Assets</h3>
-                <p>ตรวจสอบขั้นตอนและเงื่อนไขการยืมคืนอุปกรณ์ของเหรัญญิก</p>
-              </button>
-
-              <button
-                class="home-service-card"
-                type="button"
-                data-goto-page="meeting-room"
-              >
-                <div class="home-service-icon">📅</div>
-                <h3>Meeting Room</h3>
-                <p>ดูรอบการใช้ห้องประชุม ปฏิทินการประชุม และเวลาที่ว่าง</p>
-              </button>
-            </div>
-          </section>
-
-          <!-- 6. ข่าว / ประกาศสั้น -->
-          <section class="home-news section-appear">
-            <header class="home-section-header">
-              <h2>ข่าวและประกาศจากฝ่ายเหรัญญิก</h2>
-              <p>สรุปสิ่งที่ทีมเหรัญญิกอยากแจ้งให้ชมรมและนิสิตทราบ</p>
-            </header>
-            <div class="home-news-grid">
-              <article class="home-news-card">
-                <div class="home-news-tag">ประกาศ</div>
-                <h3>แนวทางการส่งปิดโครงการปีการศึกษา 2568</h3>
-                <p>
-                  โปรดส่งเอกสารปิดโครงการภายใน 30 วันหลังจากวันจัดกิจกรรมวันสุดท้าย
-                  พร้อมแนบใบเสร็จรับเงินต้นฉบับทุกฉบับ
-                </p>
-                <button
-                  class="home-news-link"
-                  type="button"
-                  data-goto-page="financial-docs"
-                >
-                  ดูรายละเอียด / ดาวน์โหลดแบบฟอร์ม →
-                </button>
-              </article>
-
-              <article class="home-news-card">
-                <div class="home-news-tag news-info">อัปเดตระบบ</div>
-                <h3>ระบบ Dashboard เวอร์ชันใหม่</h3>
-                <p>
-                  หน้า Project Status และปฏิทินกิจกรรมได้รับการปรับปรุง
-                  เพื่อแสดงสีตามกำหนดส่งปิดโครงการให้เห็นง่ายขึ้น
-                </p>
-              </article>
-
-              <article class="home-news-card">
-                <div class="home-news-tag news-tip">คำแนะนำ</div>
-                <h3>เช็กลิสต์เตรียมเอกสารก่อนส่งเหรัญญิก</h3>
-                <p>
-                  รวมรายการเอกสารที่ต้องใช้บ่อย เช่น ใบสำคัญรับเงิน ใบเสร็จรับเงิน
-                  แบบฟอร์มขออนุมัติโครงการ และใบปิดโครงการ
-                </p>
-              </article>
-            </div>
-          </section>
-        </section>
-
-      </section>
-
-      <!-- ============ PROJECT STATUS ============ -->
-      <section class="page-view" data-page="project-status">
-        <div class="page">
-          <!-- Header + Toggle -->
-          <div class="page-header-flex">
-            <div>
-              <h1 class="page-title">สถานะโครงการ</h1>
-            </div>
-
-            <!-- Toggle ระหว่างมุมมองสรุป / ปฏิทิน -->
-            <div class="tabs">
-              <button
-                class="tab-btn view-toggle-btn is-active"
-                type="button"
-                data-view="status"
-              >
-                สรุปสถานะโครงการ
-              </button>
-              <button
-                class="tab-btn view-toggle-btn"
-                type="button"
-                data-view="calendar"
-              >
-                ปฏิทินโครงการ
-              </button>
-            </div>
-          </div>
-
-          <!-- ================= STATUS VIEW ================= -->
-          <div id="statusView">
-            <!-- Filter หลัก -->
-            <div class="filter-bar">
-              <div class="filter-group filter-year">
-                <label for="yearSelect">ปีการศึกษา</label>
-                <select id="yearSelect">
-                  <option value="all">ทุกปีการศึกษา</option>
-                  <option value="2568" selected>2568</option>
-                </select>
-              </div>
-
-              <div class="filter-group filter-orgtype">
-                <label for="orgTypeSelect">ประเภทองค์กร</label>
-                <select id="orgTypeSelect">
-                  <option value="all">ทุกประเภทองค์กร</option>
-                  <!-- JS จะเติมฝ่าย/กลุ่มองค์กรเพิ่ม -->
-                </select>
-              </div>
-
-              <div class="filter-group filter-org">
-                <label for="orgSelect">ฝ่าย / ชมรม</label>
-                <select id="orgSelect">
-                  <option value="all">ทุกฝ่าย / ทุกชมรม</option>
-                  <!-- JS จะเติมรายชื่อชมรม/ฝ่ายเพิ่ม -->
-                </select>
-              </div>
-            </div>
-
-            <!-- การ์ดสรุป -->
-            <div class="cards section-appear section-delay-1">
-              <article class="card card-hover">
-                <div class="card-title">จำนวนโครงการทั้งหมด</div>
-                <div id="totalProjects" class="card-value">0</div>
-              </article>
-
-              <article class="card card-hover">
-                <div class="card-title">โครงการอยู่ระหว่างดำเนินการ</div>
-                <div id="pendingProjects" class="card-value">0</div>
-              </article>
-
-              <article class="card card-hover">
-                <div class="card-title">โครงการที่อนุมัติแล้ว</div>
-                <div id="approvedProjects" class="card-value">0</div>
-              </article>
-
-              <article class="card card-hover">
-                <div class="card-title">โครงการที่ปิดโครงการแล้ว</div>
-                <div id="closedProjects" class="card-value">0</div>
-              </article>
-
-              <article class="card card-hover">
-                <div class="card-title">วงเงินโครงการรวม (บาท)</div>
-                <div id="totalBudget" class="card-value">0</div>
-                <div class="card-caption">บาท</div>
-              </article>
-            </div>
-
-            <!-- กราฟสถานะปิดโครงการ + Pie งบประมาณ -->
-            <div class="chart-grid section-appear section-delay-2" style="margin-top:16px;">
-              <!-- Stacked bar -->
-              <article class="chart-card">
-                <header class="chart-header">
-                  <h3 class="chart-title">ภาพรวมสถานะปิดโครงการ</h3>
-                </header>
-                <div class="chart-inner">
-                  <div id="budgetChartSkeleton" class="chart-skeleton"></div>
-                  <canvas id="budgetByMonthChart"></canvas>
-                </div>
-              </article>
-
-              <!-- Pie chart -->
-              <article class="chart-card">
-                <header class="chart-header">
-                  <h3 class="chart-title">สัดส่วนงบประมาณโครงการที่ได้รับอนุมัติ</h3>
-                </header>
-                <div class="chart-inner">
-                  <div id="statusPieSkeleton" class="chart-skeleton"></div>
-                  <canvas id="statusPieChart"></canvas>
-                </div>
-              </article>
-            </div>
-
-            <!-- ตารางรายการโครงการ -->
-            <section class="panel section-appear section-delay-3" style="margin-top:18px;">
-              <header class="panel-header">
-                <div>
-                  <h3 class="panel-title">รายการโครงการ</h3>
-                </div>
-              </header>
-
-              <div class="table-wrapper">
-                <div class="project-table-wrapper">
-                  <table id="projectTable">
-                    <caption id="tableCaption">แสดง 0 โครงการ</caption>
-                    <thead>
-                      <tr>
-                        <th style="text-align:center;">รหัสโครงการ</th>
-                        <th style="text-align:center;">ชื่อโครงการ</th>
-                        <th style="text-align:center;">ฝ่าย / ชมรม</th>
-                        <th class="sortable" data-sort="year" style="text-align:center;">
-                          ปีการศึกษา
-                        </th>
-                        <th class="sortable" data-sort="status" style="text-align:center;">
-                          สถานะ
-                        </th>
-                        <th class="sortable" data-sort="budget" style="text-align:right;">
-                          งบประมาณ (บาท)
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody id="projectTableBody">
-                      <!-- JS ใส่ข้อมูลโครงการ -->
-                    </tbody>
-                  </table>
-                </div>
-
-                <div id="projectTableSkeleton" class="table-skeleton"></div>
-              </div>
-            </section>
-          </div>
-
-          <!-- ================= CALENDAR VIEW ================= -->
-          <div id="calendarView" style="display:none; margin-top:12px;">
-            <section class="panel section-appear section-delay-1">
-              <header class="panel-header">
-                <div>
-                  <h3 id="calendarPanelTitle" class="panel-title">
-                    ปฏิทินกิจกรรม —
-                  </h3>
-                  <p class="panel-caption">
-                    แสดงวันจัดกิจกรรมตามวันสิ้นสุดการปฏิบัติงานของแต่ละโครงการ
-                  </p>
-                </div>
-                <div class="calendar-controls">
-                  <button id="prevMonthBtn" type="button" class="btn-ghost">
-                    ‹ เดือนก่อนหน้า
-                  </button>
-                  <button id="nextMonthBtn" type="button" class="btn-ghost">
-                    เดือนถัดไป ›
-                  </button>
-                </div>
-              </header>
-
-              <!-- Filters -->
-              <div class="calendar-filter-bar">
-                <div class="filter-group">
-                  <label for="calendarYearSelect">ปีการศึกษา</label>
-                  <select id="calendarYearSelect">
-                    <option value="all">ทุกปีการศึกษา</option>
-                  </select>
-                </div>
-                <div class="filter-group">
-                  <label for="calendarOrgSelect">ฝ่าย / ชมรม</label>
-                  <select id="calendarOrgSelect">
-                    <option value="all">ทุกฝ่าย / ทุกชมรม</option>
-                  </select>
-                </div>
-                <div class="filter-group">
-                  <label for="calendarStatusSelect">สถานะโครงการ</label>
-                  <select id="calendarStatusSelect">
-                    <option value="all">ทุกสถานะ</option>
-                    <option value="pending">อยู่ระหว่างดำเนินการ</option>
-                    <option value="approved">อนุมัติโครงการแล้ว</option>
-                    <option value="closed">ปิดโครงการแล้ว</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- กริดปฏิทิน -->
-              <div id="calendarContainer" class="calendar-grid"></div>
-
-              <div class="home-timeline-footer" style="margin-top:12px;">
-                <span class="pill pill-soft-gray">อยู่ระหว่างดำเนินการ</span>
-                <span class="pill pill-soft-pink">อนุมัติโครงการแล้ว</span>
-                <span class="pill pill-soft-green">ปิดโครงการแล้ว</span>
-              </div>
-            </section>
-          </div>
-
-        </div>
-      </section>
-
-
-      <!-- ============ FINANCIAL DOCUMENTS ============ -->
-      <section class="page-view" data-page="financial-docs">
-        <div class="page">
-          <div class="page-header-flex section-appear">
-            <div>
-              <h2 class="page-title">Financial Documents</h2>
-              <p class="page-subtitle">
-                รวมแบบฟอร์มและเอกสารมาตรฐานด้านการเงินของฝ่ายเหรัญญิก · สำหรับโครงการและชมรม
-              </p>
-            </div>
-          </div>
-
-          <div class="separator-gradient"></div>
-
-          <div class="section-appear section-delay-2">
-            <div id="downloadList" class="download-wrapper">
-              <!-- เติมด้วย JS -->
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============ BORROW & RETURN ASSETS ============ -->
-      <section class="page-view" data-page="borrow-assets">
-        <div class="page">
-          <div class="page-header-flex section-appear">
-            <div>
-              <h2 class="page-title">Borrow &amp; Return Assets</h2>
-              <p class="page-subtitle">
-                ดูสถานะการยืมครุภัณฑ์และอุปกรณ์ส่วนกลางของ SGCU
-                รวมถึงรายการที่ใกล้ครบกำหนดคืน
-              </p>
-            </div>
-
-            <div class="tabs">
-              <button
-                class="tab-btn is-active"
-                data-assets-tab="overview"
-                type="button"
-              >
-                ภาพรวมวันนี้
-              </button>
-              <button
-                class="tab-btn"
-                data-assets-tab="list"
-                type="button"
-              >
-                รายการทั้งหมด
-              </button>
-            </div>
-          </div>
-
-          <!-- Overview -->
-          <div id="assetsOverview" class="section-appear section-delay-1">
-            <div class="cards" style="margin-bottom: 14px">
-              <article class="card card-hover">
-                <div class="card-title">จำนวนรายการที่ถูกยืมอยู่</div>
-                <div class="card-value" data-countup="12">12</div>
-                <div class="card-caption">รวมทุกฝ่าย ณ วันนี้ (ตัวอย่าง)</div>
-              </article>
-
-              <article class="card card-hover">
-                <div class="card-title">จะครบกำหนดคืนภายใน 3 วัน</div>
-                <div class="card-value" data-countup="4">4</div>
-                <div class="card-caption">รายการที่ควรติดตาม</div>
-              </article>
-
-              <article class="card card-hover">
-                <div class="card-title">เกินกำหนดคืนแล้ว</div>
-                <div class="card-value" style="color: #ef4444" data-countup="1">
-                  1
-                </div>
-                <div class="card-caption">ควรติดต่อผู้ยืมโดยด่วน</div>
-              </article>
-            </div>
-
-            <div class="panel panel-hover">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title">รายการใกล้ครบกำหนดคืน</div>
-                  <div class="panel-caption">
-                    ตัวอย่าง layout สำหรับรายการที่กำลังใช้งาน
-                    และกำลังจะครบกำหนด
-                  </div>
-                </div>
-              </div>
-
-              <div class="org-grid-2x2">
-                <article
-                  class="asset-card section-appear section-delay-1"
-                >
-                  <div class="asset-card-header">
-                    <div class="asset-card-title">
-                      ไมโครโฟนไร้สาย (ชุดที่ 1)
-                    </div>
-                    <span class="pill pill-soft-pink">ครบกำหนดใน 2 วัน</span>
-                  </div>
-                  <div class="asset-card-meta">
-                    ผู้ยืม: ชมรมดนตรีสากล · ใช้ในงานประกวดดนตรี<br />
-                    วันที่ยืม: 10 ต.ค. 2568 · กำหนดคืน: 15 ต.ค. 2568
-                  </div>
-                  <div class="asset-card-footer">
-                    <span>ผู้รับผิดชอบ: ผู้ช่วยเหรัญญิกฝ่ายกายภาพ</span>
-                    <button class="btn-ghost" type="button">
-                      ดูรายละเอียด
-                    </button>
-                  </div>
-                </article>
-
-                <article
-                  class="asset-card section-appear section-delay-2"
-                >
-                  <div class="asset-card-header">
-                    <div class="asset-card-title">
-                      เก้าอี้พลาสติก (50 ตัว)
-                    </div>
-                    <span class="pill pill-soft-gray">ครบกำหนดวันนี้</span>
-                  </div>
-                  <div class="asset-card-meta">
-                    ผู้ยืม: ฝ่ายกิจกรรม SGCU · ใช้ในงานรับน้องคณะรวม<br />
-                    วันที่ยืม: 5 ต.ค. 2568 · กำหนดคืน: 12 ต.ค. 2568
-                  </div>
-                  <div class="asset-card-footer">
-                    <span>สถานะ: รอเช็คคืน</span>
-                    <button class="btn-ghost" type="button">
-                      ดูรายละเอียด
-                    </button>
-                  </div>
-                </article>
-              </div>
-            </div>
-          </div>
-
-          <!-- List -->
-          <div
-            id="assetsList"
-            class="section-appear"
-            style="display: none; margin-top: 18px"
-          >
-            <div class="panel panel-hover">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title">รายการยืมครุภัณฑ์ทั้งหมด</div>
-                  <div class="panel-caption">
-                    ส่วนนี้คุณสามารถผูกกับ Google Sheets
-                    หรือระบบยืมคืนของคุณเองได้
-                  </div>
-                </div>
-              </div>
-
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>รายการ</th>
-                      <th>ผู้ยืม</th>
-                      <th>วันที่ยืม</th>
-                      <th>กำหนดคืน</th>
-                      <th>สถานะ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>ชุดเครื่องเสียงกลาง (Set A)</td>
-                      <td>ชมรมดนตรีไทย</td>
-                      <td>01/10/2568</td>
-                      <td>10/10/2568</td>
-                      <td><span class="badge badge-pending">รอคืน</span></td>
-                    </tr>
-                    <tr>
-                      <td>ทรงธง SGCU</td>
-                      <td>องค์การบริหารสโมสรนิสิต</td>
-                      <td>03/10/2568</td>
-                      <td>03/10/2568</td>
-                      <td>
-                        <span class="badge badge-approved">คืนแล้ว</span>
-                      </td>
-                    </tr>
-                    <!-- เติมข้อมูลจริงด้วย JS ได้ภายหลัง -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============ MEETING ROOM ============ -->
-      <section class="page-view" data-page="meeting-room">
-        <div class="page">
-          <div class="page-header-flex section-appear">
-            <div>
-              <h2 class="page-title">Meeting Room</h2>
-              <p class="page-subtitle">
-                ดูตารางการใช้ห้องประชุมของ SGCU
-                และวางแผนจองเวลาเพื่อการประชุมของฝ่ายต่าง ๆ
-              </p>
-            </div>
-
-            <div class="tabs">
-              <button
-                class="tab-btn is-active"
-                data-meeting-tab="today"
-                type="button"
-              >
-                วันนี้
-              </button>
-              <button
-                class="tab-btn"
-                data-meeting-tab="week"
-                type="button"
-              >
-                ทั้งสัปดาห์
-              </button>
-            </div>
-          </div>
-
-          <!-- Today -->
-          <div id="meetingToday" class="section-appear section-delay-1">
-            <div class="cards" style="margin-bottom: 14px">
-              <article class="card card-hover">
-                <div class="card-title">จำนวนการจองวันนี้</div>
-                <div class="card-value" data-countup="5">5</div>
-                <div class="card-caption">รวมทุกห้องประชุม (ตัวอย่าง)</div>
-              </article>
-
-              <article class="card card-hover">
-                <div class="card-title">ช่วงเวลาว่าง</div>
-                <div class="card-value">4 ช่วง</div>
-                <div class="card-caption">สามารถจองเพิ่มเติมได้</div>
-              </article>
-            </div>
-
-            <div class="panel panel-hover">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title">ตารางการใช้ห้องวันนี้</div>
-                  <div class="panel-caption">
-                    Layout ตัวอย่างสำหรับเชื่อมกับ Google Calendar / Sheets
-                  </div>
-                </div>
-              </div>
-
-              <div class="org-grid-2x2">
-                <article
-                  class="meeting-card section-appear section-delay-1"
-                >
-                  <div class="meeting-card-header">
-                    <div class="meeting-card-title">ห้องประชุมใหญ่ SGCU</div>
-                    <span class="pill pill-soft-pink">09:00 – 11:00</span>
-                  </div>
-                  <div class="meeting-card-meta">
-                    การประชุม: คณะกรรมการบริหาร SGCU 68<br />
-                    ผู้จอง: เหรัญญิก · ผู้ช่วยเหรัญญิก
-                  </div>
-                  <div class="meeting-card-footer">
-                    <span>สถานะ: ยืนยันแล้ว</span>
-                    <button class="btn-ghost" type="button">
-                      ดูรายละเอียด
-                    </button>
-                  </div>
-                </article>
-
-                <article
-                  class="meeting-card section-appear section-delay-2"
-                >
-                  <div class="meeting-card-header">
-                    <div class="meeting-card-title">ห้องประชุมเล็ก 1</div>
-                    <span class="pill pill-soft-gray">13:00 – 15:00</span>
-                  </div>
-                  <div class="meeting-card-meta">
-                    การประชุม: ฝ่ายหาทุนและสิทธิประโยชน์<br />
-                    ผู้จอง: ประธานฝ่ายหาทุนฯ
-                  </div>
-                  <div class="meeting-card-footer">
-                    <span>สถานะ: รอเริ่มประชุม</span>
-                    <button class="btn-ghost" type="button">
-                      ดูรายละเอียด
-                    </button>
-                  </div>
-                </article>
-              </div>
-            </div>
-          </div>
-
-          <!-- Week -->
-          <div
-            id="meetingWeek"
-            class="section-appear"
-            style="display: none; margin-top: 18px"
-          >
-            <div class="panel panel-hover">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title">
-                    ภาพรวมการใช้ห้องประชุมทั้งสัปดาห์
-                  </div>
-                  <div class="panel-caption">
-                    ตัวอย่างคำอธิบายช่วงที่ควรใช้จองประชุมสำหรับฝ่ายต่าง ๆ
-                  </div>
-                </div>
-              </div>
-
-              <div class="timeline">
-                <div class="timeline-item">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-content">
-                    <strong>จันทร์</strong><br />
-                    ห้องใหญ่ 09:00–11:00 · ประชุมกรรมการบริหาร<br />
-                    ห้องเล็ก 14:00–16:00 · ฝ่ายกิจกรรม
-                  </div>
-                </div>
-                <div class="timeline-item">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-content">
-                    <strong>อังคาร</strong><br />
-                    ห้องใหญ่ ว่างทั้งวัน · แนะนำสำหรับจองประชุมโครงการใหญ่
-                  </div>
-                </div>
-                <div class="timeline-item">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-content">
-                    <strong>พุธ – ศุกร์</strong><br />
-                    ช่วงบ่ายมีการจองเกือบทุกวัน ·
-                    ควรตรวจสอบตารางละเอียดก่อนนัดประชุม
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- Project Modal -->
-    <div id="projectModal" class="modal">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <div>
-            <div id="projectModalTitle" class="modal-title"></div>
-            <div id="projectModalHeaderRow" class="modal-header-row"></div>
-          </div>
-          <button id="projectModalClose" class="modal-close" type="button">
-            ✕
-          </button>
-        </div>
-        <div class="modal-subtitle">
-          <span id="projectModalTitleBadge" class="modal-badge"></span>
-        </div>
-        <div id="projectModalBody" class="modal-body"></div>
-      </div>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="desktop-nav">
+        <a href="#" data-page="home" class="active">Home</a>
+        <a href="#" data-page="about">About Us</a>
+        <a href="#" data-page="projects">Project Status</a>
+        <a href="#" data-page="downloads">Financial Docs</a>
+        <a href="#" data-page="assets">Assets</a>
+        <a href="#" data-page="meeting">Meeting Room</a>
+      </nav>
+
+      <!-- Hamburger for Mobile -->
+      <button class="hamburger" id="hamburgerBtn">
+        <span></span><span></span><span></span>
+      </button>
     </div>
 
-    <!-- Calendar Modal -->
-    <div id="calendarModal" class="modal">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <div>
-            <div id="calendarModalTitle" class="modal-title"></div>
-          </div>
-          <button id="calendarModalClose" class="modal-close" type="button">
-            ✕
-          </button>
-        </div>
-        <div id="calendarModalBody" class="modal-body"></div>
-      </div>
+    <!-- Mobile Navigation -->
+    <div class="mobile-menu" id="mobileMenu">
+      <nav>
+        <a href="#" data-page="home">Home</a>
+        <a href="#" data-page="about">About Us</a>
+        <a href="#" data-page="projects">Project Status</a>
+        <a href="#" data-page="downloads">Financial Docs</a>
+        <a href="#" data-page="assets">Assets</a>
+        <a href="#" data-page="meeting">Meeting Room</a>
+      </nav>
     </div>
+  </header>
 
-    <!-- Person Popup -->
-    <div id="personModal" class="person-modal">
-      <div class="person-modal-backdrop"></div>
-      <div class="person-modal-dialog">
-        <button id="personModalClose" class="person-modal-close">×</button>
+  <!-- ============================================================
+       2) MAIN CONTENT (PAGE CONTAINERS)
+  =============================================================== -->
+  <main class="main">
 
-        <div class="person-modal-header">
-          <div id="personModalAvatar" class="person-modal-avatar"></div>
-          <div>
-            <div id="personModalPosition" class="person-modal-position"></div>
-            <div id="personModalName" class="person-modal-name"></div>
-            <div id="personModalNick" class="person-modal-nick"></div>
+    <!-- HOME -->
+    <section id="home" class="page-view active">
+      <div class="page">
+        <h1 class="page-title">Treasurer SGCU Dashboard</h1>
+        <p class="page-subtitle">ระบบติดตามโครงการ / ตรวจสอบงบประมาณ / เอกสารทางการเงิน</p>
+
+        <!-- Hero Section -->
+        <div class="home-hero">
+          <div class="home-hero-inner">
+
+            <!-- Left -->
+            <div class="home-hero-text">
+              <div class="home-hero-eyebrow">Treasurer SGCU 68</div>
+              <h2 class="home-hero-title">Transparent & Modern Financial System</h2>
+              <p class="home-hero-subtitle">
+                ระบบจัดการงบประมาณ โปร่งใส ตรวจสอบง่าย เพื่อประสบการณ์ที่ดีของนิสิตและสโมสรนิสิต
+              </p>
+            </div>
+
+            <!-- Right (Badge Image) -->
+            <div class="home-hero-highlight">
+              <img src="img/treasurer-badge.png" class="home-hero-badge-img" alt="Treasurer SGCU Badge" />
+            </div>
           </div>
         </div>
 
-        <div id="personModalContact" class="person-modal-contact">
-          <!-- JS เติมเบอร์/LINE -->
+        <!-- Org Structure -->
+        <div id="org-structure-content" class="org-structure-wrapper section-appear">
+          <!-- JS will inject org chart -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ABOUT US -->
+    <section id="about" class="page-view">
+      <div class="page">
+        <div class="page-header-flex">
+          <h1 class="page-title">About Us</h1>
+        </div>
+        <p class="page-subtitle">แผนกเหรัญญิก — หน้าที่ โครงสร้าง และขอบเขตการทำงาน</p>
+
+        <div id="about-content">
+          <!-- JS injects About info -->
         </div>
       </div>
-    </div>
+    </section>
 
+    <!-- PROJECT STATUS -->
+    <section id="projects" class="page-view">
+      <div class="page">
+        <div class="page-header-flex">
+          <h1 class="page-title">Project Status</h1>
+        </div>
 
-    <footer class="site-footer">
-      <div class="footer-inner">
-        <span>Treasurer SGCU 68</span>
-        <span>© <span id="footerYear"></span> All rights reserved.</span>
+        <!-- Filters -->
+        <div class="filter-bar">
+          <div class="filter-group filter-year">
+            <label>ปีการศึกษา</label>
+            <select id="filterYear"></select>
+          </div>
+          <div class="filter-group filter-orgtype">
+            <label>ประเภทองค์กร</label>
+            <select id="filterOrgType"></select>
+          </div>
+          <div class="filter-group filter-org">
+            <label>องค์กร</label>
+            <select id="filterOrg"></select>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="project-table-wrapper">
+          <div id="tableSkeleton" class="table-skeleton"></div>
+          <table id="projectTable"></table>
+        </div>
       </div>
-    </footer>
+    </section>
 
-    <script src="js/app.js"></script>
-  </body>
+    <!-- DOWNLOAD / FINANCIAL DOCS -->
+    <section id="downloads" class="page-view">
+      <div class="page">
+        <div class="page-header-flex">
+          <h1 class="page-title">Financial Documents</h1>
+        </div>
+
+        <div id="downloadList"></div>
+      </div>
+    </section>
+
+    <!-- ASSETS -->
+    <section id="assets" class="page-view">
+      <div class="page">
+        <div class="page-header-flex">
+          <h1 class="page-title">Assets Borrow & Return</h1>
+        </div>
+
+        <div id="assets-content"></div>
+      </div>
+    </section>
+
+    <!-- MEETINGS -->
+    <section id="meeting" class="page-view">
+      <div class="page">
+        <div class="page-header-flex">
+          <h1 class="page-title">Meeting Room</h1>
+        </div>
+
+        <div id="meeting-content"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       3) FOOTER
+  =============================================================== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>© SGCU Treasurer 2568</div>
+      <div>Designed & Developed by SGCU Treasurer Team</div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       4) PERSON MODAL (UPDATED)
+  =============================================================== -->
+  <!-- Person Popup -->
+  <div id="personModal" class="person-modal">
+    <div class="person-modal-backdrop"></div>
+
+    <div class="person-modal-dialog">
+      <button id="personModalClose" class="person-modal-close">×</button>
+
+      <div class="person-modal-header">
+        <div id="personModalAvatar" class="person-modal-avatar"></div>
+
+        <div>
+          <div id="personModalPosition" class="person-modal-position"></div>
+          <div id="personModalName" class="person-modal-name"></div>
+          <div id="personModalNick" class="person-modal-nick"></div>
+        </div>
+      </div>
+
+      <!-- Extra (faculty, year, etc.) -->
+      <div id="personModalContact" class="person-modal-contact"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       5) SCRIPTS
+  =============================================================== -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+
 </html>

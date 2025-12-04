@@ -1852,7 +1852,9 @@ function renderOrgStructure(rows) {
   const COL_PREFIX = 4;   // คำนำหน้า
   const COL_FIRST  = 5;   // ชื่อ
   const COL_LAST   = 6;   // นามสกุล
-  const COL_NICK   = 7;   // (คอลัมน์ H) ใช้เป็น key สำหรับ contact
+  const COL_NICK   = 7;   // ชื่อเล่น (ใช้เป็น key)
+  const COL_YEAR   = 9;   // J ชั้นปี
+  const COL_FAC    = 10;  // K คณะ
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
   const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
@@ -1932,7 +1934,10 @@ function renderOrgStructure(rows) {
         nick: r[COL_NICK] || "",
         position: pos,
         phone: (r[COL_PHONE] || "").toString().trim(),
-        line: (r[COL_LINE] || "").toString().trim()
+        line: (r[COL_LINE] || "").toString().trim(),
+        faculty: (r[COL_FAC] || "").toString().trim(),
+        year: (r[COL_YEAR] || "").toString().trim(), 
+        avatarUrl
       };
     }
 
@@ -1940,82 +1945,299 @@ function renderOrgStructure(rows) {
     peopleByPos[pos].push(r);
   }
 
-  // ====== เริ่มประกอบ HTML แสดงโครงสร้าง ======
-  let html = ``;
+  function getPerson(position, index = 0) {
+    const list = peopleByPos[position] || [];
+    return list[index] || null;
+  }
 
-  const main = peopleByPos[MAIN_POSITION]?.[0];
-  if (main) {
-    html += `
-      <section class="org-main-section">
-        <article class="org-main-card">
-          ${avatarHTML(main, "lg")}
-          <div>
-            <div class="org-main-position">${MAIN_POSITION}</div>
-            <div class="org-main-name">
-              ${fullName(main)}
-              <span class="org-main-nickname-inline">${nickName(main)}</span>
-            </div>
-            ${contactBlock(main)}
-          </div>
-        </article>
-      </section>
+  function personKey(r) {
+    const nick = (r[COL_NICK] || "").toString().trim();
+    if (nick) return nick;
+    return fullName(r);
+  }
+
+  function renderPersonNode(r, opts = {}) {
+    if (!r) return "";
+
+    const key = personKey(r);
+    const size = opts.size || "lg";
+
+    return `
+      <button class="org-node" type="button" data-person-key="${key}">
+        ${avatarHTML(r, size === "sm" ? "sm" : "lg")}
+        <div class="org-node-role">${(r[COL_POS] || "").trim()}</div>
+        <div class="org-node-name">${fullName(r)}</div>
+        <div class="org-node-nick">${nickNameText(r)}</div>
+      </button>
     `;
   }
 
-  html += `<div class="org-grid-4">`;
+  // กล่องผู้ช่วย: fixed label ตามรูป, ไม่ผูก popup
+  function renderAssistantBox(labelText) {
+    if (!labelText) return "";
+    return `
+      <div class="org-node-assistant-box">
+        ${labelText}
+      </div>
+    `;
+  }
 
-  const GRID_ORDER = [
-    "R1C1","R1C2","R1C3","R1C4",
-    "R2C1","R2C2","R2C3","R2C4",
-    "BLANK","BLANK","R3C3","BLANK"
-  ];
+  // ====== ดึงคนตามตำแหน่งหลัก ๆ ตามรูปโครงสร้าง ======
+  const treasurer   = getPerson("เหรัญญิก", 0);
 
-  for (const slot of GRID_ORDER) {
-    if (slot === "BLANK") {
-      html += `<div></div>`;
-      continue;
-    }
+  const secretary1  = getPerson("เลขานุการฝ่ายเหรัญญิก", 0);
+  const secretary2  = getPerson("เลขานุการฝ่ายเหรัญญิก", 1);
 
-    const posName = SLOT[slot];
-    const items = peopleByPos[posName] || [];
+  const headBudget  = getPerson("ประธานฝ่ายบริหารและพัฒนางบประมาณ", 0);
+  const headFund    = getPerson("ประธานฝ่ายหาทุนและสิทธิประโยชน์", 0);
 
-    if (items.length === 0) {
-      html += `<div></div>`;
-      continue;
-    }
+  // ประธานฝ่ายกายภาพและพัสดุ 2 คน
+  const headAsset1  = getPerson("ประธานฝ่ายกายภาพและพัสดุ", 0);
+  const headAsset2  = getPerson("ประธานฝ่ายกายภาพและพัสดุ", 1);
 
-    const person = items.shift();
-    // รายชื่อ Position ที่ต้องเป็นสี Highlight
-    const HIGHLIGHT_POS = new Set([
-      "ประธานฝ่ายบริหารและพัฒนางบประมาณ",
-      "ประธานฝ่ายหาทุนและสิทธิประโยชน์",
-      "ประธานฝ่ายกายภาพและพัสดุ"
-    ]);
+  const depBudget   = getPerson("รองประธานฝ่ายบริหารและพัฒนางบประมาณ", 0);
+  const depFunds    = peopleByPos["รองประธานฝ่ายหาทุนและสิทธิประโยชน์"] || []; // อาจมีหลายคน
+  const depAsset    = getPerson("รองประธานฝ่ายกายภาพและพัสดุ", 0);
 
-    const isHighlight = HIGHLIGHT_POS.has(posName);
+  // ====== ประกอบ HTML Org Tree ======
+  let html = `
+    <div class="org-tree">
 
-    html += `
-      <article class="org-card ${isHighlight ? "org-card-highlight" : ""}">
-        ${avatarHTML(person, "sm")}
-        <div>
-          <div class="org-card-position">${posName}</div>
-          <div class="org-card-name">
-            ${fullName(person)}
-            <span class="org-card-nickname-inline">${nickName(person)}</span>
-          </div>
-          ${contactBlock(person)}
+      <!-- Level 1: เหรัญญิก -->
+      <div class="org-level">
+        ${treasurer
+          ? renderPersonNode(treasurer, { size: "lg" })
+          : "<p>ไม่พบข้อมูลเหรัญญิก</p>"}
+      </div>
+
+      <!-- เส้นลงมาเชื่อมกับเลขาฯ -->
+      <div class="org-line-vertical"></div>
+
+      <!-- Level 2: เลขานุการ 2 คน -->
+      <div class="org-level org-level-secretaries">
+        ${secretary1 ? renderPersonNode(secretary1, { size: "sm" }) : ""}
+        ${secretary2 ? renderPersonNode(secretary2, { size: "sm" }) : ""}
+      </div>
+
+      <!-- เส้นแนวนอนเชื่อมไปยัง 3 ประธาน -->
+      <div class="org-connector-wide"></div>
+
+      <!-- Level 3: ผู้ช่วยเหรัญญิกส่วนกลาง + สามประธาน -->
+      <div class="org-level org-level-main-branches">
+
+        <!-- LEFT: ผู้ช่วยเหรัญญิกส่วนกลาง -->
+        <div class="org-left-asst">
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิกส่วนกลาง")}
         </div>
-      </article>
-    `;
-  }
 
-  html += `</div>`;
+        <!-- RIGHT: สามสาขา -->
+        <div class="org-right-branches">
+
+          <!-- Branch: บริหารและพัฒนางบประมาณ -->
+          <div class="org-branch org-branch-budget">
+            <div class="org-branch-head">
+              ${headBudget ? renderPersonNode(headBudget, { size: "lg" }) : ""}
+            </div>
+            <div class="org-branch-dep">
+              ${depBudget ? renderPersonNode(depBudget, { size: "sm" }) : ""}
+            </div>
+            <div class="org-branch-assistant">
+              ${renderAssistantBox("ผู้ช่วยฝ่ายบริหารและพัฒนางบประมาณ")}
+            </div>
+          </div>
+
+          <!-- Branch: หาทุนและสิทธิประโยชน์ -->
+          <div class="org-branch org-branch-fund">
+            <div class="org-branch-head">
+              ${headFund ? renderPersonNode(headFund, { size: "lg" }) : ""}
+            </div>
+            <div class="org-branch-dep org-level-depfund">
+              ${depFunds.map(p => renderPersonNode(p, { size: "sm" })).join("")}
+            </div>
+            <div class="org-branch-assistant">
+              ${renderAssistantBox("ผู้ช่วยฝ่ายหาทุนและสิทธิประโยชน์")}
+            </div>
+          </div>
+
+          <!-- Branch: กายภาพและพัสดุ (ประธาน 2 คน) -->
+          <div class="org-branch org-branch-asset">
+            <div class="org-branch-head org-level-asset-heads">
+              ${headAsset1 ? renderPersonNode(headAsset1, { size: "lg" }) : ""}
+              ${headAsset2 ? renderPersonNode(headAsset2, { size: "lg" }) : ""}
+            </div>
+            <div class="org-branch-dep">
+              ${depAsset ? renderPersonNode(depAsset, { size: "sm" }) : ""}
+            </div>
+            <div class="org-branch-assistant">
+              ${renderAssistantBox("ผู้ช่วยฝ่ายกายภาพและพัสดุ")}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
 
   container.innerHTML = html;
+
+  // ผูก popup ให้เฉพาะปุ่มคน (วงกลม)
+  initOrgPersonPopup();
 }
 
-/* Helper: สร้างลิงก์ดาวน์โหลดจาก Google Drive / Docs / Sheets */
-function toDownloadUrl(url, typeHint) {
+
+
+function initOrgPersonPopup() {
+  const modal = document.getElementById("personModal");
+  if (!modal) return;
+
+  const closeBtn = document.getElementById("personModalClose");
+  const avatarEl = document.getElementById("personModalAvatar");
+  const nameEl   = document.getElementById("personModalName");
+  const nickEl   = document.getElementById("personModalNick");
+  const posEl    = document.getElementById("personModalPosition");
+  const contactEl= document.getElementById("personModalContact");
+
+  function openModalForKey(key) {
+    const info = assistantContactsByName[key];
+    if (!info) return;
+
+    // avatar
+    avatarEl.innerHTML = "";
+    if (info.avatarUrl) {
+      avatarEl.innerHTML = `<img src="${info.avatarUrl}" alt="${info.fullName}">`;
+    } else {
+      const initials = (info.fullName || "SG")
+        .split(" ")
+        .map((s) => s.charAt(0))
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+      avatarEl.textContent = initials;
+    }
+
+    posEl.textContent  = info.position || "";
+    nameEl.textContent = info.fullName || key;
+    nickEl.textContent = info.nick ? `(${info.nick})` : "";
+
+    const rows = [];
+
+    if (info.faculty) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-label">คณะ</div>
+          <div class="person-modal-contact-value">${info.faculty}</div>
+        </div>
+      `);
+    }
+
+    // ✅ แถวชั้นปี
+    if (info.year) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-label">ชั้นปี</div>
+          <div class="person-modal-contact-value">ปี ${info.year}</div>
+        </div>
+      `);
+    }
+
+    if (info.phone) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-label">โทร</div>
+          <div class="person-modal-contact-value">
+            <a href="tel:${info.phone}">${info.phone}</a>
+          </div>
+        </div>
+      `);
+    }
+
+    if (info.line) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-label">LINE</div>
+          <div class="person-modal-contact-value">${info.line}</div>
+        </div>
+      `);
+    }
+
+    if (!rows.length) {
+      rows.push(`
+        <div class="person-modal-contact-row">
+          <div class="person-modal-contact-value">
+            ยังไม่มีข้อมูลช่องทางการติดต่อเพิ่มเติม
+          </div>
+        </div>
+      `);
+    }
+
+    contactEl.innerHTML = rows.join("");
+
+    modal.classList.add("show");
+  }
+
+  // ผูก event กับทุก node ที่มี data-person-key
+  document
+  .querySelectorAll(".org-node[data-person-key]")
+  .forEach((el) => {
+    el.addEventListener("click", () => {
+      const key = el.dataset.personKey;
+      if (!key) return;
+      openModalForKey(key);
+    });
+  });
+
+  function closeModal() {
+    modal.classList.remove("show");
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeModal);
+  }
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal || e.target.classList.contains("person-modal-backdrop")) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+}
+
+function openPersonModal(person) {
+  // Avatar
+  const avatar = document.getElementById("personModalAvatar");
+  avatar.innerHTML = person.img
+    ? `<img src="${person.img}" />`
+    : `<div class="avatar-initial">${person.initial || "?"}</div>`;
+
+  // Text fields
+  document.getElementById("personModalPosition").textContent = person.position || "";
+  document.getElementById("personModalName").textContent = person.name || "";
+  document.getElementById("personModalNick").textContent = person.nick ? `(${person.nick})` : "";
+
+  // Contact
+  const contact = document.getElementById("personModalContact");
+  contact.innerHTML = person.contact
+    ? `<div><strong>ติดต่อ:</strong> ${person.contact}</div>`
+    : "";
+
+  // ⭐ NEW: Extra info
+  const extra = document.getElementById("personModalExtra");
+  extra.innerHTML = `
+    ${person.faculty ? `<div><span class="person-modal-extra-label">คณะ:</span> <span class="person-modal-extra-value">${person.faculty}</span></div>` : ""}
+    ${person.year ? `<div><span class="person-modal-extra-label">ชั้นปี:</span> <span class="person-modal-extra-value">${person.year}</span></div>` : ""}
+    ${person.note ? `<div><span class="person-modal-extra-label">หมายเหตุ:</span> <span class="person-modal-extra-value">${person.note}</span></div>` : ""}
+  `;
+
+  // Show modal
+  document.getElementById("personModal").classList.add("show");
+}
+
+
+// แปลงลิงก์ให้พร้อมดาวน์โหลด / เปิดใช้งาน
+function toDownloadUrl(url, label) {
   if (!url) return "#";
   const trimmed = url.trim();
 
@@ -2152,7 +2374,7 @@ async function loadDownloadDocuments() {
       listEl.appendChild(section);
     }
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2155", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2377", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }

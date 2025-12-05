@@ -2450,6 +2450,7 @@ function refreshMotionForActivePage() {
   }
 }
 
+
 /* 12) Init */
 window.addEventListener("load", async () => {
   // ===== 1) เก็บ DOM element ที่ใช้ซ้ำ =====
@@ -2608,16 +2609,29 @@ window.addEventListener("load", async () => {
 
   // ===== 6) โหลดข้อมูลโครงการ + Dashboard + Calendar =====
   setLoading(true);
+  try {
+    await loadProjectsFromSheet();              // ดึงข้อมูลจาก SHEET_CSV_URL (ปี 2568 ตามที่ fix ไว้)
+    if (!projects || projects.length === 0) {   // กันกรณีโหลดไม่ได้/ข้อมูลว่าง
+      projects = getFallbackProjects();
+    }
 
-  await loadProjectsFromSheet();    // ดึงข้อมูลจาก SHEET_CSV_URL (ปี 2568 ตามที่ fix ไว้)
-  initOrgTypeOptions();             // เติม options ประเภทองค์กร
-  initOrgOptions();                 // เติมรายชื่อองค์กร
-  initCharts();                     // สร้างกราฟ Chart.js
-  refreshProjectStatus();           // อัปเดตการ์ดสรุป + ตาราง + กราฟสถานะปิดโครงการ
-  initCalendar();                   // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
-  initScoreboard();                 // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
-
-  setLoading(false);
+    initOrgTypeOptions();                       // เติม options ประเภทองค์กร
+    initOrgOptions();                           // เติมรายชื่อองค์กร
+    initCharts();                               // สร้างกราฟ Chart.js
+    refreshProjectStatus();                     // อัปเดตการ์ดสรุป + ตาราง + กราฟสถานะปิดโครงการ
+    initCalendar();                             // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
+    initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
+  } catch (err) {
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:2625", err);
+    projects = getFallbackProjects();
+    initOrgTypeOptions();
+    initOrgOptions();
+    initCharts();
+    refreshProjectStatus();
+    initCalendar();
+  } finally {
+    setLoading(false);
+  }
 
   // ===== 7) Event เปลี่ยน filter ของ Dashboard =====
   if (yearSelect) {
@@ -2790,22 +2804,31 @@ function parseProjectDate(text) {
   const s = text.toString().trim();
   if (!s) return null;
 
-  // ลองให้ Date แปลงตรง ๆ ก่อน (กรณีเป็นรูปแบบ ISO หรือที่ JS อ่านได้)
-  const direct = new Date(s);
-  if (!isNaN(direct.getTime())) return direct;
-
-  // ลองรูปแบบ dd/mm/yyyy
-  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  // 1) รูปแบบ ISO: 2025-09-12 หรือ 2025/09/12
+  let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
   if (m) {
-    const day = parseInt(m[1], 10);
-    const month = parseInt(m[2], 10) - 1;
-    const year = parseInt(m[3], 10);
+    const year  = parseInt(m[1], 10);
+    const month = parseInt(m[2], 10) - 1;  // 0-based
+    const day   = parseInt(m[3], 10);
     const d = new Date(year, month, day);
-    if (!isNaN(d.getTime())) return d;
+    return isNaN(d.getTime()) ? null : d;
   }
 
-  return null;
+  // 2) รูปแบบ dd/mm/yyyy หรือ dd-mm-yyyy  (กรณี 12/9/2025, 12-09-2025)
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const day   = parseInt(m[1], 10);
+    const month = parseInt(m[2], 10) - 1;
+    const year  = parseInt(m[3], 10);
+    const d = new Date(year, month, day);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // 3) กรณีอื่น ๆ ที่มีชื่อเดือน เช่น "12 Sep 2025" ค่อยให้ JS parse
+  const direct = new Date(s);
+  return isNaN(direct.getTime()) ? null : direct;
 }
+
 
 /**
  * แปลง status จากข้อมูลโครงการ → pending / approved / closed

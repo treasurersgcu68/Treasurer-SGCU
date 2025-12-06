@@ -10,15 +10,14 @@ const DOWNLOAD_SHEET =
 
 const SCORE_SHEET =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_oiV1Ntv0x8UuRBKyvl9tTaUxrKkvImEmyFUU4oPp0pSKnLHOjJIz574Te4l25Y2IKFbLMaFlp3UW/pub?gid=968526742&single=true&output=csv";
-  
-/* cache สำหรับข้อมูลโครงการจาก Google Sheets */
-const SHEET_CACHE_TTL_MS = 1000 * 60 * 15; // อายุ cache 15 นาที
-const CACHE_VERSION = 2;
-const SHEET_CACHE_KEY = "sgcu_projects_cache_v2";
 
+const NEWS_SHEET_CSV =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLaBypwNGVEZHCjCxQDSLn8s7tTx1EKAIKuYjL7oIx7_fmssMnAcq9hpLyC4N5TvwIhrzwtZxxCAe0/pub?output=csv"; 
+ 
 
 /* 2) Globals */
 let projects = [];
+let newsItems = [];
 
 let yearSelect;
 let orgTypeSelect;
@@ -44,6 +43,12 @@ let projectModalBodyEl;
 let projectModalCloseEl;
 let currentSort = { key: null, direction: "asc" };
 let assistantContactsByName = {};
+let newsListEl;
+let newsModalEl;
+let newsModalTitleEl;
+let newsModalBodyEl;
+let newsModalCloseEl;
+
 
 // Motion globals
 let sectionObserver = null;
@@ -334,7 +339,7 @@ function extractProjectsFromRows(dataRows, headerRow) {
 // เวอร์ชันไม่ใช้ localStorage cache ชั่วคราว
 async function loadProjectsFromSheet() {
   try {
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets (nocache) ... - app.js:337");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets (nocache) ... - app.js:342");
     const res = await fetch(SHEET_CSV_URL);
     const csvText = await res.text();
 
@@ -352,7 +357,7 @@ async function loadProjectsFromSheet() {
       projects = extractProjectsFromRows(dataRows, headerRow);
     }
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:355", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:360", err);
     projects = getFallbackProjects();
   }
 }
@@ -494,14 +499,6 @@ function updateSummaryCards(filtered) {
   if (approvedProjectsEl) approvedProjectsEl.textContent = approved;
   if (closedProjectsEl)  closedProjectsEl.textContent  = closed;
   if (totalBudgetEl)     totalBudgetEl.textContent     = totalBudget.toLocaleString("th-TH");
-
-  // Home hero (เดิมคุณเช็ค null ไว้แล้ว ใช้ต่อได้เลย)
-  const homeTotal = document.getElementById("homeTotalProjects");
-  const homeApproved = document.getElementById("homeApprovedProjects");
-  const homePending = document.getElementById("homePendingProjects");
-  if (homeTotal)    homeTotal.textContent    = total;
-  if (homeApproved) homeApproved.textContent = approved;
-  if (homePending)  homePending.textContent  = pending;
 }
 
 
@@ -1615,7 +1612,7 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     },
     error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:1618", err);
+      console.error("Error loading SCORE_SHEET - app.js:1615", err);
     }
   });
 }
@@ -1747,15 +1744,6 @@ function updateHomeHeroSummary(total, approved, pending) {
   const approvedEl = document.getElementById("homeApprovedProjects");
   const pendingEl = document.getElementById("homePendingProjects");
   if (!totalEl || !approvedEl || !pendingEl) return;
-
-  // เตรียมสำหรับ CountUp + ค่า fallback ทันที
-  totalEl.dataset.countup = total.toString();
-  approvedEl.dataset.countup = approved.toString();
-  pendingEl.dataset.countup = pending.toString();
-
-  totalEl.textContent = total.toLocaleString("th-TH");
-  approvedEl.textContent = approved.toLocaleString("th-TH");
-  pendingEl.textContent = pending.toLocaleString("th-TH");
 }
 
 function refreshProjectStatus() {
@@ -1828,7 +1816,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1831", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1819", err);
     const el = document.getElementById("org-structure-content");
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
@@ -2022,12 +2010,12 @@ function renderOrgStructure(rows) {
       <!-- เส้นแนวนอนเชื่อมไปยัง 3 ประธาน -->
       <div class="org-connector-wide"></div>
 
-      <!-- Level 3: ผู้ช่วยเหรัญญิกส่วนกลาง + สามประธาน -->
+      <!-- Level 3: ผู้ช่วยเหรัญญิก + สามประธาน -->
       <div class="org-level org-level-main-branches">
 
-        <!-- LEFT: ผู้ช่วยเหรัญญิกส่วนกลาง -->
+        <!-- LEFT: ผู้ช่วยเหรัญญิก -->
         <div class="org-left-asst">
-          ${renderAssistantBox("ผู้ช่วยเหรัญญิกส่วนกลาง")}
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิก")}
         </div>
 
         <!-- RIGHT: สามสาขา -->
@@ -2205,37 +2193,6 @@ function initOrgPersonPopup() {
   });
 }
 
-function openPersonModal(person) {
-  // Avatar
-  const avatar = document.getElementById("personModalAvatar");
-  avatar.innerHTML = person.img
-    ? `<img src="${person.img}" />`
-    : `<div class="avatar-initial">${person.initial || "?"}</div>`;
-
-  // Text fields
-  document.getElementById("personModalPosition").textContent = person.position || "";
-  document.getElementById("personModalName").textContent = person.name || "";
-  document.getElementById("personModalNick").textContent = person.nick ? `(${person.nick})` : "";
-
-  // Contact
-  const contact = document.getElementById("personModalContact");
-  contact.innerHTML = person.contact
-    ? `<div><strong>ติดต่อ:</strong> ${person.contact}</div>`
-    : "";
-
-  // ⭐ NEW: Extra info
-  const extra = document.getElementById("personModalExtra");
-  extra.innerHTML = `
-    ${person.faculty ? `<div><span class="person-modal-extra-label">คณะ:</span> <span class="person-modal-extra-value">${person.faculty}</span></div>` : ""}
-    ${person.year ? `<div><span class="person-modal-extra-label">ชั้นปี:</span> <span class="person-modal-extra-value">${person.year}</span></div>` : ""}
-    ${person.note ? `<div><span class="person-modal-extra-label">หมายเหตุ:</span> <span class="person-modal-extra-value">${person.note}</span></div>` : ""}
-  `;
-
-  // Show modal
-  document.getElementById("personModal").classList.add("show");
-}
-
-
 // แปลงลิงก์ให้พร้อมดาวน์โหลด / เปิดใช้งาน
 function toDownloadUrl(url, label) {
   if (!url) return "#";
@@ -2263,6 +2220,33 @@ function toDownloadUrl(url, label) {
   return trimmed;
 }
 
+// แปลงลิงก์เป็น URL สำหรับฝัง preview ใน iframe
+function toPreviewUrl(rawUrl) {
+  if (!rawUrl) return "";
+  const u = rawUrl.trim();
+
+  // Google Drive / Docs → ใช้ /preview
+  if (u.includes("drive.google.com")) {
+    // /file/d/FILE_ID/view
+    const mFile = u.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
+    if (mFile && mFile[1]) {
+      return `https://drive.google.com/file/d/${mFile[1]}/preview`;
+    }
+
+    // ?id=FILE_ID
+    const mId = u.match(/[?&]id=([^&]+)/);
+    if (mId && mId[1]) {
+      return `https://drive.google.com/file/d/${mId[1]}/preview`;
+    }
+
+    // fallback: ใช้ลิงก์เดิม
+    return u;
+  }
+
+  // PDF หรือไฟล์อื่น ๆ ให้ browser preview ตามปกติ
+  return u;
+}
+
 /* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
 function addDownloadButton(wrapper, label, url) {
   if (!url || url === "-" || url === "--" || url === "") return;
@@ -2275,6 +2259,287 @@ function addDownloadButton(wrapper, label, url) {
   wrapper.appendChild(a);
 }
 
+/* ===== ข่าวและประกาศจากฝ่ายเหรัญญิก ===== */
+
+// แปลงลิงก์เป็น URL สำหรับฝัง preview ใน iframe
+function toPreviewUrl(url) {
+  if (!url) return "";
+  const u = url.trim();
+  if (!u) return "";
+
+  const mFile = u.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (mFile && mFile[1]) {
+    return `https://drive.google.com/file/d/${mFile[1]}/preview`;
+  }
+
+  if (u.includes("docs.google.com/document")) {
+    return u.replace(/\/edit.*$/, "/preview");
+  }
+  if (u.includes("docs.google.com/spreadsheets")) {
+    return u.replace(/\/edit.*$/, "/preview");
+  }
+  if (u.includes("docs.google.com/presentation")) {
+    return u.replace(/\/edit.*$/, "/preview");
+  }
+
+  // ไฟล์อื่น ๆ ให้ใช้ลิงก์เดิม
+  return u;
+}
+
+// โครงสร้างแถวในชีตข่าว (สมมติ index ตามที่ออกแบบ)
+// A: ชื่อประกาศ, B: วันที่ออก, C: ปีการศึกษา, D: หมวดหมู่,
+// E: กลุ่มเป้าหมาย, F: สรุปย่อ, G: URL preview, H: URL download (ถ้ามี), I: หมดอายุ, J: ปักหมุด
+async function loadNewsFromSheet() {
+  try {
+    const res = await fetch(NEWS_SHEET_CSV);
+    const csvText = await res.text();
+
+    const parsed = Papa.parse(csvText, {
+      header: false,
+      skipEmptyLines: true
+    });
+
+    const rows = parsed.data || [];
+    newsItems = [];
+
+    if (rows.length < 2) return;
+
+    // ข้าม header แถวแรก
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row) continue;
+
+      const dateStr     = (row[1] || "").trim(); // B      
+      const year        = (row[2] || "").trim(); // C
+      const title       = (row[3] || "").trim(); // D      
+      const summary     = (row[4] || "").trim(); // E
+      const previewUrl  = (row[5] || "").trim(); // F
+      const category    = (row[6] || "").trim(); // G
+      const audience    = (row[7] || "").trim(); // H
+      const expireDate  = (row[8] || "").trim(); // I      
+      const pinnedRaw   = (row[9] || "").trim(); // J
+
+      if (!title) continue;
+
+      newsItems.push({
+        id: `NEWS-${i}`,    // key ง่าย ๆ
+        title,
+        date: dateStr,
+        year,
+        category,
+        audience,
+        summary,
+        previewUrl,
+        previewUrl,
+        expireDate,
+        pinned: /true/i.test(pinnedRaw) || pinnedRaw === "1" // TRUE / true / 1
+      });
+    }
+
+    // เรียง: ปักหมุดขึ้นก่อนเสมอ แล้วเรียงตามวันที่ออก (ล่าสุดก่อน)
+    newsItems.sort((a, b) => {
+      const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+      if (pinDiff !== 0) return pinDiff;
+
+      const dA = parseNewsDate(a.date);
+      const dB = parseNewsDate(b.date);
+      const tA = dA ? dA.getTime() : 0;
+      const tB = dB ? dB.getTime() : 0;
+
+      if (tA === tB) return 0;
+      return tB - tA; // ใหม่กว่าก่อน
+    });
+
+    renderNewsList();
+  } catch (err) {
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:2355", err);
+  }
+}
+
+function renderNewsList() {
+  if (!newsListEl) return;
+
+  if (!newsItems.length) {
+    newsListEl.innerHTML = `
+      <div class="panel" style="background:#0f172a; color:#e5e7eb;">
+        <div class="panel-title" style="margin-bottom:6px;">ยังไม่มีข่าวหรือประกาศ</div>
+        <div class="panel-caption">เมื่อมีการเพิ่มประกาศจากชีตจะแสดงที่นี่อัตโนมัติ</div>
+      </div>
+    `;
+    return;
+  }
+
+  const html = newsItems
+    .map((item) => {
+      const dateText = item.date || "-";
+      const pinned = item.pinned
+        ? `<span class="news-pill news-pill-pinned">PIN</span>`
+        : "";
+      const category = item.category
+        ? `<span class="news-tag">${item.category}</span>`
+        : "";
+      const audience = item.audience
+        ? `<span class="news-tag">${item.audience}</span>`
+        : "";
+
+      return `
+        <article class="news-card" data-news-id="${item.id}">
+          <header class="news-card-header">
+            <div class="news-card-title-row">
+              ${pinned}
+              <div class="news-card-title">${item.title}</div>
+            </div>
+            <div class="news-card-meta">
+              <span>${dateText}</span>
+              ${item.year ? `<span>ปีการศึกษา ${item.year}</span>` : ""}
+              ${category}
+              ${audience}
+            </div>
+          </header>
+          ${
+            item.summary
+              ? `<p class="news-card-summary">${item.summary}</p>`
+              : ""
+          }
+          <button class="news-card-btn" type="button">ดูรายละเอียด</button>
+        </article>
+      `;
+    })
+    .join("");
+
+  newsListEl.innerHTML = html;
+
+  newsListEl.querySelectorAll("[data-news-id]").forEach((card) => {
+    const id = card.getAttribute("data-news-id");
+    card.addEventListener("click", () => openNewsModal(id));
+  });
+
+  renderHomeNewsPreview();
+}
+
+function openNewsModal(newsId) {
+  if (!newsModalEl || !newsModalTitleEl || !newsModalBodyEl) return;
+  const item = newsItems.find((n) => n.id === newsId);
+  if (!item) return;
+
+  newsModalTitleEl.textContent = item.title || "รายละเอียดข่าว/ประกาศ";
+
+  const previewUrl = toPreviewUrl(item.previewUrl);
+  const previewHtml = previewUrl
+    ? `
+      <div class="news-preview-frame">
+        <iframe src="${previewUrl}" title="news-preview" allow="fullscreen"></iframe>
+      </div>
+    `
+    : "";
+
+  const downloadHtml = item.previewUrl
+    ? `
+      <a class="download-btn" style="margin-top:10px;" target="_blank" href="${toDownloadUrl(item.previewUrl, "download")}">
+        ⬇ ดาวน์โหลดไฟล์
+      </a>
+    `
+    : "";
+
+  newsModalBodyEl.innerHTML = `
+    ${item.summary ? `<p class="news-card-summary" style="margin-top:12px;">${item.summary}</p>` : ""}
+    ${downloadHtml}
+    ${previewHtml}
+  `;
+
+  newsModalEl.classList.add("show");
+}
+
+function closeNewsModal() {
+  if (!newsModalEl) return;
+  newsModalEl.classList.remove("show");
+}
+
+function renderHomeNewsPreview() {
+  const container = document.getElementById("homeNewsPreview");
+  if (!container) return;
+
+  if (!newsItems.length) {
+    container.innerHTML = `
+      <article class="home-news-card">
+        <div class="home-news-tag news-info">ประกาศ</div>
+        <h3>ยังไม่มีข่าวใหม่</h3>
+        <p>เมื่อมีข่าวหรือประกาศใหม่จะแสดงที่นี่</p>
+      </article>
+    `;
+    return;
+  }
+
+  const topNews = newsItems.slice(0, 2);
+  const cardsHtml = topNews
+    .map((item) => {
+      const pinnedTag = item.pinned ? `<div class="home-news-tag">PIN</div>` : "";
+      const dateText = item.date ? `<div class="home-news-date">${item.date}</div>` : "";
+      const summary = item.summary ? `<p>${item.summary}</p>` : "";
+
+      return `
+        <article class="home-news-card" data-news-id="${item.id}">
+          ${pinnedTag}
+          ${dateText}
+          <h3>${item.title}</h3>
+          ${summary}
+          <button class="home-news-link" type="button" data-news-id="${item.id}">
+            ดูรายละเอียด →
+          </button>
+        </article>
+      `;
+    })
+    .join("");
+
+  const seeAllCard = `
+    <article class="home-news-card home-news-more" data-goto-page="news">
+      <div class="home-news-tag news-info">News</div>
+      <h3>ดูข่าวทั้งหมด</h3>
+      <p>เปิดหน้ารวมข่าวและประกาศทั้งหมด</p>
+      <button class="home-news-link" type="button" data-goto-page="news">
+        เปิดหน้า News →
+      </button>
+    </article>
+  `;
+
+  container.innerHTML = cardsHtml + seeAllCard;
+
+  container.querySelectorAll("[data-news-id]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      const id = el.getAttribute("data-news-id");
+      if (id) openNewsModal(id);
+    });
+  });
+}
+
+// parse วันที่แบบง่าย ๆ (dd/mm/yyyy หรือ yyyy-mm-dd)
+function parseNewsDate(text) {
+  if (!text) return null;
+  const s = text.toString().trim();
+  if (!s) return null;
+
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const day = parseInt(m[1], 10);
+    const mon = parseInt(m[2], 10) - 1;
+    const yr  = parseInt(m[3], 10);
+    const d   = new Date(yr, mon, day);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (m) {
+    const yr  = parseInt(m[1], 10);
+    const mon = parseInt(m[2], 10) - 1;
+    const day = parseInt(m[3], 10);
+    const d   = new Date(yr, mon, day);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const direct = new Date(s);
+  return isNaN(direct.getTime()) ? null : direct;
+}
 
 async function loadDownloadDocuments() {
   const listEl = document.getElementById("downloadList");
@@ -2374,7 +2639,7 @@ async function loadDownloadDocuments() {
       listEl.appendChild(section);
     }
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2377", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2642", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   }
 }
@@ -2475,10 +2740,20 @@ window.addEventListener("load", async () => {
   budgetChartSkeletonEl = document.getElementById("budgetChartSkeleton");
   statusPieSkeletonEl = document.getElementById("statusPieSkeleton");
   projectTableSkeletonEl = document.getElementById("projectTableSkeleton");
+  
+  newsListEl        = document.getElementById("newsList");
+  newsModalEl       = document.getElementById("newsModal");
+  newsModalTitleEl  = document.getElementById("newsModalTitle");
+  newsModalBodyEl   = document.getElementById("newsModalBody");
+  newsModalCloseEl  = document.getElementById("newsModalClose");
 
   // ===== 2) โหลดรายการดาวน์โหลดเอกสาร =====
   await loadDownloadDocuments();
 
+  // ===== 2.1) โหลดข่าวและประกาศจากฝ่ายเหรัญญิก =====
+  await loadNewsFromSheet();
+
+  
   // ===== 3) ตั้งปีใน footer =====
   if (footerYearEl) {
     footerYearEl.textContent = new Date().getFullYear();
@@ -2604,8 +2879,23 @@ window.addEventListener("load", async () => {
     });
   }
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeProjectModal();
+    if (e.key === "Escape") {
+      closeProjectModal();
+      closeNewsModal();
+    }
   });
+
+  // ===== X) Modal ข่าว/ประกาศ =====
+  if (newsModalCloseEl) {
+    newsModalCloseEl.addEventListener("click", closeNewsModal);
+  }
+  if (newsModalEl) {
+    newsModalEl.addEventListener("click", (e) => {
+      if (e.target === newsModalEl) {
+        closeNewsModal();
+      }
+    });
+  }
 
   // ===== 6) โหลดข้อมูลโครงการ + Dashboard + Calendar =====
   setLoading(true);
@@ -2622,7 +2912,11 @@ window.addEventListener("load", async () => {
     initCalendar();                             // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
   } catch (err) {
+<<<<<<< HEAD
     console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:2625", err);
+=======
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:2915", err);
+>>>>>>> dev
     projects = getFallbackProjects();
     initOrgTypeOptions();
     initOrgOptions();

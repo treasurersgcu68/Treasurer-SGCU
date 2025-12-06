@@ -2912,11 +2912,7 @@ window.addEventListener("load", async () => {
     initCalendar();                             // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
   } catch (err) {
-<<<<<<< HEAD
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:2625", err);
-=======
     console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:2915", err);
->>>>>>> dev
     projects = getFallbackProjects();
     initOrgTypeOptions();
     initOrgOptions();

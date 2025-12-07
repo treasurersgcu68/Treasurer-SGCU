@@ -90,6 +90,14 @@ let newsListSkeletonEl;
 let downloadSkeletonEl;
 let calendarSkeletonEl;
 let orgFilters = [];
+let kpiOnTimeEl;
+let kpiOnTimeCaptionEl;
+let kpiBudgetUsageEl;
+let kpiBudgetUsageCaptionEl;
+let kpiClosedProjectsEl;
+let kpiClosedProjectsCaptionEl;
+let kpiMonthlyCaptionEl;
+let homeKpiChart = null;
 
 // Motion globals
 let sectionObserver = null;
@@ -157,6 +165,19 @@ function parseBudget(text) {
   return isNaN(val) ? 0 : val;
 }
 
+function isProjectClosed(project) {
+  const close = (project.statusClose || "").trim();
+  const decree = (project.statusCloseDecree || "").trim();
+  return close === "ส่งกิจการนิสิตเรียบร้อย" || decree === "ปิดโครงการเรียบร้อย";
+}
+
+function getCloseDurationDays(project) {
+  const raw = project.closeDurationText ?? project.closeDuration ?? null;
+  if (raw === null || raw === undefined) return null;
+  const num = parseFloat(raw.toString().replace(/[^\d.-]/g, ""));
+  return isNaN(num) ? null : num;
+}
+
 // ===== LocalStorage Cache Helpers =====
 function canUseLocalStorage() {
   try {
@@ -177,7 +198,7 @@ function getCache(key, ttlMs) {
     if (!ts || Date.now() - ts > ttlMs) return null;
     return parsed.data || null;
   } catch (err) {
-    console.warn("อ่าน cache ไม่ได้ - app.js:151", err);
+    console.warn("อ่าน cache ไม่ได้ - app.js:201", err);
     return null;
   }
 }
@@ -187,7 +208,7 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (err) {
-    console.warn("เขียน cache ไม่ได้ - app.js:161", err);
+    console.warn("เขียน cache ไม่ได้ - app.js:211", err);
   }
 }
 
@@ -417,11 +438,11 @@ async function loadProjectsFromSheet() {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
-      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:391");
+      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:441");
       return;
     }
 
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:395");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:445");
     const res = await fetch(SHEET_CSV_URL);
     const csvText = await res.text();
 
@@ -440,7 +461,7 @@ async function loadProjectsFromSheet() {
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:414", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:464", err);
     projects = getFallbackProjects();
   }
 }
@@ -466,7 +487,7 @@ async function loadOrgFilters() {
       }))
       .filter((r) => r.group !== "" && r.name !== "");
   } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:409", err);
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:490", err);
     orgFilters = [];
   }
 }
@@ -484,7 +505,12 @@ function getFallbackProjects() {
       statusClose: "",
       statusCloseDecree: "",
       daysToDeadline: 20,
-      budget: 1649.65
+      budget: 1649.65,
+      approvedBudget100: 1649.65,
+      actualBudget: 0,
+      lastWorkDate: "2024-11-20",
+      closeDueDate: "2024-12-01",
+      closeDurationText: "8"
     },
     {
       code: "SGCU-05.001",
@@ -497,7 +523,12 @@ function getFallbackProjects() {
       statusClose: "",
       statusCloseDecree: "",
       daysToDeadline: 5,
-      budget: 114493
+      budget: 114493,
+      approvedBudget100: 114493,
+      actualBudget: 40320,
+      lastWorkDate: "2024-09-30",
+      closeDueDate: "2024-10-05",
+      closeDurationText: "16"
     },
     {
       code: "PHT-09.001",
@@ -510,7 +541,12 @@ function getFallbackProjects() {
       statusClose: "ส่งกิจการนิสิตเรียบร้อย",
       statusCloseDecree: "ปิดโครงการเรียบร้อย",
       daysToDeadline: -3,
-      budget: 95398.6
+      budget: 95398.6,
+      approvedBudget100: 95398.6,
+      actualBudget: 90210,
+      lastWorkDate: "2024-08-18",
+      closeDueDate: "2024-08-25",
+      closeDurationText: "10"
     }
   ];
 }
@@ -623,6 +659,165 @@ function updateSummaryCards(filtered) {
   if (approvedProjectsEl) approvedProjectsEl.textContent = approved;
   if (closedProjectsEl)  closedProjectsEl.textContent  = closed;
   if (totalBudgetEl)     totalBudgetEl.textContent     = totalBudget.toLocaleString("th-TH");
+}
+
+function renderHomeKpis() {
+  if (!projects || !projects.length) return;
+
+  const closedProjects = projects.filter(isProjectClosed);
+
+  const onTimeCount = closedProjects.filter((p) => {
+    const dur = getCloseDurationDays(p);
+    if (dur !== null) {
+      return dur <= 14; // ระยะเวลาปิดโครงการ (คอลัมน์ AZ) ไม่เกิน 14 วันถือว่าตรงเวลา
+    }
+
+    // fallback ถ้าไม่มีค่า duration ใช้ lastWorkDate เทียบ closeDueDate
+    const due = parseProjectDate(p.closeDueDate);
+    const last = parseProjectDate(p.lastWorkDate);
+    if (!due || !last) return false;
+    return last.getTime() <= due.getTime();
+  }).length;
+
+  const onTimePercent = closedProjects.length
+    ? (onTimeCount / closedProjects.length) * 100
+    : 0;
+
+  if (kpiOnTimeEl) {
+    kpiOnTimeEl.textContent = `${onTimePercent.toFixed(1)}%`;
+  }
+  if (kpiOnTimeCaptionEl) {
+    kpiOnTimeCaptionEl.textContent = closedProjects.length
+      ? `${onTimeCount} จาก ${closedProjects.length} โครงการปิดภายใน 14 วัน`
+      : "ยังไม่มีโครงการที่ปิดแล้ว";
+  }
+
+  const totalApproved = projects.reduce(
+    (sum, p) => sum + (p.approvedBudget100 ?? p.budget ?? 0),
+    0
+  );
+  const totalActual = projects.reduce(
+    (sum, p) => sum + (p.actualBudget ?? 0),
+    0
+  );
+
+  const usagePercent = totalApproved ? (totalActual / totalApproved) * 100 : 0;
+
+  if (kpiBudgetUsageEl) {
+    kpiBudgetUsageEl.textContent = `${usagePercent.toFixed(1)}%`;
+  }
+  if (kpiBudgetUsageCaptionEl) {
+    kpiBudgetUsageCaptionEl.textContent =
+      `${totalActual.toLocaleString("th-TH")} จาก ${totalApproved.toLocaleString("th-TH")} บาท`;
+  }
+
+  if (kpiClosedProjectsEl) {
+    kpiClosedProjectsEl.textContent = closedProjects.length.toLocaleString("th-TH");
+  }
+  if (kpiClosedProjectsCaptionEl) {
+    kpiClosedProjectsCaptionEl.textContent =
+      `จาก ${projects.length.toLocaleString("th-TH")} โครงการทั้งหมด`;
+  }
+
+  const monthly = new Map();
+  projects.forEach((p) => {
+    const d = parseProjectDate(p.lastWorkDate);
+    if (!d) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!monthly.has(key)) {
+      monthly.set(key, { date: d, approved: 0, actual: 0 });
+    }
+    const bucket = monthly.get(key);
+    bucket.approved += p.approvedBudget100 ?? p.budget ?? 0;
+    bucket.actual += p.actualBudget ?? 0;
+  });
+
+  const monthNamesShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+  const entries = Array.from(monthly.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+  const labels = entries.map(([, bucket]) => {
+    const m = bucket.date.getMonth();
+    const y = bucket.date.getFullYear().toString().slice(-2);
+    return `${monthNamesShort[m]} ${y}`;
+  });
+  const approvedData = entries.map(([, bucket]) => Math.round(bucket.approved));
+  const actualData = entries.map(([, bucket]) => Math.round(bucket.actual));
+
+  if (kpiMonthlyCaptionEl) {
+    kpiMonthlyCaptionEl.textContent = labels.length
+      ? "ใช้วันที่สิ้นสุดการปฏิบัติงานของโครงการเป็นฐานเวลา"
+      : "ยังไม่มีวันที่สิ้นสุดการปฏิบัติงานของโครงการ";
+  }
+
+  if (!labels.length) {
+    if (homeKpiChart) {
+      homeKpiChart.destroy();
+      homeKpiChart = null;
+    }
+    return;
+  }
+
+  const ctx = document.getElementById("homeKpiChart");
+  if (!ctx) return;
+
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: "งบอนุมัติ",
+        data: approvedData,
+        backgroundColor: "rgba(236, 72, 153, 0.18)",
+        borderColor: "#ec4899",
+        borderWidth: 1.5,
+        borderRadius: 8
+      },
+      {
+        label: "ใช้จริง",
+        data: actualData,
+        backgroundColor: "rgba(52, 211, 153, 0.18)",
+        borderColor: "#22c55e",
+        borderWidth: 1.5,
+        borderRadius: 8
+      }
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: (value) => value.toLocaleString("th-TH")
+        }
+      }
+    },
+    plugins: {
+      legend: { position: "bottom" },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const label = ctx.dataset.label || "";
+            const val = ctx.parsed.y || 0;
+            return `${label}: ${val.toLocaleString("th-TH")} บาท`;
+          }
+        }
+      }
+    }
+  };
+
+  if (homeKpiChart) {
+    homeKpiChart.data = chartData;
+    homeKpiChart.options = options;
+    homeKpiChart.update();
+  } else {
+    homeKpiChart = new Chart(ctx, {
+      type: "bar",
+      data: chartData,
+      options
+    });
+  }
 }
 
 function statusMainToBadgeClass(statusMain) {
@@ -1838,7 +2033,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:1883", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2036", err);
     const el = document.getElementById("org-structure-content");
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
@@ -2359,7 +2554,7 @@ async function loadNewsFromSheet() {
     setCache(CACHE_KEYS.NEWS, newsItems);
     renderNewsList();
   } catch (err) {
-    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:2449", err);
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:2557", err);
   } finally {
     toggleNewsSkeleton(false);
   }
@@ -2673,7 +2868,7 @@ async function loadDownloadDocuments() {
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2749", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2871", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   } finally {
     toggleDownloadSkeleton(false);
@@ -2720,7 +2915,7 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     },
     error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:1675", err);
+      console.error("Error loading SCORE_SHEET - app.js:2918", err);
     }
   });
 }
@@ -2914,6 +3109,13 @@ window.addEventListener("load", async () => {
   newsListSkeletonEl = document.getElementById("newsListSkeleton");
 
   downloadSkeletonEl = document.getElementById("downloadSkeleton");
+  kpiOnTimeEl = document.getElementById("kpiOnTime");
+  kpiOnTimeCaptionEl = document.getElementById("kpiOnTimeCaption");
+  kpiBudgetUsageEl = document.getElementById("kpiBudgetUsage");
+  kpiBudgetUsageCaptionEl = document.getElementById("kpiBudgetUsageCaption");
+  kpiClosedProjectsEl = document.getElementById("kpiClosedProjects");
+  kpiClosedProjectsCaptionEl = document.getElementById("kpiClosedProjectsCaption");
+  kpiMonthlyCaptionEl = document.getElementById("kpiMonthlyCaption");
 
   // ===== 2) โหลดรายการดาวน์โหลดเอกสาร =====
   await loadDownloadDocuments();
@@ -3006,10 +3208,14 @@ window.addEventListener("load", async () => {
     : [];
 
   if (hamburgerBtn && mobileMenu) {
+    hamburgerBtn.setAttribute("aria-expanded", "false");
+
     // เปิด/ปิดกล่องเมนู
     hamburgerBtn.addEventListener("click", () => {
       hamburgerBtn.classList.toggle("open");
       mobileMenu.classList.toggle("show");
+      const expanded = hamburgerBtn.classList.contains("open");
+      hamburgerBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
     });
 
     // เวลาเลือกเมนูจากกล่อง ให้สลับหน้า + ปิดกล่อง
@@ -3021,6 +3227,7 @@ window.addEventListener("load", async () => {
         switchPage(page);
         hamburgerBtn.classList.remove("open");
         mobileMenu.classList.remove("show");
+        hamburgerBtn.setAttribute("aria-expanded", "false");
       });
     });
   }
@@ -3081,8 +3288,9 @@ window.addEventListener("load", async () => {
     refreshProjectStatus();                     // อัปเดตการ์ดสรุป + ตาราง + กราฟสถานะปิดโครงการ
     initCalendar();                             // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
+    renderHomeKpis();                           // KPI หน้าแรก
   } catch (err) {
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:3032", err);
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:3293", err);
     projects = getFallbackProjects();
     await loadOrgFilters();
     initOrgTypeOptions();
@@ -3090,6 +3298,7 @@ window.addEventListener("load", async () => {
     initCharts();
     refreshProjectStatus();
     initCalendar();
+    renderHomeKpis();
   } finally {
     setLoading(false);
   }

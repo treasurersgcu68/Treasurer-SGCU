@@ -53,7 +53,7 @@
           <a href="#" data-page="meeting-room">Meeting Room</a>
         </nav>
 
-        <button id="hamburgerBtn" class="hamburger" aria-label="Toggle menu">
+        <button id="hamburgerBtn" class="hamburger" aria-label="เปิด/ปิดเมนูหลัก" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
       </div>
@@ -139,6 +139,44 @@
               </div>
             </div>
             <div id="homeNewsPreview" class="home-news-grid"></div>
+          </section>
+
+          <!-- 2.1 KPI -->
+          <section class="home-kpi section-appear section-delay-1">
+            <header class="home-section-header">
+              <h2>สรุป KPI ฝ่ายเหรัญญิก</h2>
+              <p>ภาพรวมการปิดโครงการและการใช้งบประมาณแบบอัปเดตจากข้อมูลโครงการล่าสุด</p>
+            </header>
+
+            <div class="home-kpi-grid">
+              <article class="kpi-card">
+                <div class="kpi-label">% ปิดโครงการตรงเวลา</div>
+                <div id="kpiOnTime" class="kpi-value">–</div>
+                <div class="kpi-caption" id="kpiOnTimeCaption">กำลังประมวลผล</div>
+              </article>
+
+              <article class="kpi-card">
+                <div class="kpi-label">การใช้จ่ายเทียบงบ</div>
+                <div id="kpiBudgetUsage" class="kpi-value">–</div>
+                <div class="kpi-caption" id="kpiBudgetUsageCaption">งบที่อนุมัติ vs ใช้จริง</div>
+              </article>
+
+              <article class="kpi-card">
+                <div class="kpi-label">ปิดโครงการแล้ว</div>
+                <div id="kpiClosedProjects" class="kpi-value">–</div>
+                <div class="kpi-caption" id="kpiClosedProjectsCaption">จำนวนโครงการที่ปิดแล้ว</div>
+              </article>
+            </div>
+
+            <div class="kpi-chart-card">
+              <div class="chart-header">
+                <h3 class="chart-title">เปรียบเทียบรายเดือน</h3>
+                <p class="chart-caption" id="kpiMonthlyCaption">กำลังเตรียมข้อมูล</p>
+              </div>
+              <div class="chart-inner">
+                <canvas id="homeKpiChart" height="140"></canvas>
+              </div>
+            </div>
           </section>
 
           <!-- 3. บล็อกบริการหลัก (ลิงก์ไปยังแต่ละหน้า) -->
@@ -980,7 +1018,7 @@
             <div id="projectModalTitle" class="modal-title"></div>
             <div id="projectModalHeaderRow" class="modal-header-row"></div>
           </div>
-          <button id="projectModalClose" class="modal-close" type="button">
+          <button id="projectModalClose" class="modal-close" type="button" aria-label="ปิดหน้าต่างรายละเอียดโครงการ">
             ✕
           </button>
         </div>
@@ -998,7 +1036,7 @@
           <div>
             <div id="calendarModalTitle" class="modal-title"></div>
           </div>
-          <button id="calendarModalClose" class="modal-close" type="button">
+          <button id="calendarModalClose" class="modal-close" type="button" aria-label="ปิดหน้าต่างปฏิทิน">
             ✕
           </button>
         </div>
@@ -1010,7 +1048,7 @@
     <div id="personModal" class="person-modal">
       <div class="person-modal-backdrop"></div>
       <div class="person-modal-dialog">
-        <button id="personModalClose" class="person-modal-close">×</button>
+        <button id="personModalClose" class="person-modal-close" aria-label="ปิดรายละเอียดบุคคล">×</button>
 
         <div class="person-modal-header">
           <div id="personModalAvatar" class="person-modal-avatar"></div>

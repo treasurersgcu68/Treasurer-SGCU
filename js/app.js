@@ -1,3 +1,17 @@
+/*
+ * Table of Contents
+ * 01. Config & Globals
+ * 02. Utilities & Cache
+ * 03. Project Data (parse/load)
+ * 04. Project UI (filters/summary/table/charts/modals)
+ * 05. News & Downloads
+ * 06. Scoreboard
+ * 07. Org Structure
+ * 08. Motion (section appear / count up)
+ * 09. Calendar
+ * 10. Page wiring (DOMContentLoaded)
+ */
+
 /* 1) CONFIG */
 const SHEET_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfcEartu_DeoGQXOJ7_rYPGizNtDhYJEaXivywadNZibj1rch9WKC1GF1yNbZ3zRgQ4Efjj8jrTOrf/pub?output=csv";
@@ -13,6 +27,20 @@ const SCORE_SHEET =
 
 const NEWS_SHEET_CSV =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLaBypwNGVEZHCjCxQDSLn8s7tTx1EKAIKuYjL7oIx7_fmssMnAcq9hpLyC4N5TvwIhrzwtZxxCAe0/pub?output=csv"; 
+
+// ข้อมูลประเภทองค์กร/ฝ่ายสำหรับ filter โดยตรง
+const ORG_FILTER_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3mW8GVPRgbiURGAx59WyB3TZT5GbKoXJxHxmgpU2LRd_jgow9JBwXVjtjJRvfIgYYL5MKLLuZEddd/pub?output=csv";
+
+const DEFAULT_BASE_GROUPS = [
+  "ชมรมฝ่ายศิลปะและวัฒนธรรม",
+  "ชมรมฝ่ายวิชาการ",
+  "ชมรมฝ่ายพัฒนาสังคมและบำเพ็ญประโยชน์",
+  "ชมรมฝ่ายกีฬา",
+  "องค์การบริหารสโมสรนิสิต",
+  "สภานิสิต",
+  "องค์การบริหารสโมสรนิสิต, สภานิสิต"
+];
 
 // Cache
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 นาที
@@ -61,6 +89,7 @@ let homeNewsSkeletonEl;
 let newsListSkeletonEl;
 let downloadSkeletonEl;
 let calendarSkeletonEl;
+let orgFilters = [];
 
 // Motion globals
 let sectionObserver = null;
@@ -416,6 +445,32 @@ async function loadProjectsFromSheet() {
   }
 }
 
+// โหลดตัวเลือก filter จากชีตภายนอก: คอลัมน์ A = ประเภทองค์กร, คอลัมน์ B = ฝ่าย/ชมรม
+async function loadOrgFilters() {
+  try {
+    const res = await fetch(ORG_FILTER_CSV_URL);
+    const csvText = await res.text();
+
+    const parsed = Papa.parse(csvText, {
+      header: false,
+      skipEmptyLines: true
+    });
+
+    const rows = parsed.data || [];
+    const dataRows = rows.slice(1); // เริ่มจากแถวที่ 2 ของชีต
+
+    orgFilters = dataRows
+      .map((row) => ({
+        group: (row[0] || "").toString().trim(),
+        name: (row[1] || "").toString().trim()
+      }))
+      .filter((r) => r.group !== "" && r.name !== "");
+  } catch (err) {
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:409", err);
+    orgFilters = [];
+  }
+}
+
 function getFallbackProjects() {
   return [
     {
@@ -467,7 +522,9 @@ function initOrgTypeOptions() {
   while (orgTypeSelect.options.length > 1) {
     orgTypeSelect.remove(1);
   }
-  const groups = Array.from(new Set(projects.map((p) => p.orgGroup).filter(Boolean)));
+  const groups = orgFilters.length
+    ? Array.from(new Set(orgFilters.map((o) => o.group).filter(Boolean)))
+    : Array.from(new Set(projects.map((p) => p.orgGroup).filter(Boolean)));
   groups.sort();
   groups.forEach((g) => {
     const opt = document.createElement("option");
@@ -484,10 +541,16 @@ function initOrgOptions() {
     orgSelect.remove(1);
   }
   const selectedGroup = orgTypeSelect.value;
-  const filteredForOrg = projects.filter((p) =>
-    selectedGroup === "all" ? true : p.orgGroup === selectedGroup
+  const sourceList = orgFilters.length
+    ? orgFilters.filter((o) => (selectedGroup === "all" ? true : o.group === selectedGroup))
+    : projects.filter((p) => (selectedGroup === "all" ? true : p.orgGroup === selectedGroup));
+  const orgNames = Array.from(
+    new Set(
+      sourceList
+        .map((item) => (orgFilters.length ? item.name : item.orgName))
+        .filter(Boolean)
+    )
   );
-  const orgNames = Array.from(new Set(filteredForOrg.map((p) => p.orgName).filter(Boolean)));
   orgNames.sort();
   orgNames.forEach((name) => {
     const opt = document.createElement("option");
@@ -1278,6 +1341,35 @@ function updateClosureXAxisMax(yellowData, orangeData, redData, greenData) {
   budgetByMonthChart.options.scales.x.max = Math.max(4, maxTotal);
 }
 
+function getChartOrgGroups() {
+  if (orgFilters.length) {
+    return Array.from(new Set(orgFilters.map((o) => o.group).filter(Boolean)));
+  }
+  return [...DEFAULT_BASE_GROUPS];
+}
+
+function getOrgsByGroup(group) {
+  if (!group) return [];
+  if (orgFilters.length) {
+    return Array.from(
+      new Set(
+        orgFilters
+          .filter((o) => o.group === group)
+          .map((o) => o.name)
+          .filter(Boolean)
+      )
+    );
+  }
+  return Array.from(
+    new Set(
+      projects
+        .filter((p) => p.orgGroup === group)
+        .map((p) => p.orgName)
+        .filter(Boolean)
+    )
+  );
+}
+
 function updateClosureStatusChart(filtered) {
   if (!budgetByMonthChart) return;
 
@@ -1290,15 +1382,7 @@ function updateClosureStatusChart(filtered) {
   const isGlobalView = orgGroupFilter === "all" && orgFilter === "all";
 
   if (isGlobalView) {
-    const baseGroups = [
-      "ชมรมฝ่ายศิลปะและวัฒนธรรม",
-      "ชมรมฝ่ายวิชาการ",
-      "ชมรมฝ่ายพัฒนาสังคมและบำเพ็ญประโยชน์",
-      "ชมรมฝ่ายกีฬา",
-      "องค์การบริหารสโมสรนิสิต",
-      "สภานิสิต",
-      "องค์การบริหารสโมสรนิสิต, สภานิสิต"
-    ];
+    const baseGroups = getChartOrgGroups();
 
     const statsByGroup = {};
     baseGroups.forEach((g) => {
@@ -1366,9 +1450,15 @@ function updateClosureStatusChart(filtered) {
     return;
   }
 
+  const allowedOrgs = orgFilter === "all" ? getOrgsByGroup(orgGroupFilter) : [orgFilter];
   const groups = {};
+  allowedOrgs.forEach((org) => {
+    groups[org] = { totalApproved: 0, orange: 0, red: 0, green: 0 };
+  });
+
   approvedProjects.forEach((p) => {
     const org = p.orgName || "(ไม่ระบุ)";
+    if (allowedOrgs.length && !allowedOrgs.includes(org)) return;
     if (!groups[org]) {
       groups[org] = { totalApproved: 0, orange: 0, red: 0, green: 0 };
     }
@@ -1464,15 +1554,7 @@ function updateApprovedBudgetPie(filtered) {
   let sumApproved = 0;
   let sumBase = 0;
 
-  const baseGroups = [
-    "ชมรมฝ่ายศิลปะและวัฒนธรรม",
-    "ชมรมฝ่ายวิชาการ",
-    "ชมรมฝ่ายพัฒนาสังคมและบำเพ็ญประโยชน์",
-    "ชมรมฝ่ายกีฬา",
-    "องค์การบริหารสโมสรนิสิต",
-    "สภานิสิต",
-    "องค์การบริหารสโมสรนิสิต, สภานิสิต"
-  ];
+  const baseGroups = getChartOrgGroups();
 
   if (orgGroupFilter === "all" && orgFilter === "all") {
     const budgetByGroup = {};
@@ -1531,17 +1613,22 @@ function updateApprovedBudgetPie(filtered) {
       0
     );
   } else if (orgGroupFilter !== "all" && orgFilter !== "all") {
+    const allowedOrgs = getOrgsByGroup(orgGroupFilter);
     const budgetByClub = {};
 
     baseApprovedProjects
       .filter((p) => p.orgGroup === orgGroupFilter)
       .forEach((p) => {
         const name = p.orgName || "(ไม่ระบุ)";
+        if (allowedOrgs.length && !allowedOrgs.includes(name)) return;
         budgetByClub[name] = (budgetByClub[name] || 0) + (p.budget || 0);
       });
 
-    labels = Object.keys(budgetByClub);
-    data = labels.map((l) => budgetByClub[l]);
+    const orderedLabels = allowedOrgs.length ? allowedOrgs : Object.keys(budgetByClub);
+    labels = orderedLabels.filter((l) =>
+      allowedOrgs.length ? budgetByClub[l] > 0 || l === orgFilter : true
+    );
+    data = labels.map((l) => budgetByClub[l] || 0);
     highlightLabel = orgFilter;
 
     const clubApproved = baseAllProjects
@@ -1572,8 +1659,13 @@ function updateApprovedBudgetPie(filtered) {
       }
     });
 
+    const selectedOrgGroupFromFilters = orgFilters.find((o) => o.name === orgFilter);
     const selectedOrgProject = projects.find((p) => p.orgName === orgFilter);
-    const selectedOrgGroup = selectedOrgProject ? selectedOrgProject.orgGroup : null;
+    const selectedOrgGroup = selectedOrgGroupFromFilters
+      ? selectedOrgGroupFromFilters.group
+      : selectedOrgProject
+      ? selectedOrgProject.orgGroup
+      : null;
     highlightLabel = selectedOrgGroup || null;
 
     const clubApproved = baseAllProjects
@@ -1626,140 +1718,6 @@ function updateApprovedBudgetPie(filtered) {
   }
 
   statusPieChart.update();
-}
-
-/* ================= SCOREBOARD SGCU-10.001 ================= */
-
-function initScoreboard() {
-  const podiumEl = document.getElementById("scorePodium");
-  const runnersEl = document.getElementById("scoreRunners");
-  if (!podiumEl || !runnersEl) return;
-
-  // ข้อความโหลดครั้งแรก (เผื่อยังไม่มี)
-  podiumEl.innerHTML = `<div class="score-loading">กำลังโหลดผลคะแนน...</div>`;
-  runnersEl.innerHTML = "";
-
-  Papa.parse(SCORE_SHEET, {
-    download: true,
-    complete: (results) => {
-      const rows = results.data || [];
-      if (rows.length < 2) return;
-
-      const items = [];
-
-      // ข้าม header แถวแรก
-      for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row) continue;
-
-        // AB, AC  → index 27, 28 (0-based)
-        const org = (row[27] || "").trim();
-        const scoreVal = parseFloat(row[28]);
-
-        if (!org || Number.isNaN(scoreVal)) continue;
-        items.push({ org, score: scoreVal });
-      }
-
-      if (!items.length) return;
-
-      // เรียงคะแนนมากไปน้อย
-      items.sort((a, b) => b.score - a.score);
-
-      const podium = items.slice(0, 3);   // อันดับ 1–3
-      const runners = items.slice(3, 8);  // อันดับ 4–8 เป็น runners-up
-
-      renderScorePodium(podiumEl, podium);
-      renderScoreRunners(runnersEl, runners);
-    },
-    error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:1675", err);
-    }
-  });
-}
-
-function renderScorePodium(container, podium) {
-  if (!podium.length) return;
-
-  const first = podium[0];
-  const second = podium[1];
-  const third = podium[2];
-
-  container.innerHTML = `
-    ${second ? `
-      <div class="score-podium-card second">
-        <div class="score-medal second">2</div>
-        <div class="score-rank-label">รองชนะเลิศอันดับ 1</div>
-        <div class="score-org-name">${second.org}</div>
-        <div class="score-org-score">${second.score.toLocaleString()} คะแนน</div>
-      </div>
-    ` : ""}
-
-    ${first ? `
-      <div class="score-podium-card first">
-        <div class="score-medal first">1</div>
-        <div class="score-rank-label">ชนะเลิศ</div>
-        <div class="score-org-name">${first.org}</div>
-        <div class="score-org-score">${first.score.toLocaleString()} คะแนน</div>
-      </div>
-    ` : ""}
-
-    ${third ? `
-      <div class="score-podium-card third">
-        <div class="score-medal third">3</div>
-        <div class="score-rank-label">รองชนะเลิศอันดับ 2</div>
-        <div class="score-org-name">${third.org}</div>
-        <div class="score-org-score">${third.score.toLocaleString()} คะแนน</div>
-      </div>
-    ` : ""}
-  `;
-
-  // ★ ให้ JS ไปเช็คความยาวชื่อแล้วลดฟอนต์ให้
-  adjustScoreOrgNameFont();
-}
-
-
-function renderScoreRunners(container, runners) {
-  if (!runners.length) {
-    container.style.display = "none";
-    return;
-  }
-
-  const chips = runners
-    .map((item, idx) => {
-      const rank = idx + 4; // 4,5,6,...
-      return `
-        <div class="score-runner-chip">
-          <span class="score-runner-rank">${rank}</span>
-          <span>${item.org}</span>
-          <span style="opacity:0.85;">· ${item.score.toLocaleString()} คะแนน</span>
-        </div>
-      `;
-    })
-    .join("");
-
-  container.innerHTML = `
-    <span class="score-runners-title">Runners-up</span>
-    ${chips}
-  `;
-}
-
-function adjustScoreOrgNameFont() {
-  const names = document.querySelectorAll(".score-org-name");
-
-  names.forEach((el) => {
-    const len = el.textContent.trim().length;
-
-    // ล้างคลาสเดิมก่อน
-    el.classList.remove("score-org-name--long", "score-org-name--very-long");
-
-    if (len > 40) {
-      // ยาวมาก → ฟอนต์เล็กสุด
-      el.classList.add("score-org-name--very-long");
-    } else if (len > 25) {
-      // เริ่มยาว → ฟอนต์ย่อกลาง ๆ
-      el.classList.add("score-org-name--long");
-    }
-  });
 }
 
 /* 10) Sorting + refresh */
@@ -2255,73 +2213,29 @@ function initOrgPersonPopup() {
   });
 }
 
-// แปลงลิงก์ให้พร้อมดาวน์โหลด / เปิดใช้งาน
+/* ===== ข่าวและประกาศจากฝ่ายเหรัญญิก ===== */
+
+// ลิงก์ดาวน์โหลด/preview ใช้ทั้งหน้า News และหน้าดาวน์โหลด
 function toDownloadUrl(url, label) {
   if (!url) return "#";
   const trimmed = url.trim();
 
-  // ถ้าเป็นลิงก์ Google Drive → แปลงเป็น uc?export=download
   if (trimmed.includes("drive.google.com")) {
-    // /file/d/FILE_ID/view
     const mFile = trimmed.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
     if (mFile && mFile[1]) {
       return `https://drive.google.com/uc?export=download&id=${mFile[1]}`;
     }
 
-    // ?id=FILE_ID
     const mId = trimmed.match(/[?&]id=([^&]+)/);
     if (mId && mId[1]) {
       return `https://drive.google.com/uc?export=download&id=${mId[1]}`;
     }
 
-    // ถ้าเป็น drive แบบอื่น ๆ เปิดดูเฉย ๆ
     return trimmed;
   }
 
-  // ลิงก์ปกติ (.pdf, .docx ฯลฯ) → ใช้ตามเดิม
   return trimmed;
 }
-
-// แปลงลิงก์เป็น URL สำหรับฝัง preview ใน iframe
-function toPreviewUrl(rawUrl) {
-  if (!rawUrl) return "";
-  const u = rawUrl.trim();
-
-  // Google Drive / Docs → ใช้ /preview
-  if (u.includes("drive.google.com")) {
-    // /file/d/FILE_ID/view
-    const mFile = u.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
-    if (mFile && mFile[1]) {
-      return `https://drive.google.com/file/d/${mFile[1]}/preview`;
-    }
-
-    // ?id=FILE_ID
-    const mId = u.match(/[?&]id=([^&]+)/);
-    if (mId && mId[1]) {
-      return `https://drive.google.com/file/d/${mId[1]}/preview`;
-    }
-
-    // fallback: ใช้ลิงก์เดิม
-    return u;
-  }
-
-  // PDF หรือไฟล์อื่น ๆ ให้ browser preview ตามปกติ
-  return u;
-}
-
-/* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
-function addDownloadButton(wrapper, label, url) {
-  if (!url || url === "-" || url === "--" || url === "") return;
-
-  const a = document.createElement("a");
-  a.className = "download-btn";
-  a.target = "_blank";
-  a.href = toDownloadUrl(url, label.toLowerCase());
-  a.textContent = `⬇ ${label}`;
-  wrapper.appendChild(a);
-}
-
-/* ===== ข่าวและประกาศจากฝ่ายเหรัญญิก ===== */
 
 // แปลงลิงก์เป็น URL สำหรับฝัง preview ใน iframe
 function toPreviewUrl(url) {
@@ -2344,7 +2258,6 @@ function toPreviewUrl(url) {
     return u.replace(/\/edit.*$/, "/preview");
   }
 
-  // ไฟล์อื่น ๆ ให้ใช้ลิงก์เดิม
   return u;
 }
 
@@ -2637,6 +2550,20 @@ function parseNewsDate(text) {
   return isNaN(direct.getTime()) ? null : direct;
 }
 
+/* ===== ดาวน์โหลดเอกสาร ===== */
+
+/* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
+function addDownloadButton(wrapper, label, url) {
+  if (!url || url === "-" || url === "--" || url === "") return;
+
+  const a = document.createElement("a");
+  a.className = "download-btn";
+  a.target = "_blank";
+  a.href = toDownloadUrl(url, label.toLowerCase());
+  a.textContent = `⬇ ${label}`;
+  wrapper.appendChild(a);
+}
+
 async function loadDownloadDocuments() {
   const listEl = document.getElementById("downloadList");
   if (!listEl) return;
@@ -2752,6 +2679,130 @@ async function loadDownloadDocuments() {
     toggleDownloadSkeleton(false);
     listEl.style.display = listEl.innerHTML.trim() ? "" : "none";
   }
+}
+
+/* ================= SCOREBOARD SGCU-10.001 ================= */
+
+function initScoreboard() {
+  const podiumEl = document.getElementById("scorePodium");
+  const runnersEl = document.getElementById("scoreRunners");
+  if (!podiumEl || !runnersEl) return;
+
+  podiumEl.innerHTML = `<div class="score-loading">กำลังโหลดผลคะแนน...</div>`;
+  runnersEl.innerHTML = "";
+
+  Papa.parse(SCORE_SHEET, {
+    download: true,
+    complete: (results) => {
+      const rows = results.data || [];
+      if (rows.length < 2) return;
+
+      const items = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row) continue;
+
+        const org = (row[27] || "").trim();
+        const scoreVal = parseFloat(row[28]);
+
+        if (!org || Number.isNaN(scoreVal)) continue;
+        items.push({ org, score: scoreVal });
+      }
+
+      if (!items.length) return;
+
+      items.sort((a, b) => b.score - a.score);
+
+      const podium = items.slice(0, 3);
+      const runners = items.slice(3, 8);
+
+      renderScorePodium(podiumEl, podium);
+      renderScoreRunners(runnersEl, runners);
+    },
+    error: (err) => {
+      console.error("Error loading SCORE_SHEET - app.js:1675", err);
+    }
+  });
+}
+
+function renderScorePodium(container, podium) {
+  if (!podium.length) return;
+
+  const first = podium[0];
+  const second = podium[1];
+  const third = podium[2];
+
+  container.innerHTML = `
+    ${second ? `
+      <div class="score-podium-card second">
+        <div class="score-medal second">2</div>
+        <div class="score-rank-label">รองชนะเลิศอันดับ 1</div>
+        <div class="score-org-name">${second.org}</div>
+        <div class="score-org-score">${second.score.toLocaleString()} คะแนน</div>
+      </div>
+    ` : ""}
+
+    ${first ? `
+      <div class="score-podium-card first">
+        <div class="score-medal first">1</div>
+        <div class="score-rank-label">ชนะเลิศ</div>
+        <div class="score-org-name">${first.org}</div>
+        <div class="score-org-score">${first.score.toLocaleString()} คะแนน</div>
+      </div>
+    ` : ""}
+
+    ${third ? `
+      <div class="score-podium-card third">
+        <div class="score-medal third">3</div>
+        <div class="score-rank-label">รองชนะเลิศอันดับ 2</div>
+        <div class="score-org-name">${third.org}</div>
+        <div class="score-org-score">${third.score.toLocaleString()} คะแนน</div>
+      </div>
+    ` : ""}
+  `;
+
+  adjustScoreOrgNameFont();
+}
+
+function renderScoreRunners(container, runners) {
+  if (!runners.length) {
+    container.style.display = "none";
+    return;
+  }
+
+  const chips = runners
+    .map((item, idx) => {
+      const rank = idx + 4;
+      return `
+        <div class="score-runner-chip">
+          <span class="score-runner-rank">${rank}</span>
+          <span>${item.org}</span>
+          <span style="opacity:0.85;">· ${item.score.toLocaleString()} คะแนน</span>
+        </div>
+      `;
+    })
+    .join("");
+
+  container.innerHTML = `
+    <span class="score-runners-title">Runners-up</span>
+    ${chips}
+  `;
+}
+
+function adjustScoreOrgNameFont() {
+  const names = document.querySelectorAll(".score-org-name");
+
+  names.forEach((el) => {
+    const len = el.textContent.trim().length;
+
+    el.classList.remove("score-org-name--long", "score-org-name--very-long");
+
+    if (len > 40) {
+      el.classList.add("score-org-name--very-long");
+    } else if (len > 25) {
+      el.classList.add("score-org-name--long");
+    }
+  });
 }
 
 
@@ -3022,6 +3073,8 @@ window.addEventListener("load", async () => {
       projects = getFallbackProjects();
     }
 
+    await loadOrgFilters();                     // โหลดตัวเลือก filter ประเภท/ฝ่าย
+
     initOrgTypeOptions();                       // เติม options ประเภทองค์กร
     initOrgOptions();                           // เติมรายชื่อองค์กร
     initCharts();                               // สร้างกราฟ Chart.js
@@ -3031,6 +3084,7 @@ window.addEventListener("load", async () => {
   } catch (err) {
     console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:3032", err);
     projects = getFallbackProjects();
+    await loadOrgFilters();
     initOrgTypeOptions();
     initOrgOptions();
     initCharts();

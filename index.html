@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <title>Treasurer SGCU</title>
     <meta name="description" content="ระบบติดตามสถานะโครงการ งบประมาณ และงานบริหารการเงินของ SGCU 68 พัฒนาโดยฝ่ายเหรัญญิก">
+
+    <meta name="description" content="ระบบติดตามโครงการและงบประมาณของเหรัญญิก SGCU68 (อบจ68) สำหรับดูสถานะโครงการ Project Status SGCU การใช้จ่าย และข้อมูลการบริหารงบอย่างโปร่งใส">
+    <meta name="keywords" content="เหรัญญิก SGCU68, เหรัญญิก อบจ68, SGCU, อบจ, งบประมาณ SGCU, Project Status SGCU, Treasurer SGCU, SGCU68">
+    <meta name="author" content="Treasurer SGCU68">
+    <meta property="og:title" content="เหรัญญิก SGCU68 | ระบบติดตามโครงการและงบประมาณ">
+    <meta property="og:description" content="ดูสถานะโครงการ (Project Status SGCU) และงบประมาณแบบอัปเดตโดยเหรัญญิก อบจ68">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://treasurersgcu68.github.io/Treasurer-SGCU/">
+
     <link
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
@@ -118,6 +127,18 @@
               <h2>ข่าวและประกาศจากฝ่ายเหรัญญิก</h2>
               <p>สรุปสิ่งที่ทีมเหรัญญิกอยากแจ้งให้ชมรมและนิสิตทราบ</p>
             </header>
+            <div id="homeNewsSkeleton" class="home-news-skeleton skeleton-grid" aria-hidden="true">
+              <div class="skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line tiny"></div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line tiny"></div>
+              </div>
+            </div>
             <div id="homeNewsPreview" class="home-news-grid"></div>
           </section>
 
@@ -357,6 +378,20 @@
                   <!-- JS จะเติมรายชื่อชมรม/ฝ่ายเพิ่ม -->
                 </select>
               </div>
+
+              <div class="filter-group filter-search">
+                <label for="projectSearchInput">ค้นหาข้อความ (โค้ด / ชื่อ / ฝ่าย)</label>
+                <div class="search-box">
+                  <input
+                    id="projectSearchInput"
+                    type="search"
+                    placeholder="พิมพ์คำค้น เช่น SGCU-01 หรือ ชมรมกีฬา"
+                  />
+                  <button id="projectSearchClear" class="search-clear" type="button" aria-label="เคลียร์คำค้น">
+                    ✕
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- การ์ดสรุป -->
@@ -487,16 +522,54 @@
                   <select id="calendarOrgSelect">
                     <option value="all">ทุกฝ่าย / ทุกชมรม</option>
                   </select>
-                </div>
-                <div class="filter-group">
-                  <label for="calendarStatusSelect">สถานะโครงการ</label>
-                  <select id="calendarStatusSelect">
-                    <option value="all">ทุกสถานะ</option>
+              </div>
+              <div class="filter-group">
+                <label for="calendarStatusSelect">สถานะโครงการ</label>
+                <select id="calendarStatusSelect">
+                  <option value="all">ทุกสถานะ</option>
                     <option value="pending">อยู่ระหว่างดำเนินการ</option>
                     <option value="approved">อนุมัติโครงการแล้ว</option>
                     <option value="closed">ปิดโครงการแล้ว</option>
                   </select>
                 </div>
+              </div>
+
+              <!-- Skeleton ปฏิทิน -->
+              <div id="calendarSkeleton" class="calendar-skeleton" aria-hidden="true">
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
               </div>
 
               <!-- กริดปฏิทิน -->
@@ -529,6 +602,23 @@
           <div class="separator-gradient"></div>
 
           <div class="section-appear section-delay-2">
+            <div id="downloadSkeleton" class="download-skeleton" aria-hidden="true">
+              <div class="download-skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line tiny"></div>
+              </div>
+              <div class="download-skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line tiny"></div>
+              </div>
+              <div class="download-skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line tiny"></div>
+              </div>
+            </div>
             <div id="downloadList" class="download-wrapper">
               <!-- เติมด้วย JS -->
             </div>
@@ -859,6 +949,24 @@
               </p>
             </div>
           </header>
+
+          <div id="newsListSkeleton" class="news-list-skeleton" aria-hidden="true">
+            <div class="skeleton-card">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line"></div>
+            </div>
+          </div>
 
           <div id="newsList" class="news-list"></div>
         </div>

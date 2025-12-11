@@ -11,8 +11,8 @@
     <meta property="og:description" content="ดูสถานะโครงการ (Project Status SGCU) และงบประมาณแบบอัปเดตโดยเหรัญญิก อบจ68">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://treasurersgcu68.github.io/Treasurer-SGCU/">
-    <link rel="icon" type="image/png" href="img/logo_treasurur jpg.png">
-    <link rel="apple-touch-icon" href="img/logo_treasurur jpg.png">
+    <link rel="icon" type="image/png" href="img/logo_treasurur jpg1.png">
+    <link rel="apple-touch-icon" href="img/logo_treasurur jpg1.png">
 
     <link
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
@@ -656,6 +656,280 @@
 
 
       <!-- ============ FINANCIAL DOCUMENTS ============ -->
+      <section class="page-view" data-page="project-status-staff">
+        <div class="page">
+          <!-- Header + Toggle -->
+          <div class="page-header-flex">
+            <div>
+              <h1 class="page-title">สถานะโครงการ (Staff)</h1>
+            </div>
+
+            <!-- Toggle ระหว่างมุมมองสรุป / ปฏิทิน -->
+            <div class="tabs">
+              <button
+                class="tab-btn view-toggle-btn is-active"
+                type="button"
+                data-view="status-staff"
+              >
+                สรุปสถานะโครงการ
+              </button>
+              <button
+                class="tab-btn view-toggle-btn"
+                type="button"
+                data-view="calendar-staff"
+              >
+                ปฏิทินโครงการ
+              </button>
+            </div>
+          </div>
+
+          <!-- ================= STATUS VIEW ================= -->
+          <div id="statusViewStaff">
+            <!-- Filter หลัก -->
+            <div class="filter-bar">
+              <div class="filter-group filter-year">
+                <label for="yearSelectStaff">ปีการศึกษา</label>
+                <select id="yearSelectStaff">
+                  <option value="all">ทุกปีการศึกษา</option>
+                  <option value="2568" selected>2568</option>
+                </select>
+              </div>
+
+              <div class="filter-group filter-orgtype">
+                <label for="orgTypeSelectStaff">ประเภทองค์กร</label>
+                <select id="orgTypeSelectStaff">
+                  <option value="all">ทุกประเภทองค์กร</option>
+                  <!-- JS จะเติมฝ่าย/กลุ่มองค์กรเพิ่ม -->
+                </select>
+              </div>
+
+              <div class="filter-group filter-org">
+                <label for="orgSelectStaff">ฝ่าย / ชมรม</label>
+                <select id="orgSelectStaff">
+                  <option value="all">ทุกฝ่าย / ทุกชมรม</option>
+                  <!-- JS จะเติมรายชื่อชมรม/ฝ่ายเพิ่ม -->
+                </select>
+              </div>
+
+              <div class="filter-group filter-search">
+                <label for="projectSearchInputStaff">ค้นหาข้อความ (โค้ด / ชื่อ / ฝ่าย)</label>
+                <div class="search-box">
+                  <input
+                    id="projectSearchInputStaff"
+                    type="search"
+                    placeholder="พิมพ์คำค้น เช่น SGCU-01 หรือ ชมรมกีฬา"
+                  />
+                  <button id="projectSearchClearStaff" class="search-clear" type="button" aria-label="เคลียร์คำค้น">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- การ์ดสรุป -->
+            <div class="cards section-appear section-delay-1">
+              <article class="card card-hover">
+                <div class="card-title">จำนวนโครงการทั้งหมด</div>
+                <div id="totalProjectsStaff" class="card-value">0</div>
+              </article>
+
+              <article class="card card-hover">
+                <div class="card-title">โครงการอยู่ระหว่างดำเนินการ</div>
+                <div id="pendingProjectsStaff" class="card-value">0</div>
+              </article>
+
+              <article class="card card-hover">
+                <div class="card-title">โครงการที่อนุมัติแล้ว</div>
+                <div id="approvedProjectsStaff" class="card-value">0</div>
+              </article>
+
+              <article class="card card-hover">
+                <div class="card-title">โครงการที่ปิดโครงการแล้ว</div>
+                <div id="closedProjectsStaff" class="card-value">0</div>
+              </article>
+
+              <article class="card card-hover">
+                <div class="card-title">วงเงินโครงการรวม (บาท)</div>
+                <div id="totalBudgetStaff" class="card-value">0</div>
+                <div class="card-caption">บาท</div>
+              </article>
+            </div>
+
+            <!-- กราฟสถานะปิดโครงการ + Pie งบประมาณ -->
+            <div class="chart-grid section-appear section-delay-2" style="margin-top:16px;">
+              <!-- Stacked bar -->
+              <article class="chart-card">
+                <header class="chart-header">
+                  <h3 class="chart-title">ภาพรวมสถานะปิดโครงการ</h3>
+                </header>
+                <div class="chart-inner">
+                  <div id="budgetChartSkeletonStaff" class="chart-skeleton"></div>
+                  <canvas id="budgetByMonthChartStaff"></canvas>
+                </div>
+              </article>
+
+              <!-- Pie chart -->
+              <article class="chart-card">
+                <header class="chart-header">
+                  <h3 class="chart-title">สัดส่วนงบประมาณโครงการที่ได้รับอนุมัติ</h3>
+                </header>
+                <div class="chart-inner">
+                  <div id="statusPieSkeletonStaff" class="chart-skeleton"></div>
+                  <canvas id="statusPieChartStaff"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <!-- ตารางรายการโครงการ -->
+            <section class="panel section-appear section-delay-3" style="margin-top:18px;">
+              <header class="panel-header">
+                <div>
+                  <h3 class="panel-title">รายการโครงการ</h3>
+                </div>
+              </header>
+
+              <div class="table-wrapper" id="projectTableAreaStaff">
+                <div class="project-table-wrapper">
+                  <table id="projectTableStaff">
+                    <caption id="tableCaptionStaff">แสดง 0 โครงการ</caption>
+                    <thead>
+                      <tr>
+                        <th style="text-align:center;">รหัสโครงการ</th>
+                        <th style="text-align:center;">ชื่อโครงการ</th>
+                        <th style="text-align:center;">ฝ่าย / ชมรม</th>
+                        <th class="sortable" data-sort="year" style="text-align:center;">
+                          ปีการศึกษา
+                        </th>
+                        <th class="sortable" data-sort="status" style="text-align:center;">
+                          สถานะ
+                        </th>
+                        <th class="sortable" data-sort="budget" style="text-align:right;">
+                          งบประมาณ (บาท)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="projectTableBodyStaff">
+                      <!-- JS ใส่ข้อมูลโครงการ -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <div id="projectTableSkeletonStaff" class="table-skeleton"></div>
+              </div>
+
+              <div id="projectTableLockStaff" class="panel project-lock-panel">
+                <h3 class="panel-title">ต้องเข้าสู่ระบบก่อน</h3>
+                <p class="panel-caption">
+                  กรุณาล็อกอินเพื่อดูรายละเอียดโครงการ
+                </p>
+                <div style="margin-top:10px;">
+                  <button class="btn-primary" type="button" data-goto-page="login">ไปที่หน้า Login</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- ================= CALENDAR VIEW ================= -->
+          <div id="calendarViewStaff" style="display:none; margin-top:12px;">
+            <section class="panel section-appear section-delay-1">
+              <header class="panel-header">
+                <div>
+                  <h3 id="calendarPanelTitleStaff" class="panel-title">
+                    ปฏิทินกิจกรรม —
+                  </h3>
+                  <p class="panel-caption">
+                    แสดงวันจัดกิจกรรมตามวันสิ้นสุดการปฏิบัติงานของแต่ละโครงการ
+                  </p>
+                </div>
+                <div class="calendar-controls">
+                  <button id="prevMonthBtnStaff" type="button" class="btn-ghost">
+                    ‹ เดือนก่อนหน้า
+                  </button>
+                  <button id="nextMonthBtnStaff" type="button" class="btn-ghost">
+                    เดือนถัดไป ›
+                  </button>
+                </div>
+              </header>
+
+              <!-- Filters -->
+              <div class="calendar-filter-bar">
+                <div class="filter-group">
+                  <label for="calendarYearSelectStaff">ปีการศึกษา</label>
+                  <select id="calendarYearSelectStaff">
+                    <option value="all">ทุกปีการศึกษา</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label for="calendarOrgSelectStaff">ฝ่าย / ชมรม</label>
+                  <select id="calendarOrgSelectStaff">
+                    <option value="all">ทุกฝ่าย / ทุกชมรม</option>
+                  </select>
+              </div>
+              <div class="filter-group">
+                <label for="calendarStatusSelectStaff">สถานะโครงการ</label>
+                <select id="calendarStatusSelectStaff">
+                  <option value="all">ทุกสถานะ</option>
+                    <option value="pending">อยู่ระหว่างดำเนินการ</option>
+                    <option value="approved">อนุมัติโครงการแล้ว</option>
+                    <option value="closed">ปิดโครงการแล้ว</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Skeleton ปฏิทิน -->
+              <div id="calendarSkeletonStaff" class="calendar-skeleton" aria-hidden="true">
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+                <div class="calendar-skeleton-cell"></div>
+              </div>
+
+              <!-- กริดปฏิทิน -->
+              <div id="calendarContainerStaff" class="calendar-grid"></div>
+
+              <div class="home-timeline-footer" style="margin-top:12px;">
+                <span class="pill pill-soft-gray">อยู่ระหว่างดำเนินการ</span>
+                <span class="pill pill-soft-pink">อนุมัติโครงการแล้ว</span>
+                <span class="pill pill-soft-green">ปิดโครงการแล้ว</span>
+              </div>
+            </section>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ============ FINANCIAL DOCUMENTS ============ -->
       <section class="page-view" data-page="financial-docs">
         <div class="page">
           <div class="page-header-flex section-appear">
@@ -1001,30 +1275,6 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============ STAFF: PROJECT STATUS ============ -->
-      <section class="page-view" data-page="project-status-staff">
-        <div class="page">
-          <div class="page-header-flex section-appear">
-            <div>
-              <h2 class="page-title">Project Status for Staff</h2>
-              <p class="page-subtitle">พื้นที่สำหรับทีมงานติดตามสถานะโครงการ (เฉพาะ Staff)</p>
-            </div>
-          </div>
-
-          <div class="panel panel-hover section-appear section-delay-1">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Coming Soon</div>
-                <div class="panel-caption">หน้าสำหรับรายงานเชิงลึกและไฟล์ภายในทีม</div>
-              </div>
-            </div>
-            <div class="panel-body">
-              <p>ฟีเจอร์สำหรับ Staff จะถูกเพิ่มในหน้านี้ โปรดติดตามการอัปเดตจากทีมงาน</p>
             </div>
           </div>
         </div>

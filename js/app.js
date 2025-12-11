@@ -79,6 +79,8 @@ let projectModalHeaderRowEl;
 let projectModalBodyEl;
 let projectModalCloseEl;
 let currentSort = { key: null, direction: "asc" };
+let projectStatusContexts = {};
+let activeProjectStatusContext = "public";
 let assistantContactsByName = {};
 let newsListEl;
 let newsModalEl;
@@ -117,6 +119,13 @@ let calendarViewEl;
 let projectTableAreaEl;
 let projectTableLockEl;
 let viewToggleBtns = [];
+let calendarYearSelectEl;
+let calendarOrgSelectEl;
+let calendarStatusSelectEl;
+let calendarPanelTitleEl;
+let calendarContainerEl;
+let prevMonthBtnEl;
+let nextMonthBtnEl;
 let isUserAuthenticated = false;
 let authWasAuthenticated = false;
 
@@ -167,6 +176,102 @@ const centerTextPlugin = {
 };
 
 Chart.register(centerTextPlugin);
+
+// ===== Helpers: Project Status contexts (public / staff) =====
+function buildProjectStatusContext(suffix = "", key = "public") {
+  const get = (idBase) => document.getElementById(idBase + suffix);
+  const sectionPage = key === "staff" ? "project-status-staff" : "project-status";
+  const sectionEl = document.querySelector(`section[data-page="${sectionPage}"]`);
+
+  return {
+    key,
+    suffix,
+    yearSelect: get("yearSelect"),
+    orgTypeSelect: get("orgTypeSelect"),
+    orgSelect: get("orgSelect"),
+    projectSearchInput: get("projectSearchInput"),
+    projectSearchClearBtn: get("projectSearchClear"),
+    totalProjectsEl: get("totalProjects"),
+    pendingProjectsEl: get("pendingProjects"),
+    approvedProjectsEl: get("approvedProjects"),
+    closedProjectsEl: get("closedProjects"),
+    totalBudgetEl: get("totalBudget"),
+    tableBodyEl: get("projectTableBody"),
+    tableCaptionEl: get("tableCaption"),
+    budgetChartSkeletonEl: get("budgetChartSkeleton"),
+    statusPieSkeletonEl: get("statusPieSkeleton"),
+    projectTableSkeletonEl: get("projectTableSkeleton"),
+    calendarSkeletonEl: get("calendarSkeleton"),
+    projectTableAreaEl: get("projectTableArea"),
+    projectTableLockEl: get("projectTableLock"),
+    statusViewEl: get("statusView"),
+    calendarViewEl: get("calendarView"),
+    budgetChartCanvas: get("budgetByMonthChart"),
+    statusPieCanvas: get("statusPieChart"),
+    calendarYearSelectEl: get("calendarYearSelect"),
+    calendarOrgSelectEl: get("calendarOrgSelect"),
+    calendarStatusSelectEl: get("calendarStatusSelect"),
+    calendarPanelTitleEl: get("calendarPanelTitle"),
+    calendarContainerEl: get("calendarContainer"),
+    prevMonthBtnEl: get("prevMonthBtn"),
+    nextMonthBtnEl: get("nextMonthBtn"),
+    viewToggleBtns: sectionEl
+      ? Array.from(sectionEl.querySelectorAll(".view-toggle-btn"))
+      : [],
+    budgetByMonthChart: null,
+    statusPieChart: null,
+    currentSort: { key: null, direction: "asc" },
+    currentCalendarDate: new Date()
+  };
+}
+
+function setActiveProjectStatusContext(key) {
+  const ctx = projectStatusContexts[key];
+  if (!ctx) return;
+  activeProjectStatusContext = key;
+  // sync global refs to current context
+  yearSelect = ctx.yearSelect;
+  orgTypeSelect = ctx.orgTypeSelect;
+  orgSelect = ctx.orgSelect;
+  projectSearchInput = ctx.projectSearchInput;
+  projectSearchClearBtn = ctx.projectSearchClearBtn;
+  totalProjectsEl = ctx.totalProjectsEl;
+  pendingProjectsEl = ctx.pendingProjectsEl;
+  approvedProjectsEl = ctx.approvedProjectsEl;
+  closedProjectsEl = ctx.closedProjectsEl;
+  totalBudgetEl = ctx.totalBudgetEl;
+  tableBodyEl = ctx.tableBodyEl;
+  tableCaptionEl = ctx.tableCaptionEl;
+  budgetChartSkeletonEl = ctx.budgetChartSkeletonEl;
+  statusPieSkeletonEl = ctx.statusPieSkeletonEl;
+  projectTableSkeletonEl = ctx.projectTableSkeletonEl;
+  calendarSkeletonEl = ctx.calendarSkeletonEl;
+  projectTableAreaEl = ctx.projectTableAreaEl;
+  projectTableLockEl = ctx.projectTableLockEl;
+  statusViewEl = ctx.statusViewEl;
+  calendarViewEl = ctx.calendarViewEl;
+  budgetByMonthChart = ctx.budgetByMonthChart;
+  statusPieChart = ctx.statusPieChart;
+  currentSort = ctx.currentSort;
+  currentCalendarDate = ctx.currentCalendarDate;
+  calendarYearSelectEl = ctx.calendarYearSelectEl;
+  calendarOrgSelectEl = ctx.calendarOrgSelectEl;
+  calendarStatusSelectEl = ctx.calendarStatusSelectEl;
+  calendarPanelTitleEl = ctx.calendarPanelTitleEl;
+  calendarContainerEl = ctx.calendarContainerEl;
+  prevMonthBtnEl = ctx.prevMonthBtnEl;
+  nextMonthBtnEl = ctx.nextMonthBtnEl;
+  // sync chart refs if already created
+  budgetByMonthChart = ctx.budgetByMonthChart || null;
+  statusPieChart = ctx.statusPieChart || null;
+}
+
+function syncChartsToContext(key) {
+  const ctx = projectStatusContexts[key];
+  if (!ctx) return;
+  ctx.budgetByMonthChart = budgetByMonthChart;
+  ctx.statusPieChart = statusPieChart;
+}
 
 /* 4) Helper */
 function simplifyStatus(statusRaw) {
@@ -918,7 +1023,8 @@ function getDisplayStatusForList(project) {
 }
 
 function updateTable(filteredProjects) {
-  const tbody = document.getElementById("projectTableBody");
+  const tbody = tableBodyEl;
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   filteredProjects.forEach((p) => {
@@ -1340,10 +1446,23 @@ function closeProjectModal() {
 }
 
 /* 8) Charts */
-function initCharts() {
-  const budgetCanvas = document.getElementById("budgetByMonthChart");
-  const statusCanvas = document.getElementById("statusPieChart");
+function initCharts(ctxKey = activeProjectStatusContext) {
+  setActiveProjectStatusContext(ctxKey);
+  const ctx = projectStatusContexts[ctxKey];
+  if (!ctx) return;
+
+  const budgetCanvas = ctx.budgetChartCanvas;
+  const statusCanvas = ctx.statusPieCanvas;
   if (!budgetCanvas || !statusCanvas) return;
+
+  if (ctx.budgetByMonthChart) {
+    ctx.budgetByMonthChart.destroy();
+    ctx.budgetByMonthChart = null;
+  }
+  if (ctx.statusPieChart) {
+    ctx.statusPieChart.destroy();
+    ctx.statusPieChart = null;
+  }
 
   const budgetCtx = budgetCanvas.getContext("2d");
   const statusCtx = statusCanvas.getContext("2d");
@@ -1532,10 +1651,12 @@ function initCharts() {
       cutout: "55%"
     }
   });
+
+  syncChartsToContext(ctxKey);
 }
 
 function resizeClosureChart(numLabels) {
-  const canvas = document.getElementById("budgetByMonthChart");
+  const canvas = projectStatusContexts[activeProjectStatusContext]?.budgetChartCanvas;
   if (!canvas) return;
   const container = canvas.parentElement;
   if (!container) return;
@@ -1977,8 +2098,10 @@ function updateHomeHeroSummary(total, approved, pending) {
   if (!totalEl || !approvedEl || !pendingEl) return;
 }
 
-function refreshProjectStatus() {
+function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   if (!Array.isArray(projects)) return;
+
+  setActiveProjectStatusContext(ctxKey);
 
   let filtered = filterProjects();
 
@@ -2005,47 +2128,39 @@ function refreshProjectStatus() {
   }).length;
 
   updateHomeHeroSummary(total, approved, pending);
+
+  syncChartsToContext(ctxKey);
 }
 
 
-function setLoading(isLoading) {
-  const budgetCanvas = document.getElementById("budgetByMonthChart");
-  const statusCanvas = document.getElementById("statusPieChart");
+function setLoading(isLoading, ctxKey = activeProjectStatusContext) {
+  const ctx = projectStatusContexts[ctxKey] || {};
+  const budgetCanvas = ctx.budgetChartCanvas;
+  const statusCanvas = ctx.statusPieCanvas;
 
-  if (budgetChartSkeletonEl) {
-    budgetChartSkeletonEl.style.display = isLoading ? "block" : "none";
-  }
-  if (statusPieSkeletonEl) {
-    statusPieSkeletonEl.style.display = isLoading ? "block" : "none";
-  }
-  if (projectTableSkeletonEl) {
-    projectTableSkeletonEl.style.display = isLoading ? "block" : "none";
-  }
-  if (calendarSkeletonEl) {
-    calendarSkeletonEl.style.display = isLoading ? "grid" : "none";
-  }
+  const budgetSkel = ctx.budgetChartSkeletonEl;
+  const statusSkel = ctx.statusPieSkeletonEl;
+  const tableSkel = ctx.projectTableSkeletonEl;
+  const calendarSkel = ctx.calendarSkeletonEl;
 
-  if (budgetCanvas) {
-    budgetCanvas.style.visibility = isLoading ? "hidden" : "visible";
-  }
-  if (statusCanvas) {
-    statusCanvas.style.visibility = isLoading ? "hidden" : "visible";
-  }
-  if (tableBodyEl) {
-    tableBodyEl.style.visibility = isLoading ? "hidden" : "visible";
-  }
-  const calendarContainer = document.getElementById("calendarContainer");
-  if (calendarContainer) {
-    calendarContainer.style.visibility = isLoading ? "hidden" : "visible";
-  }
+  if (budgetSkel) budgetSkel.style.display = isLoading ? "block" : "none";
+  if (statusSkel) statusSkel.style.display = isLoading ? "block" : "none";
+  if (tableSkel) tableSkel.style.display = isLoading ? "block" : "none";
+  if (calendarSkel) calendarSkel.style.display = isLoading ? "grid" : "none";
+
+  if (budgetCanvas) budgetCanvas.style.visibility = isLoading ? "hidden" : "visible";
+  if (statusCanvas) statusCanvas.style.visibility = isLoading ? "hidden" : "visible";
+  if (ctx.tableBodyEl) ctx.tableBodyEl.style.visibility = isLoading ? "hidden" : "visible";
+  if (ctx.calendarContainerEl) ctx.calendarContainerEl.style.visibility = isLoading ? "hidden" : "visible";
 }
 
-function toggleProjectStatusAccess(isAuthenticated) {
-  if (projectTableAreaEl) {
-    projectTableAreaEl.style.display = isAuthenticated ? "block" : "none";
+function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatusContext) {
+  const ctx = projectStatusContexts[ctxKey] || {};
+  if (ctx.projectTableAreaEl) {
+    ctx.projectTableAreaEl.style.display = isAuthenticated ? "block" : "none";
   }
-  if (projectTableLockEl) {
-    projectTableLockEl.style.display = isAuthenticated ? "none" : "block";
+  if (ctx.projectTableLockEl) {
+    ctx.projectTableLockEl.style.display = isAuthenticated ? "none" : "block";
   }
 }
 
@@ -2217,7 +2332,8 @@ function initAuthUI() {
     updateNavLabelsForStaff(hasStaff);
     updateNavVisibility(isAuth);
     updateNavForStaff(hasStaff ? staffAuthUser : null);
-    toggleProjectStatusAccess(isAuth);
+    toggleProjectStatusAccess(isAuth, "public");
+    toggleProjectStatusAccess(isAuth, "staff");
 
     // เปลี่ยนหน้าไปยังเมนูแรกตามสถานะปัจจุบัน (login/logout)
     const preferredPage = getPreferredPageForState(isAuth, hasStaff ? staffAuthUser : null);
@@ -3427,10 +3543,6 @@ window.addEventListener("load", async () => {
   staffLoginPasswordEl = document.getElementById("staffLoginPassword");
   staffLoginErrorEl = document.getElementById("staffLoginError");
   navLinksAll = Array.from(document.querySelectorAll("header nav a[data-visible]"));
-  statusViewEl = document.getElementById("statusView");
-  calendarViewEl = document.getElementById("calendarView");
-  projectTableAreaEl = document.getElementById("projectTableArea");
-  projectTableLockEl = document.getElementById("projectTableLock");
   viewToggleBtns = Array.from(document.querySelectorAll(".view-toggle-btn"));
   
   newsListEl        = document.getElementById("newsList");
@@ -3450,9 +3562,16 @@ window.addEventListener("load", async () => {
   kpiClosedProjectsCaptionEl = document.getElementById("kpiClosedProjectsCaption");
   kpiMonthlyCaptionEl = document.getElementById("kpiMonthlyCaption");
 
+  projectStatusContexts = {
+    public: buildProjectStatusContext("", "public"),
+    staff: buildProjectStatusContext("Staff", "staff")
+  };
+  setActiveProjectStatusContext("public");
+
   initAuthUI();
   updateNavVisibility(false);
-  toggleProjectStatusAccess(false);
+  toggleProjectStatusAccess(false, "public");
+  toggleProjectStatusAccess(false, "staff");
 
   // ===== 2) โหลดรายการดาวน์โหลดเอกสาร =====
   await loadDownloadDocuments();
@@ -3469,10 +3588,11 @@ window.addEventListener("load", async () => {
   // ===== 4) ระบบสลับหน้าแบบ SPA =====
   const navLinks = document.querySelectorAll("header nav a[data-page]");
   const pageViews = document.querySelectorAll(".page-view");
-
   function switchPage(page, { fromHash = false } = {}) {
+    const targetPage = page;
+
     pageViews.forEach((section) => {
-      const isTarget = section.dataset.page === page;
+      const isTarget = section.dataset.page === targetPage;
       if (isTarget) {
         section.classList.add("active");
         // reset animation state ให้เล่นใหม่ทุกครั้ง
@@ -3490,6 +3610,13 @@ window.addEventListener("load", async () => {
     navLinks.forEach((link) => {
       link.classList.toggle("active", link.dataset.page === page);
     });
+
+    if (page === "project-status") {
+      setActiveProjectStatusContext("public");
+    } else if (page === "project-status-staff") {
+      setActiveProjectStatusContext("staff");
+      refreshProjectStatus("staff");
+    }
 
     // sync URL hash กับ page ปัจจุบัน (ไม่ทำตอนมาจาก hashchange)
     if (!fromHash) {
@@ -3610,7 +3737,8 @@ window.addEventListener("load", async () => {
   }
 
   // ===== 6) โหลดข้อมูลโครงการ + Dashboard + Calendar =====
-  setLoading(true);
+  setLoading(true, "public");
+  setLoading(true, "staff");
   try {
     await loadProjectsFromSheet();              // ดึงข้อมูลจาก SHEET_CSV_URL (ปี 2568 ตามที่ fix ไว้)
     if (!projects || projects.length === 0) {   // กันกรณีโหลดไม่ได้/ข้อมูลว่าง
@@ -3619,108 +3747,129 @@ window.addEventListener("load", async () => {
 
     await loadOrgFilters();                     // โหลดตัวเลือก filter ประเภท/ฝ่าย
 
-    initOrgTypeOptions();                       // เติม options ประเภทองค์กร
-    initOrgOptions();                           // เติมรายชื่อองค์กร
-    initCharts();                               // สร้างกราฟ Chart.js
-    refreshProjectStatus();                     // อัปเดตการ์ดสรุป + ตาราง + กราฟสถานะปิดโครงการ
-    initCalendar();                             // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
+    ["public", "staff"].forEach((key) => {
+      setActiveProjectStatusContext(key);
+      initOrgTypeOptions();                       // เติม options ประเภทองค์กร
+      initOrgOptions();                           // เติมรายชื่อองค์กร
+      initCharts(key);                            // สร้างกราฟ Chart.js
+      refreshProjectStatus(key);                  // อัปเดตการ์ดสรุป + ตาราง + กราฟสถานะปิดโครงการ
+      initCalendar(key);                          // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
+    });
+
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
     renderHomeKpis();                           // KPI หน้าแรก
   } catch (err) {
     console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:3630", err);
     projects = getFallbackProjects();
     await loadOrgFilters();
-    initOrgTypeOptions();
-    initOrgOptions();
-    initCharts();
-    refreshProjectStatus();
-    initCalendar();
+    ["public", "staff"].forEach((key) => {
+      setActiveProjectStatusContext(key);
+      initOrgTypeOptions();
+      initOrgOptions();
+      initCharts(key);
+      refreshProjectStatus(key);
+      initCalendar(key);
+    });
     renderHomeKpis();
   } finally {
-    setLoading(false);
+    setLoading(false, "public");
+    setLoading(false, "staff");
   }
 
-  // ===== 7) Event เปลี่ยน filter ของ Dashboard =====
-  if (yearSelect) {
-    yearSelect.addEventListener("change", refreshProjectStatus);
-  }
-  if (orgTypeSelect) {
-    orgTypeSelect.addEventListener("change", () => {
-      initOrgOptions();
-      refreshProjectStatus();
-    });
-  }
-  if (orgSelect) {
-    orgSelect.addEventListener("change", refreshProjectStatus);
-  }
-  if (projectSearchInput) {
-    projectSearchInput.addEventListener("input", () => {
-      refreshProjectStatus();
-    });
-  }
-  if (projectSearchClearBtn && projectSearchInput) {
-    projectSearchClearBtn.addEventListener("click", () => {
-      projectSearchInput.value = "";
-      refreshProjectStatus();
-      projectSearchInput.focus();
-    });
-  }
+  // ===== 7) Event เปลี่ยน filter ของ Dashboard (public/staff) =====
+  ["public", "staff"].forEach((key) => {
+    const ctx = projectStatusContexts[key];
+    if (!ctx) return;
+
+    if (ctx.yearSelect) {
+      ctx.yearSelect.addEventListener("change", () => {
+        setActiveProjectStatusContext(key);
+        refreshProjectStatus(key);
+      });
+    }
+    if (ctx.orgTypeSelect) {
+      ctx.orgTypeSelect.addEventListener("change", () => {
+        setActiveProjectStatusContext(key);
+        initOrgOptions();
+        refreshProjectStatus(key);
+      });
+    }
+    if (ctx.orgSelect) {
+      ctx.orgSelect.addEventListener("change", () => {
+        setActiveProjectStatusContext(key);
+        refreshProjectStatus(key);
+      });
+    }
+    if (ctx.projectSearchInput) {
+      ctx.projectSearchInput.addEventListener("input", () => {
+        setActiveProjectStatusContext(key);
+        refreshProjectStatus(key);
+      });
+    }
+    if (ctx.projectSearchClearBtn && ctx.projectSearchInput) {
+      ctx.projectSearchClearBtn.addEventListener("click", () => {
+        setActiveProjectStatusContext(key);
+        ctx.projectSearchInput.value = "";
+        refreshProjectStatus(key);
+        ctx.projectSearchInput.focus();
+      });
+    }
+  });
 
   // ===== 8) โหลดโครงสร้างองค์กร (About Page) =====
   await loadOrgStructure();
 
-  // ===== 9) Sorting ตารางโครงการ =====
-  document.querySelectorAll("th.sortable").forEach((th) => {
-    th.addEventListener("click", () => {
-      const key = th.dataset.sort;
-      if (currentSort.key === key) {
-        currentSort.direction =
-          currentSort.direction === "asc" ? "desc" : "asc";
-      } else {
-        currentSort.key = key;
-        currentSort.direction = "asc";
-      }
+  // ===== 9) Sorting ตารางโครงการ (public/staff) =====
+  ["public", "staff"].forEach((key) => {
+    const ctx = projectStatusContexts[key];
+    if (!ctx || !ctx.tableBodyEl) return;
 
-      document
-        .querySelectorAll("th.sortable")
-        .forEach((x) => x.classList.remove("sort-asc", "sort-desc"));
+    const ths = ctx.tableBodyEl.closest("table")?.querySelectorAll("th.sortable") || [];
+    ths.forEach((th) => {
+      th.addEventListener("click", () => {
+        const sortKey = th.dataset.sort;
+        setActiveProjectStatusContext(key);
+        if (currentSort.key === sortKey) {
+          currentSort.direction =
+            currentSort.direction === "asc" ? "desc" : "asc";
+        } else {
+          currentSort.key = sortKey;
+          currentSort.direction = "asc";
+        }
 
-      th.classList.add(
-        currentSort.direction === "asc" ? "sort-asc" : "sort-desc"
-      );
+        ths.forEach((x) => x.classList.remove("sort-asc", "sort-desc"));
+        th.classList.add(
+          currentSort.direction === "asc" ? "sort-asc" : "sort-desc"
+        );
 
-      refreshProjectStatus();
+        refreshProjectStatus(key);
+      });
     });
   });
 
   // ===== 10) Toggle ระหว่าง Status / Calendar ในหน้า Project Status =====
-  const toggleBtns = document.querySelectorAll(".view-toggle-btn");
+  ["public", "staff"].forEach((key) => {
+    const ctx = projectStatusContexts[key];
+    if (!ctx || !ctx.viewToggleBtns || !ctx.statusViewEl || !ctx.calendarViewEl) return;
 
-  if (toggleBtns.length && statusViewEl && calendarViewEl) {
-    toggleBtns.forEach((btn) => {
+    ctx.viewToggleBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
-        if (!isUserAuthenticated) return;
-        const target = btn.dataset.view; // 'status' หรือ 'calendar'
+        if (!isUserAuthenticated && key === "staff") return;
+        setActiveProjectStatusContext(key);
+        const target = btn.dataset.view; // 'status' หรือ 'calendar' หรือ '-staff'
 
-        // เปลี่ยนปุ่ม active
-        toggleBtns.forEach((b) => b.classList.remove("is-active"));
+        ctx.viewToggleBtns.forEach((b) => b.classList.remove("is-active"));
         btn.classList.add("is-active");
 
-        if (target === "calendar") {
-          // โชว์เฉพาะปฏิทิน
-          statusViewEl.style.display = "none";
-          calendarViewEl.style.display = "block";
-
-          // เผื่อมี filter เปลี่ยน → วาดใหม่อีกรอบก็ได้
+        const isCalendar = target.includes("calendar");
+        ctx.statusViewEl.style.display = isCalendar ? "none" : "block";
+        ctx.calendarViewEl.style.display = isCalendar ? "block" : "none";
+        if (isCalendar) {
           generateCalendar();
-        } else {
-          // โชว์เฉพาะสรุปสถานะโครงการ
-          statusViewEl.style.display = "block";
-          calendarViewEl.style.display = "none";
         }
       });
     });
-  }
+  });
 
 
   // ===== 11) Tabs Borrow & Return Assets =====
@@ -3931,8 +4080,8 @@ function buildCalendarEventsFromProjects() {
  * เตรียม Filter (ปี / องค์กร) จาก calendarEvents
  */
 function initCalendarFilters() {
-  const yearSelect = document.getElementById("calendarYearSelect");
-  const orgSelect = document.getElementById("calendarOrgSelect");
+  const yearSelect = calendarYearSelectEl;
+  const orgSelect = calendarOrgSelectEl;
 
   if (!yearSelect || !orgSelect) return;
 
@@ -3963,9 +4112,9 @@ function initCalendarFilters() {
  * คืนรายการ events ที่อยู่ในวัน date และผ่านเงื่อนไข filter
  */
 function getEventsForDate(date) {
-  const yearSel = document.getElementById("calendarYearSelect");
-  const orgSel = document.getElementById("calendarOrgSelect");
-  const statusSel = document.getElementById("calendarStatusSelect");
+  const yearSel = calendarYearSelectEl;
+  const orgSel = calendarOrgSelectEl;
+  const statusSel = calendarStatusSelectEl;
 
   const yearFilter = yearSel ? yearSel.value : "all";
   const orgFilter = orgSel ? orgSel.value : "all";
@@ -3992,7 +4141,7 @@ function getEventsForDate(date) {
  * อัปเดตหัวปฏิทิน (ชื่อเดือน + ปี)
  */
 function updateCalendarHeader() {
-  const panel = document.getElementById("calendarPanelTitle");
+  const panel = calendarPanelTitleEl;
   if (!panel) return;
 
   const monthNames = [
@@ -4010,7 +4159,7 @@ function updateCalendarHeader() {
  * วาดปฏิทินตาม currentCalendarDate
  */
 function generateCalendar() {
-  const container = document.getElementById("calendarContainer");
+  const container = calendarContainerEl;
   if (!container) return;
 
   container.innerHTML = "";
@@ -4248,9 +4397,11 @@ function closeCalendarModal() {
 /**
  * initCalendar — เรียกหลังจาก loadProjectsFromSheet() เสร็จ
  */
-function initCalendar() {
-  const prevBtn = document.getElementById("prevMonthBtn");
-  const nextBtn = document.getElementById("nextMonthBtn");
+function initCalendar(ctxKey = activeProjectStatusContext) {
+  setActiveProjectStatusContext(ctxKey);
+
+  const prevBtn = prevMonthBtnEl;
+  const nextBtn = nextMonthBtnEl;
   const modal = document.getElementById("calendarModal");
   const modalClose = document.getElementById("calendarModalClose");
 
@@ -4263,21 +4414,23 @@ function initCalendar() {
 
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
+      setActiveProjectStatusContext(ctxKey);
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
       generateCalendar();
     });
   }
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
+      setActiveProjectStatusContext(ctxKey);
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
       generateCalendar();
     });
   }
 
-  ["calendarYearSelect", "calendarOrgSelect", "calendarStatusSelect"].forEach((id) => {
-    const el = document.getElementById(id);
+  [calendarYearSelectEl, calendarOrgSelectEl, calendarStatusSelectEl].forEach((el) => {
     if (el) {
       el.addEventListener("change", () => {
+        setActiveProjectStatusContext(ctxKey);
         generateCalendar();
       });
     }

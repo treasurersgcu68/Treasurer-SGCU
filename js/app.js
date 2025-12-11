@@ -72,6 +72,7 @@ let projectModalEl;
 let budgetChartSkeletonEl;
 let statusPieSkeletonEl;
 let projectTableSkeletonEl;
+let orgStructureSkeletonEl;
 let projectModalTitleEl;
 let projectModalTitleBadgeEl;
 let projectModalHeaderRowEl;
@@ -89,6 +90,19 @@ let newsListSkeletonEl;
 let downloadSkeletonEl;
 let calendarSkeletonEl;
 let orgFilters = [];
+let staffCredentials = {};
+let staffAuthUser = null;
+let loginBtnEl;
+let logoutBtnEl;
+let mobileLogoutBtnEl;
+let userInfoEl;
+let loginPageGoogleBtnEl;
+let loginPageLogoutBtnEl;
+let loginPageStatusEl;
+let staffLoginFormEl;
+let staffLoginUsernameEl;
+let staffLoginPasswordEl;
+let staffLoginErrorEl;
 let kpiOnTimeEl;
 let kpiOnTimeCaptionEl;
 let kpiBudgetUsageEl;
@@ -97,6 +111,14 @@ let kpiClosedProjectsEl;
 let kpiClosedProjectsCaptionEl;
 let kpiMonthlyCaptionEl;
 let homeKpiChart = null;
+let navLinksAll = [];
+let statusViewEl;
+let calendarViewEl;
+let projectTableAreaEl;
+let projectTableLockEl;
+let viewToggleBtns = [];
+let isUserAuthenticated = false;
+let authWasAuthenticated = false;
 
 // Motion globals
 let sectionObserver = null;
@@ -197,7 +219,7 @@ function getCache(key, ttlMs) {
     if (!ts || Date.now() - ts > ttlMs) return null;
     return parsed.data || null;
   } catch (err) {
-    console.warn("อ่าน cache ไม่ได้ - app.js:200", err);
+    console.warn("อ่าน cache ไม่ได้ - app.js:222", err);
     return null;
   }
 }
@@ -207,7 +229,7 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (err) {
-    console.warn("เขียน cache ไม่ได้ - app.js:210", err);
+    console.warn("เขียน cache ไม่ได้ - app.js:232", err);
   }
 }
 
@@ -437,11 +459,11 @@ async function loadProjectsFromSheet() {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
-      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:440");
+      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:462");
       return;
     }
 
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:444");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:466");
     const res = await fetch(SHEET_CSV_URL);
     const csvText = await res.text();
 
@@ -460,7 +482,7 @@ async function loadProjectsFromSheet() {
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:463", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:485", err);
     projects = getFallbackProjects();
   }
 }
@@ -486,7 +508,7 @@ async function loadOrgFilters() {
       }))
       .filter((r) => r.group !== "" && r.name !== "");
   } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:489", err);
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:511", err);
     orgFilters = [];
   }
 }
@@ -2018,8 +2040,287 @@ function setLoading(isLoading) {
   }
 }
 
+function toggleProjectStatusAccess(isAuthenticated) {
+  if (projectTableAreaEl) {
+    projectTableAreaEl.style.display = isAuthenticated ? "block" : "none";
+  }
+  if (projectTableLockEl) {
+    projectTableLockEl.style.display = isAuthenticated ? "none" : "block";
+  }
+}
+
+function updateNavVisibility(isAuthenticated) {
+  if (!navLinksAll.length) return;
+  const publicAllowed = new Set(["home", "project-status", "financial-docs", "login"]);
+  navLinksAll.forEach((link) => {
+    const mode = link.dataset.visible || "public";
+    const page = link.dataset.page || "";
+    if (!isAuthenticated && !publicAllowed.has(page)) {
+      link.style.display = "none";
+      return;
+    }
+
+    if (mode === "protected") {
+      link.style.display = isAuthenticated ? "" : "none";
+    } else if (mode === "public-only") {
+      link.style.display = isAuthenticated ? "none" : "";
+    } else {
+      link.style.display = "";
+    }
+  });
+}
+
+function updateNavForStaff(staffUser) {
+  if (!navLinksAll.length || !staffUser) return;
+
+  const roleAllowedMap = {
+    "00": new Set(["project-status-staff", "borrow-assets-staff", "meeting-room-staff"]),
+    "01": new Set(["project-status-staff"]),
+    "04": new Set(["borrow-assets-staff", "meeting-room-staff"])
+  };
+
+  const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||
+    new Set(["project-status-staff", "borrow-assets-staff", "meeting-room-staff"]);
+
+  navLinksAll.forEach((link) => {
+    const page = link.dataset.page || "";
+    link.style.display = allowedStaffPages.has(page) ? "" : "none";
+  });
+}
+
+function getPreferredPageForState(isAuth, staffUser) {
+  if (!isAuth) {
+    return "home";
+  }
+  if (staffUser) {
+    const role = staffUser.role || "";
+    if (role === "01") return "project-status-staff";
+    if (role === "04") return "borrow-assets-staff";
+    // default / 00
+    return "project-status-staff";
+  }
+  return "home";
+}
+
+function goToFirstVisibleNavPageWithPreference(preferredPage) {
+  if (!navLinksAll.length) return;
+
+  function isVisible(link) {
+    return link && link.style.display !== "none";
+  }
+
+  let targetPage = preferredPage;
+  if (targetPage) {
+    const preferredLink = navLinksAll.find(
+      (link) => link.dataset.page === targetPage && isVisible(link)
+    );
+    if (!preferredLink) {
+      targetPage = null;
+    }
+  }
+
+  if (!targetPage) {
+    const first = navLinksAll.find(isVisible);
+    targetPage = first?.dataset.page;
+  }
+
+  if (!targetPage) return;
+
+  const targetHash = `#${targetPage}`;
+  if (window.location.hash !== targetHash) {
+    window.location.hash = targetHash;
+  } else {
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  }
+}
+
+function updateNavLabelsForStaff(isStaff) {
+  const labelMap = {
+    "project-status": {
+      default: "Project Status",
+      staff: "Project Status for Staff",
+      staffPage: "project-status-staff"
+    },
+    "borrow-assets": {
+      default: "Borrow & Return Assets",
+      staff: "borrow-assets for Staff",
+      staffPage: "borrow-assets-staff"
+    },
+    "meeting-room": {
+      default: "Meeting Room",
+      staff: "meeting-room for Staff",
+      staffPage: "meeting-room-staff"
+    }
+  };
+
+  Object.entries(labelMap).forEach(([page, labels]) => {
+    const targetPage = isStaff ? labels.staffPage : page;
+    const targetLabel = isStaff ? labels.staff : labels.default;
+    document
+      .querySelectorAll(`a[data-page="${page}"], a[data-page="${labels.staffPage}"]`)
+      .forEach((el) => {
+        el.textContent = targetLabel;
+        el.dataset.page = targetPage;
+      });
+  });
+}
+
+function initAuthUI() {
+  if (!window.sgcuAuth) {
+    const panel = document.getElementById("authPanel");
+    if (panel) {
+      panel.style.display = "none";
+    }
+    return;
+  }
+
+  const {
+    auth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged
+  } = window.sgcuAuth;
+
+  if (!auth) return;
+
+  function deriveStaffRole(username) {
+    if (!username) return "";
+    const parts = username.split(/[.\-]/);
+    return parts[1] || ""; // 10.XX.YY-ZZZ -> take XX
+  }
+
+  function refreshAuthDisplay(firebaseUser) {
+    const hasFirebase = !!firebaseUser;
+    const hasStaff = !!staffAuthUser;
+    const isAuth = hasFirebase || hasStaff;
+    isUserAuthenticated = isAuth;
+    const staffLabel = hasStaff
+      ? [staffAuthUser.username, staffAuthUser.position].filter(Boolean).join(" ")
+      : "";
+    const nameText = hasFirebase
+      ? `สวัสดี ${firebaseUser.displayName || firebaseUser.email || ""}`
+      : hasStaff
+        ? `Staff : ${staffLabel}${staffAuthUser.nick ? ` (${staffAuthUser.nick})` : ""}`
+        : "";
+
+    if (userInfoEl) userInfoEl.textContent = nameText;
+    if (logoutBtnEl) logoutBtnEl.style.display = isAuth ? "inline-block" : "none";
+    if (mobileLogoutBtnEl) mobileLogoutBtnEl.style.display = isAuth ? "block" : "none";
+    if (loginPageStatusEl) loginPageStatusEl.textContent = nameText;
+    if (loginPageGoogleBtnEl) {
+      loginPageGoogleBtnEl.style.display = isAuth ? "none" : "inline-block";
+    }
+    if (loginPageLogoutBtnEl) {
+      loginPageLogoutBtnEl.style.display = isAuth ? "inline-block" : "none";
+    }
+    updateNavLabelsForStaff(hasStaff);
+    updateNavVisibility(isAuth);
+    updateNavForStaff(hasStaff ? staffAuthUser : null);
+    toggleProjectStatusAccess(isAuth);
+
+    // เปลี่ยนหน้าไปยังเมนูแรกตามสถานะปัจจุบัน (login/logout)
+    const preferredPage = getPreferredPageForState(isAuth, hasStaff ? staffAuthUser : null);
+    goToFirstVisibleNavPageWithPreference(preferredPage);
+    authWasAuthenticated = isAuth;
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    refreshAuthDisplay(user);
+  });
+
+  function handleGoogleLogin() {
+    signInWithPopup(auth, new GoogleAuthProvider()).catch((err) => {
+      alert(`ล็อกอินไม่สำเร็จ: ${err.message || err}`);
+    });
+  }
+
+  if (loginBtnEl) {
+    loginBtnEl.addEventListener("click", handleGoogleLogin);
+  }
+  if (loginPageGoogleBtnEl) {
+    loginPageGoogleBtnEl.addEventListener("click", handleGoogleLogin);
+  }
+
+  function handleLogout() {
+    staffAuthUser = null;
+    refreshAuthDisplay(auth.currentUser);
+    signOut(auth).catch((err) => {
+      console.error("logout error - app.js:2249", err);
+    });
+
+    const hamburger = document.getElementById("hamburgerBtn");
+    const mobileMenu = document.getElementById("mobileMenu");
+    if (hamburger && mobileMenu) {
+      hamburger.classList.remove("open");
+      mobileMenu.classList.remove("show");
+      hamburger.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  if (logoutBtnEl) {
+    logoutBtnEl.addEventListener("click", handleLogout);
+  }
+  if (loginPageLogoutBtnEl) {
+    loginPageLogoutBtnEl.addEventListener("click", handleLogout);
+  }
+  if (mobileLogoutBtnEl) {
+    mobileLogoutBtnEl.addEventListener("click", handleLogout);
+  }
+
+  if (staffLoginFormEl && staffLoginUsernameEl && staffLoginPasswordEl && staffLoginErrorEl) {
+    staffLoginFormEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      staffLoginErrorEl.textContent = "";
+      const username = staffLoginUsernameEl.value.trim().toLowerCase();
+      const pw = staffLoginPasswordEl.value;
+      if (!username || !pw) {
+        staffLoginErrorEl.textContent = "กรอกชื่อผู้ใช้และรหัสผ่านให้ครบถ้วน";
+        return;
+      }
+
+      if (!Object.keys(staffCredentials).length) {
+        staffLoginErrorEl.textContent = "กำลังโหลดข้อมูลผู้ใช้ staff โปรดลองใหม่";
+        return;
+      }
+
+      const staffInfo = staffCredentials[username];
+      if (!staffInfo) {
+        staffLoginErrorEl.textContent = "ไม่พบชื่อผู้ใช้นี้ กรุณาตรวจสอบอีกครั้ง";
+        return;
+      }
+      if (staffInfo.password !== pw) {
+        staffLoginErrorEl.textContent = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        return;
+      }
+
+      staffAuthUser = {
+        username,
+        position: staffInfo.position || "",
+        nick: staffInfo.nick || "",
+        role: deriveStaffRole(username)
+      };
+      refreshAuthDisplay(auth.currentUser);
+      staffLoginFormEl.reset();
+      staffLoginErrorEl.textContent = "";
+    });
+  }
+}
+
 /* 11) Org Structure (About Page) */
+function toggleOrgStructureLoading(isLoading) {
+  const container = document.getElementById("org-structure-content");
+  if (orgStructureSkeletonEl) {
+    orgStructureSkeletonEl.style.display = isLoading ? "grid" : "none";
+  }
+  if (container) {
+    container.style.display = isLoading ? "none" : "";
+  }
+}
+
 async function loadOrgStructure() {
+  toggleOrgStructureLoading(true);
+  const el = document.getElementById("org-structure-content");
   try {
     const res = await fetch(ORG_SHEET_CSV);
     const csvText = await res.text();
@@ -2032,11 +2333,12 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2035", err);
-    const el = document.getElementById("org-structure-content");
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2336", err);
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
     }
+  } finally {
+    toggleOrgStructureLoading(false);
   }
 }
 
@@ -2062,6 +2364,8 @@ function renderOrgStructure(rows) {
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
   const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
+  const COL_STAFF_USERNAME = 28; // AC
+  const COL_STAFF_PASSWORD = 29; // AD
 
   const COL_ASSISTANT_KEY = COL_NICK; // ใช้ชื่อเล่นเป็น key
 
@@ -2122,6 +2426,7 @@ function renderOrgStructure(rows) {
 
   // ====== peopleByPos + assistantContactsByName (global) ======
   assistantContactsByName = {}; // reset global
+  staffCredentials = {}; // reset global
 
   const peopleByPos = {};
   for (const r of dataRows) {
@@ -2147,6 +2452,17 @@ function renderOrgStructure(rows) {
 
     if (!peopleByPos[pos]) peopleByPos[pos] = [];
     peopleByPos[pos].push(r);
+
+    const staffUser = (r[COL_STAFF_USERNAME] || "").toString().trim().toLowerCase();
+    const staffPass = (r[COL_STAFF_PASSWORD] || "").toString().trim();
+    const staffNick = (r[COL_NICK] || "").toString().trim();
+    if (staffUser && staffPass) {
+      staffCredentials[staffUser] = {
+        password: staffPass,
+        position: pos,
+        nick: staffNick
+      };
+    }
   }
 
   function getPerson(position, index = 0) {
@@ -2553,7 +2869,7 @@ async function loadNewsFromSheet() {
     setCache(CACHE_KEYS.NEWS, newsItems);
     renderNewsList();
   } catch (err) {
-    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:2556", err);
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:2872", err);
   } finally {
     toggleNewsSkeleton(false);
   }
@@ -2867,7 +3183,7 @@ async function loadDownloadDocuments() {
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:2870", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:3186", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   } finally {
     toggleDownloadSkeleton(false);
@@ -2914,7 +3230,7 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     },
     error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:2917", err);
+      console.error("Error loading SCORE_SHEET - app.js:3233", err);
     }
   });
 }
@@ -3098,6 +3414,24 @@ window.addEventListener("load", async () => {
   statusPieSkeletonEl = document.getElementById("statusPieSkeleton");
   projectTableSkeletonEl = document.getElementById("projectTableSkeleton");
   calendarSkeletonEl = document.getElementById("calendarSkeleton");
+  orgStructureSkeletonEl = document.getElementById("orgStructureSkeleton");
+  loginBtnEl = document.getElementById("loginBtn");
+  logoutBtnEl = document.getElementById("logoutBtn");
+  mobileLogoutBtnEl = document.getElementById("mobileLogoutBtn");
+  userInfoEl = document.getElementById("userInfo");
+  loginPageGoogleBtnEl = document.getElementById("loginPageGoogleBtn");
+  loginPageLogoutBtnEl = document.getElementById("loginPageLogoutBtn");
+  loginPageStatusEl = document.getElementById("loginPageStatus");
+  staffLoginFormEl = document.getElementById("staffLoginForm");
+  staffLoginUsernameEl = document.getElementById("staffLoginUsername");
+  staffLoginPasswordEl = document.getElementById("staffLoginPassword");
+  staffLoginErrorEl = document.getElementById("staffLoginError");
+  navLinksAll = Array.from(document.querySelectorAll("header nav a[data-visible]"));
+  statusViewEl = document.getElementById("statusView");
+  calendarViewEl = document.getElementById("calendarView");
+  projectTableAreaEl = document.getElementById("projectTableArea");
+  projectTableLockEl = document.getElementById("projectTableLock");
+  viewToggleBtns = Array.from(document.querySelectorAll(".view-toggle-btn"));
   
   newsListEl        = document.getElementById("newsList");
   newsModalEl       = document.getElementById("newsModal");
@@ -3115,6 +3449,10 @@ window.addEventListener("load", async () => {
   kpiClosedProjectsEl = document.getElementById("kpiClosedProjects");
   kpiClosedProjectsCaptionEl = document.getElementById("kpiClosedProjectsCaption");
   kpiMonthlyCaptionEl = document.getElementById("kpiMonthlyCaption");
+
+  initAuthUI();
+  updateNavVisibility(false);
+  toggleProjectStatusAccess(false);
 
   // ===== 2) โหลดรายการดาวน์โหลดเอกสาร =====
   await loadDownloadDocuments();
@@ -3289,7 +3627,7 @@ window.addEventListener("load", async () => {
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
     renderHomeKpis();                           // KPI หน้าแรก
   } catch (err) {
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:3292", err);
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:3630", err);
     projects = getFallbackProjects();
     await loadOrgFilters();
     initOrgTypeOptions();
@@ -3357,12 +3695,11 @@ window.addEventListener("load", async () => {
 
   // ===== 10) Toggle ระหว่าง Status / Calendar ในหน้า Project Status =====
   const toggleBtns = document.querySelectorAll(".view-toggle-btn");
-  const statusViewEl = document.getElementById("statusView");
-  const calendarViewEl = document.getElementById("calendarView");
 
   if (toggleBtns.length && statusViewEl && calendarViewEl) {
     toggleBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (!isUserAuthenticated) return;
         const target = btn.dataset.view; // 'status' หรือ 'calendar'
 
         // เปลี่ยนปุ่ม active
@@ -3427,6 +3764,29 @@ window.addEventListener("load", async () => {
         } else {
           meetingToday.style.display = "none";
           meetingWeek.style.display = "block";
+        }
+      });
+    });
+  }
+
+  // ===== 13) Tabs Login Page =====
+  const loginTabBtns = document.querySelectorAll(".tab-btn[data-login-tab]");
+  const loginGooglePanel = document.getElementById("loginGooglePanel");
+  const loginStaffPanel = document.getElementById("loginStaffPanel");
+
+  if (loginTabBtns.length && loginGooglePanel && loginStaffPanel) {
+    loginTabBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.loginTab; // 'google' | 'staff'
+        loginTabBtns.forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+
+        if (target === "staff") {
+          loginGooglePanel.style.display = "none";
+          loginStaffPanel.style.display = "block";
+        } else {
+          loginGooglePanel.style.display = "block";
+          loginStaffPanel.style.display = "none";
         }
       });
     });

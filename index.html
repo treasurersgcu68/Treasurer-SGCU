@@ -11,6 +11,8 @@
     <meta property="og:description" content="ดูสถานะโครงการ (Project Status SGCU) และงบประมาณแบบอัปเดตโดยเหรัญญิก อบจ68">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://treasurersgcu68.github.io/Treasurer-SGCU/">
+    <link rel="icon" type="image/png" href="img/logo_treasurur jpg.png">
+    <link rel="apple-touch-icon" href="img/logo_treasurur jpg.png">
 
     <link
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
@@ -21,6 +23,40 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- PapaParse -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <!-- Firebase (Auth) -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+        signInWithPopup,
+        GoogleAuthProvider,
+        signOut,
+        signInWithEmailAndPassword
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDcRIz1Uy1AZd-9JJdLF92SyqU6m8bdSXo",
+        authDomain: "departmentwebsite-5aec1.firebaseapp.com",
+        projectId: "departmentwebsite-5aec1",
+        storageBucket: "departmentwebsite-5aec1.firebasestorage.app",
+        messagingSenderId: "827589080688",
+        appId: "1:827589080688:web:ad89c53218104f908926b5",
+        measurementId: "G-BFW19TSYL0"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+
+      window.sgcuAuth = {
+        auth,
+        GoogleAuthProvider,
+        signInWithPopup,
+        signOut,
+        onAuthStateChanged,
+        signInWithEmailAndPassword
+      };
+    </script>
   </head>
   <body>
     <header class="site-header">
@@ -46,25 +82,41 @@
         </div>
 
         <nav class="desktop-nav">
-          <a href="#" data-page="home" class="active">Home</a>
-          <a href="#" data-page="project-status">Project Status</a>
-          <a href="#" data-page="financial-docs">Financial Documents</a>
-          <a href="#" data-page="borrow-assets">Borrow &amp; Return Assets</a>
-          <a href="#" data-page="meeting-room">Meeting Room</a>
+          <a href="#" data-page="home" class="active" data-visible="public">Home</a>
+          <a href="#" data-page="project-status" data-visible="public">Project Status</a>
+          <a href="#" data-page="financial-docs" data-visible="public">Financial Documents</a>
+          <a href="#" data-page="borrow-assets" data-visible="protected">Borrow &amp; Return Assets</a>
+          <a href="#" data-page="meeting-room" data-visible="protected">Meeting Room</a>
+          <a href="#" data-page="login" data-visible="public-only">Login</a>
         </nav>
 
-        <button id="hamburgerBtn" class="hamburger" aria-label="เปิด/ปิดเมนูหลัก" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
+        <div class="header-actions">
+          <div class="auth-panel" id="authPanel">
+            <span id="userInfo" class="auth-user"></span>
+          </div>
+
+          <button id="hamburgerBtn" class="hamburger" aria-label="เปิด/ปิดเมนูหลัก" aria-expanded="false">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
       </div>
 
       <div id="mobileMenu" class="mobile-menu">
         <nav>
-          <a href="#" data-page="home">Home</a>
-          <a href="#" data-page="project-status">Project Status</a>
-          <a href="#" data-page="financial-docs">Financial Documents</a>
-          <a href="#" data-page="borrow-assets">Borrow &amp; Return Assets</a>
-          <a href="#" data-page="meeting-room">Meeting Room</a>
+          <a href="#" data-page="home" data-visible="public">Home</a>
+          <a href="#" data-page="project-status" data-visible="public">Project Status</a>
+          <a href="#" data-page="financial-docs" data-visible="public">Financial Documents</a>
+          <a href="#" data-page="borrow-assets" data-visible="protected">Borrow &amp; Return Assets</a>
+          <a href="#" data-page="meeting-room" data-visible="protected">Meeting Room</a>
+          <a href="#" data-page="login" data-visible="public-only">Login</a>
+          <button
+            id="mobileLogoutBtn"
+            type="button"
+            class="auth-btn ghost mobile-menu-logout"
+            style="display:none;"
+          >
+            Logout
+          </button>
         </nav>
       </div>
     </header>
@@ -179,55 +231,6 @@
             </div>
           </section>
 
-          <!-- 3. บล็อกบริการหลัก (ลิงก์ไปยังแต่ละหน้า) -->
-          <section class="home-services section-appear">
-            <header class="home-section-header">
-              <h2>เมนูใช้งานสำหรับทีมงานและชมรม</h2>
-              <p>เลือกใช้งานฟังก์ชันที่ต้องการได้จากการ์ดด้านล่าง</p>
-            </header>
-            <div class="home-services-grid">
-              <button
-                class="home-service-card"
-                type="button"
-                data-goto-page="project-status"
-              >
-                <div class="home-service-icon">📊</div>
-                <h3>Project Status</h3>
-                <p>ดูสถานะการอนุมัติ การโอนงบ และการส่งปิดโครงการของทุกหน่วยงาน</p>
-              </button>
-
-              <button
-                class="home-service-card"
-                type="button"
-                data-goto-page="financial-docs"
-              >
-                <div class="home-service-icon">📁</div>
-                <h3>Financial Documents</h3>
-                <p>ดาวน์โหลดแบบฟอร์ม ตัวอย่างเอกสาร และประกาศที่เกี่ยวข้องกับการเงิน</p>
-              </button>
-
-              <button
-                class="home-service-card"
-                type="button"
-                data-goto-page="borrow-assets"
-              >
-                <div class="home-service-icon">📦</div>
-                <h3>Borrow &amp; Return Assets</h3>
-                <p>ตรวจสอบขั้นตอนและเงื่อนไขการยืมคืนอุปกรณ์ของเหรัญญิก</p>
-              </button>
-
-              <button
-                class="home-service-card"
-                type="button"
-                data-goto-page="meeting-room"
-              >
-                <div class="home-service-icon">📅</div>
-                <h3>Meeting Room</h3>
-                <p>ดูรอบการใช้ห้องประชุม ปฏิทินการประชุม และเวลาที่ว่าง</p>
-              </button>
-            </div>
-          </section>
-
           <!-- 4. ขอบเขตงานของทีมเหรัญญิก -->
           <section class="home-scope section-appear">
             <header class="home-section-header">
@@ -330,6 +333,24 @@
               <h2>โครงสร้างทีมเหรัญญิก SGCU68</h2>
               <p>ดูภาพรวมโครงสร้างทีมเหรัญญิกและสายการทำงานของแต่ละฝ่าย</p>
             </header>
+
+            <div id="orgStructureSkeleton" class="org-structure-skeleton skeleton-grid" aria-hidden="true">
+              <div class="skeleton-card">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line tiny"></div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line tiny"></div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line tiny"></div>
+              </div>
+            </div>
 
             <!-- container ที่ JS จะเติมแผนผังทีมเหรัญญิก -->
             <div id="org-structure-content" class="org-structure-wrapper"></div>
@@ -493,7 +514,7 @@
                 </div>
               </header>
 
-              <div class="table-wrapper">
+              <div class="table-wrapper" id="projectTableArea">
                 <div class="project-table-wrapper">
                   <table id="projectTable">
                     <caption id="tableCaption">แสดง 0 โครงการ</caption>
@@ -520,6 +541,16 @@
                 </div>
 
                 <div id="projectTableSkeleton" class="table-skeleton"></div>
+              </div>
+
+              <div id="projectTableLock" class="panel project-lock-panel">
+                <h3 class="panel-title">ต้องเข้าสู่ระบบก่อน</h3>
+                <p class="panel-caption">
+                  กรุณาล็อกอินเพื่อดูรายละเอียดโครงการ
+                </p>
+                <div style="margin-top:10px;">
+                  <button class="btn-primary" type="button" data-goto-page="login">ไปที่หน้า Login</button>
+                </div>
               </div>
             </section>
           </div>
@@ -975,6 +1006,78 @@
         </div>
       </section>
 
+      <!-- ============ STAFF: PROJECT STATUS ============ -->
+      <section class="page-view" data-page="project-status-staff">
+        <div class="page">
+          <div class="page-header-flex section-appear">
+            <div>
+              <h2 class="page-title">Project Status for Staff</h2>
+              <p class="page-subtitle">พื้นที่สำหรับทีมงานติดตามสถานะโครงการ (เฉพาะ Staff)</p>
+            </div>
+          </div>
+
+          <div class="panel panel-hover section-appear section-delay-1">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Coming Soon</div>
+                <div class="panel-caption">หน้าสำหรับรายงานเชิงลึกและไฟล์ภายในทีม</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <p>ฟีเจอร์สำหรับ Staff จะถูกเพิ่มในหน้านี้ โปรดติดตามการอัปเดตจากทีมงาน</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ STAFF: BORROW ASSETS ============ -->
+      <section class="page-view" data-page="borrow-assets-staff">
+        <div class="page">
+          <div class="page-header-flex section-appear">
+            <div>
+              <h2 class="page-title">borrow-assets for Staff</h2>
+              <p class="page-subtitle">พื้นที่จัดการครุภัณฑ์และการคืนของ (เฉพาะ Staff)</p>
+            </div>
+          </div>
+
+          <div class="panel panel-hover section-appear section-delay-1">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Coming Soon</div>
+                <div class="panel-caption">รายการยืมคืนและการอนุมัติภายในทีม</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <p>ระบบสำหรับ Staff จะถูกเชื่อมต่อในหน้านี้ หากมีข้อสงสัยติดต่อฝ่ายเหรัญญิก</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ STAFF: MEETING ROOM ============ -->
+      <section class="page-view" data-page="meeting-room-staff">
+        <div class="page">
+          <div class="page-header-flex section-appear">
+            <div>
+              <h2 class="page-title">meeting-room for Staff</h2>
+              <p class="page-subtitle">ตารางและการจองห้องประชุมสำหรับ Staff</p>
+            </div>
+          </div>
+
+          <div class="panel panel-hover section-appear section-delay-1">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Coming Soon</div>
+                <div class="panel-caption">ข้อมูลการจองภายในทีมจะถูกเพิ่มเร็ว ๆ นี้</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <p>เตรียมพื้นที่สำหรับข้อมูลเฉพาะ Staff หากต้องการจองเร่งด่วนให้ติดต่อผู้ดูแล</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="page-view page-news" data-page="news">
         <div class="container">
           <header class="news-hero">
@@ -1079,6 +1182,51 @@
         <div id="newsModalBody" class="modal-body"></div>
       </div>
     </div>
+
+    <!-- LOGIN PAGE -->
+    <section class="page-view" data-page="login">
+      <div class="page login-page">
+        <div class="page-header-flex">
+          <div>
+            <h1 class="page-title">เข้าสู่ระบบ</h1>
+            <p class="page-subtitle">เลือกวิธีเข้าสู่ระบบที่ต้องการ</p>
+          </div>
+          <div class="tabs">
+            <button class="tab-btn is-active" data-login-tab="google" type="button">
+              Login ปกติ (Google)
+            </button>
+            <button class="tab-btn" data-login-tab="staff" type="button">
+              Staff Login
+            </button>
+          </div>
+        </div>
+
+        <div class="login-grid">
+          <div id="loginGooglePanel" class="panel panel-hover login-card">
+            <h3 class="login-title">ล็อกอินด้วย Google</h3>
+            <p class="login-caption">ใช้บัญชี Google ที่ได้รับอนุญาตสำหรับโครงการนี้</p>
+            <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Login with Google</button>
+            <div class="login-status" id="loginPageStatus"></div>
+            <button id="loginPageLogoutBtn" type="button" class="btn-secondary w-full" style="display:none;">Logout</button>
+          </div>
+
+          <div id="loginStaffPanel" class="panel panel-hover login-card" style="display:none;">
+            <h3 class="login-title">Staff Login</h3>
+            <p class="login-caption">เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านที่กำหนด</p>
+            <form id="staffLoginForm" class="login-form">
+              <label class="login-label" for="staffLoginUsername">ชื่อผู้ใช้</label>
+              <input id="staffLoginUsername" class="login-input" type="text" autocomplete="username" required />
+
+              <label class="login-label" for="staffLoginPassword">รหัสผ่าน</label>
+              <input id="staffLoginPassword" class="login-input" type="password" autocomplete="current-password" required />
+
+              <button type="submit" class="btn-primary w-full">Login (Staff)</button>
+            </form>
+            <div class="login-error" id="staffLoginError"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <footer class="site-footer">
       <div class="footer-inner">

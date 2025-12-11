@@ -2423,6 +2423,273 @@ function initAuthUI() {
   }
 }
 
+function toggleProjectStatusAccess(isAuthenticated) {
+  if (projectTableAreaEl) {
+    projectTableAreaEl.style.display = isAuthenticated ? "block" : "none";
+  }
+  if (projectTableLockEl) {
+    projectTableLockEl.style.display = isAuthenticated ? "none" : "block";
+  }
+}
+
+function updateNavVisibility(isAuthenticated) {
+  if (!navLinksAll.length) return;
+  const publicAllowed = new Set(["home", "project-status", "financial-docs", "login"]);
+  navLinksAll.forEach((link) => {
+    const mode = link.dataset.visible || "public";
+    const page = link.dataset.page || "";
+    if (!isAuthenticated && !publicAllowed.has(page)) {
+      link.style.display = "none";
+      return;
+    }
+
+    if (mode === "protected") {
+      link.style.display = isAuthenticated ? "" : "none";
+    } else if (mode === "public-only") {
+      link.style.display = isAuthenticated ? "none" : "";
+    } else {
+      link.style.display = "";
+    }
+  });
+}
+
+function updateNavForStaff(staffUser) {
+  if (!navLinksAll.length || !staffUser) return;
+
+  const roleAllowedMap = {
+    "00": new Set(["project-status-staff", "borrow-assets-staff", "meeting-room-staff"]),
+    "01": new Set(["project-status-staff"]),
+    "04": new Set(["borrow-assets-staff", "meeting-room-staff"])
+  };
+
+  const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||
+    new Set(["project-status-staff", "borrow-assets-staff", "meeting-room-staff"]);
+
+  navLinksAll.forEach((link) => {
+    const page = link.dataset.page || "";
+    link.style.display = allowedStaffPages.has(page) ? "" : "none";
+  });
+}
+
+function getPreferredPageForState(isAuth, staffUser) {
+  if (!isAuth) {
+    return "home";
+  }
+  if (staffUser) {
+    const role = staffUser.role || "";
+    if (role === "01") return "project-status-staff";
+    if (role === "04") return "borrow-assets-staff";
+    // default / 00
+    return "project-status-staff";
+  }
+  return "home";
+}
+
+function goToFirstVisibleNavPageWithPreference(preferredPage) {
+  if (!navLinksAll.length) return;
+
+  function isVisible(link) {
+    return link && link.style.display !== "none";
+  }
+
+  let targetPage = preferredPage;
+  if (targetPage) {
+    const preferredLink = navLinksAll.find(
+      (link) => link.dataset.page === targetPage && isVisible(link)
+    );
+    if (!preferredLink) {
+      targetPage = null;
+    }
+  }
+
+  if (!targetPage) {
+    const first = navLinksAll.find(isVisible);
+    targetPage = first?.dataset.page;
+  }
+
+  if (!targetPage) return;
+
+  const targetHash = `#${targetPage}`;
+  if (window.location.hash !== targetHash) {
+    window.location.hash = targetHash;
+  } else {
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  }
+}
+
+function updateNavLabelsForStaff(isStaff) {
+  const labelMap = {
+    "project-status": {
+      default: "Project Status",
+      staff: "Project Status for Staff",
+      staffPage: "project-status-staff"
+    },
+    "borrow-assets": {
+      default: "Borrow & Return Assets",
+      staff: "borrow-assets for Staff",
+      staffPage: "borrow-assets-staff"
+    },
+    "meeting-room": {
+      default: "Meeting Room",
+      staff: "meeting-room for Staff",
+      staffPage: "meeting-room-staff"
+    }
+  };
+
+  Object.entries(labelMap).forEach(([page, labels]) => {
+    const targetPage = isStaff ? labels.staffPage : page;
+    const targetLabel = isStaff ? labels.staff : labels.default;
+    document
+      .querySelectorAll(`a[data-page="${page}"], a[data-page="${labels.staffPage}"]`)
+      .forEach((el) => {
+        el.textContent = targetLabel;
+        el.dataset.page = targetPage;
+      });
+  });
+}
+
+function initAuthUI() {
+  if (!window.sgcuAuth) {
+    const panel = document.getElementById("authPanel");
+    if (panel) {
+      panel.style.display = "none";
+    }
+    return;
+  }
+
+  const {
+    auth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged
+  } = window.sgcuAuth;
+
+  if (!auth) return;
+
+  function deriveStaffRole(username) {
+    if (!username) return "";
+    const parts = username.split(/[.\-]/);
+    return parts[1] || ""; // 10.XX.YY-ZZZ -> take XX
+  }
+
+  function refreshAuthDisplay(firebaseUser) {
+    const hasFirebase = !!firebaseUser;
+    const hasStaff = !!staffAuthUser;
+    const isAuth = hasFirebase || hasStaff;
+    isUserAuthenticated = isAuth;
+    const staffLabel = hasStaff
+      ? [staffAuthUser.username, staffAuthUser.position].filter(Boolean).join(" ")
+      : "";
+    const nameText = hasFirebase
+      ? `สวัสดี ${firebaseUser.displayName || firebaseUser.email || ""}`
+      : hasStaff
+        ? `Staff : ${staffLabel}${staffAuthUser.nick ? ` (${staffAuthUser.nick})` : ""}`
+        : "";
+
+    if (userInfoEl) userInfoEl.textContent = nameText;
+    if (logoutBtnEl) logoutBtnEl.style.display = isAuth ? "inline-block" : "none";
+    if (mobileLogoutBtnEl) mobileLogoutBtnEl.style.display = isAuth ? "block" : "none";
+    if (loginPageStatusEl) loginPageStatusEl.textContent = nameText;
+    if (loginPageGoogleBtnEl) {
+      loginPageGoogleBtnEl.style.display = isAuth ? "none" : "inline-block";
+    }
+    if (loginPageLogoutBtnEl) {
+      loginPageLogoutBtnEl.style.display = isAuth ? "inline-block" : "none";
+    }
+    updateNavLabelsForStaff(hasStaff);
+    updateNavVisibility(isAuth);
+    updateNavForStaff(hasStaff ? staffAuthUser : null);
+    toggleProjectStatusAccess(isAuth);
+
+    // เปลี่ยนหน้าไปยังเมนูแรกตามสถานะปัจจุบัน (login/logout)
+    const preferredPage = getPreferredPageForState(isAuth, hasStaff ? staffAuthUser : null);
+    goToFirstVisibleNavPageWithPreference(preferredPage);
+    authWasAuthenticated = isAuth;
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    refreshAuthDisplay(user);
+  });
+
+  function handleGoogleLogin() {
+    signInWithPopup(auth, new GoogleAuthProvider()).catch((err) => {
+      alert(`ล็อกอินไม่สำเร็จ: ${err.message || err}`);
+    });
+  }
+
+  if (loginBtnEl) {
+    loginBtnEl.addEventListener("click", handleGoogleLogin);
+  }
+  if (loginPageGoogleBtnEl) {
+    loginPageGoogleBtnEl.addEventListener("click", handleGoogleLogin);
+  }
+
+  function handleLogout() {
+    staffAuthUser = null;
+    refreshAuthDisplay(auth.currentUser);
+    signOut(auth).catch((err) => {
+      console.error("logout error - app.js:2249", err);
+    });
+
+    const hamburger = document.getElementById("hamburgerBtn");
+    const mobileMenu = document.getElementById("mobileMenu");
+    if (hamburger && mobileMenu) {
+      hamburger.classList.remove("open");
+      mobileMenu.classList.remove("show");
+      hamburger.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  if (logoutBtnEl) {
+    logoutBtnEl.addEventListener("click", handleLogout);
+  }
+  if (loginPageLogoutBtnEl) {
+    loginPageLogoutBtnEl.addEventListener("click", handleLogout);
+  }
+  if (mobileLogoutBtnEl) {
+    mobileLogoutBtnEl.addEventListener("click", handleLogout);
+  }
+
+  if (staffLoginFormEl && staffLoginUsernameEl && staffLoginPasswordEl && staffLoginErrorEl) {
+    staffLoginFormEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      staffLoginErrorEl.textContent = "";
+      const username = staffLoginUsernameEl.value.trim().toLowerCase();
+      const pw = staffLoginPasswordEl.value;
+      if (!username || !pw) {
+        staffLoginErrorEl.textContent = "กรอกชื่อผู้ใช้และรหัสผ่านให้ครบถ้วน";
+        return;
+      }
+
+      if (!Object.keys(staffCredentials).length) {
+        staffLoginErrorEl.textContent = "กำลังโหลดข้อมูลผู้ใช้ staff โปรดลองใหม่";
+        return;
+      }
+
+      const staffInfo = staffCredentials[username];
+      if (!staffInfo) {
+        staffLoginErrorEl.textContent = "ไม่พบชื่อผู้ใช้นี้ กรุณาตรวจสอบอีกครั้ง";
+        return;
+      }
+      if (staffInfo.password !== pw) {
+        staffLoginErrorEl.textContent = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        return;
+      }
+
+      staffAuthUser = {
+        username,
+        position: staffInfo.position || "",
+        nick: staffInfo.nick || "",
+        role: deriveStaffRole(username)
+      };
+      refreshAuthDisplay(auth.currentUser);
+      staffLoginFormEl.reset();
+      staffLoginErrorEl.textContent = "";
+    });
+  }
+}
+
 /* 11) Org Structure (About Page) */
 function toggleOrgStructureLoading(isLoading) {
   const container = document.getElementById("org-structure-content");

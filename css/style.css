@@ -974,14 +974,17 @@ th.sortable.sort-desc::after {
   overflow-x: auto;   /* ให้เลื่อนในแนวนอนได้บนมือถือ */
 }
 
-#projectTable {
+#projectTable,
+#projectTableStaff {
   width: 100%;
   table-layout: auto;
   border-collapse: collapse;
 }
 
 #projectTable th,
-#projectTable td {
+#projectTable td,
+#projectTableStaff th,
+#projectTableStaff td {
   padding: 0.5rem 0.75rem;
 }
 
@@ -990,14 +993,20 @@ th.sortable.sort-desc::after {
 #projectTable td.col-code,
 #projectTable td.col-year,
 #projectTable td.col-status,
-#projectTable td.col-budget {
+#projectTable td.col-budget,
+#projectTableStaff td.col-code,
+#projectTableStaff td.col-year,
+#projectTableStaff td.col-status,
+#projectTableStaff td.col-budget {
   white-space: nowrap;
 }
 
 /* columns allowed to wrap */
 
 #projectTable td.col-name,
-#projectTable td.col-org {
+#projectTable td.col-org,
+#projectTableStaff td.col-name,
+#projectTableStaff td.col-org {
   white-space: normal;
   overflow-wrap: break-word;
 }
@@ -1005,11 +1014,14 @@ th.sortable.sort-desc::after {
 /* alignments */
 
 #projectTable td.col-year,
-#projectTable td.col-status {
+#projectTable td.col-status,
+#projectTableStaff td.col-year,
+#projectTableStaff td.col-status {
   text-align: center;
 }
 
-#projectTable td.col-budget {
+#projectTable td.col-budget,
+#projectTableStaff td.col-budget {
   text-align: right;
 }
 
@@ -1022,36 +1034,56 @@ th.sortable.sort-desc::after {
 #projectTable th.col-status,
 #projectTable td.col-status,
 #projectTable th.col-budget,
-#projectTable td.col-budget {
+#projectTable td.col-budget,
+#projectTableStaff th.col-code,
+#projectTableStaff td.col-code,
+#projectTableStaff th.col-year,
+#projectTableStaff td.col-year,
+#projectTableStaff th.col-status,
+#projectTableStaff td.col-status,
+#projectTableStaff th.col-budget,
+#projectTableStaff td.col-budget {
   width: auto;
   min-width: 76px;
   white-space: nowrap;
 }
 
 #projectTable th.col-code,
-#projectTable td.col-code {
+#projectTable td.col-code,
+#projectTableStaff th.col-code,
+#projectTableStaff td.col-code {
   min-width: 80px;
 }
 
 #projectTable th.col-year,
-#projectTable td.col-year {
+#projectTable td.col-year,
+#projectTableStaff th.col-year,
+#projectTableStaff td.col-year {
   min-width: 80px;
 }
 
 #projectTable th.col-status,
-#projectTable td.col-status {
+#projectTable td.col-status,
+#projectTableStaff th.col-status,
+#projectTableStaff td.col-status {
   min-width: 140px;
 }
 
 #projectTable th.col-budget,
-#projectTable td.col-budget {
+#projectTable td.col-budget,
+#projectTableStaff th.col-budget,
+#projectTableStaff td.col-budget {
   min-width: 120px;
 }
 
 #projectTable th.col-name,
 #projectTable td.col-name,
 #projectTable th.col-org,
-#projectTable td.col-org {
+#projectTable td.col-org,
+#projectTableStaff th.col-name,
+#projectTableStaff td.col-name,
+#projectTableStaff th.col-org,
+#projectTableStaff td.col-org {
   white-space: normal;
   overflow-wrap: break-word;
 }
@@ -3306,7 +3338,9 @@ th.sortable.sort-desc::after {
     gap: 12px;
   }
   #projectTable th,
-  #projectTable td {
+  #projectTable td,
+  #projectTableStaff th,
+  #projectTableStaff td {
     padding: 0.45rem 0.55rem;
     font-size: 12px;
   }

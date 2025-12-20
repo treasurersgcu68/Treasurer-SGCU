@@ -2357,6 +2357,8 @@ function initAuthUI() {
   if (loginPageGoogleBtnEl) {
     loginPageGoogleBtnEl.addEventListener("click", handleGoogleLogin);
   }
+  return "home";
+}
 
   function handleLogout() {
     staffAuthUser = null;

@@ -23,7 +23,7 @@ const DOWNLOAD_SHEET =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTburYaUshqF-DOvbwOEinWik0KXNwqqJLfO6frlxUn1iEsLu5RzkNoum4KgnWeSwBdo4--B1eScRD5/pub?output=csv";
 
 const SCORE_SHEET =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_oiV1Ntv0x8UuRBKyvl9tTaUxrKkvImEmyFUU4oPp0pSKnLHOjJIz574Te4l25Y2IKFbLMaFlp3UW/pub?gid=968526742&single=true&output=csv";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_oiV1Ntv0x8UuRBKyvl9tTaUxrKkvImEmyFUU4oPp0pSKnLHOjJIz574Te4l25Y2IKFbLMaFlp3UW/pub?gid=676554954&single=true&output=csv";
 
 const NEWS_SHEET_CSV =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLaBypwNGVEZHCjCxQDSLn8s7tTx1EKAIKuYjL7oIx7_fmssMnAcq9hpLyC4N5TvwIhrzwtZxxCAe0/pub?output=csv"; 
@@ -324,7 +324,7 @@ function getCache(key, ttlMs) {
     if (!ts || Date.now() - ts > ttlMs) return null;
     return parsed.data || null;
   } catch (err) {
-    console.warn("อ่าน cache ไม่ได้ - app.js:222", err);
+    console.warn("อ่าน cache ไม่ได้ - app.js:327", err);
     return null;
   }
 }
@@ -334,7 +334,7 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (err) {
-    console.warn("เขียน cache ไม่ได้ - app.js:232", err);
+    console.warn("เขียน cache ไม่ได้ - app.js:337", err);
   }
 }
 
@@ -564,11 +564,11 @@ async function loadProjectsFromSheet() {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
-      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:462");
+      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:567");
       return;
     }
 
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:466");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:571");
     const res = await fetch(SHEET_CSV_URL);
     const csvText = await res.text();
 
@@ -587,7 +587,7 @@ async function loadProjectsFromSheet() {
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:485", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:590", err);
     projects = getFallbackProjects();
   }
 }
@@ -613,7 +613,7 @@ async function loadOrgFilters() {
       }))
       .filter((r) => r.group !== "" && r.name !== "");
   } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:511", err);
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:616", err);
     orgFilters = [];
   }
 }
@@ -2362,7 +2362,7 @@ function initAuthUI() {
     staffAuthUser = null;
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:2249", err);
+      console.error("logout error - app.js:2365", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
@@ -2629,7 +2629,7 @@ function initAuthUI() {
     staffAuthUser = null;
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:2249", err);
+      console.error("logout error - app.js:2632", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
@@ -2716,7 +2716,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2336", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2719", err);
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
     }
@@ -3252,7 +3252,7 @@ async function loadNewsFromSheet() {
     setCache(CACHE_KEYS.NEWS, newsItems);
     renderNewsList();
   } catch (err) {
-    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:2872", err);
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:3255", err);
   } finally {
     toggleNewsSkeleton(false);
   }
@@ -3566,7 +3566,7 @@ async function loadDownloadDocuments() {
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:3186", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:3569", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   } finally {
     toggleDownloadSkeleton(false);
@@ -3595,8 +3595,8 @@ function initScoreboard() {
         const row = rows[i];
         if (!row) continue;
 
-        const org = (row[28] || "").trim();
-        const scoreVal = parseFloat(row[29]);
+        const org = (row[13] || "").trim();   //org name
+        const scoreVal = parseFloat(row[14]); //score
 
         if (!org || Number.isNaN(scoreVal)) continue;
         items.push({ org, score: scoreVal });
@@ -3613,7 +3613,7 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     },
     error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:3233", err);
+      console.error("Error loading SCORE_SHEET - app.js:3616", err);
     }
   });
 }
@@ -4026,7 +4026,7 @@ window.addEventListener("load", async () => {
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
     renderHomeKpis();                           // KPI หน้าแรก
   } catch (err) {
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:3630", err);
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4029", err);
     projects = getFallbackProjects();
     await loadOrgFilters();
     ["public", "staff"].forEach((key) => {

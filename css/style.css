@@ -2191,11 +2191,11 @@ th.sortable.sort-desc::after {
 ========================================= */
 
 .org-tree {
-  margin-top: 48px;
+  margin-top: 38px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 14px;
+  font-size: 11px;
   font-family: "Kanit", sans-serif;
 }
 
@@ -2210,11 +2210,11 @@ th.sortable.sort-desc::after {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 64px;
+  gap: 51px;
 }
 
 .org-level-secretaries {
-  gap: 96px;
+  gap: 77px;
 }
 
 /* node (วงกลม + text) */
@@ -2228,13 +2228,13 @@ th.sortable.sort-desc::after {
   cursor: pointer;
   text-align: center;
   padding: 0;
-  max-width: 220px;
+  max-width: 176px;
 }
 
 
 .org-node-circle {
-  width: 160px;
-  height: 160px;
+  width: 128px;
+  height: 128px;
   border-radius: 50%;
   border: 3px solid #ec4899;
   overflow: hidden;
@@ -2245,8 +2245,8 @@ th.sortable.sort-desc::after {
 }
 
 .org-node-circle.sm {
-  width: 112px;
-  height: 112px;
+  width: 90px;
+  height: 90px;
 }
 
 .org-node-circle img {
@@ -2256,7 +2256,7 @@ th.sortable.sort-desc::after {
 }
 
 .org-node-role {
-  margin-top: 8px;
+  margin-top: 6px;
   font-weight: 600;
 }
 
@@ -2265,7 +2265,7 @@ th.sortable.sort-desc::after {
 }
 
 .org-node-nick {
-  font-size: 12px;
+  font-size: 10px;
   color: #6b7280;
 }
 
@@ -2275,11 +2275,11 @@ th.sortable.sort-desc::after {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 160px;
-  padding: 4px 18px;
+  min-width: 128px;
+  padding: 3px 14px;
   background: #f9fafb;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 10px;
   white-space: nowrap;
   border: 1px solid #e5e7eb;
 }
@@ -2290,14 +2290,14 @@ th.sortable.sort-desc::after {
   display: grid;
   grid-template-columns: 1fr 3fr;
   align-items: flex-start;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .org-left-asst {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 28px;
+  padding-top: 22px;
 }
 
 .org-right-branches {
@@ -2305,15 +2305,15 @@ th.sortable.sort-desc::after {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 48px;
-  padding-top: 40px;
+  gap: 38px;
+  padding-top: 32px;
 }
 
 /* Branch groups */
 
 .org-branch {
   position: relative;
-  padding-top: 20px;
+  padding-top: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2328,11 +2328,11 @@ th.sortable.sort-desc::after {
 }
 
 .org-branch-head {
-  gap: 16px;
+  gap: 13px;
 }
 
 .org-branch-dep {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 /* ===== เคสฝ่ายบริหารและพัฒนางบประมาณ ===== */
@@ -2356,7 +2356,7 @@ th.sortable.sort-desc::after {
 /* กล่องผู้ช่วยใต้แต่ละ branch */
 
 .org-branch-assistant {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   justify-content: center;
 }
@@ -2365,14 +2365,14 @@ th.sortable.sort-desc::after {
 .org-level-depfund {
   display: flex;
   justify-content: center;
-  gap: 3rem;          /* ระยะห่างระหว่างสองวงกลม ปรับได้ */
+  gap: 2.4rem;          /* ระยะห่างระหว่างสองวงกลม ปรับได้ */
   flex-wrap: nowrap;  /* บังคับให้อยู่บรรทัดเดียวกันบนจอใหญ่ */
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 /* จำกัดความกว้าง node ให้ตัวอักษรไม่ล้ำไปทับกัน */
 .org-level-depfund .org-node {
-  max-width: 220px;   /* กว้างพอให้ชื่อ 2–3 บรรทัด แต่ไม่ล้ำไปหาอีกวงกลม */
+  max-width: 176px;   /* กว้างพอให้ชื่อ 2–3 บรรทัด แต่ไม่ล้ำไปหาอีกวงกลม */
   /* flex: 0 0 auto; */
 }
 
@@ -2383,9 +2383,9 @@ th.sortable.sort-desc::after {
   flex-direction: row;      /* วางแนวนอน */
   justify-content: center;  /* จัดกลาง */
   align-items: flex-start;
-  gap: 2rem;                /* ระยะห่างระหว่างสองคน */
+  gap: 1.6rem;                /* ระยะห่างระหว่างสองคน */
   flex-wrap: nowrap;        /* ▲ บังคับไม่ให้ตกรอบ */
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 
@@ -2405,8 +2405,8 @@ th.sortable.sort-desc::after {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 60px;
-  margin-bottom: 12px;
+  gap: 48px;
+  margin-bottom: 10px;
 }
 
 
@@ -2427,37 +2427,37 @@ th.sortable.sort-desc::after {
 
 @media (max-width: 900px) {
   .org-tree {
-    font-size: 13px;
+    font-size: 10px;
   }
 
   .org-level {
-    gap: 32px;
+    gap: 26px;
   }
 
   .org-level-main-branches {
     grid-template-columns: 1fr;
-    row-gap: 24px;
+    row-gap: 20px;
   }
 
   .org-left-asst {
-    padding-top: 16px;
+    padding-top: 13px;
   }
 
   .org-right-branches {
     flex-direction: column;
-    gap: 32px;
-    padding-top: 24px;
+    gap: 26px;
+    padding-top: 19px;
   }
 }
 
 @media (max-width: 600px) {
   .org-node-circle {
-    width: 100px;
-    height: 100px;
-  }
-  .org-node-circle.sm {
     width: 80px;
     height: 80px;
+  }
+  .org-node-circle.sm {
+    width: 64px;
+    height: 64px;
   }
 }
 
@@ -2467,27 +2467,27 @@ th.sortable.sort-desc::after {
   /* แต่ละ level ไม่ต้องกางกว้างมาก */
   .org-level {
     flex-direction: column;
-    gap: 24px;
+    gap: 19px;
   }
 
   /* กลุ่ม main branches: จาก 2 คอลัมน์ → 1 คอลัมน์ */
   .org-level-main-branches {
     grid-template-columns: 1fr;
-    row-gap: 24px;
+    row-gap: 19px;
   }
 
   /* กล่องผู้ช่วยส่วนกลางอยู่แถวบนสุด ตรงกลาง */
   .org-left-asst {
     justify-content: center;
-    padding-top: 8px;
-    margin-bottom: 8px;
+    padding-top: 6px;
+    margin-bottom: 6px;
   }
 
   /* สาม branch (บริหารงบ / หาทุนฯ / กายภาพฯ) ซ้อนกันทีละแถว */
   .org-right-branches {
     flex-direction: column;
     align-items: center;
-    gap: 32px;
+    gap: 26px;
     padding-top: 0;
   }
 
@@ -2504,21 +2504,21 @@ th.sortable.sort-desc::after {
   /* รองประธานฝ่ายหาทุนฯ: จอเล็กให้ซ้อนแนวตั้งแทนแนวนอน */
   .org-level-depfund {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    margin-top: 12px;
+    margin-top: 10px;
   }
 
   /* ประธานกายภาพ 2 คน: จอเล็กให้ซ้อนกันทีละแถว */
   .org-level-asset-heads {
     flex-direction: column;
-    gap: 16px;
-    margin-bottom: 8px;
+    gap: 13px;
+    margin-bottom: 6px;
   }
 
   /* จำกัดความกว้าง node ไม่ให้กินจอทั้งแถบ */
   .org-node {
-    max-width: 200px;
+    max-width: 160px;
     margin-inline: auto;
   }
 }
@@ -2526,12 +2526,12 @@ th.sortable.sort-desc::after {
 /* จอเล็กมาก เพิ่มย่อวงกลมลงอีกนิด */
 @media (max-width: 600px) {
   .org-node-circle {
-    width: 100px;
-    height: 100px;
-  }
-  .org-node-circle.sm {
     width: 80px;
     height: 80px;
+  }
+  .org-node-circle.sm {
+    width: 64px;
+    height: 64px;
   }
 }
 

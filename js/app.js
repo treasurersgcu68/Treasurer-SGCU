@@ -78,6 +78,7 @@ let projectModalTitleBadgeEl;
 let projectModalHeaderRowEl;
 let projectModalBodyEl;
 let projectModalCloseEl;
+let pdfRootEl;
 let currentSort = { key: null, direction: "asc" };
 let projectStatusContexts = {};
 let activeProjectStatusContext = "public";
@@ -324,7 +325,7 @@ function getCache(key, ttlMs) {
     if (!ts || Date.now() - ts > ttlMs) return null;
     return parsed.data || null;
   } catch (err) {
-    console.warn("อ่าน cache ไม่ได้ - app.js:327", err);
+    console.warn("อ่าน cache ไม่ได้ - app.js:328", err);
     return null;
   }
 }
@@ -334,7 +335,7 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (err) {
-    console.warn("เขียน cache ไม่ได้ - app.js:337", err);
+    console.warn("เขียน cache ไม่ได้ - app.js:338", err);
   }
 }
 
@@ -451,7 +452,7 @@ function extractProjectsFromRows(dataRows, headerRow) {
       let councilSessionText = "-";
       if (councilType || councilSession || councilMeetNo) {
         councilSessionText =
-          `ผ่านที่ประชุมสภาสมัย${councilType || ""}ที่ ` +
+          `สมัย${councilType || ""}ที่ ` +
           `${councilSession || ""} ครั้งที่ ${councilMeetNo || ""}`;
       }
 
@@ -486,6 +487,7 @@ function extractProjectsFromRows(dataRows, headerRow) {
       const advStatus = (row[COL_ADV_STATUS] || "").toString();
       const advDocNo = (row[COL_ADV_DOCNO] || "").toString();
       const advDueDate = (row[COL_ADV_DUE] || "").toString();
+      const evidenceDueDate = (row[COL_ADV_DUE] || "").toString();
 
       let advPercent = null;
       if (row[COL_ADV_PERCENT] !== undefined && row[COL_ADV_PERCENT] !== null && row[COL_ADV_PERCENT] !== "") {
@@ -544,6 +546,7 @@ function extractProjectsFromRows(dataRows, headerRow) {
         advanceDueDate: advDueDate,
         advancePercent: advPercent,
         advanceAmount: advAmountVal,
+        evidenceDueDate,
 
         closeChecker,
         closeDueDate,
@@ -564,11 +567,11 @@ async function loadProjectsFromSheet() {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
-      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:567");
+      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:570");
       return;
     }
 
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:571");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:574");
     const res = await fetch(SHEET_CSV_URL);
     const csvText = await res.text();
 
@@ -587,7 +590,7 @@ async function loadProjectsFromSheet() {
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:590", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:593", err);
     projects = getFallbackProjects();
   }
 }
@@ -613,7 +616,7 @@ async function loadOrgFilters() {
       }))
       .filter((r) => r.group !== "" && r.name !== "");
   } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:616", err);
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:619", err);
     orgFilters = [];
   }
 }
@@ -1087,6 +1090,7 @@ function openProjectModal(project) {
   const orgName = project.orgName || "-";
   const orgGroup = project.orgGroup || "-";
   const approveStatus = project.approvalStatus || project.statusMain || "-";
+  const canDownloadPdf = shouldShowPdfDownload(project);
 
   // title + badge ด้านบน
   projectModalTitleEl.textContent = name;
@@ -1267,7 +1271,7 @@ function openProjectModal(project) {
             <div class="modal-item-value">${approveStatus}</div>
           </div>
           <div>
-            <div class="modal-item-label">ผ่านที่ประชุมสภาสมัยที่ / ครั้งที่</div>
+            <div class="modal-item-label">ผ่านที่ประชุมสภา</div>
             <div class="modal-item-value">${councilSessionText}</div>
           </div>
           <div>
@@ -1361,6 +1365,15 @@ function openProjectModal(project) {
             <div class="modal-item-value">${advanceAmountText}</div>
           </div>
         </div>
+        ${
+          canDownloadPdf
+            ? `
+        <div class="modal-actions">
+          <button type="button" class="btn-primary pdf-download-btn" data-project-pdf>ดาวน์โหลดเอกสารยืมรองจ่าย (อัตโนมัติ)</button>
+        </div>
+        `
+            : ""
+        }
       </section>
 
       <div> <br/> </div>
@@ -1424,6 +1437,11 @@ function openProjectModal(project) {
   projectModalBodyEl.innerHTML = html;
   projectModalEl.classList.add("show");
 
+  const pdfBtn = projectModalBodyEl.querySelector("[data-project-pdf]");
+  if (pdfBtn) {
+    pdfBtn.addEventListener("click", () => downloadProjectPdf(project));
+  }
+
   // toggle กล่อง contact ผู้ช่วยเหรัญญิก
   const links = projectModalBodyEl.querySelectorAll(".assistant-contact-link");
   links.forEach((link) => {
@@ -1439,10 +1457,367 @@ function openProjectModal(project) {
   });
 }
 
+function shouldShowPdfDownload(project) {
+  const status = (project.statusMain || project.approvalStatus || "").toString().trim();
+  const approveDate = (project.approveDate || "").toString().trim();
+  const daysToDeadline =
+    typeof project.daysToDeadline === "number" && !isNaN(project.daysToDeadline)
+      ? project.daysToDeadline
+      : null;
+
+  return status === "อนุมัติโครงการ" && approveDate !== "" && daysToDeadline !== null && daysToDeadline > 21;
+}
+
 
 function closeProjectModal() {
   if (!projectModalEl) return;
   projectModalEl.classList.remove("show");
+}
+
+/* ===== PDF Auto-fill ===== */
+const PDF_SIGNERS = {
+  treasurerName: "นายธุวานนท์ กิ้มเฉี้ยง",
+  presidentName: "นางสาวเกวลี เอกโยคยะ"
+};
+
+function formatPdfNumber(value) {
+  if (value === null || value === undefined || value === "" || isNaN(value)) return "";
+  return Number(value).toLocaleString("th-TH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function formatPercentForPdf(value) {
+  if (value === null || value === undefined || value === "" || isNaN(value)) return "";
+  return Number(value).toFixed(0);
+}
+
+function buildPdfData(project) {
+  const budget100 =
+    project.approvedBudget100 != null ? project.approvedBudget100 : project.budget || 0;
+  const budget80 = Math.round(budget100 * 0.8 * 100) / 100;
+  const dateRange = formatThaiDateRange(project.approveDate, project.lastWorkDate);
+  const evidenceDueDateText = formatThaiDateNoPrefix(project.evidenceDueDate);
+  const advancePercentText = formatPercentForPdf(project.advancePercent);
+  const leadInfo = getProjectLeadInfo();
+
+  return {
+    projectName: project.name || "",
+    projectCode: project.code || "",
+    orgName: project.orgName || "",
+    orgGroup: project.orgGroup || "",
+    councilSessionText: project.councilSessionText || "",
+    projectDateRange: dateRange,
+    approvedBudget100Text: formatPdfNumber(budget100),
+    approvedBudget80Text: formatPdfNumber(budget80),
+    approvedBudget100Words: thaiBahtText(budget100),
+    approvedBudget80Words: thaiBahtText(budget80),
+    evidenceDueDateText,
+    advancePercentText,
+    transferDocNo: project.transferDocNo || "",
+    signerTreasurerName: PDF_SIGNERS.treasurerName,
+    signerPresidentName: PDF_SIGNERS.presidentName,
+    projectLeadName: leadInfo.name,
+    projectLeadPhone: leadInfo.phone
+  };
+}
+
+function fillPdfFields(data, rootEl = pdfRootEl) {
+  if (!rootEl) return;
+  rootEl.querySelectorAll("[data-pdf-field]").forEach((el) => {
+    const key = el.getAttribute("data-pdf-field");
+    const value = data[key];
+    const text = value == null ? "" : value.toString().trim();
+    el.textContent = text;
+  });
+}
+
+function applyThaiSegmentation(rootEl) {
+  if (!rootEl || typeof Intl === "undefined" || !Intl.Segmenter) return;
+
+  const segmenter = new Intl.Segmenter("th", { granularity: "word" });
+  const targets = rootEl.querySelectorAll(".pdf-paragraph");
+
+  targets.forEach((el) => {
+    const doc = el.ownerDocument;
+    const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    textNodes.forEach((node) => {
+      const text = node.nodeValue || "";
+      if (!text.trim()) return;
+
+      const frag = doc.createDocumentFragment();
+      for (const seg of segmenter.segment(text)) {
+        frag.appendChild(doc.createTextNode(seg.segment));
+        if (seg.isWordLike) {
+          frag.appendChild(doc.createElement("wbr"));
+        }
+      }
+      node.parentNode.replaceChild(frag, node);
+    });
+  });
+}
+
+function downloadProjectPdf(project) {
+  if (!pdfRootEl) return;
+  if (downloadPdfInSameTab(project)) return;
+
+  const printWin = window.open("", "_blank");
+  if (!printWin) {
+    alert("ไม่สามารถเปิดหน้าพิมพ์ PDF ได้ กรุณาอนุญาตป๊อปอัปสำหรับหน้านี้");
+    return;
+  }
+
+  openPdfPrintWindow(project, printWin);
+}
+
+function getProjectLeadInfo() {
+  const name = window.prompt("กรุณากรอกชื่อประธานโครงการสำหรับใช้ใน PDF\nเช่น นายองค์การบริหาร สภานิสิต", "");
+  const phone = window.prompt("กรุณากรอกเบอร์ติดต่อประธานโครงการสำหรับใช้ใน PDF\nเช่น 081-234-5678", "");
+  return {
+    name: (name || "").trim(),
+    phone: (phone || "").trim()
+  };
+}
+
+function parsePdfDate(text) {
+  if (!text) return null;
+  const s = text.toString().trim();
+  if (!s) return null;
+
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const day = parseInt(m[1], 10);
+    const mon = parseInt(m[2], 10) - 1;
+    const yr = parseInt(m[3], 10);
+    const d = new Date(yr, mon, day);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (m) {
+    const yr = parseInt(m[1], 10);
+    const mon = parseInt(m[2], 10) - 1;
+    const day = parseInt(m[3], 10);
+    const d = new Date(yr, mon, day);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const direct = new Date(s);
+  return isNaN(direct.getTime()) ? null : direct;
+}
+
+function parseAmountNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const num = parseFloat(value.toString().replace(/,/g, ""));
+  return isNaN(num) ? null : num;
+}
+
+function readThaiNumberGroup(num) {
+  const units = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน"];
+  const digits = ["", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+  let result = "";
+  const str = num.toString();
+  const len = str.length;
+
+  for (let i = 0; i < len; i++) {
+    const digit = parseInt(str.charAt(i), 10);
+    const pos = len - i - 1;
+    if (digit === 0) continue;
+
+    if (pos === 0 && digit === 1 && len > 1) {
+      result += "เอ็ด";
+    } else if (pos === 1 && digit === 2) {
+      result += "ยี่";
+    } else if (pos === 1 && digit === 1) {
+      result += "";
+    } else {
+      result += digits[digit];
+    }
+    result += units[pos];
+  }
+
+  return result;
+}
+
+function readThaiNumber(num) {
+  if (num === 0) return "ศูนย์";
+  if (num >= 1000000) {
+    const million = Math.floor(num / 1000000);
+    const rest = num % 1000000;
+    const head = readThaiNumber(million) + "ล้าน";
+    return rest ? head + readThaiNumber(rest) : head;
+  }
+  return readThaiNumberGroup(num);
+}
+
+function thaiBahtText(value) {
+  const amount = parseAmountNumber(value);
+  if (amount === null) return "";
+
+  let intPart = Math.floor(amount);
+  let satang = Math.round((amount - intPart) * 100);
+
+  if (satang === 100) {
+    intPart += 1;
+    satang = 0;
+  }
+
+  const intText = readThaiNumber(intPart);
+  if (satang === 0) {
+    return `${intText}บาทถ้วน`;
+  }
+
+  const satangText = readThaiNumber(satang);
+  return `${intText}บาท${satangText}สตางค์`;
+}
+
+function formatThaiDate(dateObj) {
+  if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) return "";
+  const dayMonth = new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "long"
+  }).format(dateObj);
+  const year = dateObj.getFullYear() + 543;
+  return `วันที่ ${dayMonth} พ.ศ. ${year}`;
+}
+
+function formatThaiDateRange(startRaw, endRaw) {
+  const startDate = parsePdfDate(startRaw);
+  const endDate = parsePdfDate(endRaw);
+  const startText = formatThaiDate(startDate);
+  const endText = formatThaiDate(endDate);
+
+  if (startText && endText) return `${startText} ถึง ${endText}`;
+  return startText || endText || "";
+}
+
+function formatThaiDateNoPrefix(raw) {
+  const parsed = parsePdfDate(raw);
+  if (!parsed || isNaN(parsed.getTime())) return (raw || "").toString().trim();
+  const dayMonth = new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "long"
+  }).format(parsed);
+  const year = parsed.getFullYear() + 543;
+  return `${dayMonth} พ.ศ. ${year}`;
+}
+
+function openPdfPrintWindow(project, printWin) {
+  if (!pdfRootEl) return false;
+
+  const data = buildPdfData(project);
+  const tempRoot = pdfRootEl.cloneNode(true);
+  tempRoot.id = "pdfRootPrint";
+  tempRoot.removeAttribute("aria-hidden");
+  tempRoot.style.position = "static";
+  tempRoot.style.left = "0";
+  tempRoot.style.top = "0";
+  tempRoot.style.visibility = "visible";
+  tempRoot.style.pointerEvents = "auto";
+
+  fillPdfFields(data, tempRoot);
+  applyThaiSegmentation(tempRoot);
+
+  const cssHref = "css/style.css";
+  const fontHref =
+    "https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap";
+
+  printWin.document.open();
+  printWin.document.write(`
+    <!doctype html>
+    <html lang="th">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SGCU PDF</title>
+        <link rel="stylesheet" href="${fontHref}" />
+        <link rel="stylesheet" href="${cssHref}" />
+        <style>
+          body { margin: 0; background: #fff; }
+          .pdf-root { position: static !important; left: 0 !important; top: 0 !important; }
+        </style>
+      </head>
+      <body></body>
+    </html>
+  `);
+  printWin.document.close();
+
+  printWin.onload = () => {
+    printWin.document.body.appendChild(tempRoot);
+    printWin.focus();
+    printWin.print();
+  };
+
+  return true;
+}
+
+function downloadPdfInSameTab(project) {
+  if (!pdfRootEl) return false;
+
+  const data = buildPdfData(project);
+  const tempRoot = pdfRootEl.cloneNode(true);
+  tempRoot.id = "pdfRootInline";
+  tempRoot.removeAttribute("aria-hidden");
+  tempRoot.style.position = "static";
+  tempRoot.style.left = "0";
+  tempRoot.style.top = "0";
+  tempRoot.style.visibility = "visible";
+  tempRoot.style.pointerEvents = "auto";
+
+  fillPdfFields(data, tempRoot);
+  applyThaiSegmentation(tempRoot);
+
+  const iframe = document.createElement("iframe");
+  iframe.className = "pdf-print-frame";
+  iframe.setAttribute("aria-hidden", "true");
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  const baseHref = new URL(".", window.location.href).href;
+  doc.open();
+  doc.write(`
+    <!doctype html>
+    <html lang="th">
+      <head>
+        <meta charset="UTF-8" />
+        <base href="${baseHref}" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SGCU PDF</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" />
+        <link rel="stylesheet" href="css/style.css" />
+        <style>
+          body { margin: 0; background: #fff; }
+          .pdf-root { position: static !important; left: 0 !important; top: 0 !important; }
+        </style>
+      </head>
+      <body></body>
+    </html>
+  `);
+  doc.close();
+
+  const doPrint = () => {
+    doc.body.appendChild(tempRoot);
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => iframe.remove(), 1000);
+  };
+
+  iframe.onload = () => {
+    setTimeout(doPrint, 200);
+  };
+
+  if (iframe.contentWindow.document.readyState === "complete") {
+    setTimeout(doPrint, 200);
+  }
+
+  return true;
 }
 
 /* 8) Charts */
@@ -2364,7 +2739,7 @@ function initAuthUI() {
     staffAuthUser = null;
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:2365", err);
+      console.error("logout error - app.js:2738", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
@@ -2423,7 +2798,7 @@ function initAuthUI() {
       staffLoginErrorEl.textContent = "";
     });
   }
-}
+
 
 function toggleProjectStatusAccess(isAuthenticated) {
   if (projectTableAreaEl) {
@@ -2631,7 +3006,7 @@ function initAuthUI() {
     staffAuthUser = null;
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:2632", err);
+      console.error("logout error - app.js:3005", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
@@ -2718,7 +3093,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2719", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:3092", err);
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
     }
@@ -3254,7 +3629,7 @@ async function loadNewsFromSheet() {
     setCache(CACHE_KEYS.NEWS, newsItems);
     renderNewsList();
   } catch (err) {
-    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:3255", err);
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:3628", err);
   } finally {
     toggleNewsSkeleton(false);
   }
@@ -3568,7 +3943,7 @@ async function loadDownloadDocuments() {
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:3569", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:3942", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   } finally {
     toggleDownloadSkeleton(false);
@@ -3615,7 +3990,7 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     },
     error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:3616", err);
+      console.error("Error loading SCORE_SHEET - app.js:3989", err);
     }
   });
 }
@@ -3795,6 +4170,7 @@ window.addEventListener("load", async () => {
   projectModalHeaderRowEl = document.getElementById("projectModalHeaderRow");
   projectModalBodyEl = document.getElementById("projectModalBody");
   projectModalCloseEl = document.getElementById("projectModalClose");
+  pdfRootEl = document.getElementById("pdfRoot");
   budgetChartSkeletonEl = document.getElementById("budgetChartSkeleton");
   statusPieSkeletonEl = document.getElementById("statusPieSkeleton");
   projectTableSkeletonEl = document.getElementById("projectTableSkeleton");
@@ -4028,7 +4404,7 @@ window.addEventListener("load", async () => {
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
     renderHomeKpis();                           // KPI หน้าแรก
   } catch (err) {
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4029", err);
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4403", err);
     projects = getFallbackProjects();
     await loadOrgFilters();
     ["public", "staff"].forEach((key) => {

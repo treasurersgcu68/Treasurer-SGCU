@@ -61,6 +61,16 @@
     </script>
   </head>
   <body>
+    <div id="appLoader" class="app-loader" aria-live="polite" aria-busy="true">
+      <div class="app-loader-panel">
+        <div class="app-loader-logo" aria-hidden="true">
+          <img src="img/logo_treasurur jpg.png" alt="" />
+        </div>
+        <div class="app-loader-title">Treasurer SGCU</div>
+        <div class="app-loader-subtitle">กำลังเชื่อมต่อข้อมูล</div>
+        <div class="app-loader-progress" aria-hidden="true"><span></span></div>
+      </div>
+    </div>
     <header class="site-header">
       <div class="header-inner">
         <div class="logo">
@@ -203,33 +213,67 @@
               <p>ภาพรวมการปิดโครงการและการใช้งบประมาณแบบอัปเดตจากข้อมูลโครงการล่าสุด</p>
             </header>
 
-            <div class="home-kpi-grid">
-              <article class="kpi-card">
-                <div class="kpi-label">% ปิดโครงการตรงเวลา</div>
-                <div id="kpiOnTime" class="kpi-value">–</div>
-                <div class="kpi-caption" id="kpiOnTimeCaption">กำลังประมวลผล</div>
-              </article>
+            <div class="home-kpi-panel">
+              <div class="home-kpi-grid">
+                <article class="kpi-card">
+                  <div class="kpi-label">% ปิดโครงการตรงเวลา</div>
+                  <div id="kpiOnTime" class="kpi-value">–</div>
+                  <div class="kpi-caption" id="kpiOnTimeCaption">กำลังประมวลผล</div>
+                </article>
 
-              <article class="kpi-card">
-                <div class="kpi-label">การใช้จ่ายเทียบงบ</div>
-                <div id="kpiBudgetUsage" class="kpi-value">–</div>
-                <div class="kpi-caption" id="kpiBudgetUsageCaption">งบที่อนุมัติ vs ใช้จริง</div>
-              </article>
+                <article class="kpi-card">
+                  <div class="kpi-label">การใช้จ่ายเทียบงบ</div>
+                  <div id="kpiBudgetUsage" class="kpi-value">–</div>
+                  <div class="kpi-caption" id="kpiBudgetUsageCaption">งบที่อนุมัติ vs ใช้จริง</div>
+                </article>
 
-              <article class="kpi-card">
-                <div class="kpi-label">ปิดโครงการแล้ว</div>
-                <div id="kpiClosedProjects" class="kpi-value">–</div>
-                <div class="kpi-caption" id="kpiClosedProjectsCaption">จำนวนโครงการที่ปิดแล้ว</div>
-              </article>
-            </div>
-
-            <div class="kpi-chart-card">
-              <div class="chart-header">
-                <h3 class="chart-title">เปรียบเทียบรายเดือน</h3>
-                <p class="chart-caption" id="kpiMonthlyCaption">กำลังเตรียมข้อมูล</p>
+                <article class="kpi-card">
+                  <div class="kpi-label">ปิดโครงการแล้ว</div>
+                  <div id="kpiClosedProjects" class="kpi-value">–</div>
+                  <div class="kpi-caption" id="kpiClosedProjectsCaption">จำนวนโครงการที่ปิดแล้ว</div>
+                </article>
               </div>
-              <div class="chart-inner">
-                <canvas id="homeKpiChart" height="140"></canvas>
+
+              <div class="home-kpi-lower">
+                <div class="kpi-chart-card">
+                  <div class="chart-header">
+                    <h3 class="chart-title">เปรียบเทียบรายเดือน</h3>
+                    <p class="chart-caption" id="kpiMonthlyCaption">กำลังเตรียมข้อมูล</p>
+                  </div>
+                  <div class="chart-inner">
+                    <canvas id="homeKpiChart" height="140"></canvas>
+                  </div>
+                </div>
+
+                <div class="kpi-heatmap-card">
+                  <div class="calendar-heatmap-header">
+                    <h4 class="calendar-heatmap-title">Heat map วันปฏิบัติงานวันสุดท้าย</h4>
+                  </div>
+                  <div class="heatmap-year">
+                    <div id="homeHeatmapMonths" class="heatmap-axis heatmap-axis-months"></div>
+                    <div class="heatmap-body">
+                      <div class="heatmap-axis heatmap-axis-days" aria-hidden="true">
+                        <span>อา</span>
+                        <span>จ</span>
+                        <span>อ</span>
+                        <span>พ</span>
+                        <span>พฤ</span>
+                        <span>ศ</span>
+                        <span>ส</span>
+                      </div>
+                      <div id="homeHeatmap" class="heatmap-year-grid"></div>
+                    </div>
+                  </div>
+                  <div class="calendar-heatmap-legend" aria-hidden="true">
+                    <span class="heatmap-legend-label">น้อย</span>
+                    <span class="heatmap-legend-swatch heat-1"></span>
+                    <span class="heatmap-legend-swatch heat-2"></span>
+                    <span class="heatmap-legend-swatch heat-3"></span>
+                    <span class="heatmap-legend-swatch heat-4"></span>
+                    <span class="heatmap-legend-swatch heat-5"></span>
+                    <span class="heatmap-legend-label">มาก</span>
+                  </div>
+                </div>
               </div>
             </div>
           </section>

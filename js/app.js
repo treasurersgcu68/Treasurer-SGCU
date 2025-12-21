@@ -114,6 +114,8 @@ let kpiClosedProjectsEl;
 let kpiClosedProjectsCaptionEl;
 let kpiMonthlyCaptionEl;
 let homeKpiChart = null;
+let homeHeatmapEl;
+let homeHeatmapMonthsEl;
 let navLinksAll = [];
 let statusViewEl;
 let calendarViewEl;
@@ -314,6 +316,14 @@ function canUseLocalStorage() {
   }
 }
 
+function debounce(fn, delay = 150) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
 function getCache(key, ttlMs) {
   if (!canUseLocalStorage()) return null;
   try {
@@ -325,7 +335,7 @@ function getCache(key, ttlMs) {
     if (!ts || Date.now() - ts > ttlMs) return null;
     return parsed.data || null;
   } catch (err) {
-    console.warn("อ่าน cache ไม่ได้ - app.js:328", err);
+    console.warn("อ่าน cache ไม่ได้ - app.js:338", err);
     return null;
   }
 }
@@ -335,7 +345,7 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (err) {
-    console.warn("เขียน cache ไม่ได้ - app.js:338", err);
+    console.warn("เขียน cache ไม่ได้ - app.js:348", err);
   }
 }
 
@@ -567,11 +577,11 @@ async function loadProjectsFromSheet() {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
-      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:570");
+      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:580");
       return;
     }
 
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:574");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:584");
     const res = await fetch(SHEET_CSV_URL);
     const csvText = await res.text();
 
@@ -590,7 +600,7 @@ async function loadProjectsFromSheet() {
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:593", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:603", err);
     projects = getFallbackProjects();
   }
 }
@@ -616,7 +626,7 @@ async function loadOrgFilters() {
       }))
       .filter((r) => r.group !== "" && r.name !== "");
   } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:619", err);
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:629", err);
     orgFilters = [];
   }
 }
@@ -790,6 +800,112 @@ function updateSummaryCards(filtered) {
   if (totalBudgetEl)     totalBudgetEl.textContent     = totalBudget.toLocaleString("th-TH");
 }
 
+function renderHomeHeatmap() {
+  const container = homeHeatmapEl;
+  const monthsRow = homeHeatmapMonthsEl;
+  if (!container || !monthsRow) return;
+
+  container.innerHTML = "";
+  monthsRow.innerHTML = "";
+  if (!projects || !projects.length) return;
+
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const startYear = currentMonth >= 5 ? today.getFullYear() : today.getFullYear() - 1;
+  const endYear = startYear + 1;
+  const monthNames = ["มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค."];
+
+  const eventsByDate = {};
+  let maxCount = 0;
+  projects
+    .filter((p) => (p.statusMain || "").trim() !== "ยกเลิกโครงการ")
+    .forEach((p) => {
+      const date = parseProjectDate(p.lastWorkDate);
+      if (!date || date < new Date(startYear, 5, 1) || date > new Date(endYear, 4, 31)) return;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      if (!eventsByDate[key]) eventsByDate[key] = [];
+      eventsByDate[key].push({
+        title: p.name || "(ไม่ระบุชื่อโครงการ)",
+        start: date,
+        org: p.orgName || "(ไม่ระบุฝ่าย/ชมรม)",
+        status: mapProjectStatusToCalendarStatus(p),
+        note: `รหัสโครงการ: ${p.code || "-"}`,
+        budgetSource: p.fundSource || "-",
+        year: p.year || "-"
+      });
+    });
+
+  const yearStart = new Date(startYear, 5, 1);
+  const yearEnd = new Date(endYear, 4, 31);
+  const startOfGrid = new Date(yearStart);
+  startOfGrid.setDate(yearStart.getDate() - yearStart.getDay());
+  const endOfGrid = new Date(yearEnd);
+  endOfGrid.setDate(yearEnd.getDate() + (6 - yearEnd.getDay()));
+
+  for (let d = new Date(yearStart); d <= yearEnd; d.setDate(d.getDate() + 1)) {
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const count = (eventsByDate[key] || []).length;
+    if (count > maxCount) maxCount = count;
+  }
+
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const totalWeeks = Math.ceil((endOfGrid - startOfGrid + 24 * 60 * 60 * 1000) / weekMs);
+  const monthLabelPositions = {};
+  for (let i = 0; i < 12; i++) {
+    const month = (i + 5) % 12;
+    const labelYear = month >= 5 ? startYear : endYear;
+    const firstOfMonth = new Date(labelYear, month, 1);
+    const diffWeeks = Math.floor((firstOfMonth - startOfGrid) / weekMs);
+    if (diffWeeks >= 0 && diffWeeks < totalWeeks) {
+      monthLabelPositions[diffWeeks] = monthNames[i];
+    }
+  }
+
+  for (let week = 0; week < totalWeeks; week++) {
+    const label = document.createElement("span");
+    label.textContent = monthLabelPositions[week] || "";
+    monthsRow.appendChild(label);
+  }
+
+  for (let week = 0; week < totalWeeks; week++) {
+    for (let day = 0; day < 7; day++) {
+      const date = new Date(startOfGrid);
+      date.setDate(startOfGrid.getDate() + week * 7 + day);
+      const isInYear = date >= yearStart && date <= yearEnd;
+
+      const cell = document.createElement("div");
+      cell.className = "heatmap-cell";
+
+      if (!isInYear) {
+        cell.classList.add("heatmap-cell-empty");
+        container.appendChild(cell);
+        continue;
+      }
+
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const events = eventsByDate[key] || [];
+      const count = events.length;
+      const level = getHeatmapLevel(count, maxCount);
+      cell.classList.add(`heat-${level}`);
+
+      if (date.toDateString() === today.toDateString()) {
+        cell.classList.add("heatmap-cell-today");
+      }
+      if (count > 0) {
+        cell.classList.add("has-events");
+        cell.title = `${date.toLocaleDateString("th-TH")} — ${count} โครงการ`;
+        cell.addEventListener("click", () => {
+          openCalendarDayModal(date, events);
+        });
+      } else {
+        cell.title = date.toLocaleDateString("th-TH");
+      }
+
+      container.appendChild(cell);
+    }
+  }
+}
+
 function renderHomeKpis() {
   if (!projects || !projects.length) return;
 
@@ -877,6 +993,8 @@ function renderHomeKpis() {
       ? "ใช้วันที่สิ้นสุดการปฏิบัติงานของโครงการเป็นฐานเวลา"
       : "ยังไม่มีวันที่สิ้นสุดการปฏิบัติงานของโครงการ";
   }
+
+  renderHomeHeatmap();
 
   if (!labels.length) {
     if (homeKpiChart) {
@@ -2466,13 +2584,6 @@ function sortProjects(projects, key, direction) {
   return sorted;
 }
 
-function updateHomeHeroSummary(total, approved, pending) {
-  const totalEl = document.getElementById("homeTotalProjects");
-  const approvedEl = document.getElementById("homeApprovedProjects");
-  const pendingEl = document.getElementById("homePendingProjects");
-  if (!totalEl || !approvedEl || !pendingEl) return;
-}
-
 function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   if (!Array.isArray(projects)) return;
 
@@ -2492,17 +2603,6 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   if (tableCaptionEl) {
     tableCaptionEl.textContent = `แสดง ${filtered.length} โครงการ`;
   }
-
-  const total = filtered.length;
-  const approved = filtered.filter(
-    (p) => (p.statusMain || "").trim() === "อนุมัติโครงการ"
-  ).length;
-  const pending = filtered.filter((p) => {
-    const s = (p.statusMain || "").trim();
-    return s !== "" && s !== "อนุมัติโครงการ";
-  }).length;
-
-  updateHomeHeroSummary(total, approved, pending);
 
   syncChartsToContext(ctxKey);
 }
@@ -2732,281 +2832,11 @@ function initAuthUI() {
   if (loginPageGoogleBtnEl) {
     loginPageGoogleBtnEl.addEventListener("click", handleGoogleLogin);
   }
-  return "home";
-}
-
   function handleLogout() {
     staffAuthUser = null;
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:2742", err);
-    });
-
-    const hamburger = document.getElementById("hamburgerBtn");
-    const mobileMenu = document.getElementById("mobileMenu");
-    if (hamburger && mobileMenu) {
-      hamburger.classList.remove("open");
-      mobileMenu.classList.remove("show");
-      hamburger.setAttribute("aria-expanded", "false");
-    }
-  }
-
-  if (logoutBtnEl) {
-    logoutBtnEl.addEventListener("click", handleLogout);
-  }
-  if (loginPageLogoutBtnEl) {
-    loginPageLogoutBtnEl.addEventListener("click", handleLogout);
-  }
-  if (mobileLogoutBtnEl) {
-    mobileLogoutBtnEl.addEventListener("click", handleLogout);
-  }
-
-  if (staffLoginFormEl && staffLoginUsernameEl && staffLoginPasswordEl && staffLoginErrorEl) {
-    staffLoginFormEl.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      staffLoginErrorEl.textContent = "";
-      const username = staffLoginUsernameEl.value.trim().toLowerCase();
-      const pw = staffLoginPasswordEl.value;
-      if (!username || !pw) {
-        staffLoginErrorEl.textContent = "กรอกชื่อผู้ใช้และรหัสผ่านให้ครบถ้วน";
-        return;
-      }
-
-      if (!Object.keys(staffCredentials).length) {
-        staffLoginErrorEl.textContent = "กำลังโหลดข้อมูลผู้ใช้ staff โปรดลองใหม่";
-        return;
-      }
-
-      const staffInfo = staffCredentials[username];
-      if (!staffInfo) {
-        staffLoginErrorEl.textContent = "ไม่พบชื่อผู้ใช้นี้ กรุณาตรวจสอบอีกครั้ง";
-        return;
-      }
-      if (staffInfo.password !== pw) {
-        staffLoginErrorEl.textContent = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
-        return;
-      }
-
-      staffAuthUser = {
-        username,
-        position: staffInfo.position || "",
-        nick: staffInfo.nick || "",
-        role: deriveStaffRole(username)
-      };
-      refreshAuthDisplay(auth.currentUser);
-      staffLoginFormEl.reset();
-      staffLoginErrorEl.textContent = "";
-    });
-  }
-
-
-function toggleProjectStatusAccess(isAuthenticated) {
-  if (projectTableAreaEl) {
-    projectTableAreaEl.style.display = isAuthenticated ? "block" : "none";
-  }
-  if (projectTableLockEl) {
-    projectTableLockEl.style.display = isAuthenticated ? "none" : "block";
-  }
-}
-
-function updateNavVisibility(isAuthenticated) {
-  if (!navLinksAll.length) return;
-  const publicAllowed = new Set(["home", "project-status", "financial-docs", "login"]);
-  navLinksAll.forEach((link) => {
-    const mode = link.dataset.visible || "public";
-    const page = link.dataset.page || "";
-    if (!isAuthenticated && !publicAllowed.has(page)) {
-      link.style.display = "none";
-      return;
-    }
-
-    if (mode === "protected") {
-      link.style.display = isAuthenticated ? "" : "none";
-    } else if (mode === "public-only") {
-      link.style.display = isAuthenticated ? "none" : "";
-    } else {
-      link.style.display = "";
-    }
-  });
-}
-
-function updateNavForStaff(staffUser) {
-  if (!navLinksAll.length || !staffUser) return;
-
-  const roleAllowedMap = {
-    "00": new Set(["project-status-staff", "borrow-assets-staff", "meeting-room-staff"]),
-    "01": new Set(["project-status-staff"]),
-    "04": new Set(["borrow-assets-staff", "meeting-room-staff"])
-  };
-
-  const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||
-    new Set(["project-status-staff", "borrow-assets-staff", "meeting-room-staff"]);
-
-  navLinksAll.forEach((link) => {
-    const page = link.dataset.page || "";
-    link.style.display = allowedStaffPages.has(page) ? "" : "none";
-  });
-}
-
-function getPreferredPageForState(isAuth, staffUser) {
-  if (!isAuth) {
-    return "home";
-  }
-  if (staffUser) {
-    const role = staffUser.role || "";
-    if (role === "01") return "project-status-staff";
-    if (role === "04") return "borrow-assets-staff";
-    // default / 00
-    return "project-status-staff";
-  }
-  return "home";
-}
-
-function goToFirstVisibleNavPageWithPreference(preferredPage) {
-  if (!navLinksAll.length) return;
-
-  function isVisible(link) {
-    return link && link.style.display !== "none";
-  }
-
-  let targetPage = preferredPage;
-  if (targetPage) {
-    const preferredLink = navLinksAll.find(
-      (link) => link.dataset.page === targetPage && isVisible(link)
-    );
-    if (!preferredLink) {
-      targetPage = null;
-    }
-  }
-
-  if (!targetPage) {
-    const first = navLinksAll.find(isVisible);
-    targetPage = first?.dataset.page;
-  }
-
-  if (!targetPage) return;
-
-  const targetHash = `#${targetPage}`;
-  if (window.location.hash !== targetHash) {
-    window.location.hash = targetHash;
-  } else {
-    window.dispatchEvent(new HashChangeEvent("hashchange"));
-  }
-}
-
-function updateNavLabelsForStaff(isStaff) {
-  const labelMap = {
-    "project-status": {
-      default: "Project Status",
-      staff: "Project Status for Staff",
-      staffPage: "project-status-staff"
-    },
-    "borrow-assets": {
-      default: "Borrow & Return Assets",
-      staff: "borrow-assets for Staff",
-      staffPage: "borrow-assets-staff"
-    },
-    "meeting-room": {
-      default: "Meeting Room",
-      staff: "meeting-room for Staff",
-      staffPage: "meeting-room-staff"
-    }
-  };
-
-  Object.entries(labelMap).forEach(([page, labels]) => {
-    const targetPage = isStaff ? labels.staffPage : page;
-    const targetLabel = isStaff ? labels.staff : labels.default;
-    document
-      .querySelectorAll(`a[data-page="${page}"], a[data-page="${labels.staffPage}"]`)
-      .forEach((el) => {
-        el.textContent = targetLabel;
-        el.dataset.page = targetPage;
-      });
-  });
-}
-
-function initAuthUI() {
-  if (!window.sgcuAuth) {
-    const panel = document.getElementById("authPanel");
-    if (panel) {
-      panel.style.display = "none";
-    }
-    return;
-  }
-
-  const {
-    auth,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signOut,
-    onAuthStateChanged
-  } = window.sgcuAuth;
-
-  if (!auth) return;
-
-  function deriveStaffRole(username) {
-    if (!username) return "";
-    const parts = username.split(/[.\-]/);
-    return parts[1] || ""; // 10.XX.YY-ZZZ -> take XX
-  }
-
-  function refreshAuthDisplay(firebaseUser) {
-    const hasFirebase = !!firebaseUser;
-    const hasStaff = !!staffAuthUser;
-    const isAuth = hasFirebase || hasStaff;
-    isUserAuthenticated = isAuth;
-    const staffLabel = hasStaff
-      ? [staffAuthUser.username, staffAuthUser.position].filter(Boolean).join(" ")
-      : "";
-    const nameText = hasFirebase
-      ? `สวัสดี ${firebaseUser.displayName || firebaseUser.email || ""}`
-      : hasStaff
-        ? `Staff : ${staffLabel}${staffAuthUser.nick ? ` (${staffAuthUser.nick})` : ""}`
-        : "";
-
-    if (userInfoEl) userInfoEl.textContent = nameText;
-    if (logoutBtnEl) logoutBtnEl.style.display = isAuth ? "inline-block" : "none";
-    if (mobileLogoutBtnEl) mobileLogoutBtnEl.style.display = isAuth ? "block" : "none";
-    if (loginPageStatusEl) loginPageStatusEl.textContent = nameText;
-    if (loginPageGoogleBtnEl) {
-      loginPageGoogleBtnEl.style.display = isAuth ? "none" : "inline-block";
-    }
-    if (loginPageLogoutBtnEl) {
-      loginPageLogoutBtnEl.style.display = isAuth ? "inline-block" : "none";
-    }
-    updateNavLabelsForStaff(hasStaff);
-    updateNavVisibility(isAuth);
-    updateNavForStaff(hasStaff ? staffAuthUser : null);
-    toggleProjectStatusAccess(isAuth);
-
-    // เปลี่ยนหน้าไปยังเมนูแรกตามสถานะปัจจุบัน (login/logout)
-    const preferredPage = getPreferredPageForState(isAuth, hasStaff ? staffAuthUser : null);
-    goToFirstVisibleNavPageWithPreference(preferredPage);
-    authWasAuthenticated = isAuth;
-  }
-
-  onAuthStateChanged(auth, (user) => {
-    refreshAuthDisplay(user);
-  });
-
-  function handleGoogleLogin() {
-    signInWithPopup(auth, new GoogleAuthProvider()).catch((err) => {
-      alert(`ล็อกอินไม่สำเร็จ: ${err.message || err}`);
-    });
-  }
-
-  if (loginBtnEl) {
-    loginBtnEl.addEventListener("click", handleGoogleLogin);
-  }
-  if (loginPageGoogleBtnEl) {
-    loginPageGoogleBtnEl.addEventListener("click", handleGoogleLogin);
-  }
-
-  function handleLogout() {
-    staffAuthUser = null;
-    refreshAuthDisplay(auth.currentUser);
-    signOut(auth).catch((err) => {
-      console.error("logout error - app.js:3009", err);
+      console.error("logout error - app.js:2839", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
@@ -3093,7 +2923,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:3096", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2926", err);
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
     }
@@ -3629,7 +3459,7 @@ async function loadNewsFromSheet() {
     setCache(CACHE_KEYS.NEWS, newsItems);
     renderNewsList();
   } catch (err) {
-    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:3632", err);
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:3462", err);
   } finally {
     toggleNewsSkeleton(false);
   }
@@ -3943,7 +3773,7 @@ async function loadDownloadDocuments() {
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:3946", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:3776", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   } finally {
     toggleDownloadSkeleton(false);
@@ -3958,7 +3788,17 @@ function initScoreboard() {
   const runnersEl = document.getElementById("scoreRunners");
   if (!podiumEl || !runnersEl) return;
 
-  podiumEl.innerHTML = `<div class="score-loading">กำลังโหลดผลคะแนน...</div>`;
+  podiumEl.classList.remove("score-animate-in");
+  runnersEl.classList.remove("score-animate-in");
+  podiumEl.innerHTML = `
+    <div class="score-loading" role="status" aria-live="polite">
+      <div class="score-loading-spinner" aria-hidden="true"></div>
+      <div class="score-loading-text">กำลังโหลดผลคะแนน...</div>
+      <div class="score-loading-bars" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  `;
   runnersEl.innerHTML = "";
 
   Papa.parse(SCORE_SHEET, {
@@ -3990,7 +3830,7 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     },
     error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:3993", err);
+      console.error("Error loading SCORE_SHEET - app.js:3833", err);
     }
   });
 }
@@ -4014,6 +3854,14 @@ function renderScorePodium(container, podium) {
 
     ${first ? `
       <div class="score-podium-card first">
+        <div class="score-champion-badge" aria-label="อันดับ 1">
+          <span class="score-champion-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false">
+              <path d="M5 6h3l2-3 2 3h3l-2 3 2 3h-5l-2 3-2-3H5l2-3-2-3z" />
+            </svg>
+          </span>
+          <span class="score-champion-text">Champion</span>
+        </div>
         <div class="score-medal first">1</div>
         <div class="score-rank-label">ชนะเลิศ</div>
         <div class="score-org-name">${first.org}</div>
@@ -4032,6 +3880,9 @@ function renderScorePodium(container, podium) {
   `;
 
   adjustScoreOrgNameFont();
+  requestAnimationFrame(() => {
+    container.classList.add("score-animate-in");
+  });
 }
 
 function renderScoreRunners(container, runners) {
@@ -4039,6 +3890,7 @@ function renderScoreRunners(container, runners) {
     container.style.display = "none";
     return;
   }
+  container.style.display = "flex";
 
   const chips = runners
     .map((item, idx) => {
@@ -4057,6 +3909,9 @@ function renderScoreRunners(container, runners) {
     <span class="score-runners-title">Runners-up</span>
     ${chips}
   `;
+  requestAnimationFrame(() => {
+    container.classList.add("score-animate-in");
+  });
 }
 
 function adjustScoreOrgNameFont() {
@@ -4206,6 +4061,9 @@ window.addEventListener("load", async () => {
   kpiClosedProjectsEl = document.getElementById("kpiClosedProjects");
   kpiClosedProjectsCaptionEl = document.getElementById("kpiClosedProjectsCaption");
   kpiMonthlyCaptionEl = document.getElementById("kpiMonthlyCaption");
+  homeHeatmapEl = document.getElementById("homeHeatmap");
+  homeHeatmapMonthsEl = document.getElementById("homeHeatmapMonths");
+  const appLoaderEl = document.getElementById("appLoader");
 
   projectStatusContexts = {
     public: buildProjectStatusContext("", "public"),
@@ -4218,11 +4076,8 @@ window.addEventListener("load", async () => {
   toggleProjectStatusAccess(false, "public");
   toggleProjectStatusAccess(false, "staff");
 
-  // ===== 2) โหลดรายการดาวน์โหลดเอกสาร =====
-  await loadDownloadDocuments();
-
-  // ===== 2.1) โหลดข่าวและประกาศจากฝ่ายเหรัญญิก =====
-  await loadNewsFromSheet();
+  // ===== 2) โหลดรายการดาวน์โหลดเอกสาร + ข่าว (ทำคู่ขนาน) =====
+  await Promise.all([loadDownloadDocuments(), loadNewsFromSheet()]);
 
   
   // ===== 3) ตั้งปีใน footer =====
@@ -4404,7 +4259,7 @@ window.addEventListener("load", async () => {
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
     renderHomeKpis();                           // KPI หน้าแรก
   } catch (err) {
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4407", err);
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4262", err);
     projects = getFallbackProjects();
     await loadOrgFilters();
     ["public", "staff"].forEach((key) => {
@@ -4446,10 +4301,11 @@ window.addEventListener("load", async () => {
       });
     }
     if (ctx.projectSearchInput) {
-      ctx.projectSearchInput.addEventListener("input", () => {
+      const debouncedSearch = debounce(() => {
         setActiveProjectStatusContext(key);
         refreshProjectStatus(key);
-      });
+      }, 180);
+      ctx.projectSearchInput.addEventListener("input", debouncedSearch);
     }
     if (ctx.projectSearchClearBtn && ctx.projectSearchInput) {
       ctx.projectSearchClearBtn.addEventListener("click", () => {
@@ -4618,6 +4474,13 @@ window.addEventListener("load", async () => {
 
   // เรียก motion ครั้งแรกสำหรับหน้าเริ่มต้น
   refreshMotionForActivePage();
+
+  if (appLoaderEl) {
+    requestAnimationFrame(() => {
+      appLoaderEl.classList.add("is-hidden");
+      appLoaderEl.setAttribute("aria-busy", "false");
+    });
+  }
 });
 
 /*******************************************************
@@ -4626,6 +4489,7 @@ window.addEventListener("load", async () => {
  *******************************************************/
 
 let calendarEvents = [];
+let calendarEventsByDate = new Map();
 let currentCalendarDate = new Date();
 
 /**
@@ -4691,6 +4555,7 @@ function mapProjectStatusToCalendarStatus(p) {
 function buildCalendarEventsFromProjects() {
   if (!Array.isArray(projects) || projects.length === 0) {
     calendarEvents = [];
+    calendarEventsByDate = new Map();
     return;
   }
 
@@ -4718,6 +4583,18 @@ function buildCalendarEventsFromProjects() {
       };
     })
     .filter(Boolean);
+
+  calendarEventsByDate = new Map();
+  calendarEvents.forEach((ev) => {
+    const d = ev.start;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+    if (!calendarEventsByDate.has(key)) {
+      calendarEventsByDate.set(key, []);
+    }
+    calendarEventsByDate.get(key).push(ev);
+  });
 }
 
 
@@ -4765,15 +4642,12 @@ function getEventsForDate(date) {
   const orgFilter = orgSel ? orgSel.value : "all";
   const statusFilter = statusSel ? statusSel.value : "all";
 
-  return calendarEvents.filter((ev) => {
-    // วันเดียวกัน (เทียบเฉพาะ Y/M/D)
-    const d = ev.start;
-    const sameDay =
-      d.getFullYear() === date.getFullYear() &&
-      d.getMonth() === date.getMonth() &&
-      d.getDate() === date.getDate();
+  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+  const baseEvents = calendarEventsByDate.get(key) || [];
 
-    if (!sameDay) return false;
+  return baseEvents.filter((ev) => {
     if (yearFilter !== "all" && ev.year !== yearFilter) return false;
     if (orgFilter !== "all" && ev.org !== orgFilter) return false;
     if (statusFilter !== "all" && ev.status !== statusFilter) return false;
@@ -4798,6 +4672,15 @@ function updateCalendarHeader() {
   const m = currentCalendarDate.getMonth();
 
   panel.textContent = `ปฏิทินกิจกรรม — ${monthNames[m]} ${y}`;
+}
+
+function getHeatmapLevel(count, maxCount) {
+  if (!count || maxCount <= 0) return 0;
+  if (count === 1) return 1;
+  if (count === 2) return 2;
+  if (count >= 3 && count <= 5) return 3;
+  if (count >= 6 && count <= 10) return 4;
+  return 5;
 }
 
 /**
@@ -4980,55 +4863,52 @@ function openCalendarDayModal(dateObj, events) {
 
   titleEl.textContent = `โครงการวันที่ ${dateText}`;
 
-  const cards = events
+  const rows = events
     .map((ev, idx) => {
-      const fmt = (d) =>
-        d && d instanceof Date && !isNaN(d.getTime())
-          ? d.toLocaleDateString("th-TH")
-          : "-";
+      const statusText =
+        ev.status === "closed"
+          ? "ปิดโครงการแล้ว"
+          : ev.status === "approved"
+          ? "อนุมัติโครงการแล้ว"
+          : "อยู่ระหว่างดำเนินการ";
       return `
-        <div class="modal-section modal-section-clickable" data-day-idx="${idx}">
-          <div class="modal-section-header">
-            <div class="modal-section-icon icon-calendar">📌</div>
-            <div class="modal-section-header-text">
-              <div class="modal-section-title">${ev.title}</div>
-              <div class="modal-section-caption">${ev.org || "-"}</div>
-            </div>
-          </div>
-          <div class="modal-section-grid">
-            <div>
-              <div class="modal-item-label">วันที่</div>
-              <div class="modal-item-value">${fmt(ev.start)}</div>
-            </div>
-            <div>
-              <div class="modal-item-label">สถานะ</div>
-              <div class="modal-item-value">
-                ${
-                  ev.status === "closed"
-                    ? "ปิดโครงการแล้ว"
-                    : ev.status === "approved"
-                    ? "อนุมัติโครงการแล้ว"
-                    : "อยู่ระหว่างดำเนินการ"
-                }
-              </div>
-            </div>
-            <div>
-              <div class="modal-item-label">หมายเหตุ</div>
-              <div class="modal-item-value">${ev.note || "-"}</div>
-            </div>
-          </div>
-        </div>
+        <tr data-day-idx="${idx}">
+          <td>
+            <div class="modal-table-title">${ev.title}</div>
+            <div class="modal-table-caption">${ev.org || "-"}</div>
+          </td>
+          <td>
+            <span class="status-pill status-${ev.status}">${statusText}</span>
+          </td>
+          <td>${ev.note || "-"}</td>
+        </tr>
       `;
     })
     .join("");
 
-  bodyEl.innerHTML = cards;
-  // คลิกการ์ดแต่ละรายการเพื่อเปิดรายละเอียดโครงการเดียว
-  bodyEl.querySelectorAll("[data-day-idx]").forEach((card) => {
-    const idx = Number(card.getAttribute("data-day-idx"));
+  bodyEl.innerHTML = `
+    <div class="modal-table-wrap">
+      <table class="modal-table">
+        <thead>
+          <tr>
+            <th>โครงการ</th>
+            <th>สถานะ</th>
+            <th>หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // คลิกแถวเพื่อเปิดรายละเอียดโครงการเดียว
+  bodyEl.querySelectorAll("tr[data-day-idx]").forEach((row) => {
+    const idx = Number(row.getAttribute("data-day-idx"));
     const ev = events[idx];
     if (!ev) return;
-    card.addEventListener("click", () => openCalendarModal(ev));
+    row.addEventListener("click", () => openCalendarModal(ev));
   });
   modal.classList.add("show");
 }

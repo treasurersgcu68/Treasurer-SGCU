@@ -124,6 +124,46 @@ textarea:focus-visible,
   font-weight: 500;
 }
 
+.staff-mode-toggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fce7f3, #fbcfe8);
+  border: 1px solid #f9a8d4;
+  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.18);
+}
+
+.staff-mode-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9d174d;
+  letter-spacing: 0.2px;
+}
+
+.staff-mode-btn {
+  border: 0;
+  background: transparent;
+  color: #9d174d;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
+
+.staff-mode-btn:hover {
+  transform: translateY(-1px);
+}
+
+.staff-mode-btn.is-active {
+  background: #db2777;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(219, 39, 119, 0.28);
+}
+
 .login-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -329,65 +369,65 @@ textarea:focus-visible,
 
 /* Mobile nav */
 
-.hamburger {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  width: 44px;
-  height: 44px;
-  cursor: pointer;
-  margin-left: auto;
+.burger {
   position: relative;
-  border: 1px solid rgba(236, 72, 153, 0.18);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 10px 18px rgba(236, 72, 153, 0.12), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
-  transition: transform 0.16s var(--motion-ease), box-shadow 0.18s var(--motion-ease), border-color 0.16s ease,
-    background 0.16s ease;
-}
-.hamburger::after {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.35));
-  opacity: 0.4;
-  pointer-events: none;
-}
-.hamburger span {
+  width: 32px;
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
   display: block;
-  height: 2px;
-  width: 22px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #0f172a, #334155);
-  margin: 0px;
-  transform-origin: center;
-  transition: transform 0.2s var(--motion-ease), opacity 0.2s var(--motion-ease), width 0.18s ease;
+  margin-left: auto;
 }
-.hamburger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(236, 72, 153, 0.18), 0 1px 0 rgba(255, 255, 255, 0.95) inset;
-  border-color: #fbcfe8;
+
+.burger input {
+  display: none;
 }
-.hamburger:active {
-  transform: translateY(0);
+
+.burger span {
+  display: block;
+  position: absolute;
+  height: 3px;
+  width: 100%;
+  background: #ec4899;
+  border-radius: 9px;
+  opacity: 1;
+  left: 0;
+  transform: rotate(0deg);
+  transition: 0.25s ease-in-out;
 }
-.hamburger.open span:nth-child(1),
-.hamburger.open span:nth-child(3) {
-  width: 22px;
-  background: linear-gradient(90deg, #e11d48, #be185d);
+
+.burger span:nth-of-type(1) {
+  top: 0px;
+  transform-origin: left center;
 }
-.hamburger.open span:nth-child(1) {
-  transform: translateY(5px) rotate(45deg);
+
+.burger span:nth-of-type(2) {
+  top: 50%;
+  transform: translateY(-50%);
+  transform-origin: left center;
 }
-.hamburger.open span:nth-child(2) {
+
+.burger span:nth-of-type(3) {
+  top: 100%;
+  transform-origin: left center;
+  transform: translateY(-100%);
+}
+
+.burger input:checked ~ span:nth-of-type(1) {
+  transform: rotate(45deg);
+  top: 0px;
+  left: 4px;
+}
+
+.burger input:checked ~ span:nth-of-type(2) {
+  width: 0%;
   opacity: 0;
-  transform: translateX(-6px);
 }
-.hamburger.open span:nth-child(3) {
-  transform: translateY(-5px) rotate(-45deg);
+
+.burger input:checked ~ span:nth-of-type(3) {
+  transform: rotate(-45deg);
+  top: 22px;
+  left: 4px;
 }
 
 .mobile-menu {
@@ -3509,7 +3549,7 @@ th.sortable.sort-desc::after {
   .desktop-nav {
     display: none;
   }
-  .hamburger {
+  .burger {
     display: block;
   }
   .home-hero-card {
@@ -3593,20 +3633,27 @@ th.sortable.sort-desc::after {
   .main {
     padding: 14px 12px 28px;
   }
+  .home-hero {
+    padding: 32px 0 28px;
+  }
   .home-hero-inner {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 24px;
+    align-items: center;
+    gap: 20px;
   }
   .home-hero-text {
     width: 100%;
+    text-align: center;
   }
   .home-hero-subtitle {
     max-width: none;
+    margin-left: auto;
+    margin-right: auto;
   }
   .home-hero-actions {
     width: 100%;
     flex-direction: column;
+    align-items: stretch;
   }
   .home-hero-actions .btn-primary,
   .home-hero-actions .btn-secondary {

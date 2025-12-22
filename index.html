@@ -2,6 +2,7 @@
 <html lang="th">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Treasurer SGCU</title>
     <meta name="description" content="ระบบติดตามสถานะโครงการ งบประมาณ และงานบริหารการเงินของ SGCU 68 พัฒนาโดยฝ่ายเหรัญญิก">
     <meta name="description" content="ระบบติดตามโครงการและงบประมาณของเหรัญญิก SGCU68 (อบจ68) สำหรับดูสถานะโครงการ Project Status SGCU การใช้จ่าย และข้อมูลการบริหารงบอย่างโปร่งใส">
@@ -98,18 +99,30 @@
           <a href="#" data-page="project-status" data-visible="public">Project Status</a>
           <a href="#" data-page="financial-docs" data-visible="public">Financial Documents</a>
           <a href="#" data-page="borrow-assets" data-visible="protected">Borrow &amp; Return Assets</a>
-          <a href="#" data-page="meeting-room" data-visible="protected">Meeting Room</a>
-          <a href="#" data-page="login" data-visible="public-only">Login</a>
+          <a href="#" data-page="login" data-visible="public">Login</a>
         </nav>
 
         <div class="header-actions">
           <div class="auth-panel" id="authPanel">
             <span id="userInfo" class="auth-user"></span>
           </div>
+          <div id="staffModeToggle" class="staff-mode-toggle">
+            <span class="staff-mode-label">โหมด</span>
+            <button class="staff-mode-btn is-active" data-staff-mode="normal" type="button">ปกติ</button>
+            <button class="staff-mode-btn" data-staff-mode="staff" type="button">Staff</button>
+          </div>
 
-          <button id="hamburgerBtn" class="hamburger" aria-label="เปิด/ปิดเมนูหลัก" aria-expanded="false">
+          <label
+            id="hamburgerBtn"
+            class="burger"
+            aria-label="เปิด/ปิดเมนูหลัก"
+            aria-expanded="false"
+            aria-controls="mobileMenu"
+            role="button"
+          >
+            <input id="hamburgerToggle" type="checkbox" aria-hidden="true" />
             <span></span><span></span><span></span>
-          </button>
+          </label>
         </div>
       </div>
 
@@ -119,8 +132,7 @@
           <a href="#" data-page="project-status" data-visible="public">Project Status</a>
           <a href="#" data-page="financial-docs" data-visible="public">Financial Documents</a>
           <a href="#" data-page="borrow-assets" data-visible="protected">Borrow &amp; Return Assets</a>
-          <a href="#" data-page="meeting-room" data-visible="protected">Meeting Room</a>
-          <a href="#" data-page="login" data-visible="public-only">Login</a>
+          <a href="#" data-page="login" data-visible="public">Login</a>
           <button
             id="mobileLogoutBtn"
             type="button"
@@ -1181,151 +1193,6 @@
         </div>
       </section>
 
-      <!-- ============ MEETING ROOM ============ -->
-      <section class="page-view" data-page="meeting-room">
-        <div class="page">
-          <div class="page-header-flex section-appear">
-            <div>
-              <h2 class="page-title">Meeting Room</h2>
-              <p class="page-subtitle">
-                ดูตารางการใช้ห้องประชุมของ SGCU
-                และวางแผนจองเวลาเพื่อการประชุมของฝ่ายต่าง ๆ
-              </p>
-            </div>
-
-            <div class="tabs">
-              <button
-                class="tab-btn is-active"
-                data-meeting-tab="today"
-                type="button"
-              >
-                วันนี้
-              </button>
-              <button
-                class="tab-btn"
-                data-meeting-tab="week"
-                type="button"
-              >
-                ทั้งสัปดาห์
-              </button>
-            </div>
-          </div>
-
-          <!-- Today -->
-          <div id="meetingToday" class="section-appear section-delay-1">
-            <div class="cards" style="margin-bottom: 14px">
-              <article class="card card-hover">
-                <div class="card-title">จำนวนการจองวันนี้</div>
-                <div class="card-value" data-countup="5">5</div>
-                <div class="card-caption">รวมทุกห้องประชุม (ตัวอย่าง)</div>
-              </article>
-
-              <article class="card card-hover">
-                <div class="card-title">ช่วงเวลาว่าง</div>
-                <div class="card-value">4 ช่วง</div>
-                <div class="card-caption">สามารถจองเพิ่มเติมได้</div>
-              </article>
-            </div>
-
-            <div class="panel panel-hover">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title">ตารางการใช้ห้องวันนี้</div>
-                  <div class="panel-caption">
-                    Layout ตัวอย่างสำหรับเชื่อมกับ Google Calendar / Sheets
-                  </div>
-                </div>
-              </div>
-
-              <div class="org-grid-2x2">
-                <article
-                  class="meeting-card section-appear section-delay-1"
-                >
-                  <div class="meeting-card-header">
-                    <div class="meeting-card-title">ห้องประชุมใหญ่ SGCU</div>
-                    <span class="pill pill-soft-pink">09:00 – 11:00</span>
-                  </div>
-                  <div class="meeting-card-meta">
-                    การประชุม: คณะกรรมการบริหาร SGCU 68<br />
-                    ผู้จอง: เหรัญญิก · ผู้ช่วยเหรัญญิก
-                  </div>
-                  <div class="meeting-card-footer">
-                    <span>สถานะ: ยืนยันแล้ว</span>
-                    <button class="btn-ghost" type="button">
-                      ดูรายละเอียด
-                    </button>
-                  </div>
-                </article>
-
-                <article
-                  class="meeting-card section-appear section-delay-2"
-                >
-                  <div class="meeting-card-header">
-                    <div class="meeting-card-title">ห้องประชุมเล็ก 1</div>
-                    <span class="pill pill-soft-gray">13:00 – 15:00</span>
-                  </div>
-                  <div class="meeting-card-meta">
-                    การประชุม: ฝ่ายหาทุนและสิทธิประโยชน์<br />
-                    ผู้จอง: ประธานฝ่ายหาทุนฯ
-                  </div>
-                  <div class="meeting-card-footer">
-                    <span>สถานะ: รอเริ่มประชุม</span>
-                    <button class="btn-ghost" type="button">
-                      ดูรายละเอียด
-                    </button>
-                  </div>
-                </article>
-              </div>
-            </div>
-          </div>
-
-          <!-- Week -->
-          <div
-            id="meetingWeek"
-            class="section-appear"
-            style="display: none; margin-top: 18px"
-          >
-            <div class="panel panel-hover">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title">
-                    ภาพรวมการใช้ห้องประชุมทั้งสัปดาห์
-                  </div>
-                  <div class="panel-caption">
-                    ตัวอย่างคำอธิบายช่วงที่ควรใช้จองประชุมสำหรับฝ่ายต่าง ๆ
-                  </div>
-                </div>
-              </div>
-
-              <div class="timeline">
-                <div class="timeline-item">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-content">
-                    <strong>จันทร์</strong><br />
-                    ห้องใหญ่ 09:00–11:00 · ประชุมกรรมการบริหาร<br />
-                    ห้องเล็ก 14:00–16:00 · ฝ่ายกิจกรรม
-                  </div>
-                </div>
-                <div class="timeline-item">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-content">
-                    <strong>อังคาร</strong><br />
-                    ห้องใหญ่ ว่างทั้งวัน · แนะนำสำหรับจองประชุมโครงการใหญ่
-                  </div>
-                </div>
-                <div class="timeline-item">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-content">
-                    <strong>พุธ – ศุกร์</strong><br />
-                    ช่วงบ่ายมีการจองเกือบทุกวัน ·
-                    ควรตรวจสอบตารางละเอียดก่อนนัดประชุม
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <!-- ============ STAFF: BORROW ASSETS ============ -->
       <section class="page-view" data-page="borrow-assets-staff">
@@ -1351,29 +1218,6 @@
         </div>
       </section>
 
-      <!-- ============ STAFF: MEETING ROOM ============ -->
-      <section class="page-view" data-page="meeting-room-staff">
-        <div class="page">
-          <div class="page-header-flex section-appear">
-            <div>
-              <h2 class="page-title">meeting-room for Staff</h2>
-              <p class="page-subtitle">ตารางและการจองห้องประชุมสำหรับ Staff</p>
-            </div>
-          </div>
-
-          <div class="panel panel-hover section-appear section-delay-1">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Coming Soon</div>
-                <div class="panel-caption">ข้อมูลการจองภายในทีมจะถูกเพิ่มเร็ว ๆ นี้</div>
-              </div>
-            </div>
-            <div class="panel-body">
-              <p>เตรียมพื้นที่สำหรับข้อมูลเฉพาะ Staff หากต้องการจองเร่งด่วนให้ติดต่อผู้ดูแล</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <section class="page-view page-news" data-page="news">
         <div class="container">
@@ -1679,15 +1523,7 @@
         <div class="page-header-flex">
           <div>
             <h1 class="page-title">เข้าสู่ระบบ</h1>
-            <p class="page-subtitle">เลือกวิธีเข้าสู่ระบบที่ต้องการ</p>
-          </div>
-          <div class="tabs">
-            <button class="tab-btn is-active" data-login-tab="google" type="button">
-              Login ปกติ (Google)
-            </button>
-            <button class="tab-btn" data-login-tab="staff" type="button">
-              Staff Login
-            </button>
+            <p class="page-subtitle">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต</p>
           </div>
         </div>
 
@@ -1698,21 +1534,6 @@
             <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Login with Google</button>
             <div class="login-status" id="loginPageStatus"></div>
             <button id="loginPageLogoutBtn" type="button" class="btn-secondary w-full" style="display:none;">Logout</button>
-          </div>
-
-          <div id="loginStaffPanel" class="panel panel-hover login-card" style="display:none;">
-            <h3 class="login-title">Staff Login</h3>
-            <p class="login-caption">เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านที่กำหนด</p>
-            <form id="staffLoginForm" class="login-form">
-              <label class="login-label" for="staffLoginUsername">ชื่อผู้ใช้</label>
-              <input id="staffLoginUsername" class="login-input" type="text" autocomplete="username" required />
-
-              <label class="login-label" for="staffLoginPassword">รหัสผ่าน</label>
-              <input id="staffLoginPassword" class="login-input" type="password" autocomplete="current-password" required />
-
-              <button type="submit" class="btn-primary w-full">Login (Staff)</button>
-            </form>
-            <div class="login-error" id="staffLoginError"></div>
           </div>
         </div>
       </div>

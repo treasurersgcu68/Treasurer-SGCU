@@ -93,8 +93,11 @@ let newsListSkeletonEl;
 let downloadSkeletonEl;
 let calendarSkeletonEl;
 let orgFilters = [];
-let staffCredentials = {};
 let staffAuthUser = null;
+let staffEmails = new Set();
+let staffProfilesByEmail = {};
+let staffViewMode = "normal";
+let refreshAuthDisplayFn = null;
 let loginBtnEl;
 let logoutBtnEl;
 let mobileLogoutBtnEl;
@@ -102,10 +105,8 @@ let userInfoEl;
 let loginPageGoogleBtnEl;
 let loginPageLogoutBtnEl;
 let loginPageStatusEl;
-let staffLoginFormEl;
-let staffLoginUsernameEl;
-let staffLoginPasswordEl;
-let staffLoginErrorEl;
+let staffModeToggleEl;
+let staffModeBtns = [];
 let kpiOnTimeEl;
 let kpiOnTimeCaptionEl;
 let kpiBudgetUsageEl;
@@ -335,7 +336,7 @@ function getCache(key, ttlMs) {
     if (!ts || Date.now() - ts > ttlMs) return null;
     return parsed.data || null;
   } catch (err) {
-    console.warn("อ่าน cache ไม่ได้ - app.js:338", err);
+    console.warn("อ่าน cache ไม่ได้ - app.js:339", err);
     return null;
   }
 }
@@ -345,7 +346,7 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (err) {
-    console.warn("เขียน cache ไม่ได้ - app.js:348", err);
+    console.warn("เขียน cache ไม่ได้ - app.js:349", err);
   }
 }
 
@@ -577,11 +578,11 @@ async function loadProjectsFromSheet() {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
-      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:580");
+      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:581");
       return;
     }
 
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:584");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:585");
     const res = await fetch(SHEET_CSV_URL);
     const csvText = await res.text();
 
@@ -600,7 +601,7 @@ async function loadProjectsFromSheet() {
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:603", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:604", err);
     projects = getFallbackProjects();
   }
 }
@@ -626,7 +627,7 @@ async function loadOrgFilters() {
       }))
       .filter((r) => r.group !== "" && r.name !== "");
   } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:629", err);
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:630", err);
     orgFilters = [];
   }
 }
@@ -2660,17 +2661,62 @@ function updateNavVisibility(isAuthenticated) {
   });
 }
 
+function getStaffProfileByEmail(email) {
+  const normalized = (email || "").toString().trim().toLowerCase();
+  if (!normalized || !staffEmails.has(normalized)) return null;
+  const profile = staffProfilesByEmail[normalized] || {};
+  return {
+    email: normalized,
+    position: profile.position || "",
+    nick: profile.nick || "",
+    role: profile.role || "00"
+  };
+}
+
+function isCurrentNavVisible() {
+  if (!navLinksAll.length) return true;
+  const currentPage = (window.location.hash || "#home").replace("#", "");
+  const currentLink = navLinksAll.find((link) => link.dataset.page === currentPage);
+  return currentLink ? currentLink.style.display !== "none" : true;
+}
+
+function applyStaffViewMode() {
+  const staffMode = !!staffAuthUser && staffViewMode === "staff";
+  updateNavLabelsForStaff(staffMode);
+  updateNavVisibility(isUserAuthenticated);
+  updateNavForStaff(staffMode ? staffAuthUser : null);
+
+  if (staffModeToggleEl) {
+    staffModeToggleEl.style.display = staffAuthUser ? "flex" : "none";
+  }
+  staffModeBtns.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.staffMode === staffViewMode);
+  });
+
+  if (!isCurrentNavVisible()) {
+    goToFirstVisibleNavPageWithPreference(null);
+  }
+}
+
+function setStaffViewMode(mode) {
+  if (mode !== "staff" && mode !== "normal") return;
+  if (staffViewMode === mode) return;
+  staffViewMode = mode;
+  applyStaffViewMode();
+}
+
 function updateNavForStaff(staffUser) {
   if (!navLinksAll.length || !staffUser) return;
+  if (staffViewMode !== "staff") return;
 
   const roleAllowedMap = {
-    "00": new Set(["project-status-staff", "borrow-assets-staff", "meeting-room-staff"]),
-    "01": new Set(["project-status-staff"]),
-    "04": new Set(["borrow-assets-staff", "meeting-room-staff"])
+    "00": new Set(["project-status-staff", "borrow-assets-staff", "login"]),
+    "01": new Set(["project-status-staff", "login"]),
+    "04": new Set(["borrow-assets-staff", "login"])
   };
 
   const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||
-    new Set(["project-status-staff", "borrow-assets-staff", "meeting-room-staff"]);
+    new Set(["project-status-staff", "borrow-assets-staff", "login"]);
 
   navLinksAll.forEach((link) => {
     const page = link.dataset.page || "";
@@ -2679,15 +2725,8 @@ function updateNavForStaff(staffUser) {
 }
 
 function getPreferredPageForState(isAuth, staffUser) {
-  if (!isAuth) {
-    return "home";
-  }
-  if (staffUser) {
-    const role = staffUser.role || "";
-    if (role === "01") return "project-status-staff";
-    if (role === "04") return "borrow-assets-staff";
-    // default / 00
-    return "project-status-staff";
+  if (isAuth) {
+    return "login";
   }
   return "home";
 }
@@ -2735,11 +2774,6 @@ function updateNavLabelsForStaff(isStaff) {
       default: "Borrow & Return Assets",
       staff: "borrow-assets for Staff",
       staffPage: "borrow-assets-staff"
-    },
-    "meeting-room": {
-      default: "Meeting Room",
-      staff: "meeting-room for Staff",
-      staffPage: "meeting-room-staff"
     }
   };
 
@@ -2774,19 +2808,17 @@ function initAuthUI() {
 
   if (!auth) return;
 
-  function deriveStaffRole(username) {
-    if (!username) return "";
-    const parts = username.split(/[.\-]/);
-    return parts[1] || ""; // 10.XX.YY-ZZZ -> take XX
-  }
-
   function refreshAuthDisplay(firebaseUser) {
     const hasFirebase = !!firebaseUser;
+    staffAuthUser = hasFirebase ? getStaffProfileByEmail(firebaseUser.email) : null;
+    if (!staffAuthUser) {
+      staffViewMode = "normal";
+    }
     const hasStaff = !!staffAuthUser;
-    const isAuth = hasFirebase || hasStaff;
+    const isAuth = hasFirebase;
     isUserAuthenticated = isAuth;
     const staffLabel = hasStaff
-      ? [staffAuthUser.username, staffAuthUser.position].filter(Boolean).join(" ")
+      ? [staffAuthUser.email, staffAuthUser.position].filter(Boolean).join(" ")
       : "";
     const nameText = hasFirebase
       ? `สวัสดี ${firebaseUser.displayName || firebaseUser.email || ""}`
@@ -2794,7 +2826,7 @@ function initAuthUI() {
         ? `Staff : ${staffLabel}${staffAuthUser.nick ? ` (${staffAuthUser.nick})` : ""}`
         : "";
 
-    if (userInfoEl) userInfoEl.textContent = nameText;
+    if (userInfoEl) userInfoEl.textContent = "";
     if (logoutBtnEl) logoutBtnEl.style.display = isAuth ? "inline-block" : "none";
     if (mobileLogoutBtnEl) mobileLogoutBtnEl.style.display = isAuth ? "block" : "none";
     if (loginPageStatusEl) loginPageStatusEl.textContent = nameText;
@@ -2804,9 +2836,7 @@ function initAuthUI() {
     if (loginPageLogoutBtnEl) {
       loginPageLogoutBtnEl.style.display = isAuth ? "inline-block" : "none";
     }
-    updateNavLabelsForStaff(hasStaff);
-    updateNavVisibility(isAuth);
-    updateNavForStaff(hasStaff ? staffAuthUser : null);
+    applyStaffViewMode();
     toggleProjectStatusAccess(isAuth, "public");
     toggleProjectStatusAccess(isAuth, "staff");
 
@@ -2834,15 +2864,19 @@ function initAuthUI() {
   }
   function handleLogout() {
     staffAuthUser = null;
+    staffViewMode = "normal";
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:2839", err);
+      console.error("logout error - app.js:2870", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
     const mobileMenu = document.getElementById("mobileMenu");
-    if (hamburger && mobileMenu) {
-      hamburger.classList.remove("open");
+    const hamburgerToggle = hamburger
+      ? hamburger.querySelector("input[type='checkbox']")
+      : null;
+    if (hamburger && mobileMenu && hamburgerToggle) {
+      hamburgerToggle.checked = false;
       mobileMenu.classList.remove("show");
       hamburger.setAttribute("aria-expanded", "false");
     }
@@ -2857,44 +2891,7 @@ function initAuthUI() {
   if (mobileLogoutBtnEl) {
     mobileLogoutBtnEl.addEventListener("click", handleLogout);
   }
-
-  if (staffLoginFormEl && staffLoginUsernameEl && staffLoginPasswordEl && staffLoginErrorEl) {
-    staffLoginFormEl.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      staffLoginErrorEl.textContent = "";
-      const username = staffLoginUsernameEl.value.trim().toLowerCase();
-      const pw = staffLoginPasswordEl.value;
-      if (!username || !pw) {
-        staffLoginErrorEl.textContent = "กรอกชื่อผู้ใช้และรหัสผ่านให้ครบถ้วน";
-        return;
-      }
-
-      if (!Object.keys(staffCredentials).length) {
-        staffLoginErrorEl.textContent = "กำลังโหลดข้อมูลผู้ใช้ staff โปรดลองใหม่";
-        return;
-      }
-
-      const staffInfo = staffCredentials[username];
-      if (!staffInfo) {
-        staffLoginErrorEl.textContent = "ไม่พบชื่อผู้ใช้นี้ กรุณาตรวจสอบอีกครั้ง";
-        return;
-      }
-      if (staffInfo.password !== pw) {
-        staffLoginErrorEl.textContent = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
-        return;
-      }
-
-      staffAuthUser = {
-        username,
-        position: staffInfo.position || "",
-        nick: staffInfo.nick || "",
-        role: deriveStaffRole(username)
-      };
-      refreshAuthDisplay(auth.currentUser);
-      staffLoginFormEl.reset();
-      staffLoginErrorEl.textContent = "";
-    });
-  }
+  refreshAuthDisplayFn = refreshAuthDisplay;
 }
 
 /* 11) Org Structure (About Page) */
@@ -2923,7 +2920,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2926", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2923", err);
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
     }
@@ -2951,11 +2948,10 @@ function renderOrgStructure(rows) {
   const COL_NICK   = 7;   // ชื่อเล่น (ใช้เป็น key)
   const COL_YEAR   = 9;   // J ชั้นปี
   const COL_FAC    = 10;  // K คณะ
+  const COL_STAFF_EMAIL = 11; // L อีเมล Staff
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
   const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
-  const COL_STAFF_USERNAME = 28; // AC
-  const COL_STAFF_PASSWORD = 29; // AD
 
   const COL_ASSISTANT_KEY = COL_NICK; // ใช้ชื่อเล่นเป็น key
 
@@ -3016,7 +3012,8 @@ function renderOrgStructure(rows) {
 
   // ====== peopleByPos + assistantContactsByName (global) ======
   assistantContactsByName = {}; // reset global
-  staffCredentials = {}; // reset global
+  staffEmails = new Set();
+  staffProfilesByEmail = {};
 
   const peopleByPos = {};
   for (const r of dataRows) {
@@ -3043,14 +3040,13 @@ function renderOrgStructure(rows) {
     if (!peopleByPos[pos]) peopleByPos[pos] = [];
     peopleByPos[pos].push(r);
 
-    const staffUser = (r[COL_STAFF_USERNAME] || "").toString().trim().toLowerCase();
-    const staffPass = (r[COL_STAFF_PASSWORD] || "").toString().trim();
-    const staffNick = (r[COL_NICK] || "").toString().trim();
-    if (staffUser && staffPass) {
-      staffCredentials[staffUser] = {
-        password: staffPass,
+    const staffEmail = (r[COL_STAFF_EMAIL] || "").toString().trim().toLowerCase();
+    if (staffEmail) {
+      staffEmails.add(staffEmail);
+      staffProfilesByEmail[staffEmail] = {
         position: pos,
-        nick: staffNick
+        nick: (r[COL_NICK] || "").toString().trim(),
+        role: "00"
       };
     }
   }
@@ -3189,6 +3185,10 @@ function renderOrgStructure(rows) {
   `;
 
   container.innerHTML = html;
+
+  if (refreshAuthDisplayFn && window.sgcuAuth?.auth?.currentUser) {
+    refreshAuthDisplayFn(window.sgcuAuth.auth.currentUser);
+  }
 
   // ผูก popup ให้เฉพาะปุ่มคน (วงกลม)
   initOrgPersonPopup();
@@ -4038,10 +4038,8 @@ window.addEventListener("load", async () => {
   loginPageGoogleBtnEl = document.getElementById("loginPageGoogleBtn");
   loginPageLogoutBtnEl = document.getElementById("loginPageLogoutBtn");
   loginPageStatusEl = document.getElementById("loginPageStatus");
-  staffLoginFormEl = document.getElementById("staffLoginForm");
-  staffLoginUsernameEl = document.getElementById("staffLoginUsername");
-  staffLoginPasswordEl = document.getElementById("staffLoginPassword");
-  staffLoginErrorEl = document.getElementById("staffLoginError");
+  staffModeToggleEl = document.getElementById("staffModeToggle");
+  staffModeBtns = Array.from(document.querySelectorAll("[data-staff-mode]"));
   navLinksAll = Array.from(document.querySelectorAll("header nav a[data-visible]"));
   viewToggleBtns = Array.from(document.querySelectorAll(".view-toggle-btn"));
   
@@ -4075,6 +4073,14 @@ window.addEventListener("load", async () => {
   updateNavVisibility(false);
   toggleProjectStatusAccess(false, "public");
   toggleProjectStatusAccess(false, "staff");
+  staffModeBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setStaffViewMode(btn.dataset.staffMode);
+    });
+  });
+  if (staffModeToggleEl) {
+    staffModeToggleEl.style.display = "none";
+  }
 
   // ===== 2) โหลดรายการดาวน์โหลดเอกสาร + ข่าว (ทำคู่ขนาน) =====
   await Promise.all([loadDownloadDocuments(), loadNewsFromSheet()]);
@@ -4167,19 +4173,24 @@ window.addEventListener("load", async () => {
   // ===== 10) Hamburger + เมนูสามขีด =====
   const hamburgerBtn = document.getElementById("hamburgerBtn");
   const mobileMenu = document.getElementById("mobileMenu");
+  const hamburgerToggle = hamburgerBtn
+    ? hamburgerBtn.querySelector("input[type='checkbox']")
+    : null;
   const mobileNavLinks = mobileMenu
     ? mobileMenu.querySelectorAll("a[data-page]")
     : [];
 
-  if (hamburgerBtn && mobileMenu) {
+  if (hamburgerBtn && mobileMenu && hamburgerToggle) {
     hamburgerBtn.setAttribute("aria-expanded", "false");
 
+    const syncMobileMenu = (isExpanded) => {
+      mobileMenu.classList.toggle("show", isExpanded);
+      hamburgerBtn.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+    };
+
     // เปิด/ปิดกล่องเมนู
-    hamburgerBtn.addEventListener("click", () => {
-      hamburgerBtn.classList.toggle("open");
-      mobileMenu.classList.toggle("show");
-      const expanded = hamburgerBtn.classList.contains("open");
-      hamburgerBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+    hamburgerToggle.addEventListener("change", () => {
+      syncMobileMenu(hamburgerToggle.checked);
     });
 
     // เวลาเลือกเมนูจากกล่อง ให้สลับหน้า + ปิดกล่อง
@@ -4189,9 +4200,8 @@ window.addEventListener("load", async () => {
         const page = link.dataset.page;
         if (!page) return;
         switchPage(page);
-        hamburgerBtn.classList.remove("open");
-        mobileMenu.classList.remove("show");
-        hamburgerBtn.setAttribute("aria-expanded", "false");
+        hamburgerToggle.checked = false;
+        syncMobileMenu(false);
       });
     });
   }
@@ -4259,7 +4269,7 @@ window.addEventListener("load", async () => {
     initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
     renderHomeKpis();                           // KPI หน้าแรก
   } catch (err) {
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4262", err);
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4272", err);
     projects = getFallbackProjects();
     await loadOrgFilters();
     ["public", "staff"].forEach((key) => {
@@ -4391,52 +4401,6 @@ window.addEventListener("load", async () => {
         } else {
           assetsOverview.style.display = "none";
           assetsList.style.display = "block";
-        }
-      });
-    });
-  }
-
-  // ===== 12) Tabs Meeting Room =====
-  const meetingTabBtns = document.querySelectorAll(".tab-btn[data-meeting-tab]");
-  const meetingToday = document.getElementById("meetingToday");
-  const meetingWeek = document.getElementById("meetingWeek");
-
-  if (meetingTabBtns.length && meetingToday && meetingWeek) {
-    meetingTabBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const target = btn.dataset.meetingTab; // 'today' | 'week'
-        meetingTabBtns.forEach((b) => b.classList.remove("is-active"));
-        btn.classList.add("is-active");
-
-        if (target === "today") {
-          meetingToday.style.display = "block";
-          meetingWeek.style.display = "none";
-        } else {
-          meetingToday.style.display = "none";
-          meetingWeek.style.display = "block";
-        }
-      });
-    });
-  }
-
-  // ===== 13) Tabs Login Page =====
-  const loginTabBtns = document.querySelectorAll(".tab-btn[data-login-tab]");
-  const loginGooglePanel = document.getElementById("loginGooglePanel");
-  const loginStaffPanel = document.getElementById("loginStaffPanel");
-
-  if (loginTabBtns.length && loginGooglePanel && loginStaffPanel) {
-    loginTabBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const target = btn.dataset.loginTab; // 'google' | 'staff'
-        loginTabBtns.forEach((b) => b.classList.remove("is-active"));
-        btn.classList.add("is-active");
-
-        if (target === "staff") {
-          loginGooglePanel.style.display = "none";
-          loginStaffPanel.style.display = "block";
-        } else {
-          loginGooglePanel.style.display = "block";
-          loginStaffPanel.style.display = "none";
         }
       });
     });

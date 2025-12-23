@@ -91,9 +91,11 @@ textarea:focus-visible,
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(255, 241, 242, 0.9);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(236, 72, 153, 0.15);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .header-inner {
@@ -873,6 +875,10 @@ textarea:focus-visible,
   background: #ffedd5;
   color: #c2410c;
 }
+.badge-warning {
+  background: #fef9c3;
+  color: #a16207;
+}
 .badge-draft {
   background: #e5e7eb;
   color: #4b5563;
@@ -1328,6 +1334,10 @@ th.sortable.sort-desc::after {
   transform: rotate(0deg);
 }
 
+.table-empty::before {
+  content: "";
+}
+
 .table-skeleton {
   display: none;
   height: 160px;
@@ -1600,6 +1610,7 @@ th.sortable.sort-desc::after {
   display: none;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
+  min-width: 640px;
 }
 
 .calendar-skeleton-cell {
@@ -1620,6 +1631,12 @@ th.sortable.sort-desc::after {
   gap: 8px;
 }
 
+.calendar-grid-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
 .calendar-grid {
   margin-top: 10px;
   display: grid;
@@ -1627,7 +1644,6 @@ th.sortable.sort-desc::after {
   gap: 4px;
   font-size: 11px;
   min-width: 640px;         /* ให้เลื่อนในแนวนอนบนจอเล็กแทนการบีบเซลล์ */
-  overflow-x: auto;
 }
 
 .calendar-day {
@@ -3807,8 +3823,8 @@ th.sortable.sort-desc::after {
 }
 
 .status-pending {
-  background: #fce7f3;
-  color: #9f1239;
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
 .status-approved {
@@ -3817,8 +3833,8 @@ th.sortable.sort-desc::after {
 }
 
 .status-closed {
-  background: #fbcfe8;
-  color: #9d174d;
+  background: #bbf7d0;
+  color: #15803d;
 }
 
 /* contact assistant box */
@@ -3946,6 +3962,16 @@ th.sortable.sort-desc::after {
   }
 }
 
+@media (prefers-reduced-motion: reduce), (max-width: 840px) {
+  .site-header,
+  .modal,
+  .person-modal-backdrop,
+  .login-card,
+  .app-loader-panel {
+    backdrop-filter: none;
+  }
+}
+
 /* =========================================
    18) Responsive (global)
 ========================================= */
@@ -4021,14 +4047,66 @@ th.sortable.sort-desc::after {
     grid-column: 1 / -1;
   }
 
+  #longestOpenTableStaff thead {
+    display: none;
+  }
+  #longestOpenTableStaff,
+  #longestOpenTableStaff tbody,
+  #longestOpenTableStaff tr,
+  #longestOpenTableStaff td {
+    display: block;
+    width: 100%;
+  }
+  #longestOpenTableStaff tr {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 8px 10px;
+    background: #ffffff;
+    margin-bottom: 8px;
+  }
+  #longestOpenTableStaff td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px dashed #e5e7eb;
+    white-space: normal;
+  }
+  #longestOpenTableStaff td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+    flex: 0 0 120px;
+  }
+  #longestOpenTableStaff td:last-child {
+    border-bottom: none;
+  }
+  #longestOpenTableStaff td.table-empty {
+    display: block;
+    padding: 10px 0;
+    border-bottom: none;
+    text-align: center;
+  }
+  #longestOpenTableStaff td.table-empty::before {
+    content: "";
+  }
+
   /* ปฏิทิน: เพิ่มพื้นที่แตะ + เลื่อนแนวนอน */
   .calendar-controls {
     width: 100%;
+  }
+  .calendar-grid-scroll {
+    margin: 0 -12px;
+    padding: 0 12px 6px;
   }
   .calendar-grid {
     min-width: 560px;
     font-size: 10px;
     gap: 3px;
+  }
+  .calendar-skeleton {
+    min-width: 560px;
   }
   .calendar-day {
     min-height: 80px;

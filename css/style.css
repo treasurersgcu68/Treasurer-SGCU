@@ -41,6 +41,10 @@ body {
   scroll-behavior: smooth;
 }
 
+body.has-modal {
+  overflow: hidden;
+}
+
 button,
 input,
 select,
@@ -58,6 +62,14 @@ textarea:focus-visible,
 .scope-pill:focus-visible,
 .home-service-card:focus-visible,
 .mobile-menu a:focus-visible {
+  outline: 2px solid var(--theme-pink-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--theme-focus);
+  border-radius: 10px;
+}
+
+.mobile-menu button:focus-visible,
+.burger:focus-visible {
   outline: 2px solid var(--theme-pink-500);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--theme-focus);
@@ -116,6 +128,43 @@ textarea:focus-visible,
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.app-alert {
+  max-width: 1120px;
+  margin: 12px auto 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(254, 226, 226, 0.6);
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.app-alert[hidden] {
+  display: none;
+}
+
+.app-alert-retry {
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  background: #fff;
+  color: #991b1b;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.load-error-text {
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .auth-btn:hover {
@@ -5193,6 +5242,38 @@ th.sortable.sort-desc::after {
   border-radius: 999px;
   background: linear-gradient(90deg, rgba(255, 143, 177, 0.2), #ff8fb1, #ffc2d6);
   transition: width 180ms ease;
+}
+
+.app-loader-error {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(254, 226, 226, 0.6);
+  color: #991b1b;
+  display: grid;
+  gap: 10px;
+}
+
+.app-loader-error[hidden] {
+  display: none;
+}
+
+.app-loader-error-text {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.app-loader-retry {
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  background: #fff;
+  color: #991b1b;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .app-loader.is-hidden {

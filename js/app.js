@@ -661,6 +661,43 @@ async function fetchTextWithProgress(url, onProgress, options = {}) {
   return text;
 }
 
+async function fetchTextWithProgress(url, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Fetch failed: ${res.status}`);
+  }
+
+  const length = Number(res.headers.get("content-length")) || 0;
+  if (!res.body || !length) {
+    const text = await res.text();
+    if (typeof onProgress === "function") {
+      onProgress(1);
+    }
+    return text;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let received = 0;
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.length;
+    text += decoder.decode(value, { stream: true });
+    if (typeof onProgress === "function") {
+      onProgress(Math.min(received / length, 1));
+    }
+  }
+
+  text += decoder.decode();
+  if (typeof onProgress === "function") {
+    onProgress(1);
+  }
+  return text;
+}
+
 function classifyOrgSimple(orgName, code) {
   const owner = (orgName || "").toString();
   const c = (code || "").toString();

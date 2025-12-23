@@ -61,6 +61,26 @@ let pendingProjectsEl;
 let approvedProjectsEl;
 let closedProjectsEl;
 let totalBudgetEl;
+let filterBarEl;
+let closureRateEl;
+let closureRateCaptionEl;
+let closureRateBarEl;
+let approvalRateEl;
+let approvalRateCaptionEl;
+let approvalRateBarEl;
+let closureRateDonutCanvas;
+let approvalRateDonutCanvas;
+let kpiOnTimeDonutCanvas;
+let kpiBudgetUsageDonutCanvas;
+let avgBudgetEl;
+let avgBudgetCaptionEl;
+let activeOrgCountEl;
+let activeOrgCaptionEl;
+let topOrgNameEl;
+let topOrgBudgetEl;
+let recentProjectsListEl;
+let longestOpenListEl;
+let longestOpenTableBodyEl;
 let tableBodyEl;
 let tableCaptionEl;
 let footerYearEl;
@@ -68,6 +88,11 @@ let projectSearchInput;
 let projectSearchClearBtn;
 let budgetByMonthChart;
 let statusPieChart;
+let trendLineChart;
+let closureRateDonutChart;
+let approvalRateDonutChart;
+let kpiOnTimeDonutChart;
+let kpiBudgetUsageDonutChart;
 let projectModalEl;
 let budgetChartSkeletonEl;
 let statusPieSkeletonEl;
@@ -114,12 +139,22 @@ let kpiBudgetUsageCaptionEl;
 let kpiClosedProjectsEl;
 let kpiClosedProjectsCaptionEl;
 let kpiMonthlyCaptionEl;
+let kpiOnTimeBarEl;
+let kpiBudgetUsageBarEl;
+let kpiClosedProjectsBarEl;
+let kpiOnTimeStaffEl;
+let kpiOnTimeCaptionStaffEl;
+let kpiBudgetUsageStaffEl;
+let kpiBudgetUsageCaptionStaffEl;
+let kpiClosedProjectsStaffEl;
+let kpiClosedProjectsCaptionStaffEl;
 let homeKpiChart = null;
 let homeHeatmapEl;
 let homeHeatmapMonthsEl;
 let navLinksAll = [];
 let statusViewEl;
 let calendarViewEl;
+let dashboardViewEl;
 let projectTableAreaEl;
 let projectTableLockEl;
 let viewToggleBtns = [];
@@ -132,6 +167,8 @@ let prevMonthBtnEl;
 let nextMonthBtnEl;
 let isUserAuthenticated = false;
 let authWasAuthenticated = false;
+let markLoaderStep = null;
+let updateLoaderProgress = null;
 
 // Motion globals
 let sectionObserver = null;
@@ -195,11 +232,31 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     orgSelect: get("orgSelect"),
     projectSearchInput: get("projectSearchInput"),
     projectSearchClearBtn: get("projectSearchClear"),
+    filterBarEl: get("filterBar"),
     totalProjectsEl: get("totalProjects"),
     pendingProjectsEl: get("pendingProjects"),
     approvedProjectsEl: get("approvedProjects"),
     closedProjectsEl: get("closedProjects"),
     totalBudgetEl: get("totalBudget"),
+    closureRateEl: get("closureRate"),
+    closureRateCaptionEl: get("closureRateCaption"),
+    closureRateBarEl: get("closureRateBar"),
+    closureRateDonutCanvas: get("closureRateDonut"),
+    approvalRateEl: get("approvalRate"),
+    approvalRateCaptionEl: get("approvalRateCaption"),
+    approvalRateBarEl: get("approvalRateBar"),
+    approvalRateDonutCanvas: get("approvalRateDonut"),
+    kpiOnTimeDonutCanvas: get("kpiOnTimeDonut"),
+    kpiBudgetUsageDonutCanvas: get("kpiBudgetUsageDonut"),
+    avgBudgetEl: get("avgBudget"),
+    avgBudgetCaptionEl: get("avgBudgetCaption"),
+    activeOrgCountEl: get("activeOrgCount"),
+    activeOrgCaptionEl: get("activeOrgCaption"),
+    topOrgNameEl: get("topOrgName"),
+    topOrgBudgetEl: get("topOrgBudget"),
+    recentProjectsListEl: get("recentProjectsList"),
+    longestOpenListEl: get("longestOpenList"),
+    longestOpenTableBodyEl: get("longestOpenTableBody"),
     tableBodyEl: get("projectTableBody"),
     tableCaptionEl: get("tableCaption"),
     budgetChartSkeletonEl: get("budgetChartSkeleton"),
@@ -209,9 +266,11 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     projectTableAreaEl: get("projectTableArea"),
     projectTableLockEl: get("projectTableLock"),
     statusViewEl: get("statusView"),
+    dashboardViewEl: get("dashboardView"),
     calendarViewEl: get("calendarView"),
     budgetChartCanvas: get("budgetByMonthChart"),
     statusPieCanvas: get("statusPieChart"),
+    trendLineCanvas: get("trendLineChart"),
     calendarYearSelectEl: get("calendarYearSelect"),
     calendarOrgSelectEl: get("calendarOrgSelect"),
     calendarStatusSelectEl: get("calendarStatusSelect"),
@@ -224,6 +283,7 @@ function buildProjectStatusContext(suffix = "", key = "public") {
       : [],
     budgetByMonthChart: null,
     statusPieChart: null,
+    trendLineChart: null,
     currentSort: { key: null, direction: "asc" },
     currentCalendarDate: new Date()
   };
@@ -239,11 +299,31 @@ function setActiveProjectStatusContext(key) {
   orgSelect = ctx.orgSelect;
   projectSearchInput = ctx.projectSearchInput;
   projectSearchClearBtn = ctx.projectSearchClearBtn;
+  filterBarEl = ctx.filterBarEl;
   totalProjectsEl = ctx.totalProjectsEl;
   pendingProjectsEl = ctx.pendingProjectsEl;
   approvedProjectsEl = ctx.approvedProjectsEl;
   closedProjectsEl = ctx.closedProjectsEl;
   totalBudgetEl = ctx.totalBudgetEl;
+  closureRateEl = ctx.closureRateEl;
+  closureRateCaptionEl = ctx.closureRateCaptionEl;
+  closureRateBarEl = ctx.closureRateBarEl;
+  closureRateDonutCanvas = ctx.closureRateDonutCanvas;
+  approvalRateEl = ctx.approvalRateEl;
+  approvalRateCaptionEl = ctx.approvalRateCaptionEl;
+  approvalRateBarEl = ctx.approvalRateBarEl;
+  approvalRateDonutCanvas = ctx.approvalRateDonutCanvas;
+  kpiOnTimeDonutCanvas = ctx.kpiOnTimeDonutCanvas;
+  kpiBudgetUsageDonutCanvas = ctx.kpiBudgetUsageDonutCanvas;
+  avgBudgetEl = ctx.avgBudgetEl;
+  avgBudgetCaptionEl = ctx.avgBudgetCaptionEl;
+  activeOrgCountEl = ctx.activeOrgCountEl;
+  activeOrgCaptionEl = ctx.activeOrgCaptionEl;
+  topOrgNameEl = ctx.topOrgNameEl;
+  topOrgBudgetEl = ctx.topOrgBudgetEl;
+  recentProjectsListEl = ctx.recentProjectsListEl;
+  longestOpenListEl = ctx.longestOpenListEl;
+  longestOpenTableBodyEl = ctx.longestOpenTableBodyEl;
   tableBodyEl = ctx.tableBodyEl;
   tableCaptionEl = ctx.tableCaptionEl;
   budgetChartSkeletonEl = ctx.budgetChartSkeletonEl;
@@ -253,9 +333,11 @@ function setActiveProjectStatusContext(key) {
   projectTableAreaEl = ctx.projectTableAreaEl;
   projectTableLockEl = ctx.projectTableLockEl;
   statusViewEl = ctx.statusViewEl;
+  dashboardViewEl = ctx.dashboardViewEl;
   calendarViewEl = ctx.calendarViewEl;
   budgetByMonthChart = ctx.budgetByMonthChart;
   statusPieChart = ctx.statusPieChart;
+  trendLineChart = ctx.trendLineChart;
   currentSort = ctx.currentSort;
   currentCalendarDate = ctx.currentCalendarDate;
   calendarYearSelectEl = ctx.calendarYearSelectEl;
@@ -268,6 +350,7 @@ function setActiveProjectStatusContext(key) {
   // sync chart refs if already created
   budgetByMonthChart = ctx.budgetByMonthChart || null;
   statusPieChart = ctx.statusPieChart || null;
+  trendLineChart = ctx.trendLineChart || null;
 }
 
 function syncChartsToContext(key) {
@@ -275,6 +358,7 @@ function syncChartsToContext(key) {
   if (!ctx) return;
   ctx.budgetByMonthChart = budgetByMonthChart;
   ctx.statusPieChart = statusPieChart;
+  ctx.trendLineChart = trendLineChart;
 }
 
 /* 4) Helper */
@@ -293,6 +377,15 @@ function parseBudget(text) {
   const cleaned = text.toString().replace(/,/g, "").replace(/[^\d.-]/g, "");
   const val = parseFloat(cleaned);
   return isNaN(val) ? 0 : val;
+}
+
+function formatMoney(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "";
+  return num.toLocaleString("th-TH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 }
 
 function isProjectClosed(project) {
@@ -325,6 +418,23 @@ function debounce(fn, delay = 150) {
   };
 }
 
+function scheduleIdleTask(task, timeout = 2000) {
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(() => task(), { timeout });
+  } else {
+    setTimeout(task, 0);
+  }
+}
+
+function runBackgroundTask(task, label) {
+  Promise.resolve()
+    .then(task)
+    .catch((err) => {
+      const suffix = label ? ` - ${label}` : "";
+      console.error(`Background task failed${suffix} - app.js:437`, err);
+    });
+}
+
 function getCache(key, ttlMs) {
   if (!canUseLocalStorage()) return null;
   try {
@@ -336,7 +446,7 @@ function getCache(key, ttlMs) {
     if (!ts || Date.now() - ts > ttlMs) return null;
     return parsed.data || null;
   } catch (err) {
-    console.warn("อ่าน cache ไม่ได้ - app.js:339", err);
+    console.warn("อ่าน cache ไม่ได้ - app.js:452", err);
     return null;
   }
 }
@@ -346,8 +456,45 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (err) {
-    console.warn("เขียน cache ไม่ได้ - app.js:349", err);
+    console.warn("เขียน cache ไม่ได้ - app.js:462", err);
   }
+}
+
+async function fetchTextWithProgress(url, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Fetch failed: ${res.status}`);
+  }
+
+  const length = Number(res.headers.get("content-length")) || 0;
+  if (!res.body || !length) {
+    const text = await res.text();
+    if (typeof onProgress === "function") {
+      onProgress(1);
+    }
+    return text;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let received = 0;
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.length;
+    text += decoder.decode(value, { stream: true });
+    if (typeof onProgress === "function") {
+      onProgress(Math.min(received / length, 1));
+    }
+  }
+
+  text += decoder.decode();
+  if (typeof onProgress === "function") {
+    onProgress(1);
+  }
+  return text;
 }
 
 function classifyOrgSimple(orgName, code) {
@@ -487,8 +634,7 @@ function extractProjectsFromRows(dataRows, headerRow) {
 
       let transferDiffDisplay = "-";
       if (transferDiffTxt || transferDiffAmount !== null) {
-        const amtStr =
-          transferDiffAmount !== null ? transferDiffAmount.toLocaleString("th-TH") : "";
+        const amtStr = transferDiffAmount !== null ? formatMoney(transferDiffAmount) : "";
         transferDiffDisplay = `${transferDiffTxt} ${amtStr} บาท`.trim();
       }
 
@@ -578,13 +724,16 @@ async function loadProjectsFromSheet() {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
-      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:581");
+      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:730");
       return;
     }
 
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:585");
-    const res = await fetch(SHEET_CSV_URL);
-    const csvText = await res.text();
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:734");
+    const csvText = await fetchTextWithProgress(SHEET_CSV_URL, (ratio) => {
+      if (typeof updateLoaderProgress === "function") {
+        updateLoaderProgress("projects", ratio);
+      }
+    });
 
     const parsed = Papa.parse(csvText, {
       header: false,
@@ -601,16 +750,23 @@ async function loadProjectsFromSheet() {
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:604", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:756", err);
     projects = getFallbackProjects();
+  } finally {
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("projects");
+    }
   }
 }
 
 // โหลดตัวเลือก filter จากชีตภายนอก: คอลัมน์ A = ประเภทองค์กร, คอลัมน์ B = ฝ่าย/ชมรม
 async function loadOrgFilters() {
   try {
-    const res = await fetch(ORG_FILTER_CSV_URL);
-    const csvText = await res.text();
+    const csvText = await fetchTextWithProgress(ORG_FILTER_CSV_URL, (ratio) => {
+      if (typeof updateLoaderProgress === "function") {
+        updateLoaderProgress("orgFilters", ratio);
+      }
+    });
 
     const parsed = Papa.parse(csvText, {
       header: false,
@@ -627,8 +783,12 @@ async function loadOrgFilters() {
       }))
       .filter((r) => r.group !== "" && r.name !== "");
   } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:630", err);
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:789", err);
     orgFilters = [];
+  } finally {
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("orgFilters");
+    }
   }
 }
 
@@ -798,17 +958,303 @@ function updateSummaryCards(filtered) {
   if (pendingProjectsEl) pendingProjectsEl.textContent = pending;
   if (approvedProjectsEl) approvedProjectsEl.textContent = approved;
   if (closedProjectsEl)  closedProjectsEl.textContent  = closed;
-  if (totalBudgetEl)     totalBudgetEl.textContent     = totalBudget.toLocaleString("th-TH");
+  if (totalBudgetEl)     totalBudgetEl.textContent     = formatMoney(totalBudget);
+
+  return { total, pending, approved, closed, totalBudget };
 }
 
-function renderHomeHeatmap() {
-  const container = homeHeatmapEl;
-  const monthsRow = homeHeatmapMonthsEl;
+function updateDashboardInsights(filtered, summary) {
+  if (!summary) return;
+  if (
+    !closureRateEl &&
+    !approvalRateEl &&
+    !avgBudgetEl &&
+    !activeOrgCountEl &&
+    !topOrgNameEl &&
+    !recentProjectsListEl &&
+    !longestOpenListEl &&
+    !longestOpenTableBodyEl
+  ) {
+    return;
+  }
+
+  const total = summary.total || 0;
+  const closed = summary.closed || 0;
+  const approved = summary.approved || 0;
+  const totalBudget = summary.totalBudget || 0;
+
+  const closureRate = total ? (closed / total) * 100 : 0;
+  const approvalRate = total ? (approved / total) * 100 : 0;
+  const avgBudget = total ? totalBudget / total : 0;
+
+  if (closureRateEl) closureRateEl.textContent = `${closureRate.toFixed(1)}%`;
+  if (closureRateCaptionEl) {
+    closureRateCaptionEl.textContent = total
+      ? `${closed} จาก ${total} โครงการปิดแล้ว`
+      : "ยังไม่มีโครงการในตัวกรองนี้";
+  }
+  if (closureRateBarEl) {
+    closureRateBarEl.style.width = `${Math.min(closureRate, 100)}%`;
+  }
+  if (closureRateDonutCanvas) {
+    closureRateDonutChart = updateDonutChart(
+      closureRateDonutChart,
+      closureRateDonutCanvas,
+      closureRate,
+      "#ec4899"
+    );
+  }
+
+  if (approvalRateEl) approvalRateEl.textContent = `${approvalRate.toFixed(1)}%`;
+  if (approvalRateCaptionEl) {
+    approvalRateCaptionEl.textContent = total
+      ? `${approved} จาก ${total} โครงการอนุมัติแล้ว`
+      : "ยังไม่มีโครงการในตัวกรองนี้";
+  }
+  if (approvalRateBarEl) {
+    approvalRateBarEl.style.width = `${Math.min(approvalRate, 100)}%`;
+  }
+  if (approvalRateDonutCanvas) {
+    approvalRateDonutChart = updateDonutChart(
+      approvalRateDonutChart,
+      approvalRateDonutCanvas,
+      approvalRate,
+      "#f472b6"
+    );
+  }
+
+  if (avgBudgetEl) avgBudgetEl.textContent = formatMoney(avgBudget);
+  if (avgBudgetCaptionEl) {
+    avgBudgetCaptionEl.textContent = `งบรวม ${formatMoney(totalBudget)} บาท`;
+  }
+
+  if (activeOrgCountEl || activeOrgCaptionEl) {
+    const activeOrgs = new Set(
+      filtered.map((p) => (p.orgName || "").trim()).filter(Boolean)
+    );
+    const allOrgCount = orgFilters.length
+      ? new Set(orgFilters.map((o) => (o.name || "").trim()).filter(Boolean)).size
+      : activeOrgs.size;
+
+    if (activeOrgCountEl) {
+      activeOrgCountEl.textContent = activeOrgs.size.toLocaleString("th-TH");
+    }
+    if (activeOrgCaptionEl) {
+      activeOrgCaptionEl.textContent = allOrgCount
+        ? `จากทั้งหมด ${allOrgCount.toLocaleString("th-TH")} หน่วยงาน`
+        : "จำนวนหน่วยงานทั้งหมดไม่ระบุ";
+    }
+  }
+
+  if (topOrgNameEl || topOrgBudgetEl) {
+    const orgTotals = new Map();
+    filtered.forEach((p) => {
+      const name = (p.orgName || "").trim() || "(ไม่ระบุฝ่าย/ชมรม)";
+      const budget = Number(p.budget || 0);
+      orgTotals.set(name, (orgTotals.get(name) || 0) + budget);
+    });
+
+    let topOrg = null;
+    orgTotals.forEach((value, name) => {
+      if (!topOrg || value > topOrg.total) {
+        topOrg = { name, total: value };
+      }
+    });
+
+    if (topOrgNameEl) {
+      topOrgNameEl.textContent = topOrg ? topOrg.name : "-";
+    }
+    if (topOrgBudgetEl) {
+      topOrgBudgetEl.textContent = topOrg
+        ? `${formatMoney(topOrg.total)} บาท`
+        : "ยังไม่มีข้อมูล";
+    }
+  }
+
+  const renderRankList = (listEl, items, emptyText) => {
+    if (!listEl) return;
+    listEl.innerHTML = "";
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "rank-list-empty";
+      li.textContent = emptyText;
+      listEl.appendChild(li);
+      return;
+    }
+
+    items.forEach((item) => {
+      const li = document.createElement("li");
+      const title = document.createElement("span");
+      const value = document.createElement("span");
+      title.className = "rank-item-title";
+      value.className = "rank-item-value";
+      title.textContent = item.title;
+      value.textContent = item.value;
+      li.append(title, value);
+      listEl.appendChild(li);
+    });
+  };
+
+  const recentItems = [...filtered]
+    .map((p) => {
+      const date = parseProjectDate(p.lastWorkDate);
+      return date ? { project: p, date } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.date - a.date)
+    .slice(0, 3)
+    .map(({ project, date }) => {
+      const name = (project.name || "").trim() || "(ไม่ระบุชื่อโครงการ)";
+      const code = (project.code || "").trim();
+      return {
+        title: code ? `${name} (${code})` : name,
+        value: date.toLocaleDateString("th-TH")
+      };
+    });
+
+  renderRankList(recentProjectsListEl, recentItems, "ยังไม่มีวันที่อัปเดตโครงการ");
+
+  const today = new Date();
+  const openItems = [...filtered]
+    .filter((p) => !isProjectClosed(p))
+    .filter((p) => {
+      const status = (p.statusMain || "")
+        .toString()
+        .replace(/\u200B/g, "")
+        .replace(/\s+/g, "")
+        .trim();
+      return !status.includes("ยกเลิกโครงการ");
+    })
+    .map((p) => {
+      const dueDate = parseProjectDate(p.closeDueDate);
+      if (!dueDate) return null;
+      const days = Math.max(0, Math.floor((today - dueDate) / (24 * 60 * 60 * 1000)));
+      if (days <= 0) return null;
+      return {
+        code: (p.code || "").trim(),
+        name: (p.name || "").trim() || "(ไม่ระบุชื่อโครงการ)",
+        org: (p.orgName || "").trim() || "(ไม่ระบุฝ่าย/ชมรม)",
+        assistant: (p.closeChecker || "").trim() || "-",
+        status: (p.statusClose || "").trim() || "-",
+        days
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.days - a.days)
+    .map((item) => ({
+      ...item,
+      title: item.code ? `${item.name} (${item.code})` : item.name,
+      value: `ค้าง ${item.days.toLocaleString("th-TH")} วัน`
+    }));
+
+  renderRankList(longestOpenListEl, openItems, "ยังไม่มีโครงการที่ค้างปิด");
+
+  if (longestOpenTableBodyEl) {
+    longestOpenTableBodyEl.innerHTML = "";
+    if (!openItems.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="5" style="text-align:center; color:#9ca3af;">ยังไม่มีโครงการที่ค้างปิด</td>`;
+      longestOpenTableBodyEl.appendChild(tr);
+    } else {
+      openItems.forEach((item) => {
+        const tr = document.createElement("tr");
+        const orgText = item.org ? `<span class="kpi-caption">${item.org}</span>` : "";
+        tr.innerHTML = `
+          <td class="col-code">${item.code}</td>
+          <td class="col-name">${item.name}<br>${orgText}</td>
+          <td class="col-assistant">${item.assistant}</td>
+          <td class="col-status">${item.status}</td>
+          <td class="col-budget" style="text-align:right;">${item.days} วัน</td>
+        `;
+        longestOpenTableBodyEl.appendChild(tr);
+      });
+    }
+  }
+}
+
+function updateTrendLineChart(filtered) {
+  if (!trendLineChart) return;
+
+  const buckets = new Map();
+  const today = new Date();
+  filtered.forEach((p) => {
+    if ((p.statusMain || "").trim() === "ยกเลิกโครงการ") return;
+    if (isProjectClosed(p)) return;
+    const dueDate = parseProjectDate(p.closeDueDate);
+    if (!dueDate || dueDate > today) return;
+    const key = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, { date: new Date(dueDate.getFullYear(), dueDate.getMonth(), 1), count: 0 });
+    }
+    buckets.get(key).count += 1;
+  });
+
+  const entries = Array.from(buckets.values()).sort((a, b) => a.date - b.date);
+  const trimmed = entries.slice(-10);
+  const monthNamesShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+  const labels = trimmed.map(({ date }) => {
+    const year = date.getFullYear().toString().slice(-2);
+    return `${monthNamesShort[date.getMonth()]} ${year}`;
+  });
+  const data = trimmed.map((entry) => entry.count);
+
+  trendLineChart.data.labels = labels;
+  trendLineChart.data.datasets[0].data = data;
+  trendLineChart.update();
+}
+
+function updateDonutChart(existingChart, canvasEl, percent, color) {
+  if (!canvasEl) return existingChart;
+  const value = Math.max(0, Math.min(percent || 0, 100));
+  const data = {
+    labels: ["value", "rest"],
+    datasets: [
+      {
+        data: [value, 100 - value],
+        backgroundColor: [color, "#f3f4f6"],
+        borderWidth: 0
+      }
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "70%",
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: false },
+      centerText: {
+        text: `${value.toFixed(1)}%`,
+        subText: "",
+        color: "#111827",
+        fontFamily: "Kanit",
+        fontSize: 20,
+        subFontSize: 11
+      }
+    }
+  };
+
+  if (existingChart) {
+    existingChart.data = data;
+    existingChart.options = options;
+    existingChart.update();
+    return existingChart;
+  }
+
+  return new Chart(canvasEl.getContext("2d"), {
+    type: "doughnut",
+    data,
+    options
+  });
+}
+
+function renderHomeHeatmap(sourceProjects = projects, container = homeHeatmapEl, monthsRow = homeHeatmapMonthsEl) {
   if (!container || !monthsRow) return;
 
   container.innerHTML = "";
   monthsRow.innerHTML = "";
-  if (!projects || !projects.length) return;
+  if (!sourceProjects || !sourceProjects.length) return;
 
   const today = new Date();
   const currentMonth = today.getMonth();
@@ -818,7 +1264,7 @@ function renderHomeHeatmap() {
 
   const eventsByDate = {};
   let maxCount = 0;
-  projects
+  sourceProjects
     .filter((p) => (p.statusMain || "").trim() !== "ยกเลิกโครงการ")
     .forEach((p) => {
       const date = parseProjectDate(p.lastWorkDate);
@@ -907,10 +1353,11 @@ function renderHomeHeatmap() {
   }
 }
 
-function renderHomeKpis() {
-  if (!projects || !projects.length) return;
+function renderHomeKpis(sourceProjects = projects) {
+  const data = Array.isArray(sourceProjects) ? sourceProjects : projects;
+  if (!data || !data.length) return;
 
-  const closedProjects = projects.filter(isProjectClosed);
+  const closedProjects = data.filter(isProjectClosed);
 
   const onTimeCount = closedProjects.filter((p) => {
     const dur = getCloseDurationDays(p);
@@ -937,12 +1384,31 @@ function renderHomeKpis() {
       ? `${onTimeCount} จาก ${closedProjects.length} โครงการปิดภายใน 14 วัน`
       : "ยังไม่มีโครงการที่ปิดแล้ว";
   }
+  if (kpiOnTimeBarEl) {
+    kpiOnTimeBarEl.style.width = `${Math.min(onTimePercent, 100)}%`;
+  }
+  if (kpiOnTimeDonutCanvas) {
+    kpiOnTimeDonutChart = updateDonutChart(
+      kpiOnTimeDonutChart,
+      kpiOnTimeDonutCanvas,
+      onTimePercent,
+      "#ec4899"
+    );
+  }
+  if (kpiOnTimeStaffEl) {
+    kpiOnTimeStaffEl.textContent = `${onTimePercent.toFixed(1)}%`;
+  }
+  if (kpiOnTimeCaptionStaffEl) {
+    kpiOnTimeCaptionStaffEl.textContent = closedProjects.length
+      ? `${onTimeCount} จาก ${closedProjects.length} โครงการปิดภายใน 14 วัน`
+      : "ยังไม่มีโครงการที่ปิดแล้ว";
+  }
 
-  const totalApproved = projects.reduce(
+  const totalApproved = data.reduce(
     (sum, p) => sum + (p.approvedBudget100 ?? p.budget ?? 0),
     0
   );
-  const totalActual = projects.reduce(
+  const totalActual = data.reduce(
     (sum, p) => sum + (p.actualBudget ?? 0),
     0
   );
@@ -954,7 +1420,25 @@ function renderHomeKpis() {
   }
   if (kpiBudgetUsageCaptionEl) {
     kpiBudgetUsageCaptionEl.textContent =
-      `${totalActual.toLocaleString("th-TH")} จาก ${totalApproved.toLocaleString("th-TH")} บาท`;
+      `${formatMoney(totalActual)} จาก ${formatMoney(totalApproved)} บาท`;
+  }
+  if (kpiBudgetUsageBarEl) {
+    kpiBudgetUsageBarEl.style.width = `${Math.min(usagePercent, 100)}%`;
+  }
+  if (kpiBudgetUsageDonutCanvas) {
+    kpiBudgetUsageDonutChart = updateDonutChart(
+      kpiBudgetUsageDonutChart,
+      kpiBudgetUsageDonutCanvas,
+      usagePercent,
+      "#f472b6"
+    );
+  }
+  if (kpiBudgetUsageStaffEl) {
+    kpiBudgetUsageStaffEl.textContent = `${usagePercent.toFixed(1)}%`;
+  }
+  if (kpiBudgetUsageCaptionStaffEl) {
+    kpiBudgetUsageCaptionStaffEl.textContent =
+      `${formatMoney(totalActual)} จาก ${formatMoney(totalApproved)} บาท`;
   }
 
   if (kpiClosedProjectsEl) {
@@ -962,11 +1446,22 @@ function renderHomeKpis() {
   }
   if (kpiClosedProjectsCaptionEl) {
     kpiClosedProjectsCaptionEl.textContent =
-      `จาก ${projects.length.toLocaleString("th-TH")} โครงการทั้งหมด`;
+      `จาก ${data.length.toLocaleString("th-TH")} โครงการทั้งหมด`;
+  }
+  if (kpiClosedProjectsBarEl) {
+    const closedPercent = data.length ? (closedProjects.length / data.length) * 100 : 0;
+    kpiClosedProjectsBarEl.style.width = `${Math.min(closedPercent, 100)}%`;
+  }
+  if (kpiClosedProjectsStaffEl) {
+    kpiClosedProjectsStaffEl.textContent = closedProjects.length.toLocaleString("th-TH");
+  }
+  if (kpiClosedProjectsCaptionStaffEl) {
+    kpiClosedProjectsCaptionStaffEl.textContent =
+      `จาก ${data.length.toLocaleString("th-TH")} โครงการทั้งหมด`;
   }
 
   const monthly = new Map();
-  projects.forEach((p) => {
+  data.forEach((p) => {
     const d = parseProjectDate(p.lastWorkDate);
     if (!d) return;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -994,8 +1489,7 @@ function renderHomeKpis() {
       ? "ใช้วันที่สิ้นสุดการปฏิบัติงานของโครงการเป็นฐานเวลา"
       : "ยังไม่มีวันที่สิ้นสุดการปฏิบัติงานของโครงการ";
   }
-
-  renderHomeHeatmap();
+  renderHomeHeatmap(data, homeHeatmapEl, homeHeatmapMonthsEl);
 
   if (!labels.length) {
     if (homeKpiChart) {
@@ -1004,9 +1498,6 @@ function renderHomeKpis() {
     }
     return;
   }
-
-  const ctx = document.getElementById("homeKpiChart");
-  if (!ctx) return;
 
   const chartData = {
     labels,
@@ -1022,7 +1513,7 @@ function renderHomeKpis() {
       {
         label: "ใช้จริง",
         data: actualData,
-        backgroundColor: "rgba(52, 211, 153, 0.18)",
+        backgroundColor: "rgba(34, 197, 94, 0.18)",
         borderColor: "#22c55e",
         borderWidth: 1.5,
         borderRadius: 8
@@ -1037,7 +1528,7 @@ function renderHomeKpis() {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value) => value.toLocaleString("th-TH")
+          callback: (value) => formatMoney(value)
         }
       }
     },
@@ -1048,7 +1539,7 @@ function renderHomeKpis() {
           label: (ctx) => {
             const label = ctx.dataset.label || "";
             const val = ctx.parsed.y || 0;
-            return `${label}: ${val.toLocaleString("th-TH")} บาท`;
+            return `${label}: ${formatMoney(val)} บาท`;
           }
         }
       }
@@ -1060,6 +1551,8 @@ function renderHomeKpis() {
     homeKpiChart.options = options;
     homeKpiChart.update();
   } else {
+    const ctx = document.getElementById("homeKpiChart");
+    if (!ctx) return;
     homeKpiChart = new Chart(ctx, {
       type: "bar",
       data: chartData,
@@ -1165,10 +1658,7 @@ function updateTable(filteredProjects) {
       budgetColor = "color:inherit;";
     }
 
-    const budgetText = budgetVal.toLocaleString("th-TH", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+    const budgetText = formatMoney(budgetVal);
 
     const displayStatus = getDisplayStatusForList(p);
 
@@ -1178,10 +1668,15 @@ function updateTable(filteredProjects) {
       </span>
     `;
 
+    const orgName = (p.orgName || "").trim();
+    const orgMarkup = orgName ? `<div class="project-org">${orgName}</div>` : "";
+
     tr.innerHTML = `
       <td class="col-code">${p.code || ""}</td>
-      <td class="col-name">${p.name || ""}</td>
-      <td class="col-org">${p.orgName || ""}</td>
+      <td class="col-name">
+        <div class="project-name">${p.name || ""}</div>
+        ${orgMarkup}
+      </td>
       <td class="col-year">${p.year || ""}</td>
       <td class="col-status">${statusBadge}</td>
       <td class="col-budget" style="${budgetColor}">${budgetText}</td>
@@ -1235,16 +1730,13 @@ function openProjectModal(project) {
   const fundSource = project.fundSource || "-";
   const approvedBudget100 =
     project.approvedBudget100 != null ? project.approvedBudget100 : project.budget || 0;
-  const approvedBudget100Text =
-    approvedBudget100.toLocaleString("th-TH") + " บาท";
+  const approvedBudget100Text = `${formatMoney(approvedBudget100)} บาท`;
 
   const transferStatus = project.transferStatus || "-";
   const transferDocNo = project.transferDocNo || "-";
   const transferDiffDisplay = project.transferDiffDisplay || "-";
   const transferNetText =
-    project.transferNet != null
-      ? project.transferNet.toLocaleString("th-TH") + " บาท"
-      : "-";
+    project.transferNet != null ? `${formatMoney(project.transferNet)} บาท` : "-";
 
   const advanceStatus = project.advanceStatus || "-";
   const advanceDocNo = project.advanceDocNo || "-";
@@ -1254,20 +1746,14 @@ function openProjectModal(project) {
       ? project.advancePercent.toFixed(0) + "%"
       : "-";
   const advanceAmountText =
-    project.advanceAmount != null
-      ? project.advanceAmount.toLocaleString("th-TH") + " บาท"
-      : "-";
+    project.advanceAmount != null ? `${formatMoney(project.advanceAmount)} บาท` : "-";
 
   const closeChecker = (project.closeChecker || "").trim();
   const closeDueDate = project.closeDueDate || "-";
   const actualBudgetText =
-    project.actualBudget != null
-      ? project.actualBudget.toLocaleString("th-TH") + " บาท"
-      : "-";
+    project.actualBudget != null ? `${formatMoney(project.actualBudget)} บาท` : "-";
   const remainingBudgetText =
-    project.remainingBudget != null
-      ? project.remainingBudget.toLocaleString("th-TH") + " บาท"
-      : "-";
+    project.remainingBudget != null ? `${formatMoney(project.remainingBudget)} บาท` : "-";
   const usagePercentText =
     project.usagePercent != null
       ? project.usagePercent.toFixed(2) + "%"
@@ -1601,10 +2087,7 @@ const PDF_SIGNERS = {
 
 function formatPdfNumber(value) {
   if (value === null || value === undefined || value === "" || isNaN(value)) return "";
-  return Number(value).toLocaleString("th-TH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  return formatMoney(value);
 }
 
 function formatPercentForPdf(value) {
@@ -1947,6 +2430,7 @@ function initCharts(ctxKey = activeProjectStatusContext) {
 
   const budgetCanvas = ctx.budgetChartCanvas;
   const statusCanvas = ctx.statusPieCanvas;
+  const trendCanvas = ctx.trendLineCanvas;
   if (!budgetCanvas || !statusCanvas) return;
 
   if (ctx.budgetByMonthChart) {
@@ -1957,9 +2441,14 @@ function initCharts(ctxKey = activeProjectStatusContext) {
     ctx.statusPieChart.destroy();
     ctx.statusPieChart = null;
   }
+  if (ctx.trendLineChart) {
+    ctx.trendLineChart.destroy();
+    ctx.trendLineChart = null;
+  }
 
   const budgetCtx = budgetCanvas.getContext("2d");
   const statusCtx = statusCanvas.getContext("2d");
+  const trendCtx = trendCanvas ? trendCanvas.getContext("2d") : null;
 
   budgetByMonthChart = new Chart(budgetCtx, {
     type: "bar",
@@ -2135,7 +2624,7 @@ function initCharts(ctxKey = activeProjectStatusContext) {
               const percent = total > 0 ? (value / total) * 100 : 0;
               const percentText = percent.toFixed(1);
               const line1 = label;
-              const line2 = `งบที่ได้รับอนุมัติ: ${value.toLocaleString("th-TH")} บาท`;
+              const line2 = `งบที่ได้รับอนุมัติ: ${formatMoney(value)} บาท`;
               const line3 = `คิดเป็น ${percentText}% ของงบทั้งหมดในกราฟนี้`;
               return [line1, line2, line3];
             }
@@ -2145,6 +2634,45 @@ function initCharts(ctxKey = activeProjectStatusContext) {
       cutout: "55%"
     }
   });
+
+  if (trendCtx) {
+    trendLineChart = new Chart(trendCtx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "โครงการค้างปิด",
+            data: [],
+            borderColor: "#ec4899",
+            backgroundColor: "rgba(236, 72, 153, 0.18)",
+            pointBackgroundColor: "#ec4899",
+            pointRadius: 3,
+            pointHoverRadius: 4,
+            fill: true,
+            tension: 0.35
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          x: {
+            ticks: { font: { size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0, font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
 
   syncChartsToContext(ctxKey);
 }
@@ -2596,10 +3124,15 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
     filtered = sortProjects(filtered, currentSort.key, currentSort.direction);
   }
 
-  updateSummaryCards(filtered);
+  const summary = updateSummaryCards(filtered);
+  updateDashboardInsights(filtered, summary);
   updateTable(filtered);
   updateClosureStatusChart(filtered);
   updateApprovedBudgetPie(filtered);
+  updateTrendLineChart(filtered);
+  if (ctxKey === "staff") {
+    renderHomeKpis(filtered);
+  }
 
   if (tableCaptionEl) {
     tableCaptionEl.textContent = `แสดง ${filtered.length} โครงการ`;
@@ -2646,6 +3179,10 @@ function updateNavVisibility(isAuthenticated) {
   navLinksAll.forEach((link) => {
     const mode = link.dataset.visible || "public";
     const page = link.dataset.page || "";
+    if (page === "dashboard-staff" && staffViewMode !== "staff") {
+      link.style.display = "none";
+      return;
+    }
     if (!isAuthenticated && !publicAllowed.has(page)) {
       link.style.display = "none";
       return;
@@ -2710,13 +3247,13 @@ function updateNavForStaff(staffUser) {
   if (staffViewMode !== "staff") return;
 
   const roleAllowedMap = {
-    "00": new Set(["project-status-staff", "borrow-assets-staff", "login"]),
-    "01": new Set(["project-status-staff", "login"]),
+    "00": new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "login"]),
+    "01": new Set(["project-status-staff", "dashboard-staff", "login"]),
     "04": new Set(["borrow-assets-staff", "login"])
   };
 
   const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||
-    new Set(["project-status-staff", "borrow-assets-staff", "login"]);
+    new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "login"]);
 
   navLinksAll.forEach((link) => {
     const page = link.dataset.page || "";
@@ -2724,7 +3261,7 @@ function updateNavForStaff(staffUser) {
   });
 }
 
-function getPreferredPageForState(isAuth, staffUser) {
+function getPreferredPageForState(isAuth) {
   if (isAuth) {
     return "login";
   }
@@ -2867,7 +3404,7 @@ function initAuthUI() {
     staffViewMode = "normal";
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:2870", err);
+      console.error("logout error - app.js:3408", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
@@ -2909,8 +3446,11 @@ async function loadOrgStructure() {
   toggleOrgStructureLoading(true);
   const el = document.getElementById("org-structure-content");
   try {
-    const res = await fetch(ORG_SHEET_CSV);
-    const csvText = await res.text();
+    const csvText = await fetchTextWithProgress(ORG_SHEET_CSV, (ratio) => {
+      if (typeof updateLoaderProgress === "function") {
+        updateLoaderProgress("orgStructure", ratio);
+      }
+    });
 
     const parsed = Papa.parse(csvText, {
       header: false,
@@ -2920,12 +3460,15 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:2923", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:3464", err);
     if (el) {
       el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
     }
   } finally {
     toggleOrgStructureLoading(false);
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("orgStructure");
+    }
   }
 }
 
@@ -3398,8 +3941,11 @@ async function loadNewsFromSheet() {
       return;
     }
 
-    const res = await fetch(NEWS_SHEET_CSV);
-    const csvText = await res.text();
+    const csvText = await fetchTextWithProgress(NEWS_SHEET_CSV, (ratio) => {
+      if (typeof updateLoaderProgress === "function") {
+        updateLoaderProgress("news", ratio);
+      }
+    });
 
     const parsed = Papa.parse(csvText, {
       header: false,
@@ -3459,9 +4005,12 @@ async function loadNewsFromSheet() {
     setCache(CACHE_KEYS.NEWS, newsItems);
     renderNewsList();
   } catch (err) {
-    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:3462", err);
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:4009", err);
   } finally {
     toggleNewsSkeleton(false);
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("news");
+    }
   }
 }
 
@@ -3620,6 +4169,20 @@ function renderHomeNewsPreview() {
       if (id) openNewsModal(id);
     });
   });
+
+  container.querySelectorAll("[data-goto-page]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      const page = el.dataset.gotoPage;
+      if (!page) return;
+      const targetHash = `#${page}`;
+      if (window.location.hash !== targetHash) {
+        window.location.hash = targetHash;
+      } else {
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      }
+    });
+  });
 }
 
 // parse วันที่แบบง่าย ๆ (dd/mm/yyyy หรือ yyyy-mm-dd)
@@ -3666,7 +4229,12 @@ function addDownloadButton(wrapper, label, url) {
 
 async function loadDownloadDocuments() {
   const listEl = document.getElementById("downloadList");
-  if (!listEl) return;
+  if (!listEl) {
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("downloads");
+    }
+    return;
+  }
 
   try {
     toggleDownloadSkeleton(true);
@@ -3677,8 +4245,11 @@ async function loadDownloadDocuments() {
       return;
     }
 
-    const res = await fetch(DOWNLOAD_SHEET);
-    const csvText = await res.text();
+    const csvText = await fetchTextWithProgress(DOWNLOAD_SHEET, (ratio) => {
+      if (typeof updateLoaderProgress === "function") {
+        updateLoaderProgress("downloads", ratio);
+      }
+    });
     const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: true });
     const rows = parsed.data;
 
@@ -3773,11 +4344,14 @@ async function loadDownloadDocuments() {
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:3776", err);
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:4348", err);
     listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
   } finally {
     toggleDownloadSkeleton(false);
     listEl.style.display = listEl.innerHTML.trim() ? "" : "none";
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("downloads");
+    }
   }
 }
 
@@ -3786,7 +4360,12 @@ async function loadDownloadDocuments() {
 function initScoreboard() {
   const podiumEl = document.getElementById("scorePodium");
   const runnersEl = document.getElementById("scoreRunners");
-  if (!podiumEl || !runnersEl) return;
+  if (!podiumEl || !runnersEl) {
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("scoreboard");
+    }
+    return;
+  }
 
   podiumEl.classList.remove("score-animate-in");
   runnersEl.classList.remove("score-animate-in");
@@ -3804,6 +4383,9 @@ function initScoreboard() {
   Papa.parse(SCORE_SHEET, {
     download: true,
     complete: (results) => {
+      if (typeof markLoaderStep === "function") {
+        markLoaderStep("scoreboard");
+      }
       const rows = results.data || [];
       if (rows.length < 2) return;
 
@@ -3830,7 +4412,10 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     },
     error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:3833", err);
+      console.error("Error loading SCORE_SHEET - app.js:4416", err);
+      if (typeof markLoaderStep === "function") {
+        markLoaderStep("scoreboard");
+      }
     }
   });
 }
@@ -4003,7 +4588,7 @@ function refreshMotionForActivePage() {
 
 
 /* 12) Init */
-window.addEventListener("load", async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // ===== 1) เก็บ DOM element ที่ใช้ซ้ำ =====
   yearSelect = document.getElementById("yearSelect");
   orgTypeSelect = document.getElementById("orgTypeSelect");
@@ -4059,9 +4644,76 @@ window.addEventListener("load", async () => {
   kpiClosedProjectsEl = document.getElementById("kpiClosedProjects");
   kpiClosedProjectsCaptionEl = document.getElementById("kpiClosedProjectsCaption");
   kpiMonthlyCaptionEl = document.getElementById("kpiMonthlyCaption");
+  kpiOnTimeBarEl = document.getElementById("kpiOnTimeBar");
+  kpiBudgetUsageBarEl = document.getElementById("kpiBudgetUsageBar");
+  kpiClosedProjectsBarEl = document.getElementById("kpiClosedProjectsBar");
+  kpiOnTimeStaffEl = document.getElementById("kpiOnTimeStaff");
+  kpiOnTimeCaptionStaffEl = document.getElementById("kpiOnTimeCaptionStaff");
+  kpiBudgetUsageStaffEl = document.getElementById("kpiBudgetUsageStaff");
+  kpiBudgetUsageCaptionStaffEl = document.getElementById("kpiBudgetUsageCaptionStaff");
+  kpiClosedProjectsStaffEl = document.getElementById("kpiClosedProjectsStaff");
+  kpiClosedProjectsCaptionStaffEl = document.getElementById("kpiClosedProjectsCaptionStaff");
   homeHeatmapEl = document.getElementById("homeHeatmap");
   homeHeatmapMonthsEl = document.getElementById("homeHeatmapMonths");
   const appLoaderEl = document.getElementById("appLoader");
+  const appLoaderPercentEl = document.getElementById("appLoaderPercent");
+  const appLoaderBarEl = document.getElementById("appLoaderBar");
+  let loaderPercent = 0;
+
+  const setLoaderPercent = (value) => {
+    const next = Math.max(loaderPercent, Math.min(100, Math.round(value)));
+    loaderPercent = next;
+    if (appLoaderPercentEl) {
+      appLoaderPercentEl.textContent = next.toString();
+    }
+    if (appLoaderBarEl) {
+      appLoaderBarEl.style.width = `${next}%`;
+    }
+  };
+
+  const hasLoaderUi = Boolean(appLoaderPercentEl);
+  const loaderStepKeys = new Set();
+  if (hasLoaderUi) {
+    loaderStepKeys.add("downloads");
+    loaderStepKeys.add("news");
+    loaderStepKeys.add("projects");
+    loaderStepKeys.add("orgFilters");
+    if (document.getElementById("scorePodium") && document.getElementById("scoreRunners")) {
+      loaderStepKeys.add("scoreboard");
+    }
+    if (document.getElementById("org-structure-content")) {
+      loaderStepKeys.add("orgStructure");
+    }
+  }
+  const loaderStepTotal = Math.max(loaderStepKeys.size, 1);
+  const loaderStepProgress = new Map();
+  loaderStepKeys.forEach((key) => loaderStepProgress.set(key, 0));
+
+  const updateLoaderTotal = () => {
+    if (!hasLoaderUi) return;
+    let sum = 0;
+    loaderStepKeys.forEach((key) => {
+      sum += loaderStepProgress.get(key) || 0;
+    });
+    const avg = sum / loaderStepTotal;
+    setLoaderPercent(5 + avg * 95);
+  };
+
+  updateLoaderProgress = (key, value) => {
+    if (!hasLoaderUi || !loaderStepKeys.has(key)) return;
+    const current = loaderStepProgress.get(key) || 0;
+    const next = Math.max(current, Math.min(1, value));
+    loaderStepProgress.set(key, next);
+    updateLoaderTotal();
+  };
+
+  markLoaderStep = (key) => {
+    updateLoaderProgress(key, 1);
+  };
+
+  if (hasLoaderUi) {
+    setLoaderPercent(5);
+  }
 
   projectStatusContexts = {
     public: buildProjectStatusContext("", "public"),
@@ -4082,8 +4734,9 @@ window.addEventListener("load", async () => {
     staffModeToggleEl.style.display = "none";
   }
 
-  // ===== 2) โหลดรายการดาวน์โหลดเอกสาร + ข่าว (ทำคู่ขนาน) =====
-  await Promise.all([loadDownloadDocuments(), loadNewsFromSheet()]);
+  // ===== 2) โหลดรายการดาวน์โหลดเอกสาร + ข่าวแบบ background =====
+  scheduleIdleTask(() => runBackgroundTask(loadDownloadDocuments, "downloads"));
+  scheduleIdleTask(() => runBackgroundTask(loadNewsFromSheet, "news"));
 
   
   // ===== 3) ตั้งปีใน footer =====
@@ -4096,6 +4749,10 @@ window.addEventListener("load", async () => {
   const pageViews = document.querySelectorAll(".page-view");
   function switchPage(page, { fromHash = false } = {}) {
     const targetPage = page;
+    if (targetPage === "dashboard-staff" && staffViewMode !== "staff") {
+      switchPage("project-status-staff", { fromHash });
+      return;
+    }
 
     pageViews.forEach((section) => {
       const isTarget = section.dataset.page === targetPage;
@@ -4122,6 +4779,23 @@ window.addEventListener("load", async () => {
     } else if (page === "project-status-staff") {
       setActiveProjectStatusContext("staff");
       refreshProjectStatus("staff");
+    } else if (page === "dashboard-staff") {
+      setActiveProjectStatusContext("staff");
+      refreshProjectStatus("staff");
+    }
+
+    const filterBar = document.getElementById("filterBarStaff");
+    if (filterBar) {
+      const hostStatus = document.getElementById("filterBarHostStaff");
+      const hostDashboard = document.getElementById("filterBarHostDashboardStaff");
+      if (page === "dashboard-staff" && hostDashboard) {
+        hostDashboard.appendChild(filterBar);
+        filterBar.style.display = "grid";
+      } else if (page === "project-status-staff" && hostStatus) {
+        hostStatus.appendChild(filterBar);
+      } else if (hostStatus) {
+        hostStatus.appendChild(filterBar);
+      }
     }
 
     // sync URL hash กับ page ปัจจุบัน (ไม่ทำตอนมาจาก hashchange)
@@ -4266,10 +4940,10 @@ window.addEventListener("load", async () => {
       initCalendar(key);                          // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
     });
 
-    initScoreboard();                           // 🔹 โหลดและแสดงผล Scoreboard SGCU-10.001
+    scheduleIdleTask(() => runBackgroundTask(initScoreboard, "scoreboard"));
     renderHomeKpis();                           // KPI หน้าแรก
   } catch (err) {
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4272", err);
+    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4947", err);
     projects = getFallbackProjects();
     await loadOrgFilters();
     ["public", "staff"].forEach((key) => {
@@ -4327,8 +5001,8 @@ window.addEventListener("load", async () => {
     }
   });
 
-  // ===== 8) โหลดโครงสร้างองค์กร (About Page) =====
-  await loadOrgStructure();
+  // ===== 8) โหลดโครงสร้างองค์กร (About Page) แบบ background =====
+  scheduleIdleTask(() => runBackgroundTask(loadOrgStructure, "orgStructure"));
 
   // ===== 9) Sorting ตารางโครงการ (public/staff) =====
   ["public", "staff"].forEach((key) => {
@@ -4358,7 +5032,7 @@ window.addEventListener("load", async () => {
     });
   });
 
-  // ===== 10) Toggle ระหว่าง Status / Calendar ในหน้า Project Status =====
+  // ===== 10) Toggle ระหว่าง Status / Dashboard / Calendar ในหน้า Project Status =====
   ["public", "staff"].forEach((key) => {
     const ctx = projectStatusContexts[key];
     if (!ctx || !ctx.viewToggleBtns || !ctx.statusViewEl || !ctx.calendarViewEl) return;
@@ -4373,8 +5047,19 @@ window.addEventListener("load", async () => {
         btn.classList.add("is-active");
 
         const isCalendar = target.includes("calendar");
-        ctx.statusViewEl.style.display = isCalendar ? "none" : "block";
-        ctx.calendarViewEl.style.display = isCalendar ? "block" : "none";
+        const isDashboard = target.includes("dashboard");
+        if (ctx.statusViewEl) {
+          ctx.statusViewEl.style.display = isCalendar || isDashboard ? "none" : "block";
+        }
+        if (ctx.calendarViewEl) {
+          ctx.calendarViewEl.style.display = isCalendar ? "block" : "none";
+        }
+        if (ctx.dashboardViewEl) {
+          ctx.dashboardViewEl.style.display = isDashboard ? "block" : "none";
+        }
+        if (ctx.filterBarEl) {
+          ctx.filterBarEl.style.display = isCalendar ? "none" : "grid";
+        }
         if (isCalendar) {
           generateCalendar();
         }
@@ -4441,8 +5126,11 @@ window.addEventListener("load", async () => {
 
   if (appLoaderEl) {
     requestAnimationFrame(() => {
+      setLoaderPercent(100);
       appLoaderEl.classList.add("is-hidden");
       appLoaderEl.setAttribute("aria-busy", "false");
+      markLoaderStep = null;
+      updateLoaderProgress = null;
     });
   }
 });

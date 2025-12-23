@@ -29,8 +29,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <!-- PapaParse -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
-    <!-- html2pdf -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
     <!-- Firebase (Auth) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -77,6 +75,12 @@
           กำลังเชื่อมต่อข้อมูล <span id="appLoaderPercent" class="app-loader-percent">0</span>%
         </div>
         <div class="app-loader-progress" aria-hidden="true"><span id="appLoaderBar"></span></div>
+        <div id="appLoaderError" class="app-loader-error" role="alert" hidden>
+          <div id="appLoaderErrorText" class="app-loader-error-text">
+            ไม่สามารถเชื่อมต่อข้อมูลได้ในขณะนี้
+          </div>
+          <button id="appLoaderRetry" class="app-loader-retry" type="button">ลองโหลดใหม่</button>
+        </div>
       </div>
     </div>
     <header class="site-header">
@@ -127,6 +131,7 @@
             aria-expanded="false"
             aria-controls="mobileMenu"
             role="button"
+            tabindex="0"
           >
             <input id="hamburgerToggle" type="checkbox" aria-hidden="true" />
             <span></span><span></span><span></span>
@@ -134,7 +139,7 @@
         </div>
       </div>
 
-      <div id="mobileMenu" class="mobile-menu">
+      <div id="mobileMenu" class="mobile-menu" aria-hidden="true">
         <nav>
           <a href="#" data-page="home" data-visible="public">Home</a>
           <a href="#" data-page="dashboard-staff" data-visible="protected">Dashboard</a>
@@ -155,6 +160,10 @@
     </header>
 
     <main class="main">
+      <div id="appAlert" class="app-alert" role="status" aria-live="polite" hidden>
+        <span id="appAlertText"></span>
+        <button id="appAlertRetry" class="app-alert-retry" type="button">ลองโหลดใหม่</button>
+      </div>
       <!-- HOME PAGE -->
       <section class="page-view active section-appear" data-page="home">
           <!-- 1. HERO -->
@@ -1536,7 +1545,14 @@
     </div>
 
     <!-- Project Modal -->
-    <div id="projectModal" class="modal">
+    <div
+      id="projectModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="projectModalTitle"
+    >
       <div class="modal-dialog">
         <div class="modal-header">
           <div>
@@ -1555,7 +1571,14 @@
     </div>
 
     <!-- Calendar Modal -->
-    <div id="calendarModal" class="modal">
+    <div
+      id="calendarModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="calendarModalTitle"
+    >
       <div class="modal-dialog">
         <div class="modal-header">
           <div>
@@ -1570,10 +1593,17 @@
     </div>
 
     <!-- Person Popup -->
-    <div id="personModal" class="person-modal">
+    <div
+      id="personModal"
+      class="person-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="personModalName"
+    >
       <div class="person-modal-backdrop"></div>
       <div class="person-modal-dialog">
-        <button id="personModalClose" class="person-modal-close" aria-label="ปิดรายละเอียดบุคคล">×</button>
+        <button id="personModalClose" class="person-modal-close" type="button" aria-label="ปิดรายละเอียดบุคคล">×</button>
 
         <div class="person-modal-header">
           <div id="personModalAvatar" class="person-modal-avatar"></div>
@@ -1591,7 +1621,14 @@
       </div>
     </div>
 
-    <div id="newsModal" class="modal">
+    <div
+      id="newsModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="newsModalTitle"
+    >
       <div class="modal-dialog">
         <div class="modal-header">
           <div>

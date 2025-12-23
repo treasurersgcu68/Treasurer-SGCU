@@ -166,13 +166,125 @@ let calendarContainerEl;
 let prevMonthBtnEl;
 let nextMonthBtnEl;
 let isUserAuthenticated = false;
-let authWasAuthenticated = false;
 let markLoaderStep = null;
 let updateLoaderProgress = null;
+let projectsLoadPromise = null;
+let projectsLoaded = false;
+let appAlertEl;
+let appAlertTextEl;
+let appAlertRetryEl;
+let appLoaderErrorEl;
+let appLoaderErrorTextEl;
+let appLoaderRetryEl;
 
 // Motion globals
 let sectionObserver = null;
 let hasInitCountup = false;
+
+// Accessibility helpers (focus trap + dialog state)
+const focusTrapHandlers = new Map();
+let activeModalEl = null;
+let lastModalFocusedEl = null;
+let lastMenuFocusedEl = null;
+
+const FOCUSABLE_SELECTOR =
+  "a[href], button:not([disabled]), input:not([disabled]):not([type='hidden']), " +
+  "select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+
+function getFocusableElements(container) {
+  if (!container) return [];
+  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+    (el) => el.offsetParent !== null && !el.hasAttribute("disabled")
+  );
+}
+
+function enableFocusTrap(container) {
+  if (!container || focusTrapHandlers.has(container)) return;
+  const handler = (e) => {
+    if (e.key !== "Tab") return;
+    const focusables = getFocusableElements(container);
+    if (!focusables.length) {
+      e.preventDefault();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const isShift = e.shiftKey;
+    if (isShift && document.activeElement === first) {
+      last.focus();
+      e.preventDefault();
+    } else if (!isShift && document.activeElement === last) {
+      first.focus();
+      e.preventDefault();
+    }
+  };
+  container.addEventListener("keydown", handler);
+  focusTrapHandlers.set(container, handler);
+}
+
+function disableFocusTrap(container) {
+  const handler = focusTrapHandlers.get(container);
+  if (!handler) return;
+  container.removeEventListener("keydown", handler);
+  focusTrapHandlers.delete(container);
+}
+
+function openDialog(modalEl, options = {}) {
+  if (!modalEl) return;
+  lastModalFocusedEl = document.activeElement;
+  modalEl.classList.add("show");
+  modalEl.setAttribute("aria-hidden", "false");
+  if (!modalEl.hasAttribute("tabindex")) modalEl.setAttribute("tabindex", "-1");
+  document.body.classList.add("has-modal");
+  activeModalEl = modalEl;
+
+  enableFocusTrap(modalEl);
+
+  const target = options.focusSelector
+    ? modalEl.querySelector(options.focusSelector)
+    : null;
+  const fallback = getFocusableElements(modalEl)[0];
+  const focusTarget = target || fallback || modalEl;
+  if (focusTarget && typeof focusTarget.focus === "function") {
+    focusTarget.focus({ preventScroll: true });
+  }
+}
+
+function closeDialog(modalEl) {
+  if (!modalEl) return;
+  modalEl.classList.remove("show");
+  modalEl.setAttribute("aria-hidden", "true");
+  disableFocusTrap(modalEl);
+  if (activeModalEl === modalEl) activeModalEl = null;
+  document.body.classList.remove("has-modal");
+  if (lastModalFocusedEl && typeof lastModalFocusedEl.focus === "function") {
+    lastModalFocusedEl.focus({ preventScroll: true });
+  }
+}
+
+function setMobileMenuState(menuEl, buttonEl, isExpanded) {
+  if (!menuEl || !buttonEl) return;
+  menuEl.classList.toggle("show", isExpanded);
+  menuEl.setAttribute("aria-hidden", isExpanded ? "false" : "true");
+  buttonEl.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+  if (!menuEl.hasAttribute("tabindex")) menuEl.setAttribute("tabindex", "-1");
+
+  if (isExpanded) {
+    lastMenuFocusedEl = document.activeElement;
+    enableFocusTrap(menuEl);
+    const focusable = getFocusableElements(menuEl);
+    if (focusable[0]) {
+      focusable[0].focus({ preventScroll: true });
+    } else {
+      menuEl.focus({ preventScroll: true });
+    }
+  } else {
+    disableFocusTrap(menuEl);
+    if (lastMenuFocusedEl && typeof lastMenuFocusedEl.focus === "function") {
+      lastMenuFocusedEl.focus({ preventScroll: true });
+    }
+  }
+}
 
 /* 3) Plugin: Center Text in Doughnut */
 const centerTextPlugin = {
@@ -431,7 +543,7 @@ function runBackgroundTask(task, label) {
     .then(task)
     .catch((err) => {
       const suffix = label ? ` - ${label}` : "";
-      console.error(`Background task failed${suffix} - app.js:437`, err);
+      console.error(`Background task failed${suffix} - app.js:546`, err);
     });
 }
 
@@ -446,7 +558,7 @@ function getCache(key, ttlMs) {
     if (!ts || Date.now() - ts > ttlMs) return null;
     return parsed.data || null;
   } catch (err) {
-    console.warn("อ่าน cache ไม่ได้ - app.js:452", err);
+    console.warn("อ่าน cache ไม่ได้ - app.js:561", err);
     return null;
   }
 }
@@ -456,8 +568,97 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (err) {
-    console.warn("เขียน cache ไม่ได้ - app.js:462", err);
+    console.warn("เขียน cache ไม่ได้ - app.js:571", err);
   }
+}
+
+const loadErrors = new Map();
+
+function updateAppAlert() {
+  if (!appAlertEl || !appAlertTextEl) return;
+  if (!loadErrors.size) {
+    appAlertEl.hidden = true;
+    return;
+  }
+  const messages = [];
+  let showRetry = false;
+  loadErrors.forEach((entry) => {
+    messages.push(entry.message);
+    if (entry.showRetry) showRetry = true;
+  });
+  appAlertTextEl.textContent = messages.join(" • ");
+  appAlertEl.hidden = false;
+  if (appAlertRetryEl) {
+    appAlertRetryEl.style.display = showRetry ? "inline-flex" : "none";
+  }
+}
+
+function recordLoadError(key, message, options = {}) {
+  loadErrors.set(key, {
+    message,
+    showRetry: Boolean(options.showRetry)
+  });
+  updateAppAlert();
+  if (options.showLoader && appLoaderErrorEl && appLoaderErrorTextEl) {
+    appLoaderErrorTextEl.textContent = message;
+    appLoaderErrorEl.hidden = false;
+  }
+}
+
+function setInlineError(el, message) {
+  if (!el) return;
+  el.innerHTML = `<div class="load-error-text">${message}</div>`;
+}
+
+async function fetchTextWithProgress(url, onProgress, options = {}) {
+  const timeoutMs = Number(options.timeoutMs) || 15000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(url, { signal: controller.signal, cache: "no-store" });
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw new Error("timeout");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!res.ok) {
+    throw new Error(`Fetch failed: ${res.status}`);
+  }
+
+  const length = Number(res.headers.get("content-length")) || 0;
+  if (!res.body || !length) {
+    const text = await res.text();
+    if (typeof onProgress === "function") {
+      onProgress(1);
+    }
+    return text;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let received = 0;
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.length;
+    text += decoder.decode(value, { stream: true });
+    if (typeof onProgress === "function") {
+      onProgress(Math.min(received / length, 1));
+    }
+  }
+
+  text += decoder.decode();
+  if (typeof onProgress === "function") {
+    onProgress(1);
+  }
+  return text;
 }
 
 async function fetchTextWithProgress(url, onProgress) {
@@ -724,11 +925,11 @@ async function loadProjectsFromSheet() {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
-      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:730");
+      console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:891");
       return;
     }
 
-    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:734");
+    console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:895");
     const csvText = await fetchTextWithProgress(SHEET_CSV_URL, (ratio) => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("projects", ratio);
@@ -750,7 +951,12 @@ async function loadProjectsFromSheet() {
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
   } catch (err) {
-    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:756", err);
+    console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:917", err);
+    recordLoadError(
+      "projects",
+      "โหลดข้อมูลโครงการไม่สำเร็จ กำลังใช้ข้อมูลสำรอง",
+      { showRetry: true, showLoader: true }
+    );
     projects = getFallbackProjects();
   } finally {
     if (typeof markLoaderStep === "function") {
@@ -783,13 +989,70 @@ async function loadOrgFilters() {
       }))
       .filter((r) => r.group !== "" && r.name !== "");
   } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:789", err);
+    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:955", err);
+    recordLoadError(
+      "orgFilters",
+      "โหลดตัวเลือกฝ่าย/ชมรมไม่สำเร็จ กำลังใช้ข้อมูลจากโครงการ",
+      { showRetry: true }
+    );
     orgFilters = [];
   } finally {
     if (typeof markLoaderStep === "function") {
       markLoaderStep("orgFilters");
     }
   }
+}
+
+function shouldLoadProjectDataForPage(page) {
+  return ["project-status", "project-status-staff", "dashboard-staff"].includes(page);
+}
+
+async function ensureProjectDataLoaded() {
+  if (projectsLoaded) return;
+  if (projectsLoadPromise) return projectsLoadPromise;
+
+  projectsLoadPromise = (async () => {
+    setLoading(true, "public");
+    setLoading(true, "staff");
+    try {
+      await loadProjectsFromSheet();              // ดึงข้อมูลจาก SHEET_CSV_URL (ปี 2568 ตามที่ fix ไว้)
+      if (!projects || projects.length === 0) {   // กันกรณีโหลดไม่ได้/ข้อมูลว่าง
+        projects = getFallbackProjects();
+      }
+
+      await loadOrgFilters();                     // โหลดตัวเลือก filter ประเภท/ฝ่าย
+
+      ["public", "staff"].forEach((key) => {
+        setActiveProjectStatusContext(key);
+        initOrgTypeOptions();                       // เติม options ประเภทองค์กร
+        initOrgOptions();                           // เติมรายชื่อองค์กร
+        initCharts(key);                            // สร้างกราฟ Chart.js
+        refreshProjectStatus(key);                  // อัปเดตการ์ดสรุป + ตาราง + กราฟสถานะปิดโครงการ
+        initCalendar(key);                          // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
+      });
+
+      renderHomeKpis();                           // KPI หน้าแรก
+    } catch (err) {
+      console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:999", err);
+      projects = getFallbackProjects();
+      await loadOrgFilters();
+      ["public", "staff"].forEach((key) => {
+        setActiveProjectStatusContext(key);
+        initOrgTypeOptions();
+        initOrgOptions();
+        initCharts(key);
+        refreshProjectStatus(key);
+        initCalendar(key);
+      });
+      renderHomeKpis();
+    } finally {
+      setLoading(false, "public");
+      setLoading(false, "staff");
+      projectsLoaded = true;
+    }
+  })();
+
+  return projectsLoadPromise;
 }
 
 function getFallbackProjects() {
@@ -2040,7 +2303,7 @@ function openProjectModal(project) {
   `;
 
   projectModalBodyEl.innerHTML = html;
-  projectModalEl.classList.add("show");
+  openDialog(projectModalEl, { focusSelector: "#projectModalClose" });
 
   const pdfBtn = projectModalBodyEl.querySelector("[data-project-pdf]");
   if (pdfBtn) {
@@ -2076,7 +2339,7 @@ function shouldShowPdfDownload(project) {
 
 function closeProjectModal() {
   if (!projectModalEl) return;
-  projectModalEl.classList.remove("show");
+  closeDialog(projectModalEl);
 }
 
 /* ===== PDF Auto-fill ===== */
@@ -3380,7 +3643,6 @@ function initAuthUI() {
     // เปลี่ยนหน้าไปยังเมนูแรกตามสถานะปัจจุบัน (login/logout)
     const preferredPage = getPreferredPageForState(isAuth, hasStaff ? staffAuthUser : null);
     goToFirstVisibleNavPageWithPreference(preferredPage);
-    authWasAuthenticated = isAuth;
   }
 
   onAuthStateChanged(auth, (user) => {
@@ -3404,7 +3666,7 @@ function initAuthUI() {
     staffViewMode = "normal";
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:3408", err);
+      console.error("logout error - app.js:3632", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
@@ -3460,10 +3722,9 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:3464", err);
-    if (el) {
-      el.innerHTML = `<p style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</p>`;
-    }
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:3688", err);
+    recordLoadError("orgStructure", "โหลดโครงสร้างองค์กรไม่สำเร็จ", { showRetry: true });
+    setInlineError(el, "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้");
   } finally {
     toggleOrgStructureLoading(false);
     if (typeof markLoaderStep === "function") {
@@ -3823,7 +4084,7 @@ function initOrgPersonPopup() {
 
     contactEl.innerHTML = rows.join("");
 
-    modal.classList.add("show");
+    openDialog(modal, { focusSelector: "#personModalClose" });
   }
 
   // ผูก event กับทุก node ที่มี data-person-key
@@ -3838,7 +4099,7 @@ function initOrgPersonPopup() {
   });
 
   function closeModal() {
-    modal.classList.remove("show");
+    closeDialog(modal);
   }
 
   if (closeBtn) {
@@ -3851,9 +4112,6 @@ function initOrgPersonPopup() {
     }
   });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModal();
-  });
 }
 
 /* ===== ข่าวและประกาศจากฝ่ายเหรัญญิก ===== */
@@ -4005,7 +4263,11 @@ async function loadNewsFromSheet() {
     setCache(CACHE_KEYS.NEWS, newsItems);
     renderNewsList();
   } catch (err) {
-    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:4009", err);
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:4229", err);
+    recordLoadError("news", "โหลดข่าว/ประกาศไม่สำเร็จ", { showRetry: true });
+    newsItems = [];
+    setInlineError(newsListEl, "ไม่สามารถโหลดข่าว/ประกาศได้ในขณะนี้");
+    setInlineError(document.getElementById("homeNewsPreview"), "ไม่สามารถโหลดข่าว/ประกาศได้ในขณะนี้");
   } finally {
     toggleNewsSkeleton(false);
     if (typeof markLoaderStep === "function") {
@@ -4105,12 +4367,12 @@ function openNewsModal(newsId) {
     ${previewHtml}
   `;
 
-  newsModalEl.classList.add("show");
+  openDialog(newsModalEl, { focusSelector: "#newsModalClose" });
 }
 
 function closeNewsModal() {
   if (!newsModalEl) return;
-  newsModalEl.classList.remove("show");
+  closeDialog(newsModalEl);
 }
 
 function renderHomeNewsPreview() {
@@ -4344,8 +4606,9 @@ async function loadDownloadDocuments() {
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
   } catch (err) {
-    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:4348", err);
-    listEl.innerHTML = `<div style="color:#dc2626;">ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้</div>`;
+    console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:4572", err);
+    recordLoadError("downloads", "โหลดรายการดาวน์โหลดไม่สำเร็จ", { showRetry: true });
+    setInlineError(listEl, "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้");
   } finally {
     toggleDownloadSkeleton(false);
     listEl.style.display = listEl.innerHTML.trim() ? "" : "none";
@@ -4412,7 +4675,14 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     },
     error: (err) => {
-      console.error("Error loading SCORE_SHEET - app.js:4416", err);
+      console.error("Error loading SCORE_SHEET - app.js:4641", err);
+      recordLoadError("scoreboard", "โหลดคะแนนไม่สำเร็จ", { showRetry: true });
+      if (podiumEl) {
+        setInlineError(podiumEl, "ไม่สามารถโหลดผลคะแนนได้ในขณะนี้");
+      }
+      if (runnersEl) {
+        runnersEl.innerHTML = "";
+      }
       if (typeof markLoaderStep === "function") {
         markLoaderStep("scoreboard");
       }
@@ -4655,9 +4925,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   kpiClosedProjectsCaptionStaffEl = document.getElementById("kpiClosedProjectsCaptionStaff");
   homeHeatmapEl = document.getElementById("homeHeatmap");
   homeHeatmapMonthsEl = document.getElementById("homeHeatmapMonths");
+  appAlertEl = document.getElementById("appAlert");
+  appAlertTextEl = document.getElementById("appAlertText");
+  appAlertRetryEl = document.getElementById("appAlertRetry");
   const appLoaderEl = document.getElementById("appLoader");
   const appLoaderPercentEl = document.getElementById("appLoaderPercent");
   const appLoaderBarEl = document.getElementById("appLoaderBar");
+  appLoaderErrorEl = document.getElementById("appLoaderError");
+  appLoaderErrorTextEl = document.getElementById("appLoaderErrorText");
+  appLoaderRetryEl = document.getElementById("appLoaderRetry");
   let loaderPercent = 0;
 
   const setLoaderPercent = (value) => {
@@ -4715,6 +4991,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     setLoaderPercent(5);
   }
 
+  if (appAlertRetryEl) {
+    appAlertRetryEl.addEventListener("click", () => window.location.reload());
+  }
+  if (appLoaderRetryEl) {
+    appLoaderRetryEl.addEventListener("click", () => window.location.reload());
+  }
+  updateAppAlert();
+
   projectStatusContexts = {
     public: buildProjectStatusContext("", "public"),
     staff: buildProjectStatusContext("Staff", "staff")
@@ -4734,9 +5018,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     staffModeToggleEl.style.display = "none";
   }
 
-  // ===== 2) โหลดรายการดาวน์โหลดเอกสาร + ข่าวแบบ background =====
+  // ===== 2) โหลดรายการดาวน์โหลดเอกสาร + ข่าว + คะแนนแบบ background =====
   scheduleIdleTask(() => runBackgroundTask(loadDownloadDocuments, "downloads"));
   scheduleIdleTask(() => runBackgroundTask(loadNewsFromSheet, "news"));
+  scheduleIdleTask(() => runBackgroundTask(initScoreboard, "scoreboard"));
 
   
   // ===== 3) ตั้งปีใน footer =====
@@ -4747,10 +5032,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===== 4) ระบบสลับหน้าแบบ SPA =====
   const navLinks = document.querySelectorAll("header nav a[data-page]");
   const pageViews = document.querySelectorAll(".page-view");
-  function switchPage(page, { fromHash = false } = {}) {
+  async function switchPage(page, { fromHash = false } = {}) {
     const targetPage = page;
     if (targetPage === "dashboard-staff" && staffViewMode !== "staff") {
-      switchPage("project-status-staff", { fromHash });
+      await switchPage("project-status-staff", { fromHash });
       return;
     }
 
@@ -4778,10 +5063,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       setActiveProjectStatusContext("public");
     } else if (page === "project-status-staff") {
       setActiveProjectStatusContext("staff");
-      refreshProjectStatus("staff");
     } else if (page === "dashboard-staff") {
       setActiveProjectStatusContext("staff");
-      refreshProjectStatus("staff");
+    }
+
+    refreshMotionForActivePage();
+
+    if (shouldLoadProjectDataForPage(page)) {
+      await ensureProjectDataLoaded();
+      if (page === "project-status") {
+        refreshProjectStatus("public");
+      } else {
+        refreshProjectStatus("staff");
+      }
     }
 
     const filterBar = document.getElementById("filterBarStaff");
@@ -4807,7 +5101,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-    refreshMotionForActivePage();
   }
 
   // คลิกเมนูด้านบน
@@ -4816,7 +5109,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       e.preventDefault();
       const page = link.dataset.page;
       if (!page) return;
-      switchPage(page);
+      void switchPage(page);
     });
   });
 
@@ -4833,14 +5126,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     ? initialHash
     : defaultPage;
 
-  switchPage(initialPage, { fromHash: true });
+  await switchPage(initialPage, { fromHash: true });
 
   // รองรับเปลี่ยน hash ด้วยตนเอง (#about, #status ฯลฯ)
   window.addEventListener("hashchange", () => {
     const hashPage = window.location.hash.replace("#", "");
     if (!hashPage) return;
     if (Array.from(pageViews).some((sec) => sec.dataset.page === hashPage)) {
-      switchPage(hashPage, { fromHash: true });
+      void switchPage(hashPage, { fromHash: true });
     }
   });
 
@@ -4856,14 +5149,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (hamburgerBtn && mobileMenu && hamburgerToggle) {
     hamburgerBtn.setAttribute("aria-expanded", "false");
+    mobileMenu.setAttribute("aria-hidden", "true");
 
     const syncMobileMenu = (isExpanded) => {
-      mobileMenu.classList.toggle("show", isExpanded);
-      hamburgerBtn.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+      setMobileMenuState(mobileMenu, hamburgerBtn, isExpanded);
     };
 
     // เปิด/ปิดกล่องเมนู
     hamburgerToggle.addEventListener("change", () => {
+      syncMobileMenu(hamburgerToggle.checked);
+    });
+
+    hamburgerBtn.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      hamburgerToggle.checked = !hamburgerToggle.checked;
       syncMobileMenu(hamburgerToggle.checked);
     });
 
@@ -4873,7 +5173,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         e.preventDefault();
         const page = link.dataset.page;
         if (!page) return;
-        switchPage(page);
+        void switchPage(page);
         hamburgerToggle.checked = false;
         syncMobileMenu(false);
       });
@@ -4886,7 +5186,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.addEventListener("click", () => {
       const page = btn.dataset.gotoPage;
       if (!page) return;
-      switchPage(page);
+      void switchPage(page);
     });
   });
 
@@ -4901,12 +5201,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
   }
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      closeProjectModal();
-      closeNewsModal();
-    }
-  });
 
   // ===== X) Modal ข่าว/ประกาศ =====
   if (newsModalCloseEl) {
@@ -4920,47 +5214,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // ===== 6) โหลดข้อมูลโครงการ + Dashboard + Calendar =====
-  setLoading(true, "public");
-  setLoading(true, "staff");
-  try {
-    await loadProjectsFromSheet();              // ดึงข้อมูลจาก SHEET_CSV_URL (ปี 2568 ตามที่ fix ไว้)
-    if (!projects || projects.length === 0) {   // กันกรณีโหลดไม่ได้/ข้อมูลว่าง
-      projects = getFallbackProjects();
+  // ปุ่ม Esc: ปิดโมดัลที่เปิดอยู่ หรือปิดเมนูมือถือ
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (activeModalEl) {
+      closeDialog(activeModalEl);
+      return;
     }
+    const menuEl = document.getElementById("mobileMenu");
+    const buttonEl = document.getElementById("hamburgerBtn");
+    const toggleEl = buttonEl ? buttonEl.querySelector("input[type='checkbox']") : null;
+    if (menuEl && buttonEl && toggleEl && menuEl.classList.contains("show")) {
+      toggleEl.checked = false;
+      setMobileMenuState(menuEl, buttonEl, false);
+    }
+  });
 
-    await loadOrgFilters();                     // โหลดตัวเลือก filter ประเภท/ฝ่าย
-
-    ["public", "staff"].forEach((key) => {
-      setActiveProjectStatusContext(key);
-      initOrgTypeOptions();                       // เติม options ประเภทองค์กร
-      initOrgOptions();                           // เติมรายชื่อองค์กร
-      initCharts(key);                            // สร้างกราฟ Chart.js
-      refreshProjectStatus(key);                  // อัปเดตการ์ดสรุป + ตาราง + กราฟสถานะปิดโครงการ
-      initCalendar(key);                          // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
-    });
-
-    scheduleIdleTask(() => runBackgroundTask(initScoreboard, "scoreboard"));
-    renderHomeKpis();                           // KPI หน้าแรก
-  } catch (err) {
-    console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:4947", err);
-    projects = getFallbackProjects();
-    await loadOrgFilters();
-    ["public", "staff"].forEach((key) => {
-      setActiveProjectStatusContext(key);
-      initOrgTypeOptions();
-      initOrgOptions();
-      initCharts(key);
-      refreshProjectStatus(key);
-      initCalendar(key);
-    });
-    renderHomeKpis();
-  } finally {
-    setLoading(false, "public");
-    setLoading(false, "staff");
-  }
-
-  // ===== 7) Event เปลี่ยน filter ของ Dashboard (public/staff) =====
+  // ===== 6) Event เปลี่ยน filter ของ Dashboard (public/staff) =====
   ["public", "staff"].forEach((key) => {
     const ctx = projectStatusContexts[key];
     if (!ctx) return;
@@ -5001,10 +5271,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ===== 8) โหลดโครงสร้างองค์กร (About Page) แบบ background =====
+  // ===== 7) โหลดโครงสร้างองค์กร (About Page) แบบ background =====
   scheduleIdleTask(() => runBackgroundTask(loadOrgStructure, "orgStructure"));
 
-  // ===== 9) Sorting ตารางโครงการ (public/staff) =====
+  // ===== 8) Sorting ตารางโครงการ (public/staff) =====
   ["public", "staff"].forEach((key) => {
     const ctx = projectStatusContexts[key];
     if (!ctx || !ctx.tableBodyEl) return;
@@ -5032,7 +5302,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // ===== 10) Toggle ระหว่าง Status / Dashboard / Calendar ในหน้า Project Status =====
+  // ===== 9) Toggle ระหว่าง Status / Dashboard / Calendar ในหน้า Project Status =====
   ["public", "staff"].forEach((key) => {
     const ctx = projectStatusContexts[key];
     if (!ctx || !ctx.viewToggleBtns || !ctx.statusViewEl || !ctx.calendarViewEl) return;
@@ -5068,7 +5338,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
 
-  // ===== 11) Tabs Borrow & Return Assets =====
+  // ===== 10) Tabs Borrow & Return Assets =====
   const assetTabBtns = document.querySelectorAll(".tab-btn[data-assets-tab]");
   const assetsOverview = document.getElementById("assetsOverview");
   const assetsList = document.getElementById("assetsList");
@@ -5497,7 +5767,7 @@ function openCalendarModal(ev) {
     </div>
   `;
 
-  modal.classList.add("show");
+  openDialog(modal, { focusSelector: "#calendarModalClose" });
 }
 
 function openCalendarDayModal(dateObj, events) {
@@ -5562,13 +5832,13 @@ function openCalendarDayModal(dateObj, events) {
     if (!ev) return;
     row.addEventListener("click", () => openCalendarModal(ev));
   });
-  modal.classList.add("show");
+  openDialog(modal, { focusSelector: "#calendarModalClose" });
 }
 
 function closeCalendarModal() {
   const modal = document.getElementById("calendarModal");
   if (!modal) return;
-  modal.classList.remove("show");
+  closeDialog(modal);
 }
 
 /**

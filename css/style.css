@@ -915,7 +915,7 @@ textarea:focus-visible,
   opacity: 1;
 }
 
-/* View-toggle buttons (Project Status) */
+/* View-toggle buttons (Project Status: public + staff) */
 
 .view-toggle-btn {
   border: none;
@@ -1093,7 +1093,7 @@ textarea:focus-visible,
   width: 100%;
 }
 
-/* Dashboard overview (status view) */
+/* Dashboard overview (staff) */
 
 .dashboard-overview {
   background: transparent;
@@ -1401,7 +1401,7 @@ th.sortable.sort-desc::after {
   min-height: 90px;
 }
 
-/* Project Status table (projectTable) */
+/* Project Status tables (public + staff) */
 
 .project-table-wrapper {
   width: 100%;
@@ -1886,104 +1886,8 @@ th.sortable.sort-desc::after {
 }
 
 /* =========================================
-   8) Home – Hero & Timeline
+   8) Home – Layout Sections (current + legacy helpers)
 ========================================= */
-
-.home-hero-card {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2.2fr);
-  gap: 16px;
-  border-radius: 22px;
-  padding: 18px 18px 16px;
-  background: radial-gradient(circle at 0% 0%, #fdf2ff, #ffffff);
-  border: 1px solid #fce7f3;
-  box-shadow: 0 18px 50px rgba(236, 72, 153, 0.24);
-}
-
-.home-hero-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.home-hero-title {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.home-hero-subtitle {
-  font-size: 13px;
-  color: #4b5563;
-  margin: 0;
-}
-
-.home-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.home-hero-mini {
-  margin-top: 4px;
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.home-hero-highlight {
-  border-radius: 18px;
-  padding: 10px 12px;
-  background: #ffffff;
-  border: 1px solid #f3e8ff;
-  position: relative;
-}
-
-.home-highlight-tag {
-  font-size: 11px;
-  color: #9f1239;
-  background: #fff7ed;
-  padding: 4px 9px;
-  border-radius: 999px;
-  display: inline-block;
-  margin-bottom: 4px;
-}
-
-.home-highlight-metric {
-  margin-top: 2px;
-}
-
-.home-highlight-number {
-  font-size: 26px;
-  font-weight: 700;
-}
-
-.home-highlight-label {
-  font-size: 11px;
-  color: #4b5563;
-}
-
-.home-highlight-row {
-  display: flex;
-  gap: 18px;
-  margin-top: 8px;
-}
-
-.home-highlight-subnumber {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.home-highlight-sublabel {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.home-highlight-footnote {
-  margin-top: 10px;
-  font-size: 10px;
-  color: #9ca3af;
-}
 
 .home-timeline-footer {
   margin-top: 10px;
@@ -1994,83 +1898,8 @@ th.sortable.sort-desc::after {
   font-size: 11px;
 }
 
-/* Home quick cards (reserved ifใช้ภายหลัง) */
-
-.home-quick-grid {
-  margin-top: 10px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 12px;
-}
-
-.home-quick-card {
-  border-radius: 16px;
-  padding: 10px 12px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  cursor: pointer;
-}
-
-.home-quick-title {
-  font-size: 13px;
-  font-weight: 600;
-  margin: 0 0 4px;
-}
-
-.home-quick-text {
-  font-size: 12px;
-  color: #4b5563;
-  margin: 0 0 4px;
-}
-
-.home-quick-meta {
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-/* Timeline (usedใน Home & Meeting) */
-
-.timeline {
-  position: relative;
-  padding-left: 18px;
-  margin: 12px 0;
-}
-
-.timeline::before {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #f9a8d4, #c4b5fd);
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 10px;
-}
-
-.timeline-dot {
-  position: absolute;
-  left: -2px;
-  top: 2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  border: 2px solid #fff;
-  background: #ec4899;
-  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.2);
-}
-
-.timeline-content {
-  margin-left: 14px;
-  font-size: 12px;
-}
-
 /* ======================
-   HOME PAGE
+   HOME PAGE (current layout)
 ====================== */
 
 .home-hero {
@@ -2144,90 +1973,7 @@ th.sortable.sort-desc::after {
   border: 1px solid rgba(236, 72, 153, 0.2);
 }
 
-.home-hero-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.home-stat-card {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 16px;
-  padding: 10px 12px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-}
-
-.home-stat-label {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.home-stat-value {
-  font-size: 22px;
-  font-weight: 700;
-  margin-top: 4px;
-}
-
-/* hero highlight */
-
-.home-hero-highlight {
-  display: flex;
-  justify-content: center;
-}
-
-.home-highlight-card {
-  width: 100%;
-  max-width: 340px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 24px;
-  padding: 20px 20px 18px;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
-}
-
-.home-highlight-card h2 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.home-highlight-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 10px;
-  font-size: 13px;
-  color: #4b5563;
-}
-
-.home-highlight-list li {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-}
-
-.dot-approved {
-  background: #22c55e;
-}
-
-.dot-warning {
-  background: #f97316;
-}
-
-.dot-neutral {
-  background: #9ca3af;
-}
-
-.home-highlight-footer {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-/* common section header */
+/* common section header (home sections) */
 
 .home-section-header {
   max-width: 900px;
@@ -2245,62 +1991,7 @@ th.sortable.sort-desc::after {
   color: #6b7280;
 }
 
-/* services */
-
-.home-services {
-  padding: 10px 0 40px;
-}
-
-.home-services-grid {
-  max-width: 1100px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.home-service-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 18px;
-  padding: 18px 16px;
-  border: 1px solid rgba(248, 113, 113, 0.08);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-}
-
-.home-service-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
-  border-color: rgba(236, 72, 153, 0.35);
-}
-
-.home-service-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  margin-bottom: 8px;
-  background: #fee2e2;
-}
-
-.home-service-card h3 {
-  font-size: 15px;
-  margin-bottom: 4px;
-}
-
-.home-service-card p {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-/* news */
+/* news (home preview) */
 
 .home-news {
   padding: 20px 0 40px;
@@ -2314,89 +2005,15 @@ th.sortable.sort-desc::after {
   gap: 18px;
 }
 
-.home-kpi {
-  padding: 0;
-}
-
-.home-kpi-panel {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.home-kpi-grid {
-  margin: 0 0 16px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 14px;
-}
-
-.kpi-card {
-  background: #ffffff;
-  border: 1px solid #f3e8ff;
-  border-radius: 16px;
-  padding: 12px;
-  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.16);
-}
-
 .kpi-label {
   font-size: 12px;
   color: #6b7280;
   margin-bottom: 6px;
 }
 
-.kpi-value {
-  font-size: 22px;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 6px;
-}
-
 .kpi-caption {
   font-size: 11px;
   color: #6b7280;
-}
-
-.kpi-chart-card {
-  background: #ffffff;
-  border: 1px solid #f3e8ff;
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: 0 6px 18px rgba(148, 163, 184, 0.2);
-}
-
-.home-kpi-lower {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 16px;
-}
-
-.kpi-heatmap-card {
-  background: #ffffff;
-  border: 1px solid #f3e8ff;
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: 0 6px 18px rgba(148, 163, 184, 0.2);
-}
-
-@media (min-width: 1024px) {
-  .home-kpi-panel {
-    padding: 20px 24px;
-  }
-
-  .home-kpi-lower {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
-    align-items: stretch;
-  }
-
-  .kpi-chart-card,
-  .kpi-heatmap-card {
-    height: 100%;
-  }
 }
 
 .home-news-skeleton {
@@ -2485,7 +2102,7 @@ th.sortable.sort-desc::after {
   color: #db2777;
 }
 
-/* scope section (ใช้ scope-pill / scope-team-card ที่ JS รู้จักแล้ว) */
+/* scope section (ใช้ scope-pill / scope-team-card ตามที่ JS ใช้งาน) */
 
 .home-scope {
   padding: 20px 0 60px;
@@ -2551,7 +2168,7 @@ th.sortable.sort-desc::after {
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
 }
 
-/* responsive */
+/* responsive (home sections) */
 
 @media (max-width: 960px) {
   .home-hero-inner {
@@ -2567,10 +2184,6 @@ th.sortable.sort-desc::after {
     order: -1;
   }
 
-  .home-services-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .home-news-grid,
   .home-scope-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2582,11 +2195,6 @@ th.sortable.sort-desc::after {
     font-size: 28px;
   }
 
-  .home-hero-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .home-services-grid,
   .home-news-grid,
   .home-scope-grid {
     grid-template-columns: 1fr;
@@ -2608,12 +2216,6 @@ th.sortable.sort-desc::after {
   max-width: 100%;
   height: auto;
   border-radius: 999px;
-}
-
-/* ถ้าไม่ใช้การ์ด bullet เดิมแล้ว จะกันสไตล์เก่ามารบกวน */
-.home-highlight-card,
-.home-highlight-list {
-  display: none;
 }
 
 /* Responsive ให้เหรียญลงกลางจอบนมือถือ */
@@ -2654,55 +2256,6 @@ th.sortable.sort-desc::after {
   }
 }
 
-
-/* =========================================
-   9) About – Scope Cards
-========================================= */
-
-.scope-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0 12px;
-}
-
-.scope-pill {
-  border-radius: 999px;
-  border: 1px solid #f9a8d4;
-  background: #ffffff;
-  padding: 5px 10px;
-  font-family: inherit;
-  font-size: 11px;
-  cursor: pointer;
-  color: #be185d;
-  transition: background 0.16s ease-out, color 0.16s ease-out,
-    box-shadow 0.16s ease-out;
-}
-
-.scope-pill-active {
-  background: #ffe4f1;
-  box-shadow: 0 4px 10px rgba(236, 72, 153, 0.25);
-}
-
-.scope-team-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
-}
-
-.scope-team-card {
-  border-radius: 14px;
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  font-size: 12px;
-  color: #4b5563;
-}
-
-.scope-team-active {
-  border-color: #f9a8d4;
-  box-shadow: 0 8px 20px rgba(236, 72, 153, 0.15);
-}
 
 /* =========================================
    10) Org structure (cards layout)
@@ -3519,11 +3072,10 @@ th.sortable.sort-desc::after {
 }
 
 /* =========================================
-   14) Assets & Meeting cards
+   14) Assets cards
 ========================================= */
 
-.asset-card,
-.meeting-card {
+.asset-card {
   border-radius: 18px;
   padding: 12px 14px;
   background: #ffffff;
@@ -3531,8 +3083,7 @@ th.sortable.sort-desc::after {
   box-shadow: 0 6px 16px rgba(148, 163, 184, 0.18);
 }
 
-.asset-card-header,
-.meeting-card-header {
+.asset-card-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -3540,21 +3091,18 @@ th.sortable.sort-desc::after {
   margin-bottom: 6px;
 }
 
-.asset-card-title,
-.meeting-card-title {
+.asset-card-title {
   font-size: 14px;
   font-weight: 700;
   color: #111827;
 }
 
-.asset-card-meta,
-.meeting-card-meta {
+.asset-card-meta {
   font-size: 11px;
   color: #6b7280;
 }
 
-.asset-card-footer,
-.meeting-card-footer {
+.asset-card-footer {
   margin-top: 4px;
   display: flex;
   justify-content: space-between;
@@ -3564,7 +3112,7 @@ th.sortable.sort-desc::after {
 }
 
 /* =========================================
-   15) Modals (Project / Calendar / Sections)
+   15) Modals (Project / Calendar / News / Sections)
 ========================================= */
 
 .modal {
@@ -3983,9 +3531,6 @@ th.sortable.sort-desc::after {
   .burger {
     display: block;
   }
-  .home-hero-card {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .chart-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -4162,7 +3707,6 @@ th.sortable.sort-desc::after {
   .home-hero-badge-img {
     width: 200px;
   }
-  .home-services-grid,
   .home-news-grid,
   .home-scope-grid {
     gap: 12px;
@@ -4187,7 +3731,7 @@ th.sortable.sort-desc::after {
   }
 }
 
-/* ================= SCOREBOARD SGCU-10.001 ================= */
+/* ================= SCOREBOARD SGCU-10.001 (home section) ================= */
 
 .home-scoreboard {
   margin-top: 40px;
@@ -4510,7 +4054,7 @@ th.sortable.sort-desc::after {
     transform: translateY(0);
   }
 }
-/* responsive */
+/* responsive (scoreboard) */
 @media (max-width: 768px) {
   .score-podium {
     gap: 10px;

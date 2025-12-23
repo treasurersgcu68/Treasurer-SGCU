@@ -1,18 +1,6 @@
-/*
- * Table of Contents
- * 01. Config & Globals
- * 02. Utilities & Cache
- * 03. Project Data (parse/load)
- * 04. Project UI (filters/summary/table/charts/modals)
- * 05. News & Downloads
- * 06. Scoreboard
- * 07. Org Structure
- * 08. Motion (section appear / count up)
- * 09. Calendar
- * 10. Page wiring (DOMContentLoaded)
- */
+/* Core config + shared globals (used across modules) */
 
-/* 1) CONFIG */
+/* Config: sheet endpoints */
 const SHEET_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfcEartu_DeoGQXOJ7_rYPGizNtDhYJEaXivywadNZibj1rch9WKC1GF1yNbZ3zRgQ4Efjj8jrTOrf/pub?output=csv";
 
@@ -49,7 +37,7 @@ const CACHE_KEYS = {
   DOWNLOADS: "sgcu_cache_downloads"
 };
 
-/* 2) Globals */
+/* Globals: shared state */
 let projects = [];
 let newsItems = [];
 

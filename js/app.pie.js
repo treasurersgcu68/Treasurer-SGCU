@@ -1,4 +1,4 @@
-/* 9) Pie: สัดส่วนงบประมาณที่ได้รับอนุมัติ */
+/* Pie chart: สัดส่วนงบประมาณที่ได้รับอนุมัติ */
 function updateApprovedBudgetPie(filtered) {
   if (!statusPieChart) return;
 
@@ -204,4 +204,3 @@ function updateApprovedBudgetPie(filtered) {
 
   statusPieChart.update();
 }
-

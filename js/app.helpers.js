@@ -1,4 +1,4 @@
-/* 4) Helper */
+/* Helpers: parse/format, cache, and background utilities */
 function simplifyStatus(statusRaw) {
   const s = (statusRaw || "").toString();
   if (!s) return "แบบร่าง";

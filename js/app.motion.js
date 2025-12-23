@@ -1,4 +1,4 @@
-/* ===== Motion Helpers: section appear + count up ===== */
+/* Motion helpers: section appear + count up */
 
 function initSectionAppearObserver() {
   const sections = document.querySelectorAll(".section-appear");
@@ -67,5 +67,4 @@ function refreshMotionForActivePage() {
     initCountupOnVisible();
   }
 }
-
 

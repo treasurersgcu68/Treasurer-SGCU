@@ -1,4 +1,4 @@
-/* 8) Charts */
+/* Charts: status summary + trends (Chart.js) */
 function initCharts(ctxKey = activeProjectStatusContext) {
   setActiveProjectStatusContext(ctxKey);
   const ctx = projectStatusContexts[ctxKey];
@@ -447,4 +447,3 @@ function updateClosureStatusChart(filtered) {
   resizeClosureChart(labels.length);
   budgetByMonthChart.update();
 }
-

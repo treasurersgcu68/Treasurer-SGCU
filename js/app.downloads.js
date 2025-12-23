@@ -1,4 +1,4 @@
-/* ===== ดาวน์โหลดเอกสาร ===== */
+/* ดาวน์โหลดเอกสารการเงิน */
 
 /* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
 function addDownloadButton(wrapper, label, url) {
@@ -140,4 +140,3 @@ async function loadDownloadDocuments() {
     }
   }
 }
-

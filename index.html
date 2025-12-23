@@ -36,11 +36,11 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css" />
-    <!-- Chart.js -->
+    <!-- Chart.js (กราฟในหน้า Status/Dashboard) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
-    <!-- PapaParse -->
+    <!-- PapaParse (อ่าน CSV/ข้อมูลตาราง) -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
-    <!-- Firebase (Auth) -->
+    <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
       import {
@@ -177,7 +177,7 @@
       </div>
       <!-- HOME PAGE -->
       <section class="page-view active section-appear" data-page="home">
-          <!-- 1. HERO -->
+          <!-- 1) Hero -->
            
           <div class="home-hero">
             <div class="home-hero-inner">
@@ -226,7 +226,7 @@
             </div>
           </div>
 
-          <!-- 2. ข่าว / ประกาศสั้น -->
+          <!-- 2) ข่าว / ประกาศสั้น -->
           <section class="home-news section-appear">
             <header class="home-section-header">
               <h2>ข่าวและประกาศจากฝ่ายเหรัญญิก</h2>
@@ -247,7 +247,7 @@
             <div id="homeNewsPreview" class="home-news-grid"></div>
           </section>
 
-          <!-- 4. ขอบเขตงานของทีมเหรัญญิก -->
+          <!-- 3) ขอบเขตงานของทีมเหรัญญิก -->
           <section class="home-scope section-appear">
             <header class="home-section-header">
               <h2>ทีมเหรัญญิกดูแลเรื่องอะไรบ้าง?</h2>
@@ -286,9 +286,9 @@
               </button>
             </div>
 
-            <!-- การ์ดทีม -->
+            <!-- การ์ดทีมตามหัวข้อที่เลือก -->
             <div class="home-scope-grid">
-              <!-- การ์ดใหม่: เหรัญญิก (ค่า default) -->
+              <!-- การ์ดเริ่มต้น: เหรัญญิก -->
               <div class="scope-team-card scope-team-active" data-scope="treasurer">
                 <h3>เหรัญญิก</h3>
                 <p>
@@ -343,7 +343,7 @@
             </div>
           </section>
 
-          <!-- 5. โครงสร้างทีมเหรัญญิก -->
+          <!-- 4) โครงสร้างทีมเหรัญญิก -->
           <section class="home-org section-appear">
             <header class="home-section-header">
               <h2>โครงสร้างทีมเหรัญญิก SGCU68</h2>
@@ -368,11 +368,11 @@
               </div>
             </div>
 
-            <!-- container ที่ JS จะเติมแผนผังทีมเหรัญญิก -->
+            <!-- JS จะเติมแผนผังทีมเหรัญญิก -->
             <div id="org-structure-content" class="org-structure-wrapper"></div>
           </section>
 
-          <!-- 6. SCOREBOARD SGCU-10.001 -->
+          <!-- 5) SCOREBOARD SGCU-10.001 -->
           <section class="home-scoreboard section-appear">
             <header class="home-section-header">
               <h2>ผลการแข่งขันโครงการ SGCU-10.001</h2>
@@ -383,21 +383,21 @@
             </header>
 
             <div class="scoreboard-wrapper">
-              <!-- Podium 3 อันดับแรก -->
+              <!-- Podium: 3 อันดับแรก -->
               <div id="scorePodium" class="score-podium">
-                <!-- JS จะเติมเนื้อหา -->
+                <!-- JS จะเติมผลคะแนน -->
                 <div class="score-loading">กำลังโหลดผลคะแนน...</div>
               </div>
 
-              <!-- Runners-up -->
+              <!-- Runners-up: อันดับถัดไป -->
               <div id="scoreRunners" class="score-runners">
-                <!-- JS จะเติมเนื้อหา -->
+                <!-- JS จะเติมผลคะแนน -->
               </div>
             </div>
           </section>
       </section>
 
-      <!-- ============ PROJECT STATUS ============ -->
+      <!-- ============ PROJECT STATUS (PUBLIC) ============ -->
       <section class="page-view" data-page="project-status">
         <div class="page">
           <!-- Header + Toggle -->
@@ -425,7 +425,7 @@
             </div>
           </div>
 
-          <!-- ================= STATUS VIEW ================= -->
+          <!-- ================= STATUS VIEW (SUMMARY) ================= -->
           <div id="statusView">
             <!-- Filter หลัก -->
             <div class="filter-bar">
@@ -441,7 +441,7 @@
                 <label for="orgTypeSelect">ประเภทองค์กร</label>
                 <select id="orgTypeSelect">
                   <option value="all">ทุกประเภทองค์กร</option>
-                  <!-- JS จะเติมฝ่าย/กลุ่มองค์กรเพิ่ม -->
+                  <!-- JS จะเติมตัวเลือกฝ่าย/กลุ่มองค์กร -->
                 </select>
               </div>
 
@@ -449,7 +449,7 @@
                 <label for="orgSelect">ฝ่าย / ชมรม</label>
                 <select id="orgSelect">
                   <option value="all">ทุกฝ่าย / ทุกชมรม</option>
-                  <!-- JS จะเติมรายชื่อชมรม/ฝ่ายเพิ่ม -->
+                  <!-- JS จะเติมรายชื่อฝ่าย/ชมรม -->
                 </select>
               </div>
 
@@ -497,7 +497,7 @@
               </article>
             </div>
 
-            <!-- กราฟสถานะปิดโครงการ + Pie งบประมาณ -->
+            <!-- กราฟสถานะปิดโครงการ + สัดส่วนงบประมาณ -->
             <div class="chart-grid section-appear section-delay-2" style="margin-top:16px;">
               <!-- Stacked bar -->
               <article class="chart-card">
@@ -522,7 +522,7 @@
               </article>
             </div>
 
-            <!-- ตารางรายการโครงการ -->
+            <!-- ตารางรายการโครงการ (ล็อกอินก่อนดูรายละเอียด) -->
             <section class="panel section-appear section-delay-3" style="margin-top:18px;">
               <header class="panel-header">
                 <div>
@@ -592,7 +592,7 @@
                 </div>
               </header>
 
-              <!-- Filters -->
+              <!-- Filters (ปี / ฝ่าย / สถานะ) -->
               <div class="calendar-filter-bar">
                 <div class="filter-group">
                   <label for="calendarYearSelect">ปีการศึกษา</label>
@@ -618,7 +618,7 @@
               </div>
 
               <div class="calendar-grid-scroll">
-                <!-- Skeleton ปฏิทิน -->
+                <!-- Skeleton ระหว่างโหลดปฏิทิน -->
                 <div id="calendarSkeleton" class="calendar-skeleton" aria-hidden="true">
                   <div class="calendar-skeleton-cell"></div>
                   <div class="calendar-skeleton-cell"></div>
@@ -656,7 +656,7 @@
                   <div class="calendar-skeleton-cell"></div>
                 </div>
 
-                <!-- กริดปฏิทิน -->
+                <!-- กริดปฏิทิน (JS เติมวัน/รายการ) -->
                 <div id="calendarContainer" class="calendar-grid"></div>
               </div>
 
@@ -824,7 +824,7 @@
         </div>
       </section>
 
-      <!-- ============ FINANCIAL DOCUMENTS ============ -->
+      <!-- ============ PROJECT STATUS (STAFF) ============ -->
       <section class="page-view" data-page="project-status-staff">
         <div class="page">
           <!-- Header + Toggle -->
@@ -833,7 +833,7 @@
               <h1 class="page-title">สถานะโครงการ (Staff)</h1>
             </div>
 
-            <!-- Toggle ระหว่างมุมมองสรุป / ปฏิทิน -->
+            <!-- Toggle ระหว่างมุมมองสรุป / ปฏิทิน (Staff) -->
             <div class="tabs">
               <button
                 class="tab-btn view-toggle-btn is-active"
@@ -852,7 +852,7 @@
             </div>
           </div>
 
-          <!-- Filter หลัก (ใช้ร่วม Status + Dashboard) -->
+          <!-- Filter หลัก (ใช้ร่วม Status + Dashboard ของ Staff) -->
           <div id="filterBarHostStaff">
             <div id="filterBarStaff" class="filter-bar">
               <div class="filter-group filter-year">
@@ -867,7 +867,7 @@
                 <label for="orgTypeSelectStaff">ประเภทองค์กร</label>
                 <select id="orgTypeSelectStaff">
                   <option value="all">ทุกประเภทองค์กร</option>
-                  <!-- JS จะเติมฝ่าย/กลุ่มองค์กรเพิ่ม -->
+                  <!-- JS จะเติมตัวเลือกฝ่าย/กลุ่มองค์กร -->
                 </select>
               </div>
 
@@ -875,7 +875,7 @@
                 <label for="orgSelectStaff">ฝ่าย / ชมรม</label>
                 <select id="orgSelectStaff">
                   <option value="all">ทุกฝ่าย / ทุกชมรม</option>
-                  <!-- JS จะเติมรายชื่อชมรม/ฝ่ายเพิ่ม -->
+                  <!-- JS จะเติมรายชื่อฝ่าย/ชมรม -->
                 </select>
               </div>
 
@@ -926,7 +926,7 @@
               </article>
             </div>
 
-            <!-- กราฟสถานะปิดโครงการ + Pie งบประมาณ -->
+            <!-- กราฟสถานะปิดโครงการ + สัดส่วนงบประมาณ -->
             <div class="chart-grid section-appear section-delay-3" style="margin-top:16px;">
               <!-- Stacked bar -->
               <article class="chart-card">
@@ -951,7 +951,7 @@
               </article>
             </div>
 
-            <!-- ตารางรายการโครงการ -->
+            <!-- ตารางรายการโครงการ (ล็อกอินก่อนดูรายละเอียด) -->
             <section class="panel section-appear section-delay-4" style="margin-top:18px;">
               <header class="panel-header">
                 <div>
@@ -999,7 +999,7 @@
             </section>
           </div>
 
-          <!-- ================= CALENDAR VIEW ================= -->
+          <!-- ================= CALENDAR VIEW (STAFF) ================= -->
           <div id="calendarViewStaff" style="display:none; margin-top:12px;">
             <section class="panel section-appear section-delay-1">
               <header class="panel-header">
@@ -1021,7 +1021,7 @@
                 </div>
               </header>
 
-              <!-- Filters -->
+              <!-- Filters (ปี / ฝ่าย / สถานะ) -->
               <div class="calendar-filter-bar">
                 <div class="filter-group">
                   <label for="calendarYearSelectStaff">ปีการศึกษา</label>
@@ -1047,7 +1047,7 @@
               </div>
 
               <div class="calendar-grid-scroll">
-                <!-- Skeleton ปฏิทิน -->
+                <!-- Skeleton ระหว่างโหลดปฏิทิน -->
                 <div id="calendarSkeletonStaff" class="calendar-skeleton" aria-hidden="true">
                   <div class="calendar-skeleton-cell"></div>
                   <div class="calendar-skeleton-cell"></div>
@@ -1085,7 +1085,7 @@
                   <div class="calendar-skeleton-cell"></div>
                 </div>
 
-                <!-- กริดปฏิทิน -->
+                <!-- กริดปฏิทิน (JS เติมวัน/รายการ) -->
                 <div id="calendarContainerStaff" class="calendar-grid"></div>
               </div>
 
@@ -1134,13 +1134,13 @@
               </div>
             </div>
             <div id="downloadList" class="download-wrapper">
-              <!-- เติมด้วย JS -->
+              <!-- JS เติมรายการไฟล์ดาวน์โหลด -->
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ============ BORROW & RETURN ASSETS ============ -->
+      <!-- ============ BORROW & RETURN ASSETS (PUBLIC) ============ -->
       <section class="page-view" data-page="borrow-assets">
         <div class="page">
           <div class="page-header-flex section-appear">
@@ -1170,7 +1170,7 @@
             </div>
           </div>
 
-          <!-- Overview -->
+          <!-- Overview (ภาพรวมวันนี้) -->
           <div id="assetsOverview" class="section-appear section-delay-1">
             <div class="cards" style="margin-bottom: 14px">
               <article class="card card-hover">
@@ -1251,7 +1251,7 @@
             </div>
           </div>
 
-          <!-- List -->
+          <!-- List (รายการทั้งหมด) -->
           <div
             id="assetsList"
             class="section-appear"
@@ -1296,7 +1296,7 @@
                         <span class="badge badge-approved">คืนแล้ว</span>
                       </td>
                     </tr>
-                    <!-- เติมข้อมูลจริงด้วย JS ได้ภายหลัง -->
+                    <!-- ตัวอย่างเท่านั้น: ผูกข้อมูลจริงด้วย JS -->
                   </tbody>
                 </table>
               </div>
@@ -1367,7 +1367,7 @@
       </section>
     </main>
 
-    <!-- PDF Template (Hidden) -->
+    <!-- PDF Template (Hidden, ใช้สร้างไฟล์ดาวน์โหลด) -->
     <div id="pdfRoot" class="pdf-root" aria-hidden="true">
       <!-- Page 1: Advance Letter -->
       <section class="pdf-flow">
@@ -1498,7 +1498,7 @@
         </div>
       </section>
 
-      <!-- Page 4: Sections 1-3 -->
+      <!-- Page 3: Sections 1-3 -->
       <section class="pdf-page">
         <div class="pdf-section">
           <div class="pdf-section-title">ส่วนที่ 1</div>

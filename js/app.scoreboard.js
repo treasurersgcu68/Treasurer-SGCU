@@ -1,4 +1,4 @@
-/* ================= SCOREBOARD SGCU-10.001 ================= */
+/* Scoreboard: SGCU-10.001 */
 
 function initScoreboard() {
   const podiumEl = document.getElementById("scorePodium");
@@ -164,5 +164,3 @@ function adjustScoreOrgNameFont() {
     }
   });
 }
-
-

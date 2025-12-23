@@ -1,4 +1,4 @@
-/* 11) Org Structure (About Page) */
+/* Org Structure (Home section: แผนผังทีมเหรัญญิก) */
 function toggleOrgStructureLoading(isLoading) {
   const container = document.getElementById("org-structure-content");
   if (orgStructureSkeletonEl) {
@@ -418,4 +418,3 @@ function initOrgPersonPopup() {
   });
 
 }
-

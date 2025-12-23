@@ -15,17 +15,22 @@
     <link rel="icon" type="image/png" href="img/logo_treasurur jpg1.png">
     <link rel="apple-touch-icon" href="img/logo_treasurur jpg1.png">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+    <link rel="preconnect" href="https://www.gstatic.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css" />
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <!-- PapaParse -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
     <!-- html2pdf -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
     <!-- Firebase (Auth) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -68,8 +73,10 @@
           <img src="img/logo_treasurur jpg.png" alt="" />
         </div>
         <div class="app-loader-title">Treasurer SGCU</div>
-        <div class="app-loader-subtitle">กำลังเชื่อมต่อข้อมูล</div>
-        <div class="app-loader-progress" aria-hidden="true"><span></span></div>
+        <div class="app-loader-status">
+          กำลังเชื่อมต่อข้อมูล <span id="appLoaderPercent" class="app-loader-percent">0</span>%
+        </div>
+        <div class="app-loader-progress" aria-hidden="true"><span id="appLoaderBar"></span></div>
       </div>
     </div>
     <header class="site-header">
@@ -96,10 +103,11 @@
 
         <nav class="desktop-nav">
           <a href="#" data-page="home" class="active" data-visible="public">Home</a>
+          <a href="#" data-page="dashboard-staff" data-visible="protected">Dashboard</a>
           <a href="#" data-page="project-status" data-visible="public">Project Status</a>
           <a href="#" data-page="financial-docs" data-visible="public">Financial Documents</a>
           <a href="#" data-page="borrow-assets" data-visible="protected">Borrow &amp; Return Assets</a>
-          <a href="#" data-page="login" data-visible="public">Login</a>
+          <a href="#" data-page="login" data-visible="public">Sign in</a>
         </nav>
 
         <div class="header-actions">
@@ -129,17 +137,18 @@
       <div id="mobileMenu" class="mobile-menu">
         <nav>
           <a href="#" data-page="home" data-visible="public">Home</a>
+          <a href="#" data-page="dashboard-staff" data-visible="protected">Dashboard</a>
           <a href="#" data-page="project-status" data-visible="public">Project Status</a>
           <a href="#" data-page="financial-docs" data-visible="public">Financial Documents</a>
           <a href="#" data-page="borrow-assets" data-visible="protected">Borrow &amp; Return Assets</a>
-          <a href="#" data-page="login" data-visible="public">Login</a>
+          <a href="#" data-page="login" data-visible="public">Sign in</a>
           <button
             id="mobileLogoutBtn"
             type="button"
             class="auth-btn ghost mobile-menu-logout"
             style="display:none;"
           >
-            Logout
+            Sign Out
           </button>
         </nav>
       </div>
@@ -216,78 +225,6 @@
               </div>
             </div>
             <div id="homeNewsPreview" class="home-news-grid"></div>
-          </section>
-
-          <!-- 2.1 KPI -->
-          <section class="home-kpi section-appear section-delay-1">
-            <header class="home-section-header">
-              <h2>สรุป KPI ฝ่ายเหรัญญิก</h2>
-              <p>ภาพรวมการปิดโครงการและการใช้งบประมาณแบบอัปเดตจากข้อมูลโครงการล่าสุด</p>
-            </header>
-
-            <div class="home-kpi-panel">
-              <div class="home-kpi-grid">
-                <article class="kpi-card">
-                  <div class="kpi-label">% ปิดโครงการตรงเวลา</div>
-                  <div id="kpiOnTime" class="kpi-value">–</div>
-                  <div class="kpi-caption" id="kpiOnTimeCaption">กำลังประมวลผล</div>
-                </article>
-
-                <article class="kpi-card">
-                  <div class="kpi-label">การใช้จ่ายเทียบงบ</div>
-                  <div id="kpiBudgetUsage" class="kpi-value">–</div>
-                  <div class="kpi-caption" id="kpiBudgetUsageCaption">งบที่อนุมัติ vs ใช้จริง</div>
-                </article>
-
-                <article class="kpi-card">
-                  <div class="kpi-label">ปิดโครงการแล้ว</div>
-                  <div id="kpiClosedProjects" class="kpi-value">–</div>
-                  <div class="kpi-caption" id="kpiClosedProjectsCaption">จำนวนโครงการที่ปิดแล้ว</div>
-                </article>
-              </div>
-
-              <div class="home-kpi-lower">
-                <div class="kpi-chart-card">
-                  <div class="chart-header">
-                    <h3 class="chart-title">เปรียบเทียบรายเดือน</h3>
-                    <p class="chart-caption" id="kpiMonthlyCaption">กำลังเตรียมข้อมูล</p>
-                  </div>
-                  <div class="chart-inner">
-                    <canvas id="homeKpiChart" height="140"></canvas>
-                  </div>
-                </div>
-
-                <div class="kpi-heatmap-card">
-                  <div class="calendar-heatmap-header">
-                    <h4 class="calendar-heatmap-title">Heat map วันปฏิบัติงานวันสุดท้าย</h4>
-                  </div>
-                  <div class="heatmap-year">
-                    <div id="homeHeatmapMonths" class="heatmap-axis heatmap-axis-months"></div>
-                    <div class="heatmap-body">
-                      <div class="heatmap-axis heatmap-axis-days" aria-hidden="true">
-                        <span>อา</span>
-                        <span>จ</span>
-                        <span>อ</span>
-                        <span>พ</span>
-                        <span>พฤ</span>
-                        <span>ศ</span>
-                        <span>ส</span>
-                      </div>
-                      <div id="homeHeatmap" class="heatmap-year-grid"></div>
-                    </div>
-                  </div>
-                  <div class="calendar-heatmap-legend" aria-hidden="true">
-                    <span class="heatmap-legend-label">น้อย</span>
-                    <span class="heatmap-legend-swatch heat-1"></span>
-                    <span class="heatmap-legend-swatch heat-2"></span>
-                    <span class="heatmap-legend-swatch heat-3"></span>
-                    <span class="heatmap-legend-swatch heat-4"></span>
-                    <span class="heatmap-legend-swatch heat-5"></span>
-                    <span class="heatmap-legend-label">มาก</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </section>
 
           <!-- 4. ขอบเขตงานของทีมเหรัญญิก -->
@@ -449,7 +386,7 @@
               <h1 class="page-title">สถานะโครงการ</h1>
             </div>
 
-            <!-- Toggle ระหว่างมุมมองสรุป / ปฏิทิน -->
+            <!-- Toggle ระหว่างมุมมองสรุป / Dashboard / ปฏิทิน -->
             <div class="tabs">
               <button
                 class="tab-btn view-toggle-btn is-active"
@@ -581,7 +518,6 @@
                       <tr>
                         <th style="text-align:center;">รหัสโครงการ</th>
                         <th style="text-align:center;">ชื่อโครงการ</th>
-                        <th style="text-align:center;">ฝ่าย / ชมรม</th>
                         <th class="sortable" data-sort="year" style="text-align:center;">
                           ปีการศึกษา
                         </th>
@@ -608,7 +544,7 @@
                   กรุณาล็อกอินเพื่อดูรายละเอียดโครงการ
                 </p>
                 <div style="margin-top:10px;">
-                  <button class="btn-primary" type="button" data-goto-page="login">ไปที่หน้า Login</button>
+                  <button class="btn-primary" type="button" data-goto-page="login">ไปที่หน้า Sign in</button>
                 </div>
               </div>
             </section>
@@ -714,6 +650,157 @@
       </section>
 
 
+      <!-- ============ DASHBOARD (STAFF) ============ -->
+      <section class="page-view" data-page="dashboard-staff">
+        <div class="page">
+          <div class="page-header-flex">
+            <div>
+              <h1 class="page-title">Dashboard ภาพรวม</h1>
+            </div>
+          </div>
+
+          <div id="filterBarHostDashboardStaff"></div>
+
+          <section class="dashboard-overview section-appear section-delay-1">
+            <header class="panel-header">
+              <div>
+                <h3 class="panel-title">ภาพรวมโครงการ</h3>
+                <p class="panel-caption">สรุปอัตราสถานะ งบเฉลี่ย และหน่วยงานที่ใช้งบสูงสุด</p>
+              </div>
+            </header>
+
+            <div class="dashboard-grid">
+              <article class="dashboard-metric">
+                <div class="metric-label">งบประมาณเฉลี่ยต่อโครงการ</div>
+                <div id="avgBudgetStaff" class="metric-value">0</div>
+                <div id="avgBudgetCaptionStaff" class="metric-caption">-</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="metric-label">จำนวนฝ่าย/ชมรมที่มีโครงการ</div>
+                <div id="activeOrgCountStaff" class="metric-value">0</div>
+                <div id="activeOrgCaptionStaff" class="metric-caption">-</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="metric-label">ฝ่าย / ชมรมใช้งบสูงสุด</div>
+                <div id="topOrgNameStaff" class="metric-value">-</div>
+                <div id="topOrgBudgetStaff" class="metric-caption">-</div>
+              </article>
+            </div>
+
+            <div class="dashboard-grid"> 
+              <article class="dashboard-metric">
+                <div class="metric-label">อัตราอนุมัติโครงการ</div>
+                <div class="donut-wrap">
+                  <canvas id="approvalRateDonutStaff"></canvas>
+                </div>
+                <div id="approvalRateCaptionStaff" class="metric-caption">-</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="kpi-label">การใช้จ่ายเทียบงบ</div>
+                <div class="donut-wrap">
+                  <canvas id="kpiBudgetUsageDonutStaff"></canvas>
+                </div>
+                <div class="kpi-caption" id="kpiBudgetUsageCaption">งบที่อนุมัติ vs ใช้จริง</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="metric-label">อัตราปิดโครงการ</div>
+                <div class="donut-wrap">
+                  <canvas id="closureRateDonutStaff"></canvas>
+                </div>
+                <div id="closureRateCaptionStaff" class="metric-caption">-</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="kpi-label">% ปิดโครงการตรงเวลา</div>
+                <div class="donut-wrap">
+                  <canvas id="kpiOnTimeDonutStaff"></canvas>
+                </div>
+                <div class="kpi-caption" id="kpiOnTimeCaption">กำลังประมวลผล</div>
+              </article>
+            </div>
+
+            <div class="dashboard-charts-grid section-appear section-delay-2" style="margin-top:12px;">
+              <article class="chart-card">
+                  <header class="chart-header">
+                    <h3 class="chart-title">จำนวนโครงการค้างปิดรายเดือน</h3>
+                  </header>
+                <div class="chart-inner">
+                  <canvas id="trendLineChartStaff"></canvas>
+                </div>
+              </article>
+
+              <article class="chart-card">
+                <header class="chart-header">
+                  <h3 class="chart-title">เปรียบเทียบรายเดือน</h3>
+                  <p class="chart-caption" id="kpiMonthlyCaption">กำลังเตรียมข้อมูล</p>
+                </header>
+                <div class="chart-inner">
+                  <canvas id="homeKpiChart" height="140"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="dashboard-charts-grid" style="margin-top:12px;">
+              <article class="chart-card">
+                <div class="calendar-heatmap-header">
+                  <h4 class="calendar-heatmap-title">Heat map วันปฏิบัติงานวันสุดท้าย</h4>
+                </div>
+                <div class="heatmap-year">
+                  <div id="homeHeatmapMonths" class="heatmap-axis heatmap-axis-months"></div>
+                  <div class="heatmap-body">
+                    <div class="heatmap-axis heatmap-axis-days" aria-hidden="true">
+                      <span>อา</span>
+                      <span>จ</span>
+                      <span>อ</span>
+                      <span>พ</span>
+                      <span>พฤ</span>
+                      <span>ศ</span>
+                      <span>ส</span>
+                    </div>
+                    <div id="homeHeatmap" class="heatmap-year-grid"></div>
+                  </div>
+                </div>
+                <div class="calendar-heatmap-legend" aria-hidden="true">
+                  <span class="heatmap-legend-label">น้อย</span>
+                  <span class="heatmap-legend-swatch heat-1"></span>
+                  <span class="heatmap-legend-swatch heat-2"></span>
+                  <span class="heatmap-legend-swatch heat-3"></span>
+                  <span class="heatmap-legend-swatch heat-4"></span>
+                  <span class="heatmap-legend-swatch heat-5"></span>
+                  <span class="heatmap-legend-label">มาก</span>
+                </div>
+              </article>
+            </div>
+
+            <div class="dashboard-lower" style="margin-top:12px;">
+              <article class="dashboard-card">
+                <h4 class="dashboard-card-title">โครงการค้างปิดนานสุด</h4>
+                <div class="project-table-wrapper">
+                  <table id="longestOpenTableStaff">
+                    <thead>
+                      <tr>
+                        <th style="text-align:center;">รหัสโครงการ</th>
+                        <th style="text-align:center;">ชื่อโครงการ</th>
+                        <th style="text-align:center;">ผู้ช่วย</th>
+                        <th style="text-align:center;">สถานะปิดโครงการ</th>
+                        <th style="text-align:right;">ยอดวันที่ค้าง</th>
+                      </tr>
+                    </thead>
+                    <tbody id="longestOpenTableBodyStaff">
+                      <!-- JS ใส่ข้อมูล -->
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+
       <!-- ============ FINANCIAL DOCUMENTS ============ -->
       <section class="page-view" data-page="project-status-staff">
         <div class="page">
@@ -742,10 +829,9 @@
             </div>
           </div>
 
-          <!-- ================= STATUS VIEW ================= -->
-          <div id="statusViewStaff">
-            <!-- Filter หลัก -->
-            <div class="filter-bar">
+          <!-- Filter หลัก (ใช้ร่วม Status + Dashboard) -->
+          <div id="filterBarHostStaff">
+            <div id="filterBarStaff" class="filter-bar">
               <div class="filter-group filter-year">
                 <label for="yearSelectStaff">ปีการศึกษา</label>
                 <select id="yearSelectStaff">
@@ -784,9 +870,12 @@
                 </div>
               </div>
             </div>
+          </div>
 
+          <!-- ================= STATUS VIEW ================= -->
+          <div id="statusViewStaff">
             <!-- การ์ดสรุป -->
-            <div class="cards section-appear section-delay-1">
+            <div class="cards section-appear section-delay-2">
               <article class="card card-hover">
                 <div class="card-title">จำนวนโครงการทั้งหมด</div>
                 <div id="totalProjectsStaff" class="card-value">0</div>
@@ -815,7 +904,7 @@
             </div>
 
             <!-- กราฟสถานะปิดโครงการ + Pie งบประมาณ -->
-            <div class="chart-grid section-appear section-delay-2" style="margin-top:16px;">
+            <div class="chart-grid section-appear section-delay-3" style="margin-top:16px;">
               <!-- Stacked bar -->
               <article class="chart-card">
                 <header class="chart-header">
@@ -840,7 +929,7 @@
             </div>
 
             <!-- ตารางรายการโครงการ -->
-            <section class="panel section-appear section-delay-3" style="margin-top:18px;">
+            <section class="panel section-appear section-delay-4" style="margin-top:18px;">
               <header class="panel-header">
                 <div>
                   <h3 class="panel-title">รายการโครงการ</h3>
@@ -855,7 +944,6 @@
                       <tr>
                         <th style="text-align:center;">รหัสโครงการ</th>
                         <th style="text-align:center;">ชื่อโครงการ</th>
-                        <th style="text-align:center;">ฝ่าย / ชมรม</th>
                         <th class="sortable" data-sort="year" style="text-align:center;">
                           ปีการศึกษา
                         </th>
@@ -882,7 +970,7 @@
                   กรุณาล็อกอินเพื่อดูรายละเอียดโครงการ
                 </p>
                 <div style="margin-top:10px;">
-                  <button class="btn-primary" type="button" data-goto-page="login">ไปที่หน้า Login</button>
+                  <button class="btn-primary" type="button" data-goto-page="login">ไปที่หน้า Sign in</button>
                 </div>
               </div>
             </section>
@@ -1527,13 +1615,51 @@
           </div>
         </div>
 
-        <div class="login-grid">
-          <div id="loginGooglePanel" class="panel panel-hover login-card">
-            <h3 class="login-title">ล็อกอินด้วย Google</h3>
-            <p class="login-caption">ใช้บัญชี Google ที่ได้รับอนุญาตสำหรับโครงการนี้</p>
-            <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Login with Google</button>
-            <div class="login-status" id="loginPageStatus"></div>
-            <button id="loginPageLogoutBtn" type="button" class="btn-secondary w-full" style="display:none;">Logout</button>
+        <div class="login-shell">
+          <div class="login-hero">
+            <div class="login-hero-content">
+              <div class="login-hero-eyebrow">Treasurer SGCU 68</div>
+              <h2 class="login-hero-title">ศูนย์กลางงานการเงินของนิสิต</h2>
+              <p class="login-hero-lead">
+                เข้าสู่ระบบเพื่อดูสถานะโครงการ งบประมาณ และเอกสารการเงินแบบเป็นทางการ
+                ข้อมูลทั้งหมดอัปเดตแบบโปร่งใสและตรวจสอบย้อนหลังได้
+              </p>
+              <div class="login-hero-list">
+                <div class="login-hero-item">
+                  <span class="login-hero-icon" aria-hidden="true">+</span>
+                  <span>ติดตามการอนุมัติและเบิกจ่ายแบบเรียลไทม์</span>
+                </div>
+                <div class="login-hero-item">
+                  <span class="login-hero-icon" aria-hidden="true">+</span>
+                  <span>จัดเก็บเอกสารการเงินในที่เดียว</span>
+                </div>
+                <div class="login-hero-item">
+                  <span class="login-hero-icon" aria-hidden="true">+</span>
+                  <span>ยืนยันตัวตนด้วยบัญชี Google ของหน่วยงาน</span>
+                </div>
+              </div>
+              <div class="login-hero-meta">
+                <div class="login-hero-chip">Secure Access</div>
+                <div class="login-hero-chip">SGCU 68</div>
+                <div class="login-hero-chip">Finance Hub</div>
+              </div>
+            </div>
+
+            <div class="login-hero-panel">
+              <div class="login-grid">
+                <div id="loginGooglePanel" class="panel panel-hover login-card">
+                  <h3 class="login-title">ล็อกอินด้วย Google</h3>
+                  <p class="login-caption">ใช้บัญชีที่ได้รับสิทธิ์เพื่อเข้าใช้งานระบบ</p>
+                  <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Sign in with Google</button>
+                  <div class="login-status" id="loginPageStatus"></div>
+                  <button id="loginPageLogoutBtn" type="button" class="btn-secondary w-full" style="display:none;">Sign Out</button>
+                </div>
+              </div>
+              <div class="login-help">
+                <div class="login-help-title">ยังไม่มีสิทธิ์เข้าใช้งาน?</div>
+                <p class="login-help-text">ติดต่อฝ่ายเหรัญญิกเพื่อขอเพิ่มสิทธิ์เข้าระบบ</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1546,6 +1672,6 @@
       </div>
     </footer>
 
-    <script src="js/app.js"></script>
+    <script src="js/app.js" defer></script>
   </body>
 </html>

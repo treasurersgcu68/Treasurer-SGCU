@@ -4319,7 +4319,6 @@ th.sortable.sort-desc::after {
   word-break: break-word;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2; /* จำกัดสูงสุด 2 บรรทัด */
   overflow: hidden;
 }
 

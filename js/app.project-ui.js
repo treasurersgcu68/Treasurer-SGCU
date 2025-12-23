@@ -1,4 +1,4 @@
-/* 6) Filter + Summary + Table */
+/* Project Status UI: filters, summary cards, tables, dashboard KPIs */
 function initOrgTypeOptions() {
   if (!orgTypeSelect) return;  // ✅ กัน null
 

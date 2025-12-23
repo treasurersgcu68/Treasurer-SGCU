@@ -1,4 +1,4 @@
-/* 12) Init */
+/* App init + wiring (DOMContentLoaded) */
 document.addEventListener("DOMContentLoaded", async () => {
   // ===== 1) เก็บ DOM element ที่ใช้ซ้ำ =====
   yearSelect = document.getElementById("yearSelect");
@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     staffModeToggleEl.style.display = "none";
   }
 
-  // ===== 2) โหลดรายการดาวน์โหลดเอกสาร + ข่าว + คะแนนแบบ background =====
+  // ===== 2) โหลดดาวน์โหลดเอกสาร + ข่าว + คะแนนแบบ background =====
   scheduleIdleTask(() => runBackgroundTask(loadDownloadDocuments, "downloads"));
   scheduleIdleTask(() => runBackgroundTask(loadNewsFromSheet, "news"));
   scheduleIdleTask(() => runBackgroundTask(initScoreboard, "scoreboard"));
@@ -281,7 +281,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ===== 10) Hamburger + เมนูสามขีด =====
+  // ===== 10) Hamburger + เมนูมือถือ =====
   const hamburgerBtn = document.getElementById("hamburgerBtn");
   const mobileMenu = document.getElementById("mobileMenu");
   const hamburgerToggle = hamburgerBtn
@@ -374,7 +374,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ===== 6) Event เปลี่ยน filter ของ Dashboard (public/staff) =====
+  // ===== 6) Event เปลี่ยน filter ของ Project Status (public/staff) =====
   ["public", "staff"].forEach((key) => {
     const ctx = projectStatusContexts[key];
     if (!ctx) return;
@@ -415,7 +415,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ===== 7) โหลดโครงสร้างองค์กร (About Page) แบบ background =====
+  // ===== 7) โหลดโครงสร้างองค์กร (Home section) แบบ background =====
   scheduleIdleTask(() => runBackgroundTask(loadOrgStructure, "orgStructure"));
 
   // ===== 8) Sorting ตารางโครงการ (public/staff) =====
@@ -446,7 +446,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // ===== 9) Toggle ระหว่าง Status / Dashboard / Calendar ในหน้า Project Status =====
+  // ===== 9) Toggle ระหว่าง Status / Calendar (public + staff) =====
   ["public", "staff"].forEach((key) => {
     const ctx = projectStatusContexts[key];
     if (!ctx || !ctx.viewToggleBtns || !ctx.statusViewEl || !ctx.calendarViewEl) return;

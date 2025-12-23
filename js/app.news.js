@@ -1,4 +1,4 @@
-/* ===== ข่าวและประกาศจากฝ่ายเหรัญญิก ===== */
+/* ข่าวและประกาศจากฝ่ายเหรัญญิก */
 
 // ลิงก์ดาวน์โหลด/preview ใช้ทั้งหน้า News และหน้าดาวน์โหลด
 function toDownloadUrl(url, label) {
@@ -358,4 +358,3 @@ function parseNewsDate(text) {
   const direct = new Date(s);
   return isNaN(direct.getTime()) ? null : direct;
 }
-

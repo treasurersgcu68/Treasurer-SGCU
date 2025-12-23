@@ -1,4 +1,4 @@
-/* 5) Load from Google Sheets (with localStorage cache) */
+/* Data loading (Google Sheets + localStorage cache) */
 async function loadProjectsFromSheet() {
   try {
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
@@ -126,13 +126,13 @@ async function ensureProjectDataLoaded() {
     setLoading(true, "public");
     setLoading(true, "staff");
     try {
-      await loadProjectsFromSheet();              // ดึงข้อมูลจาก SHEET_CSV_URL (ปี 2568 ตามที่ fix ไว้)
+      await loadProjectsFromSheet();              // ดึงข้อมูลจาก SHEET_CSV_URL
       if (!projects || projects.length === 0) {   // กันกรณีโหลดไม่ได้/ข้อมูลว่าง
         projects = getFallbackProjects();
       }
 
       await loadOrgFilters();                     // โหลดตัวเลือก filter ประเภท/ฝ่าย
-      renderHomeKpis();                           // KPI หน้าแรก
+      renderHomeKpis();                           // KPI สำหรับ dashboard (staff)
     } catch (err) {
       console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:999", err);
       projects = getFallbackProjects();

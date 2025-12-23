@@ -1,4 +1,4 @@
-/* 7) Modal: รายละเอียดโครงการ */
+/* Modal: รายละเอียดโครงการ + PDF autofill */
 function openProjectModal(project) {
   if (!projectModalEl) return;
 
@@ -725,4 +725,3 @@ function downloadPdfInSameTab(project) {
 
   return true;
 }
-

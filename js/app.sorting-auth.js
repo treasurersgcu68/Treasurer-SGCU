@@ -1,4 +1,4 @@
-/* 10) Sorting + refresh */
+/* Sorting + auth gating for Project Status */
 function sortProjects(projects, key, direction) {
   const sorted = [...projects];
 
@@ -348,4 +348,3 @@ function initAuthUI() {
   }
   refreshAuthDisplayFn = refreshAuthDisplay;
 }
-

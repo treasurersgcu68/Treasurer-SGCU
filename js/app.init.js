@@ -173,8 +173,97 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===== 4) ระบบสลับหน้าแบบ SPA =====
   const navLinks = document.querySelectorAll("header nav a[data-page]");
   const pageViews = document.querySelectorAll(".page-view");
-  async function switchPage(page, { fromHash = false } = {}) {
+  let currentPage = null;
+  let pendingBorrowPage = null;
+  const borrowConsentKey = "borrowAssetsConsent-v1";
+  const borrowConsentModal = document.getElementById("borrowConsentModal");
+  const borrowConsentConfirm = document.getElementById("borrowConsentConfirm");
+  const borrowConsentCancel = document.getElementById("borrowConsentCancel");
+  const borrowConsentClose = document.getElementById("borrowConsentClose");
+  const borrowConsentRules = document.getElementById("borrowConsentRules");
+  const borrowConsentPdpa = document.getElementById("borrowConsentPdpa");
+
+  const hasBorrowConsent = () =>
+    window.sessionStorage && sessionStorage.getItem(borrowConsentKey) === "accepted";
+
+  const updateBorrowConsentState = () => {
+    if (!borrowConsentConfirm || !borrowConsentRules || !borrowConsentPdpa) return;
+    borrowConsentConfirm.disabled = !(borrowConsentRules.checked && borrowConsentPdpa.checked);
+  };
+
+  const showBorrowConsentModal = () => {
+    if (!borrowConsentModal) return;
+    if (borrowConsentRules) borrowConsentRules.checked = false;
+    if (borrowConsentPdpa) borrowConsentPdpa.checked = false;
+    updateBorrowConsentState();
+    borrowConsentModal.classList.add("show");
+    borrowConsentModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("has-modal");
+  };
+
+  const hideBorrowConsentModal = () => {
+    if (!borrowConsentModal) return;
+    borrowConsentModal.classList.remove("show");
+    borrowConsentModal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("has-modal");
+  };
+
+  if (borrowConsentRules) {
+    borrowConsentRules.addEventListener("change", updateBorrowConsentState);
+  }
+  if (borrowConsentPdpa) {
+    borrowConsentPdpa.addEventListener("change", updateBorrowConsentState);
+  }
+  if (borrowConsentConfirm) {
+    borrowConsentConfirm.addEventListener("click", () => {
+      if (window.sessionStorage) {
+        sessionStorage.setItem(borrowConsentKey, "accepted");
+      }
+      hideBorrowConsentModal();
+      if (pendingBorrowPage) {
+        const target = pendingBorrowPage;
+        pendingBorrowPage = null;
+        void switchPage(target, { fromHash: true, bypassConsent: true });
+      }
+    });
+  }
+  if (borrowConsentCancel) {
+    borrowConsentCancel.addEventListener("click", () => {
+      hideBorrowConsentModal();
+      pendingBorrowPage = null;
+      if (!currentPage) {
+        void switchPage("home", { fromHash: true, bypassConsent: true });
+      }
+    });
+  }
+  if (borrowConsentClose) {
+    borrowConsentClose.addEventListener("click", () => {
+      hideBorrowConsentModal();
+      pendingBorrowPage = null;
+      if (!currentPage) {
+        void switchPage("home", { fromHash: true, bypassConsent: true });
+      }
+    });
+  }
+
+  async function switchPage(page, { fromHash = false, bypassConsent = false } = {}) {
     const targetPage = page;
+    if (!bypassConsent && targetPage === "borrow-assets" && !hasBorrowConsent()) {
+      pendingBorrowPage = targetPage;
+      showBorrowConsentModal();
+      if (currentPage) {
+        if (fromHash) {
+          if (history.replaceState) {
+            history.replaceState(null, "", "#" + currentPage);
+          } else {
+            window.location.hash = "#" + currentPage;
+          }
+        }
+        return;
+      }
+      await switchPage("home", { fromHash: true, bypassConsent: true });
+      return;
+    }
     if (targetPage === "dashboard-staff" && staffViewMode !== "staff") {
       await switchPage("project-status-staff", { fromHash });
       return;
@@ -245,6 +334,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
+    currentPage = page;
   }
 
   // คลิกเมนูด้านบน
@@ -497,12 +587,102 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (target === "overview") {
           assetsOverview.style.display = "block";
           assetsList.style.display = "none";
+          assetsOverview.classList.add("section-visible");
+          assetsList.classList.remove("section-visible");
         } else {
           assetsOverview.style.display = "none";
           assetsList.style.display = "block";
+          assetsList.classList.add("section-visible");
+          assetsOverview.classList.remove("section-visible");
         }
       });
     });
+  }
+
+  // ===== 10.5) Borrow form: derive faculty from student ID =====
+  const borrowStudentId = document.getElementById("borrowStudentId");
+  const borrowStudentIdWarning = document.getElementById("borrowStudentIdWarning");
+  const borrowFaculty = document.getElementById("borrowFaculty");
+  const borrowFacultyWarning = document.getElementById("borrowFacultyWarning");
+  const borrowYear = document.getElementById("borrowYear");
+  const borrowYearWarning = document.getElementById("borrowYearWarning");
+  if (borrowStudentId && borrowFaculty && borrowYear) {
+    const facultyMap = {
+      "21": "วิศวกรรมศาสตร์",
+      "22": "อักษรศาสตร์",
+      "23": "วิทยาศาสตร์",
+      "24": "รัฐศาสตร์",
+      "25": "สถาปัตยกรรมศาสตร์",
+      "26": "พาณิชยศาสตร์และการบัญชี",
+      "27": "ครุศาสตร์",
+      "28": "นิเทศศาสตร์",
+      "29": "เศรษฐศาสตร์",
+      "30": "แพทยศาสตร์",
+      "31": "สัตวแพทย์ศาสตร์",
+      "32": "ทันตแพทย์ศาสตร์",
+      "33": "เภสัชศาสตร์",
+      "34": "นิติศาสตร์",
+      "35": "ศิลปกรรมศาสตร์",
+      "37": "สหเวชศาสตร์",
+      "38": "จิตวิทยา",
+      "39": "วิทยาศาสตร์การกีฬา",
+      "40": "สำนักทรัพยากรทางการเกษตร",
+      "56": "สถาบันนวัตกรรมบูรณาการฯ"
+    };
+
+    const updateBorrowFaculty = () => {
+      const rawValue = borrowStudentId.value;
+      const digits = rawValue.replace(/\D/g, "");
+      const hasNonDigits = rawValue.trim() !== "" && digits.length !== rawValue.replace(/\s/g, "").length;
+      if (borrowStudentIdWarning) {
+        if (hasNonDigits) {
+          borrowStudentIdWarning.textContent = "กรุณากรอกตัวเลขเท่านั้น";
+          borrowStudentIdWarning.hidden = false;
+        } else {
+          borrowStudentIdWarning.hidden = true;
+        }
+      }
+      if (digits.length < 10) {
+        borrowFaculty.value = "";
+        borrowFaculty.dataset.facultyCode = "";
+        if (borrowFacultyWarning) {
+          borrowFacultyWarning.hidden = true;
+        }
+        borrowYear.value = "";
+        borrowYear.dataset.yearLevel = "";
+        if (borrowYearWarning) {
+          borrowYearWarning.hidden = true;
+        }
+        return;
+      }
+      const code = digits.slice(-2);
+      const label = facultyMap[code];
+      borrowFaculty.value = label ? label : "";
+      borrowFaculty.dataset.facultyCode = label ? code : "";
+      if (borrowFacultyWarning) {
+        borrowFacultyWarning.hidden = !!label;
+      }
+
+      const entryYearSuffix = digits.slice(0, 2);
+      const entryYear = 2500 + Number(entryYearSuffix);
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const academicYear = (now.getMonth() + 1 >= 8) ? currentYear : currentYear - 1;
+      const academicYearBE = academicYear + 543;
+      const yearLevel = Number.isFinite(entryYear)
+        ? academicYearBE - entryYear + 1
+        : NaN;
+      const isValidYearLevel = yearLevel >= 1 && yearLevel <= 8;
+      borrowYear.value = isValidYearLevel ? String(yearLevel) : "";
+      borrowYear.dataset.yearLevel = isValidYearLevel ? String(yearLevel) : "";
+      if (borrowYearWarning) {
+        borrowYearWarning.hidden = isValidYearLevel;
+      }
+    };
+
+    borrowStudentId.addEventListener("input", updateBorrowFaculty);
+    borrowStudentId.addEventListener("blur", updateBorrowFaculty);
+    updateBorrowFaculty();
   }
 
   // === Scope pills: คลิกแล้ว highlight การ์ดทีมที่เกี่ยวข้อง ===

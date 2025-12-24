@@ -136,6 +136,29 @@ function isCurrentNavVisible() {
   return currentLink ? currentLink.style.display !== "none" : true;
 }
 
+function getCurrentPageFromHash() {
+  return (window.location.hash || "#home").replace("#", "");
+}
+
+function isNavPageVisible(page) {
+  if (!navLinksAll.length) return false;
+  const link = navLinksAll.find((navLink) => navLink.dataset.page === page);
+  return link ? link.style.display !== "none" : false;
+}
+
+function getModeMappedPage(currentPage, mode) {
+  const toStaff = {
+    "project-status": "project-status-staff",
+    "borrow-assets": "borrow-assets-staff"
+  };
+  const toNormal = {
+    "project-status-staff": "project-status",
+    "borrow-assets-staff": "borrow-assets"
+  };
+  const map = mode === "staff" ? toStaff : toNormal;
+  return map[currentPage] || "";
+}
+
 function applyStaffViewMode() {
   const staffMode = !!staffAuthUser && staffViewMode === "staff";
   updateNavLabelsForStaff(staffMode);
@@ -157,8 +180,17 @@ function applyStaffViewMode() {
 function setStaffViewMode(mode) {
   if (mode !== "staff" && mode !== "normal") return;
   if (staffViewMode === mode) return;
+  const previousPage = getCurrentPageFromHash();
   staffViewMode = mode;
   applyStaffViewMode();
+  const mappedPage = getModeMappedPage(previousPage, staffViewMode);
+  if (mappedPage) {
+    goToFirstVisibleNavPageWithPreference(mappedPage);
+    return;
+  }
+  if (!isNavPageVisible(previousPage)) {
+    goToFirstVisibleNavPageWithPreference(null);
+  }
 }
 
 function updateNavForStaff(staffUser) {
@@ -228,7 +260,7 @@ function updateNavLabelsForStaff(isStaff) {
     },
     "borrow-assets": {
       default: "Borrow & Return Assets",
-      staff: "borrow-assets for Staff",
+      staff: "Borrow & Return Assets For Staff",
       staffPage: "borrow-assets-staff"
     }
   };
@@ -322,7 +354,7 @@ function initAuthUI() {
     staffViewMode = "normal";
     refreshAuthDisplay(auth.currentUser);
     signOut(auth).catch((err) => {
-      console.error("logout error - app.js:3632", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:325", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");

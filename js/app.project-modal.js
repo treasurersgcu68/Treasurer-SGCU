@@ -399,6 +399,29 @@ function formatPercentForPdf(value) {
   return Number(value).toFixed(0);
 }
 
+function buildPdfTitle(project) {
+  const rawName = (project && project.name ? project.name : "").toString().trim();
+  const base = rawName || "SGCU PDF";
+  return base.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function escapeHtml(text) {
+  return text.replace(/[&<>\"]/g, (ch) => {
+    switch (ch) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case "\"":
+        return "&quot;";
+      default:
+        return ch;
+    }
+  });
+}
+
 function buildPdfData(project) {
   const budget100 =
     project.approvedBudget100 != null ? project.approvedBudget100 : project.budget || 0;
@@ -619,6 +642,7 @@ function openPdfPrintWindow(project, printWin) {
   if (!pdfRootEl) return false;
 
   const data = buildPdfData(project);
+  const docTitle = escapeHtml(buildPdfTitle(project));
   const tempRoot = pdfRootEl.cloneNode(true);
   tempRoot.id = "pdfRootPrint";
   tempRoot.removeAttribute("aria-hidden");
@@ -642,7 +666,7 @@ function openPdfPrintWindow(project, printWin) {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SGCU PDF</title>
+        <title>${docTitle} เอกสารยืมรองจ่าย</title>
         <link rel="stylesheet" href="${fontHref}" />
         <link rel="stylesheet" href="${cssHref}" />
         <style>
@@ -668,6 +692,7 @@ function downloadPdfInSameTab(project) {
   if (!pdfRootEl) return false;
 
   const data = buildPdfData(project);
+  const docTitle = escapeHtml(buildPdfTitle(project));
   const tempRoot = pdfRootEl.cloneNode(true);
   tempRoot.id = "pdfRootInline";
   tempRoot.removeAttribute("aria-hidden");
@@ -695,7 +720,7 @@ function downloadPdfInSameTab(project) {
         <meta charset="UTF-8" />
         <base href="${baseHref}" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SGCU PDF</title>
+        <title>${docTitle}</title>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" />
         <link rel="stylesheet" href="css/style.css" />
         <style>
@@ -708,7 +733,10 @@ function downloadPdfInSameTab(project) {
   `);
   doc.close();
 
+  let hasPrinted = false;
   const doPrint = () => {
+    if (hasPrinted) return;
+    hasPrinted = true;
     doc.body.appendChild(tempRoot);
     iframe.contentWindow.focus();
     iframe.contentWindow.print();

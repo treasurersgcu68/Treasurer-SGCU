@@ -172,6 +172,49 @@ function getCalendarMaxEvents() {
   return 4;
 }
 
+function measureCalendarRowHeight(container, lineCount) {
+  const temp = document.createElement("div");
+  temp.className = "calendar-day";
+  temp.style.position = "absolute";
+  temp.style.visibility = "hidden";
+  temp.style.pointerEvents = "none";
+  temp.style.height = "auto";
+  temp.style.left = "-9999px";
+  temp.style.top = "0";
+
+  const header = document.createElement("div");
+  header.className = "calendar-day-header";
+  header.textContent = "30";
+
+  const pill = document.createElement("span");
+  pill.className = "calendar-today-pill";
+  pill.textContent = "วันนี้";
+  header.appendChild(pill);
+  temp.appendChild(header);
+
+  for (let i = 0; i < lineCount; i++) {
+    const evDiv = document.createElement("div");
+    evDiv.className = "calendar-event pending";
+    evDiv.textContent = "โครงการตัวอย่าง";
+    temp.appendChild(evDiv);
+  }
+
+  container.appendChild(temp);
+  const height = temp.offsetHeight;
+  temp.remove();
+  return height;
+}
+
+function updateCalendarRowHeight() {
+  if (!calendarContainerEl) return;
+  const maxEvents = getCalendarMaxEvents();
+  const lineCount = maxEvents + 1;
+  const rowHeight = measureCalendarRowHeight(calendarContainerEl, lineCount);
+  const scrollWrap =
+    calendarContainerEl.closest(".calendar-grid-scroll") || calendarContainerEl;
+  scrollWrap.style.setProperty("--calendar-row-height", `${rowHeight}px`);
+}
+
 /**
  * วาดปฏิทินตาม currentCalendarDate
  */
@@ -180,6 +223,7 @@ function generateCalendar() {
   if (!container) return;
 
   container.innerHTML = "";
+  updateCalendarRowHeight();
 
   const today = new Date();
   const todayY = today.getFullYear();

@@ -351,6 +351,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   font-weight: 600;
   min-height: 20px;
 }
+
 .btn-primary.w-full, .btn-secondary.w-full {
   width: 100%;
   text-align: center;
@@ -819,6 +820,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: #6b7280;
   margin: 0;
 }
+
 .section-text-sm {
   font-size: 13px;
   color: #4b5563;
@@ -1171,6 +1173,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   padding: 0;
   border-radius: 0;
 }
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -1209,6 +1212,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
+
 .dashboard-card-title {
   font-size: 12px;
   color: #6b7280;
@@ -1550,6 +1554,7 @@ th.sortable.sort-desc::after {
   font-size: 13px;
   font-weight: 600;
 }
+
 .chart-inner {
   height: 260px;
 }
@@ -1698,6 +1703,7 @@ th.sortable.sort-desc::after {
   font-weight: 600;
   cursor: pointer;
 }
+
 .calendar-heatmap-header {
   display: flex;
   flex-direction: column;
@@ -1782,6 +1788,7 @@ th.sortable.sort-desc::after {
   border-color: #ec4899;
   box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.25);
 }
+
 .heat-1 {
   background: #ffe4f1;
   border-color: #fecdd3;
@@ -2006,6 +2013,7 @@ th.sortable.sort-desc::after {
   background: #dbeafe;
   color: #1d4ed8;
 }
+
 .home-news-card h3 {
   font-size: 15px;
   margin-bottom: 4px;
@@ -2213,6 +2221,7 @@ th.sortable.sort-desc::after {
 .org-structure-wrapper {
   margin-top: 10px;
 }
+
 /* Avatar (card-style org) */
 /* =========================================
    11) ORG TREE (วงกลมใหญ่ – แผนผังเหรัญญิก)
@@ -2743,6 +2752,7 @@ th.sortable.sort-desc::after {
   margin: 0;
   padding: 4px 24px 10px;
 }
+
 .download-item {
   width: 100%;
   padding: 8px 0;
@@ -2778,6 +2788,7 @@ th.sortable.sort-desc::after {
   font-size: 0.9rem;
   color: #6b7280;
 }
+
 .download-buttons {
   margin-left: auto;
   display: flex;
@@ -3925,6 +3936,7 @@ th.sortable.sort-desc::after {
   background: rgba(56, 189, 248, 0.12);
   color: #7dd3fc;
 }
+
 .news-preview-frame {
   margin-top: 12px;
   border: 1px solid rgba(236, 72, 153, 0.2);
@@ -3939,6 +3951,7 @@ th.sortable.sort-desc::after {
   min-height: 420px;
   border: none;
 }
+
 .news-preview-frame {
   width: 100%;
   min-height: 60vh;
@@ -4056,6 +4069,7 @@ th.sortable.sort-desc::after {
   page-break-before: always;
   break-before: page;
 }
+
 .pdf-flow {
   width: 210mm;
   box-sizing: border-box;
@@ -4381,6 +4395,7 @@ th.sortable.sort-desc::after {
   font-weight: 600;
   letter-spacing: 0.2px;
 }
+
 .app-loader-status {
   margin-top: 10px;
   font-size: 13px;
@@ -4396,6 +4411,7 @@ th.sortable.sort-desc::after {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
 .app-loader-progress {
   margin-top: 20px;
   height: 6px;

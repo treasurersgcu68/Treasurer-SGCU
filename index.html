@@ -1660,14 +1660,14 @@
     </div>
 
     <!-- PDF Template (Hidden, ใช้สร้างไฟล์ดาวน์โหลด) -->
-    <div id="pdfRoot" class="pdf-root" aria-hidden="true">
+    <div id="pdfRoot" class="pdf-root" aria-hidden="true" style="font-size: 14pt;">
       <!-- Page 1: Advance Letter -->
       <section class="pdf-flow">
         <div class="pdf-header">
           <img class="pdf-banner" src="img/banner SGCU.jpg" alt="SGCU" />
         </div>
 
-        <div class="pdf-center-title">แบบบันทึกยืมรองจ่าย (กำลังพัฒนา)</div>
+        <div class="pdf-center-title">แบบบันทึกยืมรองจ่าย</div>
         <div class="pdf-row-between">
           <div>ที่ อบจ. 10.01.01-....../2568</div>
           <div>เหรัญญิก <br> องค์การบริหารสโมสรนิสิต <br> จุฬาลงกรณ์มหาวิทยาลัย</div>
@@ -1682,7 +1682,7 @@
           เรียน&emsp;รองอธิการบดี (รองศาสตราจารย์ ดร.สุกัญญา สมไพบูลย์)
         </div>
         <div class="pdf-paragraph">
-          &emsp;ตามที่ <span class="pdf-fill pdf-fill-lg" data-pdf-field="orgName"></span> 
+          &emsp;&emsp;ตามที่ <span class="pdf-fill pdf-fill-lg" data-pdf-field="orgName"></span> 
           <span class="pdf-fill pdf-fill-lg" data-pdf-field="orgGroup"></span> 
           ได้รับอนุมัติงบประมาณจากเงินงบสโมสรนิสิตเพื่อใช้ในการดำเนิน <span class="pdf-fill pdf-fill-lg" data-pdf-field="projectName"></span> 
           ซึ่งจัดขึ้นในระหว่าง <span class="pdf-fill pdf-fill-md" data-pdf-field="projectDateRange"></span>
@@ -1690,7 +1690,7 @@
           (<span class="pdf-fill pdf-fill-lg" data-pdf-field="approvedBudget100Words"></span>)
         </div>
         <div class="pdf-paragraph">
-          &emsp;ในการนี้ <span class="pdf-fill pdf-fill-lg" data-pdf-field="orgName"></span> 
+          &emsp;&emsp;ในการนี้ <span class="pdf-fill pdf-fill-lg" data-pdf-field="orgName"></span> 
           <span class="pdf-fill pdf-fill-lg" data-pdf-field="orgGroup"></span> 
           ขออนุมัติยืมเงินรองจ่ายร้อยละ <span class="pdf-fill pdf-fill-sm" data-pdf-field="advancePercentText"></span> 
           เป็นเงิน <span class="pdf-fill pdf-fill-md" data-pdf-field="approvedBudget80Text"></span> บาท 
@@ -1699,7 +1699,7 @@
           <span class="pdf-fill pdf-fill-lg" data-pdf-field="councilSessionText"></span>
         </div>
         <div class="pdf-paragraph">
-          &emsp;ทั้งนี้ ผู้รับผิดชอบโครงการจะต้องดำเนินการส่งเอกสารหลักฐานการใช้งบประมาณ ให้เหรัญญิกของคณะกรรมการบริหารในวันที่ 
+          &emsp;&emsp;ทั้งนี้ ผู้รับผิดชอบโครงการจะต้องดำเนินการส่งเอกสารหลักฐานการใช้งบประมาณ ให้เหรัญญิกของคณะกรรมการบริหารในวันที่ 
           <span class="pdf-fill pdf-fill-sm" data-pdf-field="evidenceDueDateText"></span>
           มิฉะนั้น เหรัญญิกของคณะกรรมการบริหารจะดำเนินการระงับการเบิกจ่ายเงินในโครงการอื่น ๆ ที่เกี่ยวข้องต่อไป 
           โดยอาศัยอำนาจตามความในข้อ 26 แห่งระเบียบจุฬาลงกรณ์มหาวิทยาลัย ว่าด้วยการเงิน 
@@ -1709,26 +1709,87 @@
             &emsp;จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
         </div>
 
-        <div class="pdf-signature-block pdf-signature-right">
-          <div class="pdf-sign-role">ขอแสดงความนับถือ</div>
-          <div><br><br></div>
-          <div class="pdf-sign-line"></div>
-          <div class="pdf-sign-name">(<span data-pdf-field="projectLeadName"></span>)</div>
-          <div class="pdf-sign-role">ประธานโครงการ <span class="pdf-fill pdf-fill-lg" data-pdf-field="projectName"></span></div>
+        <div class="pdf-paragraph pdf-dots-right">ขอแสดงความนับถือ</div>
+        
+        <!-- Central Signature Block (SGCU / Council) -->
+        <div id="sig-central" class="pdf-signature-block pdf-signature-right" style="display: none;">
+            <div style="break-inside: avoid; page-break-inside: avoid;">
+              <div><br><br></div>
+              <div class="pdf-sign-line"></div>
+              <div class="pdf-sign-name">(<span data-pdf-field="projectLeadName"></span>)</div>
+              <div class="pdf-sign-role">ประธานโครงการ <span class="pdf-fill pdf-fill-lg" data-pdf-field="projectName"></span></div>
+            </div>
 
-          <div><br><br></div>
-          <div class="pdf-sign-line"></div>
-          <div class="pdf-sign-name">(<span data-pdf-field="signerTreasurerName"></span>)</div>
-          <div class="pdf-sign-role">เหรัญญิก</div>
-          <div class="pdf-sign-org">องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย</div>
+            <div style="break-inside: avoid; page-break-inside: avoid;">
+              <div><br><br></div>
+              <div class="pdf-sign-line"></div>
+              <div class="pdf-sign-name">(<span data-pdf-field="signerTreasurerName"></span>)</div>
+              <div class="pdf-sign-role">เหรัญญิก</div>
+              <div class="pdf-sign-org">องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย</div>
+            </div>
 
-          <div><br><br></div>
-          <div class="pdf-sign-line"></div>
-          <div class="pdf-sign-name">(<span data-pdf-field="signerPresidentName"></span>)</div>
-          <div class="pdf-sign-role">นายกสโมสร</div>
-          <div class="pdf-sign-org">องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย</div>
+            <div style="break-inside: avoid; page-break-inside: avoid;">
+              <div><br><br></div>
+              <div class="pdf-sign-line"></div>
+              <div class="pdf-sign-name">(<span data-pdf-field="signerPresidentName"></span>)</div>
+              <div class="pdf-sign-role">นายกสโมสร</div>
+              <div class="pdf-sign-org">องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย</div>
+            </div>
         </div>
 
+        <!-- Club Signature Block (2 Columns) -->
+        <div id="sig-club" style="display: none; margin-top: 6mm; font-size: 14pt; width: 100%;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm;">
+              <!-- Left Column -->
+              <div style="text-align: center;">
+                <div style="break-inside: avoid; page-break-inside: avoid;">
+                  <div><br><br></div>
+                  <div class="pdf-sign-line"></div>
+                  <div class="pdf-sign-name">(<span data-pdf-field="projectLeadName"></span>)</div>
+                  <div class="pdf-sign-role">ประธานโครงการ <span class="pdf-fill pdf-fill-lg" data-pdf-field="projectName"></span></div>
+                </div>
+                <div style="break-inside: avoid; page-break-inside: avoid;">
+                  <div><br><br></div>
+                  <div class="pdf-sign-line"></div>
+                  <div class="pdf-sign-name">(<span data-pdf-field="clubTreasurerName"></span>)</div>
+                  <div class="pdf-sign-role">เหรัญญิชมรม</div>
+                  <div class="pdf-sign-org"><span data-pdf-field="orgName"></span></div>
+                </div>
+                <div style="break-inside: avoid; page-break-inside: avoid;">
+                  <div><br><br></div>
+                  <div class="pdf-sign-line"></div>
+                  <div class="pdf-sign-name">(<span data-pdf-field="orgHeadName"></span>)</div>
+                  <div class="pdf-sign-role">ประธานชมรม</div>
+                  <div class="pdf-sign-org"><span data-pdf-field="orgName"></span></div>
+                </div>
+                <div style="break-inside: avoid; page-break-inside: avoid;">
+                  <div><br><br></div>
+                  <div class="pdf-sign-line"></div>
+                  <div class="pdf-sign-name">(<span data-pdf-field="advisorName"></span>)</div>
+                  <div class="pdf-sign-role">อาจารย์ที่ปรึกษาชมรม</div>
+                  <div class="pdf-sign-org"><span data-pdf-field="orgName"></span></div>
+                </div>
+              </div>
+            
+              <!-- Right Column -->
+              <div style="text-align: center;">
+                <div style="break-inside: avoid; page-break-inside: avoid;">
+                  <div><br><br></div>
+                  <div class="pdf-sign-line"></div>
+                  <div class="pdf-sign-name">(<span data-pdf-field="signerTreasurerName"></span>)</div>
+                  <div class="pdf-sign-role">เหรัญญิก</div>
+                  <div class="pdf-sign-org">องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย</div>
+                </div>
+                <div style="break-inside: avoid; page-break-inside: avoid;">
+                  <div><br><br></div>
+                  <div class="pdf-sign-line"></div>
+                  <div class="pdf-sign-name">(<span data-pdf-field="signerPresidentName"></span>)</div>
+                  <div class="pdf-sign-role">นายกสโมสร</div>
+                  <div class="pdf-sign-org">องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย</div>
+                </div>
+              </div>
+            </div>
+        </div>
       </section>
 
 
@@ -1747,7 +1808,7 @@
         <div class="pdf-paragraph pdf-dots-right">................................................</div>
 
         <div class="pdf-paragraph">
-          &emsp;<span class="pdf-fill pdf-fill-xl" data-pdf-field="projectName"></span> 
+          &emsp;&emsp;<span class="pdf-fill pdf-fill-xl" data-pdf-field="projectName"></span> 
           ได้รับการอนุมัติงบจากที่ประชุมสภานิสิต <span class="pdf-fill pdf-fill-lg" data-pdf-field="councilSessionText"></span> 
           จัดกิจกรรมใน <span class="pdf-fill pdf-fill-md" data-pdf-field="projectDateRange"></span>
         </div>
@@ -1789,8 +1850,8 @@
           <div class="pdf-sign-role">ประธานโครงการ <span class="pdf-fill pdf-fill-lg" data-pdf-field="projectName"></span></div>
         </div>
         <div class="pdf-right-block">
-          <div>โอนเงินเข้าบัญชีองค์การบริหารสโมสรนิสิตจุฬาฯ</div>
-          <div>เลขที่บัญชี 407-313892-5</div>
+          <div>โอนเงินเข้าบัญชี<span data-pdf-field="orgAccountName"></span></div>
+          <div>เลขที่บัญชี <span data-pdf-field="orgAccountNo"></span></div>
           <div>โทรศัพท์ <span data-pdf-field="projectLeadPhone"></span>, 094-969-6495</div>
         </div>
       </section>
@@ -1802,21 +1863,16 @@
           <div class="pdf-section-subtitle">ส่วนการลงบัญชี</div>
           <div class="pdf-grid">
             <div class="pdf-line">
-              <span class="label">เงินจ่ายลงหน้าเลขที่</span>
-              <span class="pdf-fill pdf-fill-sm"></span>
+              <span class="label">เงินจ่ายลงหน้าเลขที่____________</span>
             </div>
             <div class="pdf-line">
-              <span class="label">จำนวนเงิน</span>
-              <span class="pdf-fill pdf-fill-md"></span>
-              <span class="label">บาท</span>
+              <span class="label">จำนวนเงิน__________________________บาท</span>
             </div>
             <div class="pdf-line">
-              <span class="label">ลงบัญชีวันที่</span>
-              <span class="pdf-fill pdf-fill-md"></span>
+              <span class="label">ลงบัญชีวันที่___/___/ 25___</span>
             </div>
             <div class="pdf-line">
-              <span class="label">ผู้ลงบัญชี</span>
-              <span class="pdf-fill pdf-fill-lg"></span>
+              <span class="label">ผู้ลงบัญชี______________________________</span>
             </div>
           </div>
         </div>
@@ -1826,21 +1882,16 @@
           <div class="pdf-section-subtitle">ส่วนที่บันทึกเมื่อมีการส่งฎีกา</div>
           <div class="pdf-grid">
             <div class="pdf-line">
-              <span class="label">ฎีกาเลขที่</span>
-              <span class="pdf-fill pdf-fill-md"></span>
+              <span class="label">ฎีกาเลขที่_____________</span>
             </div>
             <div class="pdf-line">
-              <span class="label">จำนวนเงินส่งคืน</span>
-              <span class="pdf-fill pdf-fill-md"></span>
-              <span class="label">บาท</span>
+              <span class="label">จำนวนเงินส่งคืน______________________บาท</span>
             </div>
             <div class="pdf-line">
-              <span class="label">ลงบัญชีวันที่</span>
-              <span class="pdf-fill pdf-fill-md"></span>
+              <span class="label">ลงบัญชีวันที่___/___/25___</span>
             </div>
             <div class="pdf-line">
-              <span class="label">ผู้ลงบัญชี</span>
-              <span class="pdf-fill pdf-fill-lg"></span>
+              <span class="label">ผู้ลงบัญชี______________________________</span>
             </div>
           </div>
           <div class="pdf-note">*หมายเหตุ เฉพาะกรณีที่เงินรองจ่ายมากกว่าจำนวนเงินที่ส่งเบิก</div>
@@ -1848,10 +1899,10 @@
 
         <div class="pdf-section">
           <div class="pdf-section-title">ส่วนที่ 3</div>
-          <div class="pdf-section-subtitle">ข้อแนะนำ</div>
+          <div class="pdf-section-subtitle"><u>ข้อแนะนำ</u></div>
           <ol class="pdf-list">
             <li>ให้กรอกเฉพาะส่วนที่ 1 เท่านั้น</li>
-            <li>เอกสารที่ต้องนำเบิกมี แบบบันทึกยืมเงินรองจ่าย      ขอยืมเงินรองจ่าย    จดหมายอนุมัติกิจกรรม และ เอกสารโครงการ</li>
+            <li>เอกสารที่ต้องนำเบิกมี <u>แบบบันทึกยืมเงินรองจ่าย</u>&emsp;<u>ขอยืมเงินรองจ่าย</u>&emsp;<u>จดหมายอนุมัติกิจกรรม</u> และ <u>เอกสารโครงการ</u></li>
           </ol>
         </div>
       </section>
@@ -1902,6 +1953,61 @@
           </button>
         </div>
         <div id="calendarModalBody" class="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- PDF Sign Modal (New) -->
+    <div
+      id="pdfSignModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="pdfSignModalTitle"
+    >
+      <div class="modal-dialog" style="max-width: 500px;">
+        <div class="modal-header">
+          <div>
+            <div id="pdfSignModalTitle" class="modal-title">ข้อมูลสำหรับออกเอกสาร</div>
+            <div class="modal-subtitle">กรุณากรอกข้อมูลผู้ลงนามเพื่อสร้างไฟล์ PDF</div>
+          </div>
+          <button id="pdfSignModalClose" class="modal-close" type="button" aria-label="ปิด">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="pdfSignForm" class="borrow-request-form" style="gap: 12px;">
+            <div class="borrow-form-field">
+              <label class="login-label" for="pdfSignLeadName">ชื่อประธานโครงการ <span style="color:red">*</span></label>
+              <input id="pdfSignLeadName" class="login-input" type="text" placeholder="ตัวอย่าง นายองค์การบริหาร สภานิสิต" required />
+            </div>
+            <div class="borrow-form-field">
+              <label class="login-label" for="pdfSignLeadPhone">เบอร์โทรศัพท์ (ประธานโครงการ) <span style="color:red">*</span></label>
+              <input id="pdfSignLeadPhone" class="login-input" type="tel" placeholder="ตัวอย่าง 081-234-5678" required />
+            </div>
+
+            <div id="pdfSignClubFields" style="display:none; flex-direction: column; gap: 12px;">
+               <div class="separator-gradient" style="margin: 8px 0; height: 1px; background: #e5e7eb;"></div>
+               <div class="borrow-form-field">
+                  <label class="login-label" for="pdfSignHeadName">ชื่อประธาน<span id="pdfSignOrgLabel">ชมรม</span> <span style="color:red">*</span></label>
+                  <input id="pdfSignHeadName" class="login-input" type="text" placeholder="ตัวอย่าง นายกีฬา รักวิชาการ" required/>
+               </div>
+               <div class="borrow-form-field">
+                  <label class="login-label" for="pdfSignClubTreasurer">ชื่อเหรัญญิก<span id="pdfSignOrgLabel2">ชมรม</span> <span style="color:red">*</span></label>
+                  <input id="pdfSignClubTreasurer" class="login-input" type="text" placeholder="ตัวอย่าง นางสาวศิลป์ รักพัฒนา" required/>
+               </div>
+               <div class="borrow-form-field">
+                  <label class="login-label" for="pdfSignAdvisor">ชื่ออาจารย์ที่ปรึกษา <span style="color:red">*</span></label>
+                  <input id="pdfSignAdvisor" class="login-input" type="text" placeholder="ตัวอย่าง รศ.ดร.กิจการนิสิต จุฬา" required/>
+               </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 16px;">
+              <button type="button" class="btn-ghost" id="pdfSignCancel">ยกเลิก</button>
+              <button type="submit" class="btn-primary">สร้าง PDF</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 

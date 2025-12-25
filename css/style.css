@@ -242,9 +242,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin: 0;
   font-size: 14px;
 }
-
-
-
 .borrow-form-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -354,9 +351,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   font-weight: 600;
   min-height: 20px;
 }
-
-
-
 .btn-primary.w-full, .btn-secondary.w-full {
   width: 100%;
   text-align: center;
@@ -825,9 +819,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: #6b7280;
   margin: 0;
 }
-
-
-
 .section-text-sm {
   font-size: 13px;
   color: #4b5563;
@@ -1180,9 +1171,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   padding: 0;
   border-radius: 0;
 }
-
-
-
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -1216,20 +1204,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-top: 2px;
 }
 
-
-
-
-
-
-
 .dashboard-lower {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
-
-
-
 .dashboard-card-title {
   font-size: 12px;
   color: #6b7280;
@@ -1255,12 +1234,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .dashboard-metric .metric-caption, .dashboard-metric .kpi-caption {
   margin-top: 0;
 }
-
-
-
-
-
-
 
 .rank-item-title {
   color: #111827;
@@ -1577,9 +1550,6 @@ th.sortable.sort-desc::after {
   font-size: 13px;
   font-weight: 600;
 }
-
-
-
 .chart-inner {
   height: 260px;
 }
@@ -1728,9 +1698,6 @@ th.sortable.sort-desc::after {
   font-weight: 600;
   cursor: pointer;
 }
-
-
-
 .calendar-heatmap-header {
   display: flex;
   flex-direction: column;
@@ -1742,10 +1709,6 @@ th.sortable.sort-desc::after {
   font-size: 13px;
   font-weight: 600;
 }
-
-
-
-
 
 .heatmap-year {
   overflow-x: auto;
@@ -1819,9 +1782,6 @@ th.sortable.sort-desc::after {
   border-color: #ec4899;
   box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.25);
 }
-
-
-
 .heat-1 {
   background: #ffe4f1;
   border-color: #fecdd3;
@@ -2046,9 +2006,6 @@ th.sortable.sort-desc::after {
   background: #dbeafe;
   color: #1d4ed8;
 }
-
-
-
 .home-news-card h3 {
   font-size: 15px;
   margin-bottom: 4px;
@@ -2234,7 +2191,6 @@ th.sortable.sort-desc::after {
   }
 }
 
-
 /* =========================================
    10) Org structure (cards layout)
 ========================================= */
@@ -2257,40 +2213,7 @@ th.sortable.sort-desc::after {
 .org-structure-wrapper {
   margin-top: 10px;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Avatar (card-style org) */
-
-
-
-
-
-
-
-
-
 /* =========================================
    11) ORG TREE (วงกลมใหญ่ – แผนผังเหรัญญิก)
 ========================================= */
@@ -2335,7 +2258,6 @@ th.sortable.sort-desc::after {
   padding: 0;
   max-width: 176px;
 }
-
 
 .org-node-circle {
   width: 128px;
@@ -2479,7 +2401,6 @@ th.sortable.sort-desc::after {
   /* flex: 0 0 auto; */
 }
 
-
 /* กล่องรองประธานฝ่ายหาทุนและสิทธิประโยชน์ – ให้ 2 คนอยู่บรรทัดเดียวกัน */
 .org-branch-dep.org-level-depfund {
   display: flex;
@@ -2490,16 +2411,12 @@ th.sortable.sort-desc::after {
   flex-wrap: nowrap;        /* ▲ บังคับไม่ให้ตกรอบ */
   margin-top: 10px;
 }
-
-
-
 /* ถ้าจอเล็กมาก ค่อยอนุญาตให้หักบรรทัดได้ */
 @media (max-width: 640px) {
   .org-branch-dep.org-level-depfund {
     flex-wrap: wrap;
   }
 }
-
 
 /* ประธานกายภาพ 2 คน */
 
@@ -2511,7 +2428,6 @@ th.sortable.sort-desc::after {
   gap: 48px;
   margin-bottom: 10px;
 }
-
 
 /* เส้นทั้งหมดใน org-tree ปิดการแสดงผล */
 
@@ -2741,10 +2657,6 @@ th.sortable.sort-desc::after {
   margin-bottom: 6px;
 }
 
-
-
-
-
 .person-modal-contact {
   border-top: 1px solid #e5e7eb;
   margin-top: 8px;
@@ -2831,9 +2743,6 @@ th.sortable.sort-desc::after {
   margin: 0;
   padding: 4px 24px 10px;
 }
-
-
-
 .download-item {
   width: 100%;
   padding: 8px 0;
@@ -2869,9 +2778,6 @@ th.sortable.sort-desc::after {
   font-size: 0.9rem;
   color: #6b7280;
 }
-
-
-
 .download-buttons {
   margin-left: auto;
   display: flex;
@@ -3865,7 +3771,6 @@ th.sortable.sort-desc::after {
   font-size: 12px;
 }
 
-
 /* ตัวอักษรใน Runners-up เป็นสีดำ */
 .score-runners, .score-runners * {
   color: #000 !important;
@@ -4009,12 +3914,6 @@ th.sortable.sort-desc::after {
   max-width: 720px;
 }
 
-
-
-
-
-
-
 .page-news {
   background: transparent;
 }
@@ -4026,15 +3925,6 @@ th.sortable.sort-desc::after {
   background: rgba(56, 189, 248, 0.12);
   color: #7dd3fc;
 }
-
-
-
-
-
-
-
-
-
 .news-preview-frame {
   margin-top: 12px;
   border: 1px solid rgba(236, 72, 153, 0.2);
@@ -4049,29 +3939,11 @@ th.sortable.sort-desc::after {
   min-height: 420px;
   border: none;
 }
-
-
-
-
-
-
-
-
-
 .news-preview-frame {
   width: 100%;
   min-height: 60vh;
   border: none;
 }
-
-
-
-
-
-
-
-
-
 .modal-actions {
   margin-top: 18px;
   display: flex;
@@ -4170,7 +4042,7 @@ th.sortable.sort-desc::after {
   width: 210mm;
   min-height: 297mm;
   box-sizing: border-box;
-  padding: 25.4mm 24.3mm 29mm 25.4mm;
+  padding: 23.4mm 24.3mm 29mm 25.4mm;
   page-break-after: always;
   break-after: page;
 }
@@ -4184,9 +4056,6 @@ th.sortable.sort-desc::after {
   page-break-before: always;
   break-before: page;
 }
-
-
-
 .pdf-flow {
   width: 210mm;
   box-sizing: border-box;
@@ -4205,8 +4074,6 @@ th.sortable.sort-desc::after {
   margin-bottom: 4mm;
 }
 
-
-
 .pdf-banner {
   width: 160mm;
   height: 32mm;
@@ -4214,14 +4081,6 @@ th.sortable.sort-desc::after {
   max-height: 32mm;
   object-fit: contain;
 }
-
-
-
-
-
-
-
-
 
 .pdf-center-title {
   text-align: center;
@@ -4238,7 +4097,7 @@ th.sortable.sort-desc::after {
 }
 
 .pdf-section {
-  margin-bottom: 8mm;
+  margin-bottom: 1.5mm;
 }
 
 .pdf-section-title {
@@ -4249,13 +4108,13 @@ th.sortable.sort-desc::after {
 
 .pdf-section-subtitle {
   font-size: 14pt;
-  margin-bottom: 4mm;
+  margin-bottom: 1mm;
 }
 
 .pdf-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4mm 10mm;
+  gap: 1mm 10mm;
   font-size: 14pt;
 }
 
@@ -4265,10 +4124,8 @@ th.sortable.sort-desc::after {
   gap: 3mm;
   flex-wrap: wrap;
   font-size: 14pt;
-  margin-bottom: 2.5mm;
+  margin-bottom: 1mm;
 }
-
-
 
 .pdf-line .label {
   white-space: nowrap;
@@ -4331,8 +4188,6 @@ th.sortable.sort-desc::after {
   padding-left: 5mm;
 }
 
-
-
 .pdf-table {
   width: 100%;
   border-collapse: collapse;
@@ -4341,7 +4196,7 @@ th.sortable.sort-desc::after {
 }
 
 .pdf-table th, .pdf-table td {
-  border: 1px solid #444;
+  border: 0.5px solid #444;
   padding: 2mm 1.5mm;
   text-align: left;
   font-size: 14pt;
@@ -4381,8 +4236,6 @@ th.sortable.sort-desc::after {
   text-align: right;
 }
 
-
-
 .pdf-signature-block {
   width: 70mm;
   text-align: center;
@@ -4397,6 +4250,7 @@ th.sortable.sort-desc::after {
 .pdf-right-block {
   text-align: right;
   margin-top: 6mm;
+  font-size: 14pt;
 }
 
 .pdf-sign-line {
@@ -4415,8 +4269,8 @@ th.sortable.sort-desc::after {
 
 .pdf-paragraph {
   font-size: 14pt;
-  margin-bottom: 3.5mm;
-  line-height: 1.6;
+  margin-bottom: 1mm;
+  line-height: 1.5;
   text-align: justify;
   text-justify: inter-word;
   overflow-wrap: break-word;
@@ -4527,9 +4381,6 @@ th.sortable.sort-desc::after {
   font-weight: 600;
   letter-spacing: 0.2px;
 }
-
-
-
 .app-loader-status {
   margin-top: 10px;
   font-size: 13px;
@@ -4545,9 +4396,6 @@ th.sortable.sort-desc::after {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-
-
-
 .app-loader-progress {
   margin-top: 20px;
   height: 6px;

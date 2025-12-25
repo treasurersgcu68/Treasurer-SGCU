@@ -348,7 +348,7 @@ function openProjectModal(project) {
 
   const pdfBtn = projectModalBodyEl.querySelector("[data-project-pdf]");
   if (pdfBtn) {
-    pdfBtn.addEventListener("click", () => downloadProjectPdf(project));
+    pdfBtn.addEventListener("click", () => openPdfSignModal(project));
   }
 
   // toggle กล่อง contact ผู้ช่วยเหรัญญิก
@@ -374,7 +374,17 @@ function shouldShowPdfDownload(project) {
       ? project.daysToDeadline
       : null;
 
-  return status === "อนุมัติโครงการ" && approveDate !== "" && daysToDeadline !== null && daysToDeadline > 21;
+  const advanceStatus = (project.advanceStatus || "").toString().trim();
+  const invalidAdvanceStatuses = [
+    "ส่งกิจการนิสิตแล้ว รออนุมัติ",
+    "สำรองจ่ายก่อน",
+    "เหรัญญิกรับเงินจากกิจการนิสิต",
+    "โครงการรับเงินแล้ว",
+    "ยกเลิก",
+    "ไม่อนุมัติ / อนุมัติไม่ทันวันจัดกิจกรรม"
+  ];
+
+  return status === "อนุมัติโครงการ" && approveDate !== "" && daysToDeadline !== null && daysToDeadline > 21 && !invalidAdvanceStatuses.includes(advanceStatus);
 }
 
 
@@ -388,6 +398,41 @@ const PDF_SIGNERS = {
   treasurerName: "นายธุวานนท์ กิ้มเฉี้ยง",
   presidentName: "นางสาวเกวลี เอกโยคยะ"
 };
+
+let orgAccountMap = null;
+
+function ensureOrgAccountMap() {
+  if (orgAccountMap) return Promise.resolve();
+  return new Promise((resolve) => {
+    if (typeof Papa === "undefined") {
+      orgAccountMap = {};
+      resolve();
+      return;
+    }
+    Papa.parse(ORG_FILTER_CSV_URL, {
+      download: true,
+      header: false,
+      complete: (results) => {
+        const map = {};
+        if (results && results.data) {
+          results.data.forEach((row) => {
+            if (row.length >= 5) {
+              const name = (row[1] || "").trim(); // Column B
+              const acc = (row[4] || "").trim();  // Column E
+              if (name) map[name] = acc;
+            }
+          });
+        }
+        orgAccountMap = map;
+        resolve();
+      },
+      error: () => {
+        orgAccountMap = {};
+        resolve();
+      }
+    });
+  });
+}
 
 function formatPdfNumber(value) {
   if (value === null || value === undefined || value === "" || isNaN(value)) return "";
@@ -422,20 +467,32 @@ function escapeHtml(text) {
   });
 }
 
-function buildPdfData(project) {
+function buildPdfData(project, signatureData) {
   const budget100 =
     project.approvedBudget100 != null ? project.approvedBudget100 : project.budget || 0;
   const budget80 = Math.round(budget100 * 0.8 * 100) / 100;
   const dateRange = formatThaiDateRange(project.approveDate, project.lastWorkDate);
   const evidenceDueDateText = formatThaiDateNoPrefix(project.evidenceDueDate);
   const advancePercentText = formatPercentForPdf(project.advancePercent);
-  const leadInfo = getProjectLeadInfo();
+  
+  const orgAccountNo = (orgAccountMap && project.orgName && orgAccountMap[project.orgName])
+    ? orgAccountMap[project.orgName]
+    : "407-313892-5";
+
+  const orgAccountName = (project.orgGroup === "องค์การบริหารสโมสรนิสิต")
+    ? "องค์การบริหารสโมสรนิสิต"
+    : (project.orgName || "");
+
+  let pdfOrgGroup = project.orgGroup || "";
+  if (pdfOrgGroup === "องค์การบริหารสโมสรนิสิต, สภานิสิต") {
+    pdfOrgGroup = "สโมสรนิสิต";
+  }
 
   return {
     projectName: project.name || "",
     projectCode: project.code || "",
     orgName: project.orgName || "",
-    orgGroup: project.orgGroup || "",
+    orgGroup: pdfOrgGroup,
     councilSessionText: project.councilSessionText || "",
     projectDateRange: dateRange,
     approvedBudget100Text: formatPdfNumber(budget100),
@@ -447,8 +504,13 @@ function buildPdfData(project) {
     transferDocNo: project.transferDocNo || "",
     signerTreasurerName: PDF_SIGNERS.treasurerName,
     signerPresidentName: PDF_SIGNERS.presidentName,
-    projectLeadName: leadInfo.name,
-    projectLeadPhone: leadInfo.phone
+    projectLeadName: signatureData.name,
+    projectLeadPhone: signatureData.phone,
+    orgAccountNo: orgAccountNo,
+    orgAccountName: orgAccountName,
+    orgHeadName: signatureData.headName,
+    clubTreasurerName: signatureData.clubTreasurer,
+    advisorName: signatureData.advisor
   };
 }
 
@@ -493,9 +555,34 @@ function applyThaiSegmentation(rootEl) {
   });
 }
 
-function downloadProjectPdf(project) {
+function setupPdfSignatures(rootEl, project) {
+  const isCentral = ["องค์การบริหารสโมสรนิสิต", "สภานิสิต", "องค์การบริหารสโมสรนิสิต, สภานิสิต"].includes(project.orgGroup);
+  const centralBlock = rootEl.querySelector("#sig-central");
+  const clubBlock = rootEl.querySelector("#sig-club");
+  
+  if (centralBlock && clubBlock) {
+    if (isCentral) {
+      centralBlock.style.display = "block";
+      clubBlock.style.display = "none";
+    } else {
+      centralBlock.style.display = "none";
+      clubBlock.style.display = "block";
+    }
+  }
+
+  if (isCentral) {
+    rootEl.querySelectorAll('[data-pdf-field="orgName"]').forEach((el) => {
+      el.style.display = "none";
+    });
+  }
+}
+
+async function downloadProjectPdf(project, signatureData) {
   if (!pdfRootEl) return;
-  if (downloadPdfInSameTab(project)) return;
+  
+  await ensureOrgAccountMap();
+
+  if (downloadPdfInSameTab(project, signatureData)) return;
 
   const printWin = window.open("", "_blank");
   if (!printWin) {
@@ -503,15 +590,80 @@ function downloadProjectPdf(project) {
     return;
   }
 
-  openPdfPrintWindow(project, printWin);
+  openPdfPrintWindow(project, printWin, signatureData);
 }
 
-function getProjectLeadInfo() {
-  const name = window.prompt("กรุณากรอกชื่อประธานโครงการสำหรับใช้ใน PDF\nเช่น นายองค์การบริหาร สภานิสิต", "");
-  const phone = window.prompt("กรุณากรอกเบอร์ติดต่อประธานโครงการสำหรับใช้ใน PDF\nเช่น 081-234-5678", "");
-  return {
-    name: (name || "").trim(),
-    phone: (phone || "").trim()
+function openPdfSignModal(project) {
+  const modal = document.getElementById("pdfSignModal");
+  if (!modal) return;
+
+  // Reset form
+  const form = document.getElementById("pdfSignForm");
+  form.reset();
+
+  // Determine Central vs Club
+  const isCentral = ["องค์การบริหารสโมสรนิสิต", "สภานิสิต", "องค์การบริหารสโมสรนิสิต, สภานิสิต"].includes(project.orgGroup);
+  
+  const clubFields = document.getElementById("pdfSignClubFields");
+  const orgLabel = document.getElementById("pdfSignOrgLabel");
+  const orgLabel2 = document.getElementById("pdfSignOrgLabel2");
+
+  const headNameInput = document.getElementById("pdfSignHeadName");
+  const clubTreasurerInput = document.getElementById("pdfSignClubTreasurer");
+  const advisorInput = document.getElementById("pdfSignAdvisor");
+  
+  if (isCentral) {
+    clubFields.style.display = "none";
+    if(headNameInput) headNameInput.required = false;
+    if(clubTreasurerInput) clubTreasurerInput.required = false;
+    if(advisorInput) advisorInput.required = false;
+  } else {
+    clubFields.style.display = "flex";
+    if(headNameInput) headNameInput.required = true;
+    if(clubTreasurerInput) clubTreasurerInput.required = true;
+    if(advisorInput) advisorInput.required = true;
+
+    const orgName = project.orgName || "ชมรม";
+    if(orgLabel) orgLabel.textContent = orgName;
+    if(orgLabel2) orgLabel2.textContent = orgName;
+  }
+
+  // Show modal
+  if (typeof openDialog === "function") {
+    openDialog(modal, { focusSelector: "#pdfSignLeadName" });
+  } else {
+    modal.classList.add("show");
+  }
+
+  // Handle Close/Cancel
+  const closeBtn = document.getElementById("pdfSignModalClose");
+  const cancelBtn = document.getElementById("pdfSignCancel");
+  
+  const closeHandler = () => {
+    if (typeof closeDialog === "function") {
+      closeDialog(modal);
+    } else {
+      modal.classList.remove("show");
+    }
+  };
+  
+  closeBtn.onclick = closeHandler;
+  cancelBtn.onclick = closeHandler;
+
+  // Handle Submit
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    
+    const signatureData = {
+      name: document.getElementById("pdfSignLeadName").value.trim(),
+      phone: document.getElementById("pdfSignLeadPhone").value.trim(),
+      headName: document.getElementById("pdfSignHeadName").value.trim(),
+      clubTreasurer: document.getElementById("pdfSignClubTreasurer").value.trim(),
+      advisor: document.getElementById("pdfSignAdvisor").value.trim()
+    };
+
+    closeHandler();
+    downloadProjectPdf(project, signatureData);
   };
 }
 
@@ -638,10 +790,10 @@ function formatThaiDateNoPrefix(raw) {
   return `${dayMonth} พ.ศ. ${year}`;
 }
 
-function openPdfPrintWindow(project, printWin) {
+function openPdfPrintWindow(project, printWin, signatureData) {
   if (!pdfRootEl) return false;
 
-  const data = buildPdfData(project);
+  const data = buildPdfData(project, signatureData);
   const docTitle = escapeHtml(buildPdfTitle(project));
   const tempRoot = pdfRootEl.cloneNode(true);
   tempRoot.id = "pdfRootPrint";
@@ -654,6 +806,7 @@ function openPdfPrintWindow(project, printWin) {
 
   fillPdfFields(data, tempRoot);
   applyThaiSegmentation(tempRoot);
+  setupPdfSignatures(tempRoot, project);
 
   const cssHref = "css/style.css";
   const fontHref =
@@ -688,10 +841,10 @@ function openPdfPrintWindow(project, printWin) {
   return true;
 }
 
-function downloadPdfInSameTab(project) {
+function downloadPdfInSameTab(project, signatureData) {
   if (!pdfRootEl) return false;
 
-  const data = buildPdfData(project);
+  const data = buildPdfData(project, signatureData);
   const docTitle = escapeHtml(buildPdfTitle(project));
   const tempRoot = pdfRootEl.cloneNode(true);
   tempRoot.id = "pdfRootInline";
@@ -704,6 +857,7 @@ function downloadPdfInSameTab(project) {
 
   fillPdfFields(data, tempRoot);
   applyThaiSegmentation(tempRoot);
+  setupPdfSignatures(tempRoot, project);
 
   const iframe = document.createElement("iframe");
   iframe.className = "pdf-print-frame";

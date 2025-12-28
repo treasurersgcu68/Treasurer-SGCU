@@ -191,7 +191,17 @@ function initCharts(ctxKey = activeProjectStatusContext) {
           fontFamily: "Kanit"
         },
         tooltip: {
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          titleColor: "#111827",
+          bodyColor: "#374151",
+          borderColor: "#e5e7eb",
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6,
+          displayColors: false,
+          bodyFont: { family: "'Kanit', sans-serif", size: 12 },
           callbacks: {
+            title: () => [],
             label: (ctx) => {
               const label = ctx.label || "";
               const value = ctx.parsed || 0;
@@ -199,15 +209,15 @@ function initCharts(ctxKey = activeProjectStatusContext) {
               const total = dataset.data.reduce((a, b) => a + b, 0);
               const percent = total > 0 ? (value / total) * 100 : 0;
               const percentText = percent.toFixed(1);
-              const line1 = label;
-              const line2 = `งบที่ได้รับอนุมัติ: ${formatMoney(value)} บาท`;
-              const line3 = `คิดเป็น ${percentText}% ของงบทั้งหมดในกราฟนี้`;
-              return [line1, line2, line3];
+              return [
+                `• ${label}`,
+                `  งบอนุมัติ: ${formatMoney(value)} บาท (${percentText}%)`
+              ];
             }
           }
         }
       },
-      cutout: "55%"
+      cutout: "65%"
     }
   });
 

@@ -4,9 +4,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const addBorrowAssetRow = document.getElementById("addBorrowAssetRow");
   const borrowAssetsTableBody = document.getElementById("borrowAssetsTableBody");
   const borrowAssetsTableBodyStaff = document.getElementById("borrowAssetsTableBodyStaff");
+  const borrowAssetsSearch = document.getElementById("borrowAssetsSearch");
+  const borrowAssetsSearchClear = document.getElementById("borrowAssetsSearchClear");
+  const borrowAssetsSearchStaff = document.getElementById("borrowAssetsSearchStaff");
+  const borrowAssetsSearchStaffClear = document.getElementById("borrowAssetsSearchStaffClear");
+  const borrowAssetsTypeFilter = document.getElementById("borrowAssetsTypeFilter");
+  const borrowAssetsTypeFilterStaff = document.getElementById("borrowAssetsTypeFilterStaff");
+  const borrowAssetsCount = document.getElementById("borrowAssetsCount");
+  const borrowAssetsCountStaff = document.getElementById("borrowAssetsCountStaff");
   if (!borrowAssetList || !addBorrowAssetRow) return;
 
   const assetMap = new Map();
+  let borrowAssetsRows = [];
   const BORROW_ASSETS_CSV_URL =
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcx0zotyWntFscUtgXHg4dkJQ6xI16Xrasy58sQfr-29iwgdpujpuvLC7poHH3TG4KR6P36A-bLyZR/pub?gid=0&single=true&output=csv";
 
@@ -18,6 +27,75 @@ document.addEventListener("DOMContentLoaded", () => {
   const parseNumber = (value) => {
     const num = Number(String(value || "").replace(/[^\d.-]/g, ""));
     return Number.isFinite(num) ? num : null;
+  };
+
+  const buildSearchText = (row) => {
+    if (row.searchText) return row.searchText;
+    const searchText = [
+      row.type,
+      row.code,
+      row.name,
+      row.location,
+      row.remaining,
+      row.unit,
+      row.approvedText,
+      row.note
+    ]
+      .map((value) => (value == null ? "" : String(value).toLowerCase()))
+      .join(" ");
+    row.searchText = searchText;
+    return searchText;
+  };
+
+  const filterBorrowAssetsRows = ({ term, type }) => {
+    const normalized = term.trim().toLowerCase();
+    const normalizedType = type === "all" ? "" : type.trim().toLowerCase();
+    return borrowAssetsRows.filter((row) => {
+      const typeMatch =
+        !normalizedType || (row.type || "").toLowerCase() === normalizedType;
+      const searchMatch =
+        !normalized || buildSearchText(row).includes(normalized);
+      return typeMatch && searchMatch;
+    });
+  };
+
+  const applyBorrowAssetsFilters = () => {
+    if (borrowAssetsTableBody) {
+      const term = borrowAssetsSearch ? borrowAssetsSearch.value : "";
+      const type = borrowAssetsTypeFilter ? borrowAssetsTypeFilter.value : "all";
+      const rows = filterBorrowAssetsRows({ term, type });
+      renderBorrowAssetsTable(rows);
+      if (borrowAssetsCount) {
+        borrowAssetsCount.textContent = `พบ ${rows.length} รายการ`;
+      }
+    }
+    if (borrowAssetsTableBodyStaff) {
+      const term = borrowAssetsSearchStaff ? borrowAssetsSearchStaff.value : "";
+      const type = borrowAssetsTypeFilterStaff ? borrowAssetsTypeFilterStaff.value : "all";
+      const rows = filterBorrowAssetsRows({ term, type });
+      renderBorrowAssetsTableStaff(rows);
+      if (borrowAssetsCountStaff) {
+        borrowAssetsCountStaff.textContent = `พบ ${rows.length} รายการ`;
+      }
+    }
+  };
+
+  const syncTypeOptions = (types) => {
+    const sorted = Array.from(new Set(types)).sort((a, b) => a.localeCompare(b, "th"));
+    const populateSelect = (selectEl) => {
+      if (!selectEl) return;
+      while (selectEl.options.length > 1) {
+        selectEl.remove(1);
+      }
+      sorted.forEach((type) => {
+        const option = document.createElement("option");
+        option.value = type;
+        option.textContent = type;
+        selectEl.appendChild(option);
+      });
+    };
+    populateSelect(borrowAssetsTypeFilter);
+    populateSelect(borrowAssetsTypeFilterStaff);
   };
 
   const renderBorrowAssetsTable = (rows) => {
@@ -137,8 +215,9 @@ document.addEventListener("DOMContentLoaded", () => {
             assetMap.set(row.code, row.name);
           }
         });
-        renderBorrowAssetsTable(rows);
-        renderBorrowAssetsTableStaff(rows);
+        syncTypeOptions(rows.map((row) => row.type).filter(Boolean));
+        borrowAssetsRows = rows;
+        applyBorrowAssetsFilters();
 
         borrowAssetList.querySelectorAll("[data-asset-row]").forEach((row) => {
           const codeInput = row.querySelector('[data-asset-field="code"]');
@@ -232,6 +311,31 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   loadBorrowAssets();
+
+  if (borrowAssetsSearch) {
+    borrowAssetsSearch.addEventListener("input", applyBorrowAssetsFilters);
+  }
+  if (borrowAssetsSearchClear && borrowAssetsSearch) {
+    borrowAssetsSearchClear.addEventListener("click", () => {
+      borrowAssetsSearch.value = "";
+      applyBorrowAssetsFilters();
+    });
+  }
+  if (borrowAssetsSearchStaff) {
+    borrowAssetsSearchStaff.addEventListener("input", applyBorrowAssetsFilters);
+  }
+  if (borrowAssetsSearchStaffClear && borrowAssetsSearchStaff) {
+    borrowAssetsSearchStaffClear.addEventListener("click", () => {
+      borrowAssetsSearchStaff.value = "";
+      applyBorrowAssetsFilters();
+    });
+  }
+  if (borrowAssetsTypeFilter) {
+    borrowAssetsTypeFilter.addEventListener("change", applyBorrowAssetsFilters);
+  }
+  if (borrowAssetsTypeFilterStaff) {
+    borrowAssetsTypeFilterStaff.addEventListener("change", applyBorrowAssetsFilters);
+  }
 
   const staffTabBtns = document.querySelectorAll(".tab-btn[data-assets-staff-tab]");
   const staffBorrowQueue = document.getElementById("staffBorrowQueue");

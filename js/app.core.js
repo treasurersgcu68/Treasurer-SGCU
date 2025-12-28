@@ -465,3 +465,23 @@ function syncChartsToContext(key) {
   ctx.statusPieChart = statusPieChart;
   ctx.trendLineChart = trendLineChart;
 }
+
+/* Initialize Hamburger Menu (Accessibility Fix) */
+document.addEventListener("DOMContentLoaded", () => {
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const mobileMenu = document.getElementById("mobileMenu");
+
+  if (hamburgerBtn && mobileMenu) {
+    hamburgerBtn.addEventListener("click", () => {
+      const isExpanded = hamburgerBtn.getAttribute("aria-expanded") === "true";
+      setMobileMenuState(mobileMenu, hamburgerBtn, !isExpanded);
+    });
+
+    // Close menu when clicking a link inside
+    mobileMenu.querySelectorAll("a, button").forEach((el) => {
+      el.addEventListener("click", () => {
+        setMobileMenuState(mobileMenu, hamburgerBtn, false);
+      });
+    });
+  }
+});

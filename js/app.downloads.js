@@ -12,6 +12,58 @@ function addDownloadButton(wrapper, label, url) {
   wrapper.appendChild(a);
 }
 
+function applyDownloadCategoryFilter(listEl, selected) {
+  if (!listEl) return;
+  const target = selected || "all";
+  listEl.querySelectorAll(".download-section-card").forEach((section) => {
+    const category = (section.dataset.category || "").trim();
+    const isVisible = target === "all" || category === target;
+    section.style.display = isVisible ? "" : "none";
+  });
+}
+
+function initDownloadCategoryFilter(listEl) {
+  const selectEl = document.getElementById("downloadCategorySelect");
+  if (!selectEl || !listEl) return;
+
+  const sections = Array.from(listEl.querySelectorAll(".download-section-card"));
+  const categories = [];
+
+  sections.forEach((section) => {
+    let category = (section.dataset.category || "").trim();
+    if (!category) {
+      const titleEl = section.querySelector(".download-card-title");
+      category = (titleEl ? titleEl.textContent : "").trim();
+      if (category) {
+        section.dataset.category = category;
+      }
+    }
+    if (category && !categories.includes(category)) {
+      categories.push(category);
+    }
+  });
+
+  const currentValue = selectEl.value || "all";
+  selectEl.innerHTML = '<option value="all">ทุกประเภท</option>';
+  categories.forEach((category) => {
+    const opt = document.createElement("option");
+    opt.value = category;
+    opt.textContent = category;
+    selectEl.appendChild(opt);
+  });
+
+  selectEl.value = categories.includes(currentValue) ? currentValue : "all";
+
+  if (!selectEl.dataset.bound) {
+    selectEl.addEventListener("change", (event) => {
+      applyDownloadCategoryFilter(listEl, event.target.value);
+    });
+    selectEl.dataset.bound = "true";
+  }
+
+  applyDownloadCategoryFilter(listEl, selectEl.value);
+}
+
 async function loadDownloadDocuments() {
   const listEl = document.getElementById("downloadList");
   if (!listEl) {
@@ -27,6 +79,7 @@ async function loadDownloadDocuments() {
     const cached = getCache(CACHE_KEYS.DOWNLOADS, CACHE_TTL_MS);
     if (cached && typeof cached === "string" && cached.trim()) {
       listEl.innerHTML = cached;
+      initDownloadCategoryFilter(listEl);
       return;
     }
 
@@ -77,6 +130,7 @@ async function loadDownloadDocuments() {
     for (const categoryName in categories) {
       const section = document.createElement("section");
       section.className = "download-section-card";
+      section.dataset.category = categoryName;
 
       section.innerHTML = `
         <div class="download-card-header">
@@ -125,6 +179,8 @@ async function loadDownloadDocuments() {
 
       listEl.appendChild(section);
     }
+
+    initDownloadCategoryFilter(listEl);
 
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);

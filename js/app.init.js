@@ -1,4 +1,34 @@
 /* App init + wiring (DOMContentLoaded) */
+function runHeroSubtitleTyping() {
+  const subtitle = document.querySelector(".home-hero-subtitle");
+  if (!subtitle || subtitle.dataset.typingReady === "true") return;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  const fullText = subtitle.textContent.replace(/\s+/g, " ").trim();
+  if (!fullText) return;
+
+  subtitle.dataset.typingReady = "true";
+  subtitle.textContent = "";
+
+  const cursor = document.createElement("span");
+  cursor.className = "typing-cursor";
+  cursor.setAttribute("aria-hidden", "true");
+  subtitle.appendChild(cursor);
+
+  let index = 0;
+  const speedMs = 28;
+  const typingTimer = window.setInterval(() => {
+    subtitle.insertBefore(document.createTextNode(fullText[index]), cursor);
+    index += 1;
+    if (index >= fullText.length) {
+      window.clearInterval(typingTimer);
+      window.setTimeout(() => cursor.remove(), 600);
+    }
+  }, speedMs);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   // ===== 1) เก็บ DOM element ที่ใช้ซ้ำ =====
   yearSelect = document.getElementById("yearSelect");
@@ -139,6 +169,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     appLoaderRetryEl.addEventListener("click", () => window.location.reload());
   }
   updateAppAlert();
+  runHeroSubtitleTyping();
 
   projectStatusContexts = {
     public: buildProjectStatusContext("", "public"),
@@ -335,6 +366,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     currentPage = page;
+    if (window.localStorage) {
+      localStorage.setItem("lastActivePage", page);
+    }
   }
 
   // คลิกเมนูด้านบน
@@ -354,11 +388,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     navLinks[0]?.dataset.page ||
     "home";
 
-  const initialPage = Array.from(pageViews).some(
-    (sec) => sec.dataset.page === initialHash
-  )
+  const storedPage = window.localStorage
+    ? localStorage.getItem("lastActivePage")
+    : "";
+  const isValidPage = (page) =>
+    Array.from(pageViews).some((sec) => sec.dataset.page === page);
+
+  const initialPage = isValidPage(initialHash)
     ? initialHash
-    : defaultPage;
+    : isValidPage(storedPage)
+      ? storedPage
+      : defaultPage;
 
   await switchPage(initialPage, { fromHash: true });
 
@@ -689,21 +729,46 @@ document.addEventListener("DOMContentLoaded", async () => {
   const scopePills = document.querySelectorAll(".scope-pill[data-scope-target]");
   const scopeCards = document.querySelectorAll(".scope-team-card[data-scope]");
 
+  const syncScopeCards = (target) => {
+    scopePills.forEach((pill) => {
+      const isActive = pill.dataset.scopeTarget === target;
+      pill.classList.toggle("scope-pill-active", isActive);
+      pill.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+
+    scopeCards.forEach((card) => {
+      const isActive = card.dataset.scope === target;
+      if (isActive) {
+        card.classList.remove("scope-team-exit");
+        card.classList.add("scope-team-active");
+        card.hidden = false;
+      } else if (!card.hidden) {
+        card.classList.remove("scope-team-active");
+        card.classList.add("scope-team-exit");
+        window.setTimeout(() => {
+          card.hidden = true;
+          card.classList.remove("scope-team-exit");
+        }, 200);
+      }
+    });
+  };
+
+  const initialScope =
+    document.querySelector(".scope-pill-active")?.dataset.scopeTarget
+    || scopePills[0]?.dataset.scopeTarget;
+
+  if (initialScope) {
+    syncScopeCards(initialScope);
+  }
+
   scopePills.forEach((pill) => {
     pill.addEventListener("click", () => {
       const target = pill.dataset.scopeTarget;
+      if (!target) {
+        return;
+      }
 
-      // toggle active pill
-      scopePills.forEach((p) => p.classList.remove("scope-pill-active"));
-      pill.classList.add("scope-pill-active");
-
-      // toggle highlight card
-      scopeCards.forEach((card) => {
-        card.classList.toggle(
-          "scope-team-active",
-          card.dataset.scope === target
-        );
-      });
+      syncScopeCards(target);
 
       // เลื่อนสายตาไปหา card ที่ถูกเลือก (เฉพาะบนจอเล็กจะช่วยให้เห็นชัด)
       const activeCard = document.querySelector(

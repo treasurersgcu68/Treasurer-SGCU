@@ -27,7 +27,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้ - app.js:3688", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:30", err);
     recordLoadError("orgStructure", "โหลดโครงสร้างองค์กรไม่สำเร็จ", { showRetry: true });
     setInlineError(el, "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้");
   } finally {
@@ -241,8 +241,13 @@ function renderOrgStructure(rows) {
       <div class="org-level org-level-main-branches">
 
         <!-- LEFT: ผู้ช่วยเหรัญญิก -->
-        <div class="org-left-asst">
-          ${renderAssistantBox("ผู้ช่วยเหรัญญิก")}
+        <div class="org-left-asst" style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายเทคโนโลยีสารสนเทศ")}
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิกส่วนกลาง")}
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายศิลปะและวัฒนธรรม")}
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายวิชาการ")}
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายกีฬา")}
+          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายพัฒนาสังคมและบำเพ็ญประโยชน์")}
         </div>
 
         <!-- RIGHT: สามสาขา -->

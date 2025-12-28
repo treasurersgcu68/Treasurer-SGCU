@@ -328,9 +328,12 @@ function initAuthUI() {
     toggleProjectStatusAccess(isAuth, "public");
     toggleProjectStatusAccess(isAuth, "staff");
 
-    // เปลี่ยนหน้าไปยังเมนูแรกตามสถานะปัจจุบัน (login/logout)
+    // เปลี่ยนหน้าเฉพาะเมื่อหน้าปัจจุบันไม่สามารถมองเห็นได้
     const preferredPage = getPreferredPageForState(isAuth, hasStaff ? staffAuthUser : null);
-    goToFirstVisibleNavPageWithPreference(preferredPage);
+    const currentPage = getCurrentPageFromHash();
+    if (!isNavPageVisible(currentPage)) {
+      goToFirstVisibleNavPageWithPreference(preferredPage);
+    }
   }
 
   onAuthStateChanged(auth, (user) => {

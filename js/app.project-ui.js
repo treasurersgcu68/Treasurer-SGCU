@@ -153,11 +153,13 @@ function updateDashboardInsights(filtered, summary) {
     closureRateBarEl.style.width = `${Math.min(closureRate, 100)}%`;
   }
   if (closureRateDonutCanvas) {
+    const closedList = filtered.filter(p => (p.statusClose || "").trim() === "ส่งกิจการนิสิตเรียบร้อย");
     closureRateDonutChart = updateDonutChart(
       closureRateDonutChart,
       closureRateDonutCanvas,
       closureRate,
-      "#ec4899"
+      "#ec4899",
+      getDonutTooltipLines(closedList)
     );
   }
 
@@ -171,11 +173,13 @@ function updateDashboardInsights(filtered, summary) {
     approvalRateBarEl.style.width = `${Math.min(approvalRate, 100)}%`;
   }
   if (approvalRateDonutCanvas) {
+    const approvedList = filtered.filter(p => (p.statusMain || "").trim() === "อนุมัติโครงการ");
     approvalRateDonutChart = updateDonutChart(
       approvalRateDonutChart,
       approvalRateDonutCanvas,
       approvalRate,
-      "#f472b6"
+      "#f472b6",
+      getDonutTooltipLines(approvedList)
     );
   }
 
@@ -377,7 +381,7 @@ function updateTrendLineChart(filtered) {
   trendLineChart.update();
 }
 
-function updateDonutChart(existingChart, canvasEl, percent, color) {
+function updateDonutChart(existingChart, canvasEl, percent, color, tooltipLines = null) {
   if (!canvasEl) return existingChart;
   const value = Math.max(0, Math.min(percent || 0, 100));
   const data = {
@@ -397,7 +401,22 @@ function updateDonutChart(existingChart, canvasEl, percent, color) {
     cutout: "70%",
     plugins: {
       legend: { display: false },
-      tooltip: { enabled: false },
+      tooltip: {
+        enabled: !!tooltipLines,
+        filter: (item) => item.dataIndex === 0,
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        titleColor: "#111827",
+        bodyColor: "#374151",
+        borderColor: "#e5e7eb",
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 6,
+        displayColors: false,
+        bodyFont: { family: "'Kanit', sans-serif", size: 12 },
+        callbacks: {
+          label: () => tooltipLines || []
+        }
+      },
       centerText: {
         text: `${value.toFixed(1)}%`,
         subText: "",
@@ -538,7 +557,7 @@ function renderHomeKpis(sourceProjects = projects) {
 
   const closedProjects = data.filter(isProjectClosed);
 
-  const onTimeCount = closedProjects.filter((p) => {
+  const onTimeProjects = closedProjects.filter((p) => {
     const dur = getCloseDurationDays(p);
     if (dur !== null) {
       return dur <= 14; // ระยะเวลาปิดโครงการ (คอลัมน์ AZ) ไม่เกิน 14 วันถือว่าตรงเวลา
@@ -557,7 +576,8 @@ function renderHomeKpis(sourceProjects = projects) {
     }
     if (!due || !last) return false;
     return last.getTime() <= due.getTime();
-  }).length;
+  });
+  const onTimeCount = onTimeProjects.length;
 
   const onTimePercent = closedProjects.length
     ? (onTimeCount / closedProjects.length) * 100
@@ -579,7 +599,8 @@ function renderHomeKpis(sourceProjects = projects) {
       kpiOnTimeDonutChart,
       kpiOnTimeDonutCanvas,
       onTimePercent,
-      "#ec4899"
+      "#ec4899",
+      getDonutTooltipLines(onTimeProjects)
     );
   }
   if (kpiOnTimeStaffEl) {
@@ -617,7 +638,8 @@ function renderHomeKpis(sourceProjects = projects) {
       kpiBudgetUsageDonutChart,
       kpiBudgetUsageDonutCanvas,
       usagePercent,
-      "#f472b6"
+      "#f472b6",
+      getDonutTooltipLines(data, "actualBudget")
     );
   }
   if (kpiBudgetUsageStaffEl) {
@@ -790,6 +812,34 @@ function statusCloseToBadgeClass(statusClose) {
     return "badge badge-warning";
   }
   return "badge badge-rejected";
+}
+
+function getDonutTooltipLines(projectsList, valueKey = null) {
+  const groups = {};
+  let total = 0;
+  projectsList.forEach((p) => {
+    const name = (p.orgGroup || "(ไม่ระบุ)").trim();
+    const val = valueKey ? (p[valueKey] || 0) : 1;
+    groups[name] = (groups[name] || 0) + val;
+    total += val;
+  });
+
+  const sorted = Object.entries(groups)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  const top = sorted.slice(0, 5);
+  const lines = top.map(([n, v]) => {
+    const vStr = valueKey ? formatMoney(v) : v.toLocaleString();
+    const unit = valueKey ? " บาท" : " โครงการ";
+    const pct = total > 0 ? ((v / total) * 100).toFixed(1) : "0.0";
+    return `• ${n}: ${vStr}${unit} (${pct}%)`;
+  });
+
+  if (sorted.length > 5) {
+    lines.push(`...และอีก ${sorted.length - 5} กลุ่ม`);
+  }
+  return lines;
 }
 
 /**

@@ -130,23 +130,20 @@
             <span id="userInfo" class="auth-user"></span>
           </div>
           <div id="staffModeToggle" class="staff-mode-toggle">
-            <span class="staff-mode-label">โหมด</span>
             <button class="staff-mode-btn is-active" data-staff-mode="normal" type="button">ปกติ</button>
             <button class="staff-mode-btn" data-staff-mode="staff" type="button">Staff</button>
           </div>
 
-          <label
+          <button
             id="hamburgerBtn"
             class="burger"
+            type="button"
             aria-label="เปิด/ปิดเมนูหลัก"
             aria-expanded="false"
             aria-controls="mobileMenu"
-            role="button"
-            tabindex="0"
           >
-            <input id="hamburgerToggle" type="checkbox" aria-hidden="true" />
             <span></span><span></span><span></span>
-          </label>
+          </button>
         </div>
       </div>
 
@@ -213,13 +210,13 @@
 
               <!-- ขวา: เหรียญ Treasurer -->              
               <div class="home-hero-badge">
-                <div class="home-hero-highlight">
+                <div class="home-hero-highlight" style="border-radius: 20px;">
                   <a
                     href="https://www.instagram.com/treasurer.sgcu?igsh=MXR0cXM0NWY5N3UwYg=="
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <img src="./img/logo_treasurur jpg.png" alt="Treasurer SGCU68" class="home-hero-badge-img" />
+                    <img src="./img/logo_treasurur jpg.png" alt="Treasurer SGCU68" class="home-hero-badge-img" style="border-radius: 20px;" />
                   </a>
                 </div>
               </div>
@@ -260,6 +257,7 @@
                 class="scope-pill scope-pill-active"
                 type="button"
                 data-scope-target="treasurer"
+                aria-pressed="true"
               >
                 เหรัญญิก
               </button>
@@ -267,6 +265,7 @@
                 class="scope-pill"
                 type="button"
                 data-scope-target="budget"
+                aria-pressed="false"
               >
                 บริหารและพัฒนางบประมาณ
               </button>
@@ -274,6 +273,7 @@
                 class="scope-pill"
                 type="button"
                 data-scope-target="fundraising"
+                aria-pressed="false"
               >
                 หาทุนและสิทธิประโยชน์
               </button>
@@ -281,6 +281,7 @@
                 class="scope-pill"
                 type="button"
                 data-scope-target="assets"
+                aria-pressed="false"
               >
                 กายภาพและพัสดุ
               </button>
@@ -302,7 +303,7 @@
                 </ul>
               </div>
 
-              <div class="scope-team-card" data-scope="budget">
+              <div class="scope-team-card" data-scope="budget" hidden>
                 <h3>ฝ่ายบริหารและพัฒนางบประมาณ</h3>
                 <p>
                   ดูแลภาพรวมงบประมาณของ SGCU68 วางแผน แบ่งสัดส่วนงบ
@@ -315,7 +316,7 @@
                 </ul>
               </div>
 
-              <div class="scope-team-card" data-scope="fundraising">
+              <div class="scope-team-card" data-scope="fundraising" hidden>
                 <h3>ฝ่ายหาทุนและสิทธิประโยชน์</h3>
                 <p>
                   ประสานงานการหาทุน สปอนเซอร์ และสิทธิประโยชน์ต่าง ๆ
@@ -328,7 +329,7 @@
                 </ul>
               </div>
 
-              <div class="scope-team-card" data-scope="assets">
+              <div class="scope-team-card" data-scope="assets" hidden>
                 <h3>ฝ่ายกายภาพและพัสดุ</h3>
                 <p>
                   ดูแลครุภัณฑ์ อุปกรณ์ และทรัพย์สินของสโมสรนิสิต รวมถึงระบบการยืมคืน
@@ -1111,6 +1112,14 @@
                 รวมแบบฟอร์มและเอกสารมาตรฐานด้านการเงินของฝ่ายเหรัญญิก · สำหรับโครงการและชมรม
               </p>
             </div>
+            <div id="downloadFilterBar" class="download-filter-bar">
+              <div class="filter-group">
+                <label for="downloadCategorySelect">ประเภทเอกสาร</label>
+                <select id="downloadCategorySelect">
+                  <option value="all" selected>ทุกประเภท</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <div class="separator-gradient"></div>
@@ -1193,7 +1202,7 @@
                         class="login-input"
                         type="text"
                         placeholder="รูปแบบ: xxxXXXXXxx"
-                        pattern="^(?:5[6-9]|6[0-8])[3478]\d{5}(?:(?:0[1-2])|(?:2[0-9]|3[0-9]|40)|51|53|55|56|58)$"
+                        pattern="^(?:5[6-9]|6[0-9])[3478]\d{5}(?:(?:0[1-2])|(?:2[0-9]|3[0-9]|40)|51|53|55|56|58)$"
                         required
                       />
                       <div id="borrowStudentIdWarning" class="section-text-sm" style="color: #b91c1c;" hidden>
@@ -1374,11 +1383,38 @@
           </div>
 
           <div id="assetsList" class="section-appear" style="display: none;">
+            <div class="filter-bar assets-filter-bar">
+              <div class="filter-group filter-orgtype">
+                <label for="borrowAssetsTypeFilter">ประเภท</label>
+                <select id="borrowAssetsTypeFilter">
+                  <option value="all">ทุกประเภท</option>
+                </select>
+              </div>
+              <div class="filter-group filter-search">
+                <label for="borrowAssetsSearch">ค้นหารายการพัสดุ (ประเภท/รหัส/ชื่อ/ที่เก็บ)</label>
+                <div class="search-box">
+                  <input
+                    id="borrowAssetsSearch"
+                    type="search"
+                    placeholder="พิมพ์คำค้น เช่น สายไฟ หรือ A-001"
+                  />
+                  <button
+                    id="borrowAssetsSearchClear"
+                    class="search-clear"
+                    type="button"
+                    aria-label="เคลียร์คำค้น"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
             <div class="panel panel-hover">
               <div class="panel-header">
                 <div>
                   <div class="panel-title">รายการพัสดุที่สามารถยืมคืนได้</div>
                   <div class="panel-caption">อัปเดตล่าสุดจากฝ่ายกายภาพและพัสดุ</div>
+                  <div id="borrowAssetsCount" class="panel-meta">พบ 0 รายการ</div>
                 </div>
               </div>
               <div class="table-wrapper">
@@ -1506,6 +1542,33 @@
                 <div>
                   <div class="panel-title">รายการพัสดุทั้งหมด (Staff)</div>
                   <div class="panel-caption">แสดงข้อมูลครบทุกคอลัมน์จากคลังพัสดุ</div>
+                  <div id="borrowAssetsCountStaff" class="panel-meta">พบ 0 รายการ</div>
+                </div>
+              </div>
+              <div class="filter-bar">
+                <div class="filter-group filter-orgtype">
+                  <label for="borrowAssetsTypeFilterStaff">ประเภท</label>
+                  <select id="borrowAssetsTypeFilterStaff">
+                    <option value="all">ทุกประเภท</option>
+                  </select>
+                </div>
+                <div class="filter-group filter-search">
+                  <label for="borrowAssetsSearchStaff">ค้นหารายการพัสดุ (ทุกคอลัมน์)</label>
+                  <div class="search-box">
+                    <input
+                      id="borrowAssetsSearchStaff"
+                      type="search"
+                      placeholder="พิมพ์คำค้น เช่น โต๊ะพับ หรือ A-001"
+                    />
+                    <button
+                      id="borrowAssetsSearchStaffClear"
+                      class="search-clear"
+                      type="button"
+                      aria-label="เคลียร์คำค้น"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="table-wrapper">

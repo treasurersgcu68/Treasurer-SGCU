@@ -79,6 +79,12 @@ function hydrateProjectsCache(list) {
 // โหลดตัวเลือก filter จากชีตภายนอก: คอลัมน์ A = ประเภทองค์กร, คอลัมน์ B = ฝ่าย/ชมรม
 async function loadOrgFilters() {
   try {
+    const cached = getCache(CACHE_KEYS.ORG_FILTERS, CACHE_TTL_MS);
+    if (cached && Array.isArray(cached) && cached.length) {
+      orgFilters = cached;
+      return;
+    }
+
     const csvText = await fetchTextWithProgress(ORG_FILTER_CSV_URL, (ratio) => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("orgFilters", ratio);
@@ -99,6 +105,8 @@ async function loadOrgFilters() {
         name: (row[1] || "").toString().trim()
       }))
       .filter((r) => r.group !== "" && r.name !== "");
+
+    setCache(CACHE_KEYS.ORG_FILTERS, orgFilters);
   } catch (err) {
     console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:955", err);
     recordLoadError(

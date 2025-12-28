@@ -775,7 +775,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         `.scope-team-card[data-scope="${target}"]`
       );
       if (activeCard && window.innerWidth < 900) {
-        activeCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        const rect = activeCard.getBoundingClientRect();
+        const headerEl = document.querySelector(".site-header");
+        const headerOffset = headerEl ? headerEl.getBoundingClientRect().height + 12 : 0;
+        const viewTop = headerOffset;
+        const viewBottom = window.innerHeight - 12;
+        const isAbove = rect.top < viewTop;
+        const isBelow = rect.bottom > viewBottom;
+
+        if (isAbove || isBelow) {
+          const targetY = window.scrollY + rect.top - headerOffset;
+          window.scrollTo({ top: targetY, behavior: "smooth" });
+        }
       }
     });
   });

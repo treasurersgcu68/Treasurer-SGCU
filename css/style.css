@@ -38,6 +38,11 @@ body {
   scroll-behavior: smooth;
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 body.has-modal {
   overflow: hidden;
 }
@@ -2974,7 +2979,7 @@ th.sortable.sort-desc::after {
 
 @media (max-width: 640px) {
   .download-filter-bar {
-    width: 400%;
+    width: 100%;
     grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;
   }
@@ -3621,12 +3626,39 @@ th.sortable.sort-desc::after {
 @media (max-width: 720px) {
   .header-inner {
     padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    min-width: 0;
+  }
+  .logo-text {
+    min-width: 0;
+  }
+  .logo-title {
+    font-size: 13px;
+  }
+  .logo-subtitle {
+    display: none;
+  }
+  .header-actions {
+    margin-left: auto;
+    gap: 6px;
+  }
+  .auth-panel {
+    font-size: 11px;
+  }
+  .auth-user {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .main {
     padding: 14px 12px 28px;
   }
   .home-hero {
     padding: 32px 0 28px;
+    min-height: auto;
   }
   .home-hero-inner {
     flex-direction: column;
@@ -3747,9 +3779,8 @@ th.sortable.sort-desc::after {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  height: 230px;       /* คุมความสูงให้เสมอกัน */
+  height: auto;       /* เปิดให้ขยายตามชื่อองค์กร */
   min-height: 230px;
-  overflow: hidden;
 }
 
 /* เสาให้สูงไม่เท่ากัน */
@@ -3812,10 +3843,15 @@ th.sortable.sort-desc::after {
   margin-bottom: 4px;
   font-size: 16px;
   text-align: center;
-  max-width: 14ch;
-  word-break: break-word;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   overflow: hidden;
 }
 
@@ -4016,8 +4052,8 @@ th.sortable.sort-desc::after {
   .score-podium-card {
     width: 120px;
     padding: 12px 8px 14px;
-    height: 180px;
-    min-height: 180px;
+    height: auto;
+    min-height: 190px;
   }
 
   .score-medal {
@@ -4027,7 +4063,10 @@ th.sortable.sort-desc::after {
   }
 
   .score-org-name {
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.25;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
   }
 
   .scoreboard-wrapper {

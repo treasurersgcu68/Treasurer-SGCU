@@ -23,22 +23,42 @@ function initScoreboard() {
   `;
   runnersEl.innerHTML = "";
 
-  Papa.parse(SCORE_SHEET, {
-    download: true,
-    complete: (results) => {
-      if (typeof markLoaderStep === "function") {
-        markLoaderStep("scoreboard");
-      }
-      const rows = results.data || [];
+  const cached = getCache(CACHE_KEYS.SCOREBOARD, CACHE_TTL_MS);
+  if (cached && Array.isArray(cached) && cached.length) {
+    const podium = cached.slice(0, 3);
+    const runners = cached.slice(3, 8);
+    renderScorePodium(podiumEl, podium);
+    renderScoreRunners(runnersEl, runners);
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("scoreboard");
+    }
+    return;
+  }
+
+  fetchTextWithProgress(SCORE_SHEET, (ratio) => {
+    if (typeof updateLoaderProgress === "function") {
+      updateLoaderProgress("scoreboard", ratio);
+    }
+  })
+    .then((csvText) => {
+      const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: true });
+      const rows = parsed.data || [];
       if (rows.length < 2) return;
+
+      const headerRow = rows[0] || [];
+      const headerOrgIdx = getHeaderIndex(headerRow, [/องค์กร/i, /org/i, /ฝ่าย/i, /ชมรม/i]);
+      const headerScoreIdx = getHeaderIndex(headerRow, [/คะแนน/i, /score/i]);
+      const useFallback = headerOrgIdx == null || headerScoreIdx == null;
+      const orgColIndex = useFallback ? 13 : headerOrgIdx;
+      const scoreColIndex = useFallback ? 14 : headerScoreIdx;
 
       const items = [];
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         if (!row) continue;
 
-        const org = (row[13] || "").trim();   //org name
-        const scoreVal = parseFloat(row[14]); //score
+        const org = normalizeScoreOrgName(row[orgColIndex]); // org name
+        const scoreVal = parseFloat(row[scoreColIndex]); // score
 
         if (!org || Number.isNaN(scoreVal)) continue;
         items.push({ org, score: scoreVal });
@@ -47,14 +67,15 @@ function initScoreboard() {
       if (!items.length) return;
 
       items.sort((a, b) => b.score - a.score);
+      setCache(CACHE_KEYS.SCOREBOARD, items);
 
       const podium = items.slice(0, 3);
       const runners = items.slice(3, 8);
 
       renderScorePodium(podiumEl, podium);
       renderScoreRunners(runnersEl, runners);
-    },
-    error: (err) => {
+    })
+    .catch((err) => {
       console.error("Error loading SCORE_SHEET - app.js:4641", err);
       recordLoadError("scoreboard", "โหลดคะแนนไม่สำเร็จ", { showRetry: true });
       if (podiumEl) {
@@ -63,11 +84,33 @@ function initScoreboard() {
       if (runnersEl) {
         runnersEl.innerHTML = "";
       }
+    })
+    .finally(() => {
       if (typeof markLoaderStep === "function") {
         markLoaderStep("scoreboard");
       }
+    });
+}
+
+function normalizeScoreOrgName(value) {
+  if (value == null) return "";
+  const cleaned = String(value)
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned;
+}
+
+function getHeaderIndex(headerRow, patterns) {
+  if (!Array.isArray(headerRow)) return null;
+  for (let i = 0; i < headerRow.length; i++) {
+    const cell = normalizeScoreOrgName(headerRow[i]).toLowerCase();
+    if (!cell) continue;
+    if (patterns.some((re) => re.test(cell))) {
+      return i;
     }
-  });
+  }
+  return null;
 }
 
 function renderScorePodium(container, podium) {

@@ -136,6 +136,19 @@ function getCache(key, ttlMs) {
   }
 }
 
+function getCacheTimestamp(key) {
+  if (!canUseLocalStorage()) return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const ts = parsed && parsed.ts ? Number(parsed.ts) : NaN;
+    return Number.isFinite(ts) ? ts : null;
+  } catch (err) {
+    return null;
+  }
+}
+
 function setCache(key, data) {
   if (!canUseLocalStorage()) return;
   try {
@@ -143,6 +156,26 @@ function setCache(key, data) {
   } catch (err) {
     console.warn("เขียน cache ไม่ได้  app.js:571 - app.helpers.js:144", err);
   }
+}
+
+function formatLastUpdated(ts) {
+  if (!ts) return "ไม่พบข้อมูล";
+  const date = new Date(ts);
+  if (isNaN(date.getTime())) return "ไม่พบข้อมูล";
+  return date.toLocaleString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function updateProjectsLastUpdatedDisplay(value) {
+  if (!projectsLastUpdatedEl && !projectsLastUpdatedStaffEl) return;
+  const text = typeof value === "string" ? value : formatLastUpdated(value);
+  if (projectsLastUpdatedEl) projectsLastUpdatedEl.textContent = text;
+  if (projectsLastUpdatedStaffEl) projectsLastUpdatedStaffEl.textContent = text;
 }
 
 const loadErrors = new Map();
@@ -184,54 +217,69 @@ function setInlineError(el, message) {
 }
 
 async function fetchTextWithProgress(url, onProgress, options = {}) {
-  const timeoutMs = Number(options.timeoutMs) || 15000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  let res;
-  try {
-    res = await fetch(url, { signal: controller.signal, cache: "no-store" });
-  } catch (err) {
-    if (err && err.name === "AbortError") {
-      throw new Error("timeout");
+  const retries = Number.isFinite(options.retries) ? options.retries : 2;
+  const baseDelayMs = Number(options.retryDelayMs) || 700;
+  const backoff = Number(options.retryBackoff) || 1.8;
+  const maxDelayMs = Number(options.retryMaxDelayMs) || 6000;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const timeoutMs = Number(options.timeoutMs) || 15000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`Fetch failed: ${res.status}`);
+      }
+
+      const length = Number(res.headers.get("content-length")) || 0;
+      if (!res.body || !length) {
+        const text = await res.text();
+        if (typeof onProgress === "function") {
+          onProgress(1);
+        }
+        return text;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let received = 0;
+      let text = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += value.length;
+        text += decoder.decode(value, { stream: true });
+        if (typeof onProgress === "function") {
+          onProgress(Math.min(received / length, 1));
+        }
+      }
+
+      text += decoder.decode();
+      if (typeof onProgress === "function") {
+        onProgress(1);
+      }
+      return text;
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        if (attempt >= retries) {
+          throw new Error("timeout");
+        }
+      } else if (attempt >= retries) {
+        throw err;
+      }
+
+      const delay = Math.min(baseDelayMs * Math.pow(backoff, attempt), maxDelayMs);
+      const jitter = delay * (0.15 + Math.random() * 0.25);
+      await new Promise((resolve) => setTimeout(resolve, delay + jitter));
+      if (typeof onProgress === "function") {
+        onProgress(0);
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
   }
-
-  if (!res.ok) {
-    throw new Error(`Fetch failed: ${res.status}`);
-  }
-
-  const length = Number(res.headers.get("content-length")) || 0;
-  if (!res.body || !length) {
-    const text = await res.text();
-    if (typeof onProgress === "function") {
-      onProgress(1);
-    }
-    return text;
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let received = 0;
-  let text = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    received += value.length;
-    text += decoder.decode(value, { stream: true });
-    if (typeof onProgress === "function") {
-      onProgress(Math.min(received / length, 1));
-    }
-  }
-
-  text += decoder.decode();
-  if (typeof onProgress === "function") {
-    onProgress(1);
-  }
-  return text;
 }
 
 function classifyOrgSimple(orgName, code) {

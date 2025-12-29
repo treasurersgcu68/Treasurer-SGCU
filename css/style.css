@@ -189,13 +189,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   box-shadow: 0 6px 16px rgba(236, 72, 153, 0.18);
 }
 
-.staff-mode-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--theme-pink-800);
-  letter-spacing: 0.2px;
-}
-
 .staff-mode-btn {
   border: 0;
   background: transparent;
@@ -531,6 +524,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+    padding: 0 8px;
   }
 
   .login-shell {
@@ -821,6 +815,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .page-subtitle {
   font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.page-meta {
+  font-size: 12px;
   color: #6b7280;
   margin: 0;
 }
@@ -1236,6 +1236,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 12px;
 }
 
+.dashboard-lower > .dashboard-card {
+  min-width: 0;
+}
+
+.dashboard-card .project-table-wrapper {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-card-wide {
+  grid-column: 1 / -1;
+}
+
 .card:hover, .dashboard-metric:hover, .dashboard-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
@@ -1469,7 +1482,8 @@ th.sortable.sort-desc::after {
 
 .project-table-wrapper {
   width: 100%;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   max-height: 70vh;
 }
 
@@ -1908,6 +1922,7 @@ th.sortable.sort-desc::after {
 
 .home-hero-text {
   flex: 1.4;
+  min-width: 0;
 }
 
 .home-hero-eyebrow {
@@ -1928,6 +1943,8 @@ th.sortable.sort-desc::after {
   font-size: 15px;
   color: #4b5563;
   margin: 0 0 24px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .home-hero-subtitle .typing-cursor {
@@ -2158,26 +2175,6 @@ th.sortable.sort-desc::after {
   box-shadow: 0 12px 24px rgba(236, 72, 153, 0.18), inset 0 0 0 1px rgba(236, 72, 153, 0.16);
 }
 
-.scope-pill-icon {
-  display: inline-flex;
-  width: 18px;
-  height: 18px;
-}
-
-.scope-pill-icon svg {
-  width: 18px;
-  height: 18px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.scope-pill-active .scope-pill-icon {
-  animation: scope-icon-spin 0.45s var(--motion-ease);
-}
-
 .home-scope-grid {
   max-width: 820px;
   margin: 0 auto;
@@ -2227,36 +2224,6 @@ th.sortable.sort-desc::after {
   pointer-events: none;
 }
 
-.scope-card-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.scope-card-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border: 1px solid rgba(236, 72, 153, 0.22);
-  color: #be185d;
-  box-shadow: 0 12px 22px rgba(236, 72, 153, 0.12);
-}
-
-.scope-card-icon svg {
-  width: 18px;
-  height: 18px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .scope-team-card h3 {
   font-size: 15px;
   margin-bottom: 0;
@@ -2276,10 +2243,6 @@ th.sortable.sort-desc::after {
 .scope-team-active::after {
   opacity: 1;
   transform: scaleX(1);
-}
-
-.scope-team-active .scope-card-icon {
-  animation: scope-icon-bounce 0.5s var(--motion-ease) both;
 }
 
 .scope-team-active h3 {
@@ -3387,21 +3350,6 @@ th.sortable.sort-desc::after {
   font-weight: 600;
 }
 
-.status-pending {
-  background: #f3f4f6;
-  color: #4b5563;
-}
-
-.status-approved {
-  background: #ffe4f1;
-  color: #be185d;
-}
-
-.status-closed {
-  background: #bbf7d0;
-  color: #15803d;
-}
-
 /* contact assistant box */
 
 .assistant-contact-link {
@@ -3698,7 +3646,18 @@ th.sortable.sort-desc::after {
     font-size: 12px;
   }
   .project-table-wrapper {
-    margin: 0 -4px;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #projectTable, #projectTableStaff, #longestOpenTableStaff {
+    min-width: 720px;
+  }
+  #longestOpenTableStaff {
+    width: 100%;
   }
   .calendar-controls {
     flex-direction: column;

@@ -168,6 +168,8 @@ let appAlertRetryEl;
 let appLoaderErrorEl;
 let appLoaderErrorTextEl;
 let appLoaderRetryEl;
+let projectsLastUpdatedEl;
+let projectsLastUpdatedStaffEl;
 
 // Motion globals
 let sectionObserver = null;

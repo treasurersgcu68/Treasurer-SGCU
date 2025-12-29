@@ -6,6 +6,8 @@ async function loadProjectsFromSheet() {
       projects = cached;
       hydrateProjectsCache(projects);
       console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:891");
+      const cacheTs = getCacheTimestamp(CACHE_KEYS.PROJECTS);
+      updateProjectsLastUpdatedDisplay(cacheTs || "ใช้ข้อมูลแคช");
       return;
     }
 
@@ -30,6 +32,7 @@ async function loadProjectsFromSheet() {
       projects = extractProjectsFromRows(dataRows, headerRow);
     }
     setCache(CACHE_KEYS.PROJECTS, projects);
+    updateProjectsLastUpdatedDisplay(Date.now());
   } catch (err) {
     console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:917", err);
     recordLoadError(
@@ -37,6 +40,7 @@ async function loadProjectsFromSheet() {
       "โหลดข้อมูลโครงการไม่สำเร็จ กำลังใช้ข้อมูลสำรอง",
       { showRetry: true, showLoader: true }
     );
+    updateProjectsLastUpdatedDisplay("ไม่สามารถอัปเดตได้");
     projects = getFallbackProjects();
   } finally {
     if (typeof markLoaderStep === "function") {

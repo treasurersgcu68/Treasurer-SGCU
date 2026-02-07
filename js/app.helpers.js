@@ -369,14 +369,14 @@ function extractProjectsFromRows(dataRows, headerRow) {
   const COL_ACTUAL_BUDGET = 35;
   const COL_CLOSE_DUE = 36;
 
-  const COL_DAYS = 39;
-  const COL_STATUS_CLOSE = 43;     // AR
-  const COL_STATUS_CLOSE_DEC = 44; // AS
+  const COL_DAYS = 48;
+  const COL_STATUS_CLOSE = 51;     // AZ
+  const COL_STATUS_CLOSE_DEC = 52; // BA
 
-  const COL_REMAIN_BUDGET = 49;
-  const COL_USAGE_PERCENT = 50;
-  const COL_CLOSE_DURATION = 51;
-  const COL_DECREE_NO = 52;
+  const COL_REMAIN_BUDGET = 57;
+  const COL_USAGE_PERCENT = 58;
+  const COL_CLOSE_DURATION = 59;
+  const COL_DECREE_NO = 60;
 
   return dataRows
     .filter((row) => {

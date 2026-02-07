@@ -118,6 +118,38 @@ function updateSummaryCards(filtered) {
   return { total, pending, approved, closed, totalBudget };
 }
 
+function syncDashboardFilterOptions(selectEl, values) {
+  if (!selectEl) return "all";
+  const current = selectEl.value || "all";
+  const uniqueValues = Array.from(
+    new Set(values.map((v) => (v || "").toString().trim()).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b, "th-TH"));
+
+  while (selectEl.options.length) {
+    selectEl.remove(0);
+  }
+
+  const baseOption = document.createElement("option");
+  baseOption.value = "all";
+  baseOption.textContent = "ทั้งหมด";
+  selectEl.appendChild(baseOption);
+
+  uniqueValues.forEach((value) => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = value;
+    selectEl.appendChild(opt);
+  });
+
+  if (uniqueValues.includes(current)) {
+    selectEl.value = current;
+  } else {
+    selectEl.value = "all";
+  }
+
+  return selectEl.value;
+}
+
 function updateDashboardInsights(filtered, summary) {
   if (!summary) return;
   if (
@@ -279,7 +311,7 @@ function updateDashboardInsights(filtered, summary) {
   renderRankList(recentProjectsListEl, recentItems, "ยังไม่มีวันที่อัปเดตโครงการ");
 
   const today = new Date();
-  const openItems = [...filtered]
+  const openItemsRaw = [...filtered]
     .filter((p) => !isProjectClosed(p))
     .filter((p) => {
       const status = (p.statusMain || "")
@@ -316,6 +348,23 @@ function updateDashboardInsights(filtered, summary) {
       title: item.code ? `${item.name} (${item.code})` : item.name,
       value: `ค้าง ${item.days.toLocaleString("th-TH")} วัน`
     }));
+
+  const assistantFilterValue = syncDashboardFilterOptions(
+    longestOpenAssistantFilterEl,
+    openItemsRaw.map((item) => item.assistant)
+  );
+  const statusFilterValue = syncDashboardFilterOptions(
+    longestOpenStatusFilterEl,
+    openItemsRaw.map((item) => item.status)
+  );
+
+  let openItems = openItemsRaw;
+  if (assistantFilterValue !== "all") {
+    openItems = openItems.filter((item) => item.assistant === assistantFilterValue);
+  }
+  if (statusFilterValue !== "all") {
+    openItems = openItems.filter((item) => item.status === statusFilterValue);
+  }
 
   if (longestOpenTableCaptionEl) {
     longestOpenTableCaptionEl.textContent = `แสดงผล ${openItems.length.toLocaleString("th-TH")} โครงการ`;

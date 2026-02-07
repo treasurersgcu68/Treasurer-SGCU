@@ -72,6 +72,8 @@ let recentProjectsListEl;
 let longestOpenListEl;
 let longestOpenTableCaptionEl;
 let longestOpenTableBodyEl;
+let longestOpenAssistantFilterEl;
+let longestOpenStatusFilterEl;
 let tableBodyEl;
 let tableCaptionEl;
 let lastTableProjects = [];
@@ -364,6 +366,8 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     longestOpenListEl: get("longestOpenList"),
     longestOpenTableCaptionEl: get("longestOpenTableCaption"),
     longestOpenTableBodyEl: get("longestOpenTableBody"),
+    longestOpenAssistantFilterEl: get("longestOpenAssistantFilter"),
+    longestOpenStatusFilterEl: get("longestOpenStatusFilter"),
     tableBodyEl: get("projectTableBody"),
     tableCaptionEl: get("tableCaption"),
     budgetChartSkeletonEl: get("budgetChartSkeleton"),
@@ -433,6 +437,8 @@ function setActiveProjectStatusContext(key) {
   longestOpenListEl = ctx.longestOpenListEl;
   longestOpenTableCaptionEl = ctx.longestOpenTableCaptionEl;
   longestOpenTableBodyEl = ctx.longestOpenTableBodyEl;
+  longestOpenAssistantFilterEl = ctx.longestOpenAssistantFilterEl;
+  longestOpenStatusFilterEl = ctx.longestOpenStatusFilterEl;
   tableBodyEl = ctx.tableBodyEl;
   tableCaptionEl = ctx.tableCaptionEl;
   budgetChartSkeletonEl = ctx.budgetChartSkeletonEl;

@@ -1261,6 +1261,25 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-bottom: 8px;
 }
 
+.dashboard-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dashboard-filter-bar .filter-group label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.dashboard-filter-bar .filter-group select {
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 6px 9px;
+}
+
 .donut-wrap {
   height: 140px;
   width: 100%;
@@ -3507,6 +3526,10 @@ th.sortable.sort-desc::after {
   }
 
   .dashboard-lower {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-filter-bar {
     grid-template-columns: 1fr;
   }
 

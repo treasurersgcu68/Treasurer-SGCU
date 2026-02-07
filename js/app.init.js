@@ -545,6 +545,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         ctx.projectSearchInput.focus();
       });
     }
+    if (ctx.longestOpenAssistantFilterEl) {
+      ctx.longestOpenAssistantFilterEl.addEventListener("change", () => {
+        setActiveProjectStatusContext(key);
+        refreshProjectStatus(key);
+      });
+    }
+    if (ctx.longestOpenStatusFilterEl) {
+      ctx.longestOpenStatusFilterEl.addEventListener("change", () => {
+        setActiveProjectStatusContext(key);
+        refreshProjectStatus(key);
+      });
+    }
   });
 
   // ===== 7) โหลดโครงสร้างองค์กร (Home section) แบบ background =====

@@ -191,7 +191,7 @@
                 </h1>
                 <p class="home-hero-subtitle">
                   เราเชื่อว่าความโปร่งใสคือพื้นฐานของความไว้วางใจ
-                  ทุกโครงการของนิสิตสามารถติดตามได้ทั้งงบประมาณและเอกสารภายในเว็บไซต์นี้
+                  ทุกโครงการของนิสิตสามารถติดตามได้ทั้งงบประมาณ และเอกสารภายในเว็บไซต์นี้
                 </p>
 
                 <!-- ปุ่มหลัก -->
@@ -808,6 +808,20 @@
             <div class="dashboard-lower" style="margin-top:12px;">
               <article class="dashboard-card dashboard-card-wide">
                 <h4 class="dashboard-card-title">โครงการค้างปิดนานสุด</h4>
+                <div class="dashboard-filter-bar">
+                  <div class="filter-group">
+                    <label for="longestOpenAssistantFilterStaff">ผู้รับผิดชอบ</label>
+                    <select id="longestOpenAssistantFilterStaff">
+                      <option value="all">ทั้งหมด</option>
+                    </select>
+                  </div>
+                  <div class="filter-group">
+                    <label for="longestOpenStatusFilterStaff">สถานะปิดโครงการ</label>
+                    <select id="longestOpenStatusFilterStaff">
+                      <option value="all">ทั้งหมด</option>
+                    </select>
+                  </div>
+                </div>
                 <div class="project-table-wrapper">
                   <table id="longestOpenTableStaff">
                     <caption id="longestOpenTableCaptionStaff">แสดงผล 0 โครงการ</caption>

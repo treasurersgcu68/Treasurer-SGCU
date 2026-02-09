@@ -25,98 +25,41 @@ function initCharts(ctxKey = activeProjectStatusContext) {
   const budgetCtx = budgetCanvas.getContext("2d");
   const statusCtx = statusCanvas.getContext("2d");
   const trendCtx = trendCanvas ? trendCanvas.getContext("2d") : null;
+  const makeStackDataset = (label, backgroundColor, datasetIndex) => ({
+    label,
+    data: [],
+    backgroundColor,
+    stack: "status",
+    borderSkipped: false,
+    pointStyle: "rectRounded",
+    borderRadius(ctx) {
+      const i = ctx.dataIndex;
+      const ds = ctx.chart.data.datasets;
+      const curr = ds[datasetIndex]?.data?.[i] || 0;
+      const hasRightSegment = ds
+        .slice(datasetIndex + 1)
+        .some((s) => (s?.data?.[i] || 0) > 0);
+      const isRight = curr > 0 && !hasRightSegment;
+      return {
+        topLeft: 0,
+        bottomLeft: 0,
+        topRight: isRight ? 10 : 0,
+        bottomRight: isRight ? 10 : 0
+      };
+    }
+  });
 
   budgetByMonthChart = new Chart(budgetCtx, {
     type: "bar",
     data: {
       labels: [],
       datasets: [
-        {
-          label: "โครงการที่อนุมัติแล้ว",
-          data: [],
-          backgroundColor: "#fbbf24",
-          stack: "status",
-          borderSkipped: false,
-          pointStyle: "rectRounded",
-          borderRadius(ctx) {
-            const i = ctx.dataIndex;
-            const ds = ctx.chart.data.datasets;
-            const y = ds[0].data[i] || 0;
-            const o = ds[1].data[i] || 0;
-            const r = ds[2].data[i] || 0;
-            const g = ds[3].data[i] || 0;
-            const isRight = y > 0 && o === 0 && r === 0 && g === 0;
-            return {
-              topLeft: 0,
-              bottomLeft: 0,
-              topRight: isRight ? 10 : 0,
-              bottomRight: isRight ? 10 : 0
-            };
-          }
-        },
-        {
-          label: "โครงการที่วันเลยจัดแล้ว",
-          data: [],
-          backgroundColor: "#f97316",
-          stack: "status",
-          borderSkipped: false,
-          pointStyle: "rectRounded",
-          borderRadius(ctx) {
-            const i = ctx.dataIndex;
-            const ds = ctx.chart.data.datasets;
-            const o = ds[1].data[i] || 0;
-            const r = ds[2].data[i] || 0;
-            const g = ds[3].data[i] || 0;
-            const isRight = o > 0 && r === 0 && g === 0;
-            return {
-              topLeft: 0,
-              bottomLeft: 0,
-              topRight: isRight ? 10 : 0,
-              bottomRight: isRight ? 10 : 0
-            };
-          }
-        },
-        {
-          label: "โครงการที่เลยกำหนดส่งปิดแล้ว",
-          data: [],
-          backgroundColor: "#ef4444",
-          stack: "status",
-          borderSkipped: false,
-          pointStyle: "rectRounded",
-          borderRadius(ctx) {
-            const i = ctx.dataIndex;
-            const ds = ctx.chart.data.datasets;
-            const r = ds[2].data[i] || 0;
-            const g = ds[3].data[i] || 0;
-            const isRight = r > 0 && g === 0;
-            return {
-              topLeft: 0,
-              bottomLeft: 0,
-              topRight: isRight ? 10 : 0,
-              bottomRight: isRight ? 10 : 0
-            };
-          }
-        },
-        {
-          label: "โครงการที่ปิดแล้ว",
-          data: [],
-          backgroundColor: "#22c55e",
-          stack: "status",
-          borderSkipped: false,
-          pointStyle: "rectRounded",
-          borderRadius(ctx) {
-            const i = ctx.dataIndex;
-            const ds = ctx.chart.data.datasets;
-            const g = ds[3].data[i] || 0;
-            const isRight = g > 0;
-            return {
-              topLeft: 0,
-              bottomLeft: 0,
-              topRight: isRight ? 10 : 0,
-              bottomRight: isRight ? 10 : 0
-            };
-          }
-        }
+        makeStackDataset("โครงการที่อนุมัติแล้ว", "#fbbf24", 0),
+        makeStackDataset("โครงการที่วันเลยจัดแล้ว", "#f97316", 1),
+        makeStackDataset("โครงการที่เลยกำหนดส่งปิดแล้ว", "#ef4444", 2),
+        makeStackDataset("โครงการที่ปิดแล้ว", "#22c55e", 3),
+        makeStackDataset("ยกเลิกโครงการ", "#9ca3af", 4),
+        makeStackDataset("ไม่ส่งปิดโครงการ", "#111827", 5)
       ]
     },
     options: {
@@ -277,10 +220,16 @@ function resizeClosureChart(numLabels) {
   if (budgetByMonthChart) budgetByMonthChart.resize();
 }
 
-function updateClosureXAxisMax(yellowData, orangeData, redData, greenData) {
+function updateClosureXAxisMax(yellowData, orangeData, redData, greenData, grayData, blackData) {
   if (!budgetByMonthChart) return;
   const totals = yellowData.map(
-    (_, i) => (yellowData[i] || 0) + (orangeData[i] || 0) + (redData[i] || 0) + (greenData[i] || 0)
+    (_, i) =>
+      (yellowData[i] || 0) +
+      (orangeData[i] || 0) +
+      (redData[i] || 0) +
+      (greenData[i] || 0) +
+      (grayData[i] || 0) +
+      (blackData[i] || 0)
   );
   const maxTotal = totals.length ? Math.max(...totals) : 0;
   budgetByMonthChart.options.scales.x.max = Math.max(4, maxTotal);
@@ -318,9 +267,30 @@ function getOrgsByGroup(group) {
 function updateClosureStatusChart(filtered) {
   if (!budgetByMonthChart) return;
 
-  const approvedProjects = filtered.filter(
-    (p) => (p.statusMain || "").trim() === "อนุมัติโครงการ"
-  );
+  const closureTrackedProjects = filtered.filter((p) => {
+    const statusMain = (p.statusMain || "").trim();
+    return statusMain === "อนุมัติโครงการ" || statusMain === "ยกเลิกโครงการ";
+  });
+
+  const isNoCloseSubmission = (p) =>
+    (p.statusClose || "").trim() === "ไม่ส่งปิดโครงการ";
+
+  const classifyClosureBucket = (p) => {
+    const mainStatus = (p.statusMain || "").trim();
+    if (mainStatus === "ยกเลิกโครงการ") return "gray";
+    if (isNoCloseSubmission(p)) return "black";
+
+    const isClosed = (p.statusClose || "").trim() === "ส่งกิจการนิสิตเรียบร้อย";
+    if (isClosed) return "green";
+
+    const d =
+      typeof p.daysToDeadline === "number" && !isNaN(p.daysToDeadline)
+        ? p.daysToDeadline
+        : null;
+    if (d !== null && d < 0) return "red";
+    if (d !== null && d >= 0 && d <= 14) return "orange";
+    return "yellow";
+  };
 
   const orgGroupFilter = orgTypeSelect.value;
   const orgFilter = orgSelect.value;
@@ -331,36 +301,24 @@ function updateClosureStatusChart(filtered) {
 
     const statsByGroup = {};
     baseGroups.forEach((g) => {
-      statsByGroup[g] = { totalApproved: 0, orange: 0, red: 0, green: 0 };
+      statsByGroup[g] = { totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
     });
 
-    approvedProjects.forEach((p) => {
+    closureTrackedProjects.forEach((p) => {
       const groupName = baseGroups.includes(p.orgGroup) ? p.orgGroup : null;
       if (!groupName) return;
 
       const g = statsByGroup[groupName];
-      g.totalApproved++;
-
-      const isClosed = (p.statusClose || "").trim() === "ส่งกิจการนิสิตเรียบร้อย";
-      const d =
-        typeof p.daysToDeadline === "number" && !isNaN(p.daysToDeadline)
-          ? p.daysToDeadline
-          : null;
-
-      if (isClosed) {
-        g.green++;
+      const bucket = classifyClosureBucket(p);
+      if (bucket === "gray") {
+        g.gray++;
         return;
       }
-      if (d !== null) {
-        if (d < 0) {
-          g.red++;
-          return;
-        }
-        if (d >= 0 && d <= 14) {
-          g.orange++;
-          return;
-        }
-      }
+      if ((p.statusMain || "").trim() === "อนุมัติโครงการ") g.totalApproved++;
+      if (bucket === "black") g.black++;
+      else if (bucket === "green") g.green++;
+      else if (bucket === "red") g.red++;
+      else if (bucket === "orange") g.orange++;
     });
 
     const labels = baseGroups;
@@ -368,19 +326,25 @@ function updateClosureStatusChart(filtered) {
     const orangeData = [];
     const redData = [];
     const greenData = [];
+    const grayData = [];
+    const blackData = [];
 
     labels.forEach((label) => {
       const g = statsByGroup[label] || {
         totalApproved: 0,
         orange: 0,
         red: 0,
-        green: 0
+        green: 0,
+        gray: 0,
+        black: 0
       };
-      const yellow = Math.max(g.totalApproved - g.orange - g.red - g.green, 0);
+      const yellow = Math.max(g.totalApproved - g.orange - g.red - g.green - g.black, 0);
       yellowData.push(yellow);
       orangeData.push(g.orange);
       redData.push(g.red);
       greenData.push(g.green);
+      grayData.push(g.gray);
+      blackData.push(g.black);
     });
 
     budgetByMonthChart.data.labels = labels;
@@ -388,8 +352,10 @@ function updateClosureStatusChart(filtered) {
     budgetByMonthChart.data.datasets[1].data = orangeData;
     budgetByMonthChart.data.datasets[2].data = redData;
     budgetByMonthChart.data.datasets[3].data = greenData;
+    budgetByMonthChart.data.datasets[4].data = grayData;
+    budgetByMonthChart.data.datasets[5].data = blackData;
 
-    updateClosureXAxisMax(yellowData, orangeData, redData, greenData);
+    updateClosureXAxisMax(yellowData, orangeData, redData, greenData, grayData, blackData);
     resizeClosureChart(labels.length);
     budgetByMonthChart.update();
     return;
@@ -398,38 +364,26 @@ function updateClosureStatusChart(filtered) {
   const allowedOrgs = orgFilter === "all" ? getOrgsByGroup(orgGroupFilter) : [orgFilter];
   const groups = {};
   allowedOrgs.forEach((org) => {
-    groups[org] = { totalApproved: 0, orange: 0, red: 0, green: 0 };
+    groups[org] = { totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
   });
 
-  approvedProjects.forEach((p) => {
+  closureTrackedProjects.forEach((p) => {
     const org = p.orgName || "(ไม่ระบุ)";
     if (allowedOrgs.length && !allowedOrgs.includes(org)) return;
     if (!groups[org]) {
-      groups[org] = { totalApproved: 0, orange: 0, red: 0, green: 0 };
+      groups[org] = { totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
     }
     const g = groups[org];
-    g.totalApproved++;
-
-    const isClosed = (p.statusClose || "").trim() === "ส่งกิจการนิสิตเรียบร้อย";
-    const d =
-      typeof p.daysToDeadline === "number" && !isNaN(p.daysToDeadline)
-        ? p.daysToDeadline
-        : null;
-
-    if (isClosed) {
-      g.green++;
+    const bucket = classifyClosureBucket(p);
+    if (bucket === "gray") {
+      g.gray++;
       return;
     }
-    if (d !== null) {
-      if (d < 0) {
-        g.red++;
-        return;
-      }
-      if (d >= 0 && d <= 14) {
-        g.orange++;
-        return;
-      }
-    }
+    if ((p.statusMain || "").trim() === "อนุมัติโครงการ") g.totalApproved++;
+    if (bucket === "black") g.black++;
+    else if (bucket === "green") g.green++;
+    else if (bucket === "red") g.red++;
+    else if (bucket === "orange") g.orange++;
   });
 
   const labels = Object.keys(groups);
@@ -437,14 +391,18 @@ function updateClosureStatusChart(filtered) {
   const orangeData = [];
   const redData = [];
   const greenData = [];
+  const grayData = [];
+  const blackData = [];
 
   labels.forEach((org) => {
     const g = groups[org];
-    const yellow = Math.max(g.totalApproved - g.orange - g.red - g.green, 0);
+    const yellow = Math.max(g.totalApproved - g.orange - g.red - g.green - g.black, 0);
     yellowData.push(yellow);
     orangeData.push(g.orange);
     redData.push(g.red);
     greenData.push(g.green);
+    grayData.push(g.gray);
+    blackData.push(g.black);
   });
 
   budgetByMonthChart.data.labels = labels;
@@ -452,8 +410,10 @@ function updateClosureStatusChart(filtered) {
   budgetByMonthChart.data.datasets[1].data = orangeData;
   budgetByMonthChart.data.datasets[2].data = redData;
   budgetByMonthChart.data.datasets[3].data = greenData;
+  budgetByMonthChart.data.datasets[4].data = grayData;
+  budgetByMonthChart.data.datasets[5].data = blackData;
 
-  updateClosureXAxisMax(yellowData, orangeData, redData, greenData);
+  updateClosureXAxisMax(yellowData, orangeData, redData, greenData, grayData, blackData);
   resizeClosureChart(labels.length);
   budgetByMonthChart.update();
 }

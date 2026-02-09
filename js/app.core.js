@@ -2,7 +2,7 @@
 
 /* Config: sheet endpoints */
 const SHEET_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfcEartu_DeoGQXOJ7_rYPGizNtDhYJEaXivywadNZibj1rch9WKC1GF1yNbZ3zRgQ4Efjj8jrTOrf/pub?output=csv";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfcEartu_DeoGQXOJ7_rYPGizNtDhYJEaXivywadNZibj1rch9WKC1GF1yNbZ3zRgQ4Efjj8jrTOrf/pub?gid=1357605440&single=true&output=csv";
 
 const ORG_SHEET_CSV =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ84XOAc7rrKIloXHL5o_0ekzKdi4cQlPMUCGRPb6equG5WAguoaR2fa5ip3j7cT9noG5u9Ozv-VDot/pub?output=csv";
@@ -30,7 +30,7 @@ const DEFAULT_BASE_GROUPS = [
 ];
 
 // Cache
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 นาที
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3 นาที
 const CACHE_KEYS = {
   PROJECTS: "sgcu_cache_projects",
   NEWS: "sgcu_cache_news",
@@ -70,10 +70,10 @@ let topOrgNameEl;
 let topOrgBudgetEl;
 let recentProjectsListEl;
 let longestOpenListEl;
-let longestOpenTableCaptionEl;
-let longestOpenTableBodyEl;
 let longestOpenAssistantFilterEl;
 let longestOpenStatusFilterEl;
+let longestOpenTableCaptionEl;
+let longestOpenTableBodyEl;
 let tableBodyEl;
 let tableCaptionEl;
 let lastTableProjects = [];
@@ -364,10 +364,10 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     topOrgBudgetEl: get("topOrgBudget"),
     recentProjectsListEl: get("recentProjectsList"),
     longestOpenListEl: get("longestOpenList"),
-    longestOpenTableCaptionEl: get("longestOpenTableCaption"),
-    longestOpenTableBodyEl: get("longestOpenTableBody"),
     longestOpenAssistantFilterEl: get("longestOpenAssistantFilter"),
     longestOpenStatusFilterEl: get("longestOpenStatusFilter"),
+    longestOpenTableCaptionEl: get("longestOpenTableCaption"),
+    longestOpenTableBodyEl: get("longestOpenTableBody"),
     tableBodyEl: get("projectTableBody"),
     tableCaptionEl: get("tableCaption"),
     budgetChartSkeletonEl: get("budgetChartSkeleton"),
@@ -435,10 +435,10 @@ function setActiveProjectStatusContext(key) {
   topOrgBudgetEl = ctx.topOrgBudgetEl;
   recentProjectsListEl = ctx.recentProjectsListEl;
   longestOpenListEl = ctx.longestOpenListEl;
-  longestOpenTableCaptionEl = ctx.longestOpenTableCaptionEl;
-  longestOpenTableBodyEl = ctx.longestOpenTableBodyEl;
   longestOpenAssistantFilterEl = ctx.longestOpenAssistantFilterEl;
   longestOpenStatusFilterEl = ctx.longestOpenStatusFilterEl;
+  longestOpenTableCaptionEl = ctx.longestOpenTableCaptionEl;
+  longestOpenTableBodyEl = ctx.longestOpenTableBodyEl;
   tableBodyEl = ctx.tableBodyEl;
   tableCaptionEl = ctx.tableCaptionEl;
   budgetChartSkeletonEl = ctx.budgetChartSkeletonEl;

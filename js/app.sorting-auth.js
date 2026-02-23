@@ -295,6 +295,57 @@ function initAuthUI() {
   } = window.sgcuAuth;
 
   if (!auth) return;
+  const AUTH_SESSION_KEY = "sgcu_auth_session_started_at";
+  const AUTH_SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 1 วัน
+
+  function readAuthSession() {
+    try {
+      const raw = window.localStorage?.getItem(AUTH_SESSION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const startedAt = Number(parsed?.startedAt);
+      const uid = (parsed?.uid || "").toString();
+      if (!uid || !Number.isFinite(startedAt) || startedAt <= 0) return null;
+      return { uid, startedAt };
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function writeAuthSession(uid, startedAt) {
+    if (!uid || !Number.isFinite(startedAt)) return;
+    try {
+      window.localStorage?.setItem(
+        AUTH_SESSION_KEY,
+        JSON.stringify({ uid, startedAt })
+      );
+    } catch (err) {
+      // ignore write errors (private mode / quota)
+    }
+  }
+
+  function clearAuthSession() {
+    try {
+      window.localStorage?.removeItem(AUTH_SESSION_KEY);
+    } catch (err) {
+      // ignore remove errors
+    }
+  }
+
+  function resolveSessionStart(user) {
+    const uid = user?.uid || "";
+    if (!uid) return null;
+
+    const stored = readAuthSession();
+    if (stored && stored.uid === uid) return stored.startedAt;
+
+    const fallbackMs = new Date(user?.metadata?.lastSignInTime || "").getTime();
+    const startedAt = Number.isFinite(fallbackMs) && fallbackMs > 0
+      ? fallbackMs
+      : Date.now();
+    writeAuthSession(uid, startedAt);
+    return startedAt;
+  }
 
   function refreshAuthDisplay(firebaseUser) {
     const hasFirebase = !!firebaseUser;
@@ -337,12 +388,50 @@ function initAuthUI() {
   }
 
   onAuthStateChanged(auth, (user) => {
+    if (user) {
+      const startedAt = resolveSessionStart(user);
+      if (startedAt && Date.now() - startedAt >= AUTH_SESSION_MAX_AGE_MS) {
+        clearAuthSession();
+        signOut(auth).catch((err) => {
+          console.error("auto logout error (session expired)", err);
+        });
+        refreshAuthDisplay(null);
+        return;
+      }
+    } else {
+      clearAuthSession();
+    }
     refreshAuthDisplay(user);
   });
 
   function handleGoogleLogin() {
+    function getAuthErrorMessage(err) {
+      const code = err?.code || "";
+      const host = window.location.host;
+      const protocol = window.location.protocol;
+      const currentOrigin = window.location.origin;
+
+      if (code === "auth/unauthorized-domain") {
+        return [
+          "ล็อกอินไม่สำเร็จ: โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase",
+          `โดเมนปัจจุบัน: ${host}`,
+          "ให้เพิ่มโดเมนนี้ใน Firebase Console > Authentication > Settings > Authorized domains"
+        ].join("\n");
+      }
+
+      if (protocol !== "https:" && host !== "localhost") {
+        return [
+          "ล็อกอินไม่สำเร็จ: หน้าเว็บไม่ได้เปิดผ่าน HTTPS",
+          `ต้นทางปัจจุบัน: ${currentOrigin}`,
+          "Google/Firebase Sign-in บนโดเมนจริงควรใช้ HTTPS"
+        ].join("\n");
+      }
+
+      return `ล็อกอินไม่สำเร็จ (${code || "unknown"}): ${err?.message || err}`;
+    }
+
     signInWithPopup(auth, new GoogleAuthProvider()).catch((err) => {
-      alert(`ล็อกอินไม่สำเร็จ: ${err.message || err}`);
+      alert(getAuthErrorMessage(err));
     });
   }
 
@@ -356,19 +445,21 @@ function initAuthUI() {
     staffAuthUser = null;
     staffViewMode = "normal";
     refreshAuthDisplay(auth.currentUser);
+    clearAuthSession();
     signOut(auth).catch((err) => {
       console.error("logout error  app.js:3632 - app.sorting-auth.js:325", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");
     const mobileMenu = document.getElementById("mobileMenu");
-    const hamburgerToggle = hamburger
-      ? hamburger.querySelector("input[type='checkbox']")
-      : null;
-    if (hamburger && mobileMenu && hamburgerToggle) {
-      hamburgerToggle.checked = false;
-      mobileMenu.classList.remove("show");
-      hamburger.setAttribute("aria-expanded", "false");
+    if (hamburger && mobileMenu) {
+      if (typeof setMobileMenuState === "function") {
+        setMobileMenuState(mobileMenu, hamburger, false);
+      } else {
+        mobileMenu.classList.remove("show");
+        mobileMenu.setAttribute("aria-hidden", "true");
+        hamburger.setAttribute("aria-expanded", "false");
+      }
     }
   }
 

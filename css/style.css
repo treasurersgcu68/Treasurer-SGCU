@@ -932,6 +932,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: #15803d;
 }
 
+.pill-soft-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1762,6 +1767,10 @@ th.sortable.sort-desc::after {
 .calendar-event.closed {
   background: #bbf7d0;
   color: #15803d;
+}
+.calendar-event.cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .calendar-event.calendar-more {

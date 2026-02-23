@@ -56,6 +56,19 @@
         signOut,
         signInWithEmailAndPassword
       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import {
+        getAnalytics,
+        isSupported,
+        logEvent
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        runTransaction,
+        increment,
+        serverTimestamp
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyDcRIz1Uy1AZd-9JJdLF92SyqU6m8bdSXo",
@@ -69,6 +82,7 @@
 
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
+      const db = getFirestore(app);
 
       window.sgcuAuth = {
         auth,
@@ -77,6 +91,65 @@
         signOut,
         onAuthStateChanged,
         signInWithEmailAndPassword
+      };
+
+      window.sgcuAnalytics = {
+        trackPageView: () => {}
+      };
+      window.sgcuVisitorCounter = {
+        syncDailyVisitorCount: async () => null
+      };
+
+      isSupported()
+        .then((supported) => {
+          if (!supported) return;
+          const analytics = getAnalytics(app);
+          window.sgcuAnalytics.trackPageView = (pageName) => {
+            const safePage = (pageName || "home").toString();
+            const pagePath = `${window.location.pathname}#${safePage}`;
+            const pageLocation = `${window.location.origin}${pagePath}`;
+            logEvent(analytics, "page_view", {
+              page_title: `Treasurer SGCU - ${safePage}`,
+              page_location: pageLocation,
+              page_path: pagePath
+            });
+          };
+        })
+        .catch(() => {
+          // ignore analytics init failures
+        });
+
+      function getDateKeyInBangkok() {
+        const formatter = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Bangkok",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        });
+        return formatter.format(new Date());
+      }
+
+      window.sgcuVisitorCounter.syncDailyVisitorCount = async () => {
+        const dateKey = getDateKeyInBangkok();
+        const counterRef = doc(db, "site_daily_visitors", dateKey);
+        await runTransaction(db, async (transaction) => {
+          const snap = await transaction.get(counterRef);
+          if (!snap.exists()) {
+            transaction.set(counterRef, {
+              total: 1,
+              updatedAt: serverTimestamp()
+            });
+            return;
+          }
+          transaction.update(counterRef, {
+            total: increment(1),
+            updatedAt: serverTimestamp()
+          });
+        });
+
+        const latestSnap = await getDoc(counterRef);
+        const total = Number(latestSnap.data()?.total || 0);
+        return Number.isFinite(total) ? total : 0;
       };
     </script>
   </head>
@@ -410,7 +483,7 @@
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">สถานะโครงการ</h1>
-              <p class="page-meta">อัปเดตล่าสุด: <span id="projectsLastUpdated">-</span></p>
+              <p class="page-meta">อัปเดตล่าสุด : <span id="projectsLastUpdated">-</span></p>
             </div>
 
             <!-- Toggle ระหว่างมุมมองสรุป / Dashboard / ปฏิทิน -->
@@ -620,6 +693,7 @@
                     <option value="pending">อยู่ระหว่างดำเนินการ</option>
                     <option value="approved">อนุมัติโครงการแล้ว</option>
                     <option value="closed">ปิดโครงการแล้ว</option>
+                    <option value="cancelled">ยกเลิกโครงการ</option>
                   </select>
                 </div>
               </div>
@@ -671,6 +745,7 @@
                 <span class="pill pill-soft-gray">อยู่ระหว่างดำเนินการ</span>
                 <span class="pill pill-soft-pink">อนุมัติโครงการแล้ว</span>
                 <span class="pill pill-soft-green">ปิดโครงการแล้ว</span>
+                <span class="pill pill-soft-red">ยกเลิกโครงการ</span>
               </div>
             </section>
           </div>
@@ -685,6 +760,7 @@
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">Dashboard ภาพรวม</h1>
+              <p class="page-meta">ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง</p>
             </div>
           </div>
 
@@ -852,7 +928,7 @@
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">สถานะโครงการ (Staff)</h1>
-              <p class="page-meta">อัปเดตล่าสุด: <span id="projectsLastUpdatedStaff">-</span></p>
+              <p class="page-meta">อัปเดตล่าสุด : <span id="projectsLastUpdatedStaff">-</span></p>
             </div>
 
             <!-- Toggle ระหว่างมุมมองสรุป / ปฏิทิน (Staff) -->
@@ -1064,6 +1140,7 @@
                     <option value="pending">อยู่ระหว่างดำเนินการ</option>
                     <option value="approved">อนุมัติโครงการแล้ว</option>
                     <option value="closed">ปิดโครงการแล้ว</option>
+                    <option value="cancelled">ยกเลิกโครงการ</option>
                   </select>
                 </div>
               </div>
@@ -1115,6 +1192,7 @@
                 <span class="pill pill-soft-gray">อยู่ระหว่างดำเนินการ</span>
                 <span class="pill pill-soft-pink">อนุมัติโครงการแล้ว</span>
                 <span class="pill pill-soft-green">ปิดโครงการแล้ว</span>
+                <span class="pill pill-soft-red">ยกเลิกโครงการ</span>
               </div>
             </section>
           </div>

@@ -1,5 +1,7 @@
 /* ข่าวและประกาศจากฝ่ายเหรัญญิก */
 
+const HOME_NEWS_PREVIEW_LIMIT = 4;
+
 // ลิงก์ดาวน์โหลด/preview ใช้ทั้งหน้า News และหน้าดาวน์โหลด
 function toDownloadUrl(url, label) {
   if (!url) return "#";
@@ -274,7 +276,7 @@ function renderHomeNewsPreview() {
     return;
   }
 
-  const topNews = newsItems.slice(0, 2);
+  const topNews = newsItems.slice(0, HOME_NEWS_PREVIEW_LIMIT);
   const cardsHtml = topNews
     .map((item) => {
       const pinnedTag = item.pinned ? `<div class="home-news-tag">PIN</div>` : "";

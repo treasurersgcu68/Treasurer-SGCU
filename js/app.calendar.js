@@ -8,12 +8,17 @@ let calendarEventsByDate = new Map();
 let currentCalendarDate = new Date();
 
 /**
- * แปลง status จากข้อมูลโครงการ → pending / approved / closed
+ * แปลง status จากข้อมูลโครงการ → pending / approved / closed / cancelled
  */
 function mapProjectStatusToCalendarStatus(p) {
   const main = (p.statusMain || "").trim();
   const ar = (p.statusClose || "").trim();
   const as = (p.statusCloseDecree || "").trim();
+
+  // ยกเลิกโครงการ
+  if (main === "ยกเลิกโครงการ") {
+    return "cancelled";
+  }
 
   // ปิดโครงการแล้ว
   if (ar === "ส่งกิจการนิสิตเรียบร้อย" || as === "ปิดโครงการเรียบร้อย") {
@@ -38,8 +43,6 @@ function buildCalendarEventsFromProjects() {
   }
 
   calendarEvents = projects
-    // ตัดโครงการที่ "ยกเลิกโครงการ" ออกเหมือนเดิม
-    .filter((p) => (p.statusMain || "").trim() !== "ยกเลิกโครงการ")
     .map((p) => {
       // ✅ ใช้วันที่จากคอลัมน์ M เท่านั้น (lastWorkDate)
       const dateStr = p.lastWorkDate;
@@ -327,6 +330,15 @@ function openCalendarModal(ev) {
       ? d.toLocaleDateString("th-TH")
       : "-";
 
+  const statusText =
+    ev.status === "closed"
+      ? "ปิดโครงการแล้ว"
+      : ev.status === "approved"
+      ? "อนุมัติโครงการแล้ว"
+      : ev.status === "cancelled"
+      ? "ยกเลิกโครงการ"
+      : "อยู่ระหว่างดำเนินการ";
+
   bodyEl.innerHTML = `
     <div class="modal-section">
       <div class="modal-section-title">
@@ -355,15 +367,7 @@ function openCalendarModal(ev) {
         </div>
         <div>
           <div class="modal-item-label">สถานะ</div>
-          <div class="modal-item-value">
-            ${
-              ev.status === "closed"
-                ? "ปิดโครงการแล้ว"
-                : ev.status === "approved"
-                ? "อนุมัติโครงการแล้ว"
-                : "อยู่ระหว่างดำเนินการ"
-            }
-          </div>
+          <div class="modal-item-value">${statusText}</div>
         </div>
         ${
           ev.note
@@ -403,6 +407,8 @@ function openCalendarDayModal(dateObj, events) {
           ? "ปิดโครงการแล้ว"
           : ev.status === "approved"
           ? "อนุมัติโครงการแล้ว"
+          : ev.status === "cancelled"
+          ? "ยกเลิกโครงการ"
           : "อยู่ระหว่างดำเนินการ";
       return `
         <tr data-day-idx="${idx}">

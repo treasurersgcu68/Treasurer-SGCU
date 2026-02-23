@@ -29,6 +29,29 @@ function runHeroSubtitleTyping() {
   }, speedMs);
 }
 
+async function initDailyVisitorCounter() {
+  const dashboardVisitorCountEl = document.getElementById("dashboardVisitorCount");
+  if (!dashboardVisitorCountEl) return;
+
+  const setCounterText = (value) => {
+    dashboardVisitorCountEl.textContent = value;
+  };
+
+  setCounterText("...");
+  try {
+    const total = await window.sgcuVisitorCounter?.syncDailyVisitorCount?.();
+    const numericTotal = Number(total);
+    if (!Number.isFinite(numericTotal) || numericTotal < 0) {
+      setCounterText("-");
+      return;
+    }
+    setCounterText(numericTotal.toLocaleString("th-TH"));
+  } catch (err) {
+    setCounterText("-");
+    console.warn("visitor counter error", err);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   // ===== 1) เก็บ DOM element ที่ใช้ซ้ำ =====
   yearSelect = document.getElementById("yearSelect");
@@ -107,6 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   appLoaderErrorEl = document.getElementById("appLoaderError");
   appLoaderErrorTextEl = document.getElementById("appLoaderErrorText");
   appLoaderRetryEl = document.getElementById("appLoaderRetry");
+  void initDailyVisitorCounter();
   let loaderPercent = 0;
 
   const setLoaderPercent = (value) => {
@@ -280,7 +304,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function switchPage(page, { fromHash = false, bypassConsent = false } = {}) {
+    const previousPage = currentPage;
     const targetPage = page;
+    const pageExists = Array.from(pageViews).some((section) => section.dataset.page === targetPage);
+    if (!pageExists) {
+      return;
+    }
+
+    // Route guard: กันการเข้าหน้า protected/staff ผ่าน hash โดยตรง
+    if (!isNavPageVisible(targetPage)) {
+      const fallbackCandidates = isUserAuthenticated
+        ? ["project-status", "project-status-staff", "dashboard-staff", "home"]
+        : ["home", "login"];
+      const fallback =
+        fallbackCandidates.find((candidate) => isNavPageVisible(candidate)) ||
+        navLinksAll.find((link) => link.style.display !== "none")?.dataset.page;
+
+      if (!fallback || fallback === targetPage) return;
+
+      if (fromHash) {
+        if (history.replaceState) {
+          history.replaceState(null, "", `#${fallback}`);
+        } else {
+          window.location.hash = `#${fallback}`;
+        }
+      }
+      await switchPage(fallback, { fromHash: true, bypassConsent: true });
+      return;
+    }
+
     if (!bypassConsent && targetPage === "borrow-assets" && !hasBorrowConsent()) {
       pendingBorrowPage = targetPage;
       showBorrowConsentModal();
@@ -371,6 +423,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (window.localStorage) {
       localStorage.setItem("lastActivePage", page);
     }
+
+    if (previousPage && previousPage !== page) {
+      window.sgcuAnalytics?.trackPageView?.(page);
+    }
   }
 
   // คลิกเมนูด้านบน
@@ -416,43 +472,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===== 10) Hamburger + เมนูมือถือ =====
   const hamburgerBtn = document.getElementById("hamburgerBtn");
   const mobileMenu = document.getElementById("mobileMenu");
-  const hamburgerToggle = hamburgerBtn
-    ? hamburgerBtn.querySelector("input[type='checkbox']")
-    : null;
-  const mobileNavLinks = mobileMenu
-    ? mobileMenu.querySelectorAll("a[data-page]")
-    : [];
-
-  if (hamburgerBtn && mobileMenu && hamburgerToggle) {
+  if (hamburgerBtn && mobileMenu) {
     hamburgerBtn.setAttribute("aria-expanded", "false");
     mobileMenu.setAttribute("aria-hidden", "true");
 
-    const syncMobileMenu = (isExpanded) => {
-      setMobileMenuState(mobileMenu, hamburgerBtn, isExpanded);
-    };
-
-    // เปิด/ปิดกล่องเมนู
-    hamburgerToggle.addEventListener("change", () => {
-      syncMobileMenu(hamburgerToggle.checked);
-    });
-
-    hamburgerBtn.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      e.preventDefault();
-      hamburgerToggle.checked = !hamburgerToggle.checked;
-      syncMobileMenu(hamburgerToggle.checked);
-    });
-
-    // เวลาเลือกเมนูจากกล่อง ให้สลับหน้า + ปิดกล่อง
-    mobileNavLinks.forEach((link) => {
-      link.addEventListener("click", (e) => {
-        e.preventDefault();
-        const page = link.dataset.page;
-        if (!page) return;
-        void switchPage(page);
-        hamburgerToggle.checked = false;
-        syncMobileMenu(false);
-      });
+    document.addEventListener("click", (e) => {
+      if (!mobileMenu.classList.contains("show")) return;
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (mobileMenu.contains(target) || hamburgerBtn.contains(target)) return;
+      setMobileMenuState(mobileMenu, hamburgerBtn, false);
     });
   }
 
@@ -499,9 +528,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     const menuEl = document.getElementById("mobileMenu");
     const buttonEl = document.getElementById("hamburgerBtn");
-    const toggleEl = buttonEl ? buttonEl.querySelector("input[type='checkbox']") : null;
-    if (menuEl && buttonEl && toggleEl && menuEl.classList.contains("show")) {
-      toggleEl.checked = false;
+    if (menuEl && buttonEl && menuEl.classList.contains("show")) {
       setMobileMenuState(menuEl, buttonEl, false);
     }
   });

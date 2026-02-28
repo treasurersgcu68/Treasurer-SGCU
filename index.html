@@ -64,9 +64,7 @@
       import {
         getFirestore,
         doc,
-        getDoc,
         runTransaction,
-        increment,
         serverTimestamp
       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -131,25 +129,33 @@
 
       window.sgcuVisitorCounter.syncDailyVisitorCount = async () => {
         const dateKey = getDateKeyInBangkok();
-        const counterRef = doc(db, "site_daily_visitors", dateKey);
-        await runTransaction(db, async (transaction) => {
-          const snap = await transaction.get(counterRef);
-          if (!snap.exists()) {
-            transaction.set(counterRef, {
-              total: 1,
-              updatedAt: serverTimestamp()
-            });
-            return;
-          }
-          transaction.update(counterRef, {
-            total: increment(1),
-            updatedAt: serverTimestamp()
-          });
-        });
+        const dailyRef = doc(db, "site_daily_visitors", dateKey);
+        const allTimeRef = doc(db, "site_stats", "visitors_all_time");
 
-        const latestSnap = await getDoc(counterRef);
-        const total = Number(latestSnap.data()?.total || 0);
-        return Number.isFinite(total) ? total : 0;
+        return runTransaction(db, async (transaction) => {
+          const dailySnap = await transaction.get(dailyRef);
+          const allTimeSnap = await transaction.get(allTimeRef);
+
+          const currentDaily = Number(dailySnap.data()?.total || 0);
+          const currentAllTime = Number(allTimeSnap.data()?.total || 0);
+          const nextDaily = Number.isFinite(currentDaily) ? currentDaily + 1 : 1;
+          const nextAllTime = Number.isFinite(currentAllTime) ? currentAllTime + 1 : 1;
+
+          transaction.set(dailyRef, {
+            total: nextDaily,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+
+          transaction.set(allTimeRef, {
+            total: nextAllTime,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+
+          return {
+            dailyTotal: nextDaily,
+            allTimeTotal: nextAllTime
+          };
+        });
       };
     </script>
   </head>
@@ -582,7 +588,7 @@
               <!-- Stacked bar -->
               <article class="chart-card">
                 <header class="chart-header">
-                  <h3 class="chart-title">ภาพรวมสถานะปิดโครงการ</h3>
+                  <h3 class="chart-title">ภาพรวมสถานะโครงการ</h3>
                 </header>
                 <div class="chart-inner">
                   <div id="budgetChartSkeleton" class="chart-skeleton"></div>
@@ -760,7 +766,7 @@
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">Dashboard ภาพรวม</h1>
-              <p class="page-meta">ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง</p>
+              <p class="page-meta">ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง | ผู้เข้าชมสะสม : <span id="dashboardVisitorAllTimeCount">-</span> ครั้ง</p>
             </div>
           </div>
 
@@ -800,15 +806,15 @@
                 <div class="donut-wrap">
                   <canvas id="approvalRateDonutStaff"></canvas>
                 </div>
-                <div id="approvalRateCaptionStaff" class="metric-caption">-</div>
+                <div class="metric-caption" id="approvalRateCaptionStaff">กำลังประมวลผล</div>
               </article>
 
               <article class="dashboard-metric">
-                <div class="kpi-label">การใช้จ่ายเทียบงบ</div>
+                <div class="metric-label">การใช้จ่ายเทียบงบ</div>
                 <div class="donut-wrap">
                   <canvas id="kpiBudgetUsageDonutStaff"></canvas>
                 </div>
-                <div class="kpi-caption" id="kpiBudgetUsageCaption">งบที่อนุมัติ vs ใช้จริง</div>
+                <div class="metric-caption" id="kpiBudgetUsageCaption">กำลังประมวลผล</div>
               </article>
 
               <article class="dashboard-metric">
@@ -816,15 +822,15 @@
                 <div class="donut-wrap">
                   <canvas id="closureRateDonutStaff"></canvas>
                 </div>
-                <div id="closureRateCaptionStaff" class="metric-caption">-</div>
+                <div class="metric-caption" id="closureRateCaptionStaff">กำลังประมวลผล</div>
               </article>
 
               <article class="dashboard-metric">
-                <div class="kpi-label">% ปิดโครงการตรงเวลา</div>
+                <div class="metric-label">% ปิดโครงการตรงเวลา</div>
                 <div class="donut-wrap">
                   <canvas id="kpiOnTimeDonutStaff"></canvas>
                 </div>
-                <div class="kpi-caption" id="kpiOnTimeCaption">กำลังประมวลผล</div>
+                <div class="metric-caption" id="kpiOnTimeCaption">กำลังประมวลผล</div>
               </article>
             </div>
 
@@ -1029,7 +1035,7 @@
               <!-- Stacked bar -->
               <article class="chart-card">
                 <header class="chart-header">
-                  <h3 class="chart-title">ภาพรวมสถานะปิดโครงการ</h3>
+                  <h3 class="chart-title">ภาพรวมสถานะโครงการ</h3>
                 </header>
                 <div class="chart-inner">
                   <div id="budgetChartSkeletonStaff" class="chart-skeleton"></div>
@@ -1701,36 +1707,89 @@
 
 
       <section class="page-view page-news" data-page="news">
-        <div class="container">
-          <header class="news-hero">
+        <div class="page">
+          <div class="page-header-flex">
             <div>
-              <p class="news-hero-eyebrow">Treasurer SGCU68</p>
-              <h2 class="news-hero-title">ข่าวและประกาศจากฝ่ายเหรัญญิก</h2>
-              <p class="news-hero-subtitle">
-                ติดตามประกาศสำคัญ แนวปฏิบัติ และไฟล์ดาวน์โหลดล่าสุดสำหรับองค์กรและชมรม
-              </p>
-            </div>
-          </header>
-
-          <div id="newsListSkeleton" class="news-list-skeleton" aria-hidden="true">
-            <div class="skeleton-card">
-              <div class="skeleton-line short"></div>
-              <div class="skeleton-line"></div>
-              <div class="skeleton-line"></div>
-            </div>
-            <div class="skeleton-card">
-              <div class="skeleton-line short"></div>
-              <div class="skeleton-line"></div>
-              <div class="skeleton-line"></div>
-            </div>
-            <div class="skeleton-card">
-              <div class="skeleton-line short"></div>
-              <div class="skeleton-line"></div>
-              <div class="skeleton-line"></div>
+              <h1 class="page-title">ข่าวและประกาศ</h1>
+              <p class="page-meta">ติดตามประกาศสำคัญ แนวปฏิบัติ และไฟล์ดาวน์โหลดล่าสุดสำหรับองค์กรและชมรม</p>
             </div>
           </div>
 
-          <div id="newsList" class="news-list"></div>
+          <div class="filter-bar news-filter-bar" aria-label="ตัวกรองข่าวและประกาศ">
+            <div class="filter-group filter-year">
+              <label for="newsYearFilter">ปีการศึกษา</label>
+              <select id="newsYearFilter">
+                <option value="all">ทั้งหมด</option>
+              </select>
+            </div>
+            <div class="filter-group filter-orgtype">
+              <label for="newsCategoryFilter">หมวดข่าว</label>
+              <select id="newsCategoryFilter">
+                <option value="all">ทั้งหมด</option>
+              </select>
+            </div>
+            <div class="filter-group filter-org">
+              <label for="newsAudienceFilter">ประกาศจากฝ่าย</label>
+              <select id="newsAudienceFilter">
+                <option value="all">ทั้งหมด</option>
+              </select>
+            </div>
+            <div class="filter-group filter-sort">
+              <label for="newsSortSelect">เรียงตาม</label>
+              <select id="newsSortSelect">
+                <option value="latest">ล่าสุดก่อน</option>
+                <option value="oldest">เก่าสุดก่อน</option>
+                <option value="pinned">ปักหมุดก่อน</option>
+                <option value="title">ชื่อข่าว A-Z</option>
+              </select>
+            </div>
+            <div class="filter-group filter-search">
+              <label for="newsSearchInput">ค้นหาข่าวหรือประกาศ</label>
+              <div class="search-box">
+                <input
+                  id="newsSearchInput"
+                  type="search"
+                  placeholder="พิมพ์คำค้น เช่น แนวปฏิบัติ หรือ ดาวน์โหลด"
+                  autocomplete="off"
+                />
+                <button id="newsFilterReset" class="search-clear" type="button" aria-label="ล้างตัวกรองข่าว">
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <section class="panel">
+            <header class="panel-header">
+              <div>
+                <h3 class="panel-title">รายการข่าวและประกาศ</h3>
+                <div id="newsFilterSummary" class="panel-caption">กำลังโหลดข่าว...</div>
+              </div>
+            </header>
+
+            <div id="newsListSkeleton" class="news-list-skeleton" aria-hidden="true">
+              <div class="skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+              </div>
+            </div>
+
+            <div id="newsList" class="news-list"></div>
+            <div class="news-list-actions">
+              <button id="newsLoadMoreBtn" class="news-load-more" type="button">โหลดเพิ่ม</button>
+            </div>
+          </section>
         </div>
       </section>
     </main>

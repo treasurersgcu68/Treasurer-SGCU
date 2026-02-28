@@ -31,23 +31,32 @@ function runHeroSubtitleTyping() {
 
 async function initDailyVisitorCounter() {
   const dashboardVisitorCountEl = document.getElementById("dashboardVisitorCount");
-  if (!dashboardVisitorCountEl) return;
+  const dashboardVisitorAllTimeCountEl = document.getElementById("dashboardVisitorAllTimeCount");
+  if (!dashboardVisitorCountEl || !dashboardVisitorAllTimeCountEl) return;
 
-  const setCounterText = (value) => {
-    dashboardVisitorCountEl.textContent = value;
+  const setCounterText = (dailyValue, allTimeValue) => {
+    dashboardVisitorCountEl.textContent = dailyValue;
+    dashboardVisitorAllTimeCountEl.textContent = allTimeValue;
   };
 
-  setCounterText("...");
+  setCounterText("...", "...");
   try {
-    const total = await window.sgcuVisitorCounter?.syncDailyVisitorCount?.();
-    const numericTotal = Number(total);
-    if (!Number.isFinite(numericTotal) || numericTotal < 0) {
-      setCounterText("-");
+    const result = await window.sgcuVisitorCounter?.syncDailyVisitorCount?.();
+    const numericDaily = Number(result?.dailyTotal);
+    const numericAllTime = Number(result?.allTimeTotal);
+    if (
+      !Number.isFinite(numericDaily) || numericDaily < 0 ||
+      !Number.isFinite(numericAllTime) || numericAllTime < 0
+    ) {
+      setCounterText("-", "-");
       return;
     }
-    setCounterText(numericTotal.toLocaleString("th-TH"));
+    setCounterText(
+      numericDaily.toLocaleString("th-TH"),
+      numericAllTime.toLocaleString("th-TH")
+    );
   } catch (err) {
-    setCounterText("-");
+    setCounterText("-", "-");
     console.warn("visitor counter error", err);
   }
 }

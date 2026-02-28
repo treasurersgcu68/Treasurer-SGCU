@@ -94,7 +94,7 @@ function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatus
 
 function updateNavVisibility(isAuthenticated) {
   if (!navLinksAll.length) return;
-  const publicAllowed = new Set(["home", "project-status", "financial-docs", "login"]);
+  const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
   navLinksAll.forEach((link) => {
     const mode = link.dataset.visible || "public";
     const page = link.dataset.page || "";
@@ -115,6 +115,36 @@ function updateNavVisibility(isAuthenticated) {
       link.style.display = "";
     }
   });
+}
+
+function getAllowedPagesForCurrentState() {
+  const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
+  if (!isUserAuthenticated) {
+    return publicAllowed;
+  }
+
+  const allowed = new Set(publicAllowed);
+  const protectedAllowed = ["dashboard-staff", "borrow-assets", "borrow-assets-staff", "project-status-staff"];
+  protectedAllowed.forEach((page) => allowed.add(page));
+
+  if (staffAuthUser && staffViewMode === "staff") {
+    const roleAllowedMap = {
+      "00": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "login"],
+      "01": ["project-status-staff", "dashboard-staff", "login"],
+      "04": ["borrow-assets-staff", "login"]
+    };
+    const roleAllowed = roleAllowedMap[staffAuthUser.role || ""] ||
+      ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "login"];
+    return new Set(roleAllowed);
+  }
+
+  if (staffViewMode !== "staff") {
+    allowed.delete("dashboard-staff");
+    allowed.delete("borrow-assets-staff");
+    allowed.delete("project-status-staff");
+  }
+
+  return allowed;
 }
 
 function getStaffProfileByEmail(email) {
@@ -141,9 +171,7 @@ function getCurrentPageFromHash() {
 }
 
 function isNavPageVisible(page) {
-  if (!navLinksAll.length) return false;
-  const link = navLinksAll.find((navLink) => navLink.dataset.page === page);
-  return link ? link.style.display !== "none" : false;
+  return getAllowedPagesForCurrentState().has(page);
 }
 
 function getModeMappedPage(currentPage, mode) {

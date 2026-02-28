@@ -4185,41 +4185,23 @@ th.sortable.sort-desc::after {
   color: #111827;
 }
 
-.news-hero {
-  background: #ffffff;
-  border: 1px solid rgba(236, 72, 153, 0.22);
-  border-radius: 18px;
-  padding: 18px 20px;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-  color: #1f2937;
-  margin-bottom: 16px;
-}
-
-.news-hero-eyebrow {
-  font-size: 0.85rem;
-  letter-spacing: 0.02em;
-  color: #be185d;
-  margin: 0 0 4px;
-}
-
-.news-hero-title {
-  margin: 0;
-  font-size: clamp(1.5rem, 2vw, 1.9rem);
-  color: #111827;
-}
-
-.news-hero-subtitle {
-  margin: 6px 0 0;
-  color: #4b5563;
-  font-size: 0.95rem;
-  max-width: 720px;
-}
-
 .page-news {
   background: transparent;
+}
+
+.news-filter-bar {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.news-filter-bar .filter-year,
+.news-filter-bar .filter-orgtype,
+.news-filter-bar .filter-org,
+.news-filter-bar .filter-sort {
+  grid-column: span 1;
+}
+
+.news-filter-bar .filter-search {
+  grid-column: span 1;
 }
 
 .news-tag {
@@ -4249,6 +4231,59 @@ th.sortable.sort-desc::after {
   width: 100%;
   min-height: 60vh;
   border: none;
+}
+
+.news-empty-state {
+  grid-column: 1 / -1;
+  background: #fff8fb;
+  border: 1px dashed rgba(236, 72, 153, 0.24);
+  border-radius: 18px;
+  padding: 1.4rem;
+  text-align: center;
+  color: #475569;
+}
+
+.news-empty-state strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #1f2937;
+}
+
+.news-list-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.news-load-more {
+  min-width: 180px;
+  border: 1px solid rgba(236, 72, 153, 0.26);
+  border-radius: 999px;
+  background: #fff7fa;
+  color: #be185d;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.news-load-more:hover {
+  background: #ffe4ef;
+  border-color: rgba(190, 24, 93, 0.42);
+  transform: translateY(-1px);
+}
+
+.news-load-more[hidden],
+.news-list-actions[hidden] {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .news-preview-frame iframe {
+    min-height: 320px;
+  }
 }
 .modal-actions {
   margin-top: 18px;

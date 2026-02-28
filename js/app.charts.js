@@ -54,12 +54,13 @@ function initCharts(ctxKey = activeProjectStatusContext) {
     data: {
       labels: [],
       datasets: [
-        makeStackDataset("โครงการที่อนุมัติแล้ว", "#fbbf24", 0),
-        makeStackDataset("โครงการที่วันเลยจัดแล้ว", "#f97316", 1),
-        makeStackDataset("โครงการที่เลยกำหนดส่งปิดแล้ว", "#ef4444", 2),
-        makeStackDataset("โครงการที่ปิดแล้ว", "#22c55e", 3),
-        makeStackDataset("ยกเลิกโครงการ", "#9ca3af", 4),
-        makeStackDataset("ไม่ส่งปิดโครงการ", "#111827", 5)
+        makeStackDataset("ยังไม่อนุมัติ", "#d1d5db", 0),
+        makeStackDataset("โครงการที่อนุมัติแล้ว", "#fbbf24", 1),
+        makeStackDataset("โครงการที่วันเลยจัดแล้ว", "#f97316", 2),
+        makeStackDataset("โครงการที่เลยกำหนดส่งปิดแล้ว", "#ef4444", 3),
+        makeStackDataset("โครงการที่ปิดแล้ว", "#22c55e", 4),
+        makeStackDataset("ยกเลิกโครงการ", "#6b7280", 5),
+        makeStackDataset("ไม่ส่งปิดโครงการ", "#111827", 6)
       ]
     },
     options: {
@@ -220,10 +221,11 @@ function resizeClosureChart(numLabels) {
   if (budgetByMonthChart) budgetByMonthChart.resize();
 }
 
-function updateClosureXAxisMax(yellowData, orangeData, redData, greenData, grayData, blackData) {
+function updateClosureXAxisMax(pendingData, yellowData, orangeData, redData, greenData, grayData, blackData) {
   if (!budgetByMonthChart) return;
-  const totals = yellowData.map(
+  const totals = pendingData.map(
     (_, i) =>
+      (pendingData[i] || 0) +
       (yellowData[i] || 0) +
       (orangeData[i] || 0) +
       (redData[i] || 0) +
@@ -267,16 +269,18 @@ function getOrgsByGroup(group) {
 function updateClosureStatusChart(filtered) {
   if (!budgetByMonthChart) return;
 
-  const closureTrackedProjects = filtered.filter((p) => {
-    const statusMain = (p.statusMain || "").trim();
-    return statusMain === "อนุมัติโครงการ" || statusMain === "ยกเลิกโครงการ";
-  });
+  const closureTrackedProjects = filtered.filter(
+    (p) => ((p.statusMain || "").trim()) !== ""
+  );
 
   const isNoCloseSubmission = (p) =>
     (p.statusClose || "").trim() === "ไม่ส่งปิดโครงการ";
 
   const classifyClosureBucket = (p) => {
     const mainStatus = (p.statusMain || "").trim();
+    if (mainStatus !== "อนุมัติโครงการ" && mainStatus !== "ยกเลิกโครงการ") {
+      return "pending";
+    }
     if (mainStatus === "ยกเลิกโครงการ") return "gray";
     if (isNoCloseSubmission(p)) return "black";
 
@@ -301,7 +305,7 @@ function updateClosureStatusChart(filtered) {
 
     const statsByGroup = {};
     baseGroups.forEach((g) => {
-      statsByGroup[g] = { totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
+      statsByGroup[g] = { pending: 0, totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
     });
 
     closureTrackedProjects.forEach((p) => {
@@ -310,6 +314,10 @@ function updateClosureStatusChart(filtered) {
 
       const g = statsByGroup[groupName];
       const bucket = classifyClosureBucket(p);
+      if (bucket === "pending") {
+        g.pending++;
+        return;
+      }
       if (bucket === "gray") {
         g.gray++;
         return;
@@ -322,6 +330,7 @@ function updateClosureStatusChart(filtered) {
     });
 
     const labels = baseGroups;
+    const pendingData = [];
     const yellowData = [];
     const orangeData = [];
     const redData = [];
@@ -331,6 +340,7 @@ function updateClosureStatusChart(filtered) {
 
     labels.forEach((label) => {
       const g = statsByGroup[label] || {
+        pending: 0,
         totalApproved: 0,
         orange: 0,
         red: 0,
@@ -338,6 +348,7 @@ function updateClosureStatusChart(filtered) {
         gray: 0,
         black: 0
       };
+      pendingData.push(g.pending);
       const yellow = Math.max(g.totalApproved - g.orange - g.red - g.green - g.black, 0);
       yellowData.push(yellow);
       orangeData.push(g.orange);
@@ -348,14 +359,15 @@ function updateClosureStatusChart(filtered) {
     });
 
     budgetByMonthChart.data.labels = labels;
-    budgetByMonthChart.data.datasets[0].data = yellowData;
-    budgetByMonthChart.data.datasets[1].data = orangeData;
-    budgetByMonthChart.data.datasets[2].data = redData;
-    budgetByMonthChart.data.datasets[3].data = greenData;
-    budgetByMonthChart.data.datasets[4].data = grayData;
-    budgetByMonthChart.data.datasets[5].data = blackData;
+    budgetByMonthChart.data.datasets[0].data = pendingData;
+    budgetByMonthChart.data.datasets[1].data = yellowData;
+    budgetByMonthChart.data.datasets[2].data = orangeData;
+    budgetByMonthChart.data.datasets[3].data = redData;
+    budgetByMonthChart.data.datasets[4].data = greenData;
+    budgetByMonthChart.data.datasets[5].data = grayData;
+    budgetByMonthChart.data.datasets[6].data = blackData;
 
-    updateClosureXAxisMax(yellowData, orangeData, redData, greenData, grayData, blackData);
+    updateClosureXAxisMax(pendingData, yellowData, orangeData, redData, greenData, grayData, blackData);
     resizeClosureChart(labels.length);
     budgetByMonthChart.update();
     return;
@@ -364,17 +376,21 @@ function updateClosureStatusChart(filtered) {
   const allowedOrgs = orgFilter === "all" ? getOrgsByGroup(orgGroupFilter) : [orgFilter];
   const groups = {};
   allowedOrgs.forEach((org) => {
-    groups[org] = { totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
+    groups[org] = { pending: 0, totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
   });
 
   closureTrackedProjects.forEach((p) => {
     const org = p.orgName || "(ไม่ระบุ)";
     if (allowedOrgs.length && !allowedOrgs.includes(org)) return;
     if (!groups[org]) {
-      groups[org] = { totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
+      groups[org] = { pending: 0, totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
     }
     const g = groups[org];
     const bucket = classifyClosureBucket(p);
+    if (bucket === "pending") {
+      g.pending++;
+      return;
+    }
     if (bucket === "gray") {
       g.gray++;
       return;
@@ -387,6 +403,7 @@ function updateClosureStatusChart(filtered) {
   });
 
   const labels = Object.keys(groups);
+  const pendingData = [];
   const yellowData = [];
   const orangeData = [];
   const redData = [];
@@ -396,6 +413,7 @@ function updateClosureStatusChart(filtered) {
 
   labels.forEach((org) => {
     const g = groups[org];
+    pendingData.push(g.pending);
     const yellow = Math.max(g.totalApproved - g.orange - g.red - g.green - g.black, 0);
     yellowData.push(yellow);
     orangeData.push(g.orange);
@@ -406,14 +424,15 @@ function updateClosureStatusChart(filtered) {
   });
 
   budgetByMonthChart.data.labels = labels;
-  budgetByMonthChart.data.datasets[0].data = yellowData;
-  budgetByMonthChart.data.datasets[1].data = orangeData;
-  budgetByMonthChart.data.datasets[2].data = redData;
-  budgetByMonthChart.data.datasets[3].data = greenData;
-  budgetByMonthChart.data.datasets[4].data = grayData;
-  budgetByMonthChart.data.datasets[5].data = blackData;
+  budgetByMonthChart.data.datasets[0].data = pendingData;
+  budgetByMonthChart.data.datasets[1].data = yellowData;
+  budgetByMonthChart.data.datasets[2].data = orangeData;
+  budgetByMonthChart.data.datasets[3].data = redData;
+  budgetByMonthChart.data.datasets[4].data = greenData;
+  budgetByMonthChart.data.datasets[5].data = grayData;
+  budgetByMonthChart.data.datasets[6].data = blackData;
 
-  updateClosureXAxisMax(yellowData, orangeData, redData, greenData, grayData, blackData);
+  updateClosureXAxisMax(pendingData, yellowData, orangeData, redData, greenData, grayData, blackData);
   resizeClosureChart(labels.length);
   budgetByMonthChart.update();
 }

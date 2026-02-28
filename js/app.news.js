@@ -1,6 +1,16 @@
 /* ข่าวและประกาศจากฝ่ายเหรัญญิก */
 
 const HOME_NEWS_PREVIEW_LIMIT = 4;
+const NEWS_PAGE_SIZE = 9;
+const newsFilterState = {
+  query: "",
+  year: "all",
+  category: "all",
+  audience: "all",
+  sort: "latest"
+};
+let newsFilterInitialized = false;
+let newsVisibleCount = NEWS_PAGE_SIZE;
 
 // ลิงก์ดาวน์โหลด/preview ใช้ทั้งหน้า News และหน้าดาวน์โหลด
 function toDownloadUrl(url, label) {
@@ -165,17 +175,38 @@ async function loadNewsFromSheet() {
 function renderNewsList() {
   if (!newsListEl) return;
 
+  initNewsFilters();
+  syncNewsFilterOptions();
+  updateNewsLoadMoreVisibility(false);
+
   if (!newsItems.length) {
+    updateNewsFilterSummary(0, 0);
     newsListEl.innerHTML = `
       <div class="panel" style="background:#0f172a; color:#e5e7eb;">
         <div class="panel-title" style="margin-bottom:6px;">ยังไม่มีข่าวหรือประกาศ</div>
         <div class="panel-caption">เมื่อมีการเพิ่มประกาศจากชีตจะแสดงที่นี่อัตโนมัติ</div>
       </div>
     `;
+    renderHomeNewsPreview();
     return;
   }
 
-  const html = newsItems
+  const processedItems = getProcessedNewsItems();
+  const filteredItems = processedItems.slice(0, newsVisibleCount);
+  updateNewsFilterSummary(filteredItems.length, processedItems.length, newsItems.length);
+
+  if (!processedItems.length) {
+    newsListEl.innerHTML = `
+      <div class="news-empty-state">
+        <strong>ไม่พบข่าวที่ตรงกับตัวกรอง</strong>
+        <span>ลองเปลี่ยนคำค้นหรือกดล้างตัวกรองเพื่อดูรายการทั้งหมด</span>
+      </div>
+    `;
+    renderHomeNewsPreview();
+    return;
+  }
+
+  const html = filteredItems
     .map((item) => {
       const dateText = item.date || "-";
       const pinned = item.pinned
@@ -220,7 +251,219 @@ function renderNewsList() {
     card.addEventListener("click", () => openNewsModal(id));
   });
 
+  updateNewsLoadMoreVisibility(processedItems.length > filteredItems.length);
   renderHomeNewsPreview();
+}
+
+function initNewsFilters() {
+  if (newsFilterInitialized) return;
+
+  const searchInput = document.getElementById("newsSearchInput");
+  const yearFilter = document.getElementById("newsYearFilter");
+  const categoryFilter = document.getElementById("newsCategoryFilter");
+  const audienceFilter = document.getElementById("newsAudienceFilter");
+  const sortSelect = document.getElementById("newsSortSelect");
+  const resetButton = document.getElementById("newsFilterReset");
+  const loadMoreButton = document.getElementById("newsLoadMoreBtn");
+
+  if (!searchInput || !yearFilter || !categoryFilter || !audienceFilter || !sortSelect || !resetButton || !loadMoreButton) return;
+
+  searchInput.addEventListener("input", () => {
+    newsFilterState.query = searchInput.value.trim();
+    resetNewsVisibleCount();
+    renderNewsList();
+  });
+  yearFilter.addEventListener("change", () => {
+    newsFilterState.year = yearFilter.value;
+    resetNewsVisibleCount();
+    renderNewsList();
+  });
+  categoryFilter.addEventListener("change", () => {
+    newsFilterState.category = categoryFilter.value;
+    resetNewsVisibleCount();
+    renderNewsList();
+  });
+  audienceFilter.addEventListener("change", () => {
+    newsFilterState.audience = audienceFilter.value;
+    resetNewsVisibleCount();
+    renderNewsList();
+  });
+  sortSelect.addEventListener("change", () => {
+    newsFilterState.sort = sortSelect.value;
+    resetNewsVisibleCount();
+    renderNewsList();
+  });
+  resetButton.addEventListener("click", () => {
+    newsFilterState.query = "";
+    newsFilterState.year = "all";
+    newsFilterState.category = "all";
+    newsFilterState.audience = "all";
+    newsFilterState.sort = "latest";
+    resetNewsVisibleCount();
+    searchInput.value = "";
+    yearFilter.value = "all";
+    categoryFilter.value = "all";
+    audienceFilter.value = "all";
+    sortSelect.value = "latest";
+    renderNewsList();
+  });
+  loadMoreButton.addEventListener("click", () => {
+    newsVisibleCount += NEWS_PAGE_SIZE;
+    renderNewsList();
+  });
+
+  newsFilterInitialized = true;
+}
+
+function syncNewsFilterOptions() {
+  syncNewsFilterSelect("newsYearFilter", getUniqueNewsValues("year"), "ทั้งหมด");
+  syncNewsFilterSelect("newsCategoryFilter", getUniqueNewsValues("category"), "ทั้งหมด");
+  syncNewsFilterSelect("newsAudienceFilter", getUniqueNewsValues("audience"), "ทั้งหมด");
+
+  const searchInput = document.getElementById("newsSearchInput");
+  const sortSelect = document.getElementById("newsSortSelect");
+  if (searchInput && searchInput.value !== newsFilterState.query) {
+    searchInput.value = newsFilterState.query;
+  }
+  if (sortSelect && sortSelect.value !== newsFilterState.sort) {
+    sortSelect.value = newsFilterState.sort;
+  }
+}
+
+function syncNewsFilterSelect(selectId, values, defaultLabel) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const currentValue = select.value || "all";
+  const optionsHtml = [
+    `<option value="all">${defaultLabel}</option>`,
+    ...values.map((value) => `<option value="${escapeNewsHtml(value)}">${escapeNewsHtml(value)}</option>`)
+  ].join("");
+
+  select.innerHTML = optionsHtml;
+
+  const nextValue = values.includes(currentValue) ? currentValue : "all";
+  select.value = nextValue;
+
+  if (selectId === "newsYearFilter") newsFilterState.year = nextValue;
+  if (selectId === "newsCategoryFilter") newsFilterState.category = nextValue;
+  if (selectId === "newsAudienceFilter") newsFilterState.audience = nextValue;
+}
+
+function getUniqueNewsValues(field) {
+  return Array.from(
+    new Set(
+      newsItems
+        .map((item) => (item[field] || "").toString().trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => b.localeCompare(a, "th"));
+}
+
+function getFilteredNewsItems() {
+  const query = newsFilterState.query.toLowerCase();
+
+  return newsItems.filter((item) => {
+    if (newsFilterState.year !== "all" && (item.year || "").trim() !== newsFilterState.year) {
+      return false;
+    }
+    if (newsFilterState.category !== "all" && (item.category || "").trim() !== newsFilterState.category) {
+      return false;
+    }
+    if (newsFilterState.audience !== "all" && (item.audience || "").trim() !== newsFilterState.audience) {
+      return false;
+    }
+    if (!query) return true;
+
+    const haystack = [
+      item.title,
+      item.summary,
+      item.category,
+      item.audience,
+      item.year,
+      item.date
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return haystack.includes(query);
+  });
+}
+
+function getProcessedNewsItems() {
+  const filteredItems = getFilteredNewsItems();
+  return filteredItems.sort((a, b) => compareNewsItems(a, b, newsFilterState.sort));
+}
+
+function compareNewsItems(a, b, mode) {
+  if (mode === "title") {
+    return (a.title || "").localeCompare((b.title || ""), "th");
+  }
+
+  const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+  const timeA = parseNewsDate(a.date)?.getTime() || 0;
+  const timeB = parseNewsDate(b.date)?.getTime() || 0;
+
+  if (mode === "oldest") {
+    if (timeA !== timeB) return timeA - timeB;
+    return (a.title || "").localeCompare((b.title || ""), "th");
+  }
+
+  if (mode === "pinned" && pinDiff !== 0) {
+    return pinDiff;
+  }
+
+  if (timeA !== timeB) {
+    return timeB - timeA;
+  }
+  if (mode === "pinned" && pinDiff !== 0) {
+    return pinDiff;
+  }
+  return (a.title || "").localeCompare((b.title || ""), "th");
+}
+
+function updateNewsFilterSummary(visibleCount, filteredCount, totalCount) {
+  const summaryEl = document.getElementById("newsFilterSummary");
+  if (!summaryEl) return;
+
+  if (!totalCount) {
+    summaryEl.textContent = "ยังไม่มีข่าวให้แสดง";
+    return;
+  }
+
+  if (filteredCount === totalCount && visibleCount === filteredCount) {
+    summaryEl.textContent = `แสดงข่าวทั้งหมด ${totalCount} รายการ`;
+    return;
+  }
+
+  if (visibleCount < filteredCount) {
+    summaryEl.textContent = `แสดง ${visibleCount} จาก ${filteredCount} รายการ (${totalCount} ทั้งหมด)`;
+    return;
+  }
+
+  summaryEl.textContent = `แสดง ${filteredCount} จาก ${totalCount} รายการ`;
+}
+
+function updateNewsLoadMoreVisibility(shouldShow) {
+  const actionEl = document.querySelector(".news-list-actions");
+  const buttonEl = document.getElementById("newsLoadMoreBtn");
+  if (!actionEl || !buttonEl) return;
+  actionEl.hidden = !shouldShow;
+  buttonEl.hidden = !shouldShow;
+}
+
+function resetNewsVisibleCount() {
+  newsVisibleCount = NEWS_PAGE_SIZE;
+}
+
+function escapeNewsHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function openNewsModal(newsId) {

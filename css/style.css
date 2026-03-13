@@ -2331,6 +2331,41 @@ th.sortable.sort-desc::after {
   .home-news-grid {
     grid-template-columns: 1fr;
   }
+
+  .home-news {
+    padding-top: 14px;
+    padding-bottom: 28px;
+  }
+
+  .home-news-grid {
+    gap: 14px;
+  }
+
+  .home-news-card {
+    padding: 14px 14px 13px;
+    border-radius: 14px;
+  }
+
+  .home-news-card h3 {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  .home-news-card p {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+
+  .home-news-date {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .home-news-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
 }
 
 @keyframes scope-card-enter {
@@ -4089,14 +4124,14 @@ th.sortable.sort-desc::after {
 
 .news-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
   margin-top: 18px;
 }
 
 .news-list-skeleton {
   display: none;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
   margin-top: 18px;
 }
@@ -4283,6 +4318,72 @@ th.sortable.sort-desc::after {
 @media (max-width: 860px) {
   .news-preview-frame iframe {
     min-height: 320px;
+  }
+
+  .news-list,
+  .news-list-skeleton {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .news-card {
+    min-height: 0;
+    padding: 1rem;
+  }
+
+  .news-card-title {
+    font-size: 1rem;
+  }
+
+  .news-card-meta {
+    font-size: 0.74rem;
+  }
+
+  .news-card-summary {
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+
+  .news-card-btn {
+    width: 100%;
+    align-self: stretch;
+    text-align: center;
+  }
+
+  .news-filter-bar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .news-filter-bar .filter-year,
+  .news-filter-bar .filter-orgtype,
+  .news-filter-bar .filter-org,
+  .news-filter-bar .filter-sort,
+  .news-filter-bar .filter-search {
+    grid-column: 1 / -1;
+  }
+
+  .news-filter-bar .filter-group label {
+    font-size: 10px;
+  }
+
+  .news-filter-bar .filter-group select,
+  .news-filter-bar .filter-group input[type="search"] {
+    font-size: 13px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .news-load-more {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page-news .page-title {
+    line-height: 1.25;
+  }
+
+  .page-news .page-meta {
+    font-size: 11px;
   }
 }
 .modal-actions {

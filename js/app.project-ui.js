@@ -102,7 +102,7 @@ function updateSummaryCards(filtered) {
     if (statusMain === "อนุมัติโครงการ") {
       approved += 1;
     }
-    if ((p.statusClose || "").trim() === "ส่งกิจการนิสิตเรียบร้อย") {
+    if (isProjectClosed(p)) {
       closed += 1;
     }
     totalBudget += p.budget || 0;
@@ -185,7 +185,7 @@ function updateDashboardInsights(filtered, summary) {
     closureRateBarEl.style.width = `${Math.min(closureRate, 100)}%`;
   }
   if (closureRateDonutCanvas) {
-    const closedList = filtered.filter(p => (p.statusClose || "").trim() === "ส่งกิจการนิสิตเรียบร้อย");
+    const closedList = filtered.filter(isProjectClosed);
     closureRateDonutChart = updateDonutChart(
       closureRateDonutChart,
       closureRateDonutCanvas,

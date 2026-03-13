@@ -76,7 +76,12 @@ function formatMoney(value) {
 function isProjectClosed(project) {
   const close = (project.statusClose || "").trim();
   const decree = (project.statusCloseDecree || "").trim();
-  return close === "ส่งกิจการนิสิตเรียบร้อย" || decree === "ปิดโครงการเรียบร้อย";
+  return (
+    close === "ส่งกิจการนิสิตเรียบร้อย" ||
+    close === "ยกเลิกโครงการ" ||
+    close === "ไม่ส่งปิดโครงการ" ||
+    decree === "ปิดโครงการเรียบร้อย"
+  );
 }
 
 function getCloseDurationDays(project) {

@@ -85,7 +85,12 @@ function initCharts(ctxKey = activeProjectStatusContext) {
           stacked: true,
           ticks: { stepSize: 1 }
         },
-        y: { stacked: true }
+        y: {
+          stacked: true,
+          ticks: {
+            autoSkip: false
+          }
+        }
       }
     }
   });
@@ -213,8 +218,9 @@ function resizeClosureChart(numLabels) {
   const container = canvas.parentElement;
   if (!container) return;
 
-  const baseHeight = 260;
-  const perLabel = 26;
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  const baseHeight = isMobile ? 340 : 260;
+  const perLabel = isMobile ? 34 : 26;
   const newHeight = Math.max(baseHeight, numLabels * perLabel);
   container.style.height = newHeight + "px";
 

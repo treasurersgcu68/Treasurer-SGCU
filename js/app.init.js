@@ -481,6 +481,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===== 10) Hamburger + เมนูมือถือ =====
   const hamburgerBtn = document.getElementById("hamburgerBtn");
   const mobileMenu = document.getElementById("mobileMenu");
+  const navGroupToggles = Array.from(document.querySelectorAll(".nav-group-toggle"));
+  const navGroupMenus = Array.from(document.querySelectorAll(".nav-group-menu"));
+
+  const closeDesktopNavGroups = () => {
+    navGroupToggles.forEach((btn) => {
+      btn.setAttribute("aria-expanded", "false");
+      const host = btn.closest(".nav-group");
+      if (host) host.classList.remove("is-open");
+    });
+    navGroupMenus.forEach((menu) => {
+      menu.classList.remove("show");
+      menu.setAttribute("aria-hidden", "true");
+    });
+  };
+
   if (hamburgerBtn && mobileMenu) {
     hamburgerBtn.setAttribute("aria-expanded", "false");
     mobileMenu.setAttribute("aria-hidden", "true");
@@ -491,6 +506,42 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!(target instanceof Element)) return;
       if (mobileMenu.contains(target) || hamburgerBtn.contains(target)) return;
       setMobileMenuState(mobileMenu, hamburgerBtn, false);
+    });
+  }
+  if (navGroupToggles.length) {
+    closeDesktopNavGroups();
+
+    navGroupToggles.forEach((btn) => {
+      btn.addEventListener("click", (event) => {
+        event.preventDefault();
+        const host = btn.closest(".nav-group");
+        const menu = host?.querySelector(".nav-group-menu");
+        if (!host || !menu) return;
+        const isOpen = menu.classList.contains("show");
+        closeDesktopNavGroups();
+        if (!isOpen) {
+          btn.setAttribute("aria-expanded", "true");
+          host.classList.add("is-open");
+          menu.classList.add("show");
+          menu.setAttribute("aria-hidden", "false");
+        }
+      });
+    });
+
+    navGroupMenus.forEach((menu) => {
+      menu.addEventListener("click", (event) => {
+        const target = event.target;
+        if (target instanceof HTMLAnchorElement && target.dataset.page) {
+          closeDesktopNavGroups();
+        }
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".nav-group")) return;
+      closeDesktopNavGroups();
     });
   }
 
@@ -540,6 +591,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (menuEl && buttonEl && menuEl.classList.contains("show")) {
       setMobileMenuState(menuEl, buttonEl, false);
     }
+    closeDesktopNavGroups();
   });
 
   // ===== 6) Event เปลี่ยน filter ของ Project Status (public/staff) =====

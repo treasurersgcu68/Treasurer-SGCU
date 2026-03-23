@@ -15,6 +15,8 @@
  * - app.scoreboard.js      : คะแนนโครงการ SGCU-10.001
  * - app.calendar.js        : ปฏิทินโครงการจากข้อมูล projects
  * - app.motion.js          : motion helpers (section appear / count up)
+ * - app.meeting-room-booking.js : ระบบขอจองห้องประชุม (ผู้ใช้งานทั่วไป)
+ * - app.meeting-room-staff.js   : ระบบอนุมัติจองห้องประชุม (staff)
  * - app.init.js            : ผูกอีเวนต์ + init ทั้งระบบเมื่อ DOM พร้อม
  *
  * ลำดับการโหลดดูได้จาก index.html

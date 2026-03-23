@@ -64,6 +64,13 @@
       import {
         getFirestore,
         doc,
+        collection,
+        addDoc,
+        onSnapshot,
+        query,
+        orderBy,
+        updateDoc,
+        deleteDoc,
         runTransaction,
         serverTimestamp
       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -81,6 +88,18 @@
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
+      window.sgcuFirestore = {
+        db,
+        doc,
+        collection,
+        addDoc,
+        onSnapshot,
+        query,
+        orderBy,
+        updateDoc,
+        deleteDoc,
+        serverTimestamp
+      };
 
       window.sgcuAuth = {
         auth,
@@ -201,12 +220,37 @@
         </div>
 
         <nav class="desktop-nav">
-          <a href="#" data-page="home" class="active" data-visible="public">Home</a>
-          <a href="#" data-page="dashboard-staff" data-visible="protected">Dashboard</a>
-          <a href="#" data-page="project-status" data-visible="public">Project Status</a>
-          <a href="#" data-page="financial-docs" data-visible="public">Financial Documents</a>
-          <a href="#" data-page="borrow-assets" data-visible="protected">ขอยืมพัสดุ</a>
-          <a href="#" data-page="login" data-visible="public">Sign in</a>
+          <div id="desktopNavGeneral" class="desktop-nav-role" data-role-nav="general">
+            <a href="#" data-page="home" class="nav-pill active" data-visible="public">หน้าหลัก</a>
+
+            <a href="#" data-page="project-status" class="nav-pill" data-visible="public">ติดตามสถานะโครงการ</a>
+            <a href="#" data-page="financial-docs" class="nav-pill" data-visible="public">เอกสารการเงิน</a>
+
+            <div class="nav-group">
+              <button class="nav-group-toggle" type="button" aria-expanded="false">การจอง</button>
+              <div class="nav-group-menu" aria-hidden="true">
+                <a href="#" data-page="borrow-assets" data-visible="protected">ยืม-คืนพัสดุ</a>
+                <a href="#" data-page="meeting-room-booking" data-visible="protected">จองห้องประชุม</a>
+              </div>
+            </div>
+
+            <a href="#" data-page="login" class="nav-pill" data-visible="public">เข้าสู่ระบบ</a>
+          </div>
+
+          <div id="desktopNavStaff" class="desktop-nav-role" data-role-nav="staff" style="display:none;">
+            <a href="#" data-page="dashboard-staff" class="nav-pill" data-visible="protected">ภาพรวม</a>
+
+            <div class="nav-group">
+              <button class="nav-group-toggle" type="button" aria-expanded="false">งานอนุมัติ</button>
+              <div class="nav-group-menu" aria-hidden="true">
+                <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการคำขอยืม-คืนพัสดุ</a>
+                <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม</a>
+              </div>
+            </div>
+
+            <a href="#" data-page="project-status-staff" class="nav-pill" data-visible="protected">กำกับสถานะโครงการ</a>
+            <a href="#" data-page="login" class="nav-pill" data-visible="public">เข้าสู่ระบบ</a>
+          </div>
         </nav>
 
         <div class="header-actions">
@@ -233,19 +277,23 @@
 
       <div id="mobileMenu" class="mobile-menu" aria-hidden="true">
         <nav>
-          <a href="#" data-page="home" data-visible="public">Home</a>
-          <a href="#" data-page="dashboard-staff" data-visible="protected">Dashboard</a>
-          <a href="#" data-page="project-status" data-visible="public">Project Status</a>
-          <a href="#" data-page="financial-docs" data-visible="public">Financial Documents</a>
-          <a href="#" data-page="borrow-assets" data-visible="protected">ขอยืมพัสดุ</a>
-          <a href="#" data-page="login" data-visible="public">Sign in</a>
+          <a href="#" data-page="home" data-visible="public">หน้าหลัก</a>
+          <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมสำหรับ Staff</a>
+          <a href="#" data-page="project-status" data-visible="public">ติดตามสถานะโครงการ</a>
+          <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ (Staff)</a>
+          <a href="#" data-page="financial-docs" data-visible="public">เอกสารการเงิน</a>
+          <a href="#" data-page="borrow-assets" data-visible="protected">ยืม-คืนพัสดุ</a>
+          <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการยืม-คืนพัสดุ (Staff)</a>
+          <a href="#" data-page="meeting-room-booking" data-visible="protected">จองห้องประชุม</a>
+          <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม (Staff)</a>
+          <a href="#" data-page="login" data-visible="public">เข้าสู่ระบบ</a>
           <button
             id="mobileLogoutBtn"
             type="button"
             class="auth-btn ghost mobile-menu-logout"
             style="display:none;"
           >
-            Sign Out
+            ออกจากระบบ
           </button>
         </nav>
       </div>
@@ -1259,7 +1307,7 @@
         <div class="page">
           <div class="page-header-flex section-appear">
             <div>
-              <h2 class="page-title">Borrow & Return</h2>
+              <h2 class="page-title">Borrow & Return (กำลังพัฒนา)</h2>
               <p class="page-subtitle">
                 กรอกคำขอยืมพัสดุ/ครุภัณฑ์จากส่วนกลาง และติดตามสถานะการอนุมัติ
               </p>
@@ -1700,6 +1748,266 @@
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ============ MEETING ROOM BOOKING (REQUEST) ============ -->
+      <section class="page-view meeting-room-page" data-page="meeting-room-booking">
+        <div class="page">
+          <div class="page-header-flex section-appear meeting-room-header">
+            <div>
+              <h2 class="page-title">Meeting Room Booking (กำลังพัฒนา)</h2>
+              <p class="page-subtitle">กรอกคำขอเพื่อจองห้องประชุม และติดตามสถานะอนุมัติจากทีม Staff</p>
+            </div>
+          </div>
+
+          <div class="separator-gradient"></div>
+
+          <div class="panel panel-hover section-appear section-delay-1 meeting-form-panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">แบบฟอร์มขอจองห้องประชุม</div>
+                <div class="panel-caption">ระบบจะเช็คเวลาทับซ้อนอัตโนมัติ และส่งเข้าคิวรออนุมัติ</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <form id="meetingRoomBookingForm" class="meeting-booking-form">
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRoomName">ห้องประชุม</label>
+                    <select id="meetingRoomName" class="login-input" required>
+                      <option value="" disabled selected>เลือกห้องประชุม</option>
+                    </select>
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingDate">วันที่</label>
+                    <input id="meetingDate" class="login-input" type="date" required />
+                  </div>
+                </div>
+
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingStartTime">เวลาเริ่ม</label>
+                    <input id="meetingStartTime" class="login-input" type="time" required />
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingEndTime">เวลาสิ้นสุด</label>
+                    <input id="meetingEndTime" class="login-input" type="time" required />
+                  </div>
+                </div>
+
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRequester">ชื่อผู้ขอ</label>
+                    <input id="meetingRequester" class="login-input" type="text" placeholder="ชื่อผู้รับผิดชอบการประชุม" required />
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRequesterPhone">เบอร์ติดต่อ</label>
+                    <input id="meetingRequesterPhone" class="login-input" type="tel" placeholder="0xxxxxxxxx" />
+                  </div>
+                </div>
+
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRequesterContact">ช่องทางติดต่อเพิ่มเติม</label>
+                    <input id="meetingRequesterContact" class="login-input" type="text" placeholder="เช่น LINE ID / Email" />
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingProjectMode">ประเภทคำขอ</label>
+                    <select id="meetingProjectMode" class="login-input">
+                      <option value="non_project" selected>ประชุมทั่วไป</option>
+                      <option value="project">ประชุมโครงการภายใต้สโมสรนิสิต</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div id="meetingProjectFields" hidden>
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="meetingProjectCode">รหัสโครงการ</label>
+                      <input id="meetingProjectCode" class="login-input" type="text" placeholder="เช่น SGCU-10.001" />
+                      <div id="meetingProjectCodeState" class="section-text-sm" hidden></div>
+                      <div id="meetingProjectNamePreview" class="section-text-sm" hidden></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingPurpose">วัตถุประสงค์การใช้ห้อง</label>
+                    <textarea id="meetingPurpose" class="login-input" rows="3" placeholder="ระบุหัวข้อประชุมหรือกิจกรรม" required></textarea>
+                  </div>
+                </div>
+
+                <div class="meeting-form-actions">
+                  <button class="btn-primary" type="submit">ส่งคำขอจอง</button>
+                  <span id="meetingBookingMessage" class="section-text-sm" aria-live="polite"></span>
+                </div>
+              </form>
+
+              <div class="separator-gradient" style="margin: 14px 0 10px;"></div>
+
+              <form id="meetingCancelForm" class="meeting-booking-form">
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingCancelBookingSelect">คำขอของฉัน</label>
+                    <select id="meetingCancelBookingSelect" class="login-input" required>
+                      <option value="">เลือกคำขอที่ต้องการยกเลิก</option>
+                    </select>
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingCancelReason">เหตุผลการขอยกเลิก</label>
+                    <textarea
+                      id="meetingCancelReason"
+                      class="login-input"
+                      rows="2"
+                      placeholder="ระบุเหตุผลที่ต้องการยกเลิก"
+                      required
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="meeting-form-actions">
+                  <button class="btn-ghost" type="submit">ยกเลิกคำขอของฉัน</button>
+                  <span id="meetingCancelMessage" class="section-text-sm" aria-live="polite"></span>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div id="meetingRoomCalendarPanel" class="panel panel-hover section-appear section-delay-2 meeting-calendar-panel">
+            <div class="panel-header">
+              <div>
+                <div id="meetingCalendarTitle" class="panel-title">ปฏิทินจองห้องประชุม</div>
+              </div>
+              <div class="meeting-calendar-toolbar">
+                <button id="meetingCalendarPrevMonth" class="btn-ghost" type="button">เดือนก่อน</button>
+                <button id="meetingCalendarNextMonth" class="btn-ghost" type="button">เดือนถัดไป</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="calendar-weekday-row" aria-hidden="true">
+                <div class="calendar-weekday">อา</div>
+                <div class="calendar-weekday">จ</div>
+                <div class="calendar-weekday">อ</div>
+                <div class="calendar-weekday">พ</div>
+                <div class="calendar-weekday">พฤ</div>
+                <div class="calendar-weekday">ศ</div>
+                <div class="calendar-weekday">ส</div>
+              </div>
+              <div id="meetingRoomCalendar" class="calendar-grid"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ============ STAFF: MEETING ROOM APPROVAL ============ -->
+      <section class="page-view" data-page="meeting-room-staff">
+        <div class="page">
+          <div class="page-header-flex section-appear">
+            <div>
+              <h2 class="page-title">Meeting Room Approval For Staff</h2>
+              <p class="page-subtitle">อนุมัติหรือปฏิเสธคำขอจองห้องประชุม พร้อมจัดการรายการทั้งหมด</p>
+            </div>
+            <div class="tabs">
+              <button
+                class="tab-btn view-toggle-btn is-active"
+                type="button"
+                data-meeting-staff-tab="requests"
+              >
+                รายการคำขอ
+              </button>
+              <button
+                class="tab-btn view-toggle-btn"
+                type="button"
+                data-meeting-staff-tab="history"
+              >
+                ประวัติการขอ
+              </button>
+            </div>
+          </div>
+
+          <div class="separator-gradient"></div>
+
+          <div id="staffMeetingAll" class="panel panel-hover section-appear section-delay-1" style="margin-top: 18px;">
+            <div class="panel-header">
+              <div>
+                <div id="meetingRoomStaffPanelTitle" class="panel-title">รายการคำขอ</div>
+                <div id="meetingRoomStaffPanelCaption" class="panel-caption">แสดงคำขอที่ยังไม่เลยวันขอ</div>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ห้อง</th>
+                    <th>วันที่</th>
+                    <th>เวลา</th>
+                    <th>ผู้ขอ</th>
+                    <th>วัตถุประสงค์</th>
+                    <th>สถานะ/การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="meetingRoomAllTableBody">
+                  <tr>
+                    <td colspan="6">กำลังโหลดข้อมูล...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="meetingRoomStaffCalendarPanel" class="panel panel-hover section-appear section-delay-2 meeting-calendar-panel" style="margin-top: 18px;">
+            <div class="panel-header">
+              <div>
+                <div id="meetingStaffCalendarTitle" class="panel-title">ปฏิทินคำขอจองห้องประชุม</div>
+              </div>
+              <div class="meeting-calendar-toolbar">
+                <button id="meetingStaffCalendarPrevMonth" class="btn-ghost" type="button">เดือนก่อน</button>
+                <button id="meetingStaffCalendarNextMonth" class="btn-ghost" type="button">เดือนถัดไป</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="calendar-weekday-row" aria-hidden="true">
+                <div class="calendar-weekday">อา</div>
+                <div class="calendar-weekday">จ</div>
+                <div class="calendar-weekday">อ</div>
+                <div class="calendar-weekday">พ</div>
+                <div class="calendar-weekday">พฤ</div>
+                <div class="calendar-weekday">ศ</div>
+                <div class="calendar-weekday">ส</div>
+              </div>
+              <div id="meetingRoomStaffCalendar" class="calendar-grid"></div>
+            </div>
+          </div>
+
+          <div class="panel panel-hover section-appear section-delay-3 meeting-room-manage-panel" style="margin-top: 18px;">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">จัดการห้องประชุม</div>
+                <div class="panel-caption">เพิ่มห้องใหม่ หรือลบห้องที่ไม่ใช้งาน</div>
+                <div id="meetingRoomManageCount" class="panel-meta">พบ 0 ห้อง</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <form id="meetingRoomManageForm" class="meeting-room-manage-form">
+                <div class="meeting-room-manage-row">
+                  <input
+                    id="meetingRoomManageInput"
+                    class="login-input"
+                    type="text"
+                    placeholder="เช่น ห้องประชุม 4 ชั้น 3"
+                    maxlength="100"
+                    required
+                  />
+                  <button class="btn-primary" type="submit">เพิ่มห้อง</button>
+                </div>
+                <div id="meetingRoomManageMessage" class="section-text-sm" aria-live="polite"></div>
+              </form>
+              <div id="meetingRoomManageList" class="meeting-room-manage-list"></div>
             </div>
           </div>
         </div>
@@ -2282,6 +2590,25 @@
       </div>
     </div>
 
+    <div
+      id="meetingBookingDetailModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="meetingBookingDetailTitle"
+    >
+      <div class="modal-dialog" style="max-width: 560px;">
+        <div class="modal-header">
+          <div>
+            <div id="meetingBookingDetailTitle" class="modal-title">รายละเอียดการจองห้องประชุม</div>
+          </div>
+          <button id="meetingBookingDetailClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
+        </div>
+        <div id="meetingBookingDetailBody" class="modal-body"></div>
+      </div>
+    </div>
+
     <!-- LOGIN PAGE -->
     <section class="page-view" data-page="login">
       <div class="page login-page">
@@ -2363,6 +2690,8 @@
     <script src="js/app.scoreboard.js" defer></script>
     <script src="js/app.motion.js" defer></script>
     <script src="js/app.borrow-assets.js" defer></script>
+    <script src="js/app.meeting-room-booking.js" defer></script>
+    <script src="js/app.meeting-room-staff.js" defer></script>
     <script src="js/app.init.js" defer></script>
     <script src="js/app.calendar.js" defer></script>
   </body>

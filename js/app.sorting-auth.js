@@ -94,11 +94,12 @@ function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatus
 
 function updateNavVisibility(isAuthenticated) {
   if (!navLinksAll.length) return;
+  const allowedPages = getAllowedPagesForCurrentState();
   const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
   navLinksAll.forEach((link) => {
     const mode = link.dataset.visible || "public";
     const page = link.dataset.page || "";
-    if (page === "dashboard-staff" && staffViewMode !== "staff") {
+    if (!allowedPages.has(page)) {
       link.style.display = "none";
       return;
     }
@@ -117,6 +118,19 @@ function updateNavVisibility(isAuthenticated) {
   });
 }
 
+function syncRoleNavContainers() {
+  const isStaffMode = !!staffAuthUser && staffViewMode === "staff";
+  const desktopGeneral = document.getElementById("desktopNavGeneral");
+  const desktopStaff = document.getElementById("desktopNavStaff");
+  const mobileGeneral = document.getElementById("mobileNavGeneral");
+  const mobileStaff = document.getElementById("mobileNavStaff");
+
+  if (desktopGeneral) desktopGeneral.style.display = isStaffMode ? "none" : "flex";
+  if (desktopStaff) desktopStaff.style.display = isStaffMode ? "flex" : "none";
+  if (mobileGeneral) mobileGeneral.style.display = isStaffMode ? "none" : "block";
+  if (mobileStaff) mobileStaff.style.display = isStaffMode ? "block" : "none";
+}
+
 function getAllowedPagesForCurrentState() {
   const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
   if (!isUserAuthenticated) {
@@ -124,17 +138,24 @@ function getAllowedPagesForCurrentState() {
   }
 
   const allowed = new Set(publicAllowed);
-  const protectedAllowed = ["dashboard-staff", "borrow-assets", "borrow-assets-staff", "project-status-staff"];
+  const protectedAllowed = [
+    "dashboard-staff",
+    "borrow-assets",
+    "borrow-assets-staff",
+    "project-status-staff",
+    "meeting-room-booking",
+    "meeting-room-staff"
+  ];
   protectedAllowed.forEach((page) => allowed.add(page));
 
   if (staffAuthUser && staffViewMode === "staff") {
     const roleAllowedMap = {
-      "00": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "login"],
-      "01": ["project-status-staff", "dashboard-staff", "login"],
+      "00": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"],
+      "01": ["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"],
       "04": ["borrow-assets-staff", "login"]
     };
     const roleAllowed = roleAllowedMap[staffAuthUser.role || ""] ||
-      ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "login"];
+      ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"];
     return new Set(roleAllowed);
   }
 
@@ -142,6 +163,7 @@ function getAllowedPagesForCurrentState() {
     allowed.delete("dashboard-staff");
     allowed.delete("borrow-assets-staff");
     allowed.delete("project-status-staff");
+    allowed.delete("meeting-room-staff");
   }
 
   return allowed;
@@ -163,7 +185,7 @@ function isCurrentNavVisible() {
   if (!navLinksAll.length) return true;
   const currentPage = (window.location.hash || "#home").replace("#", "");
   const currentLink = navLinksAll.find((link) => link.dataset.page === currentPage);
-  return currentLink ? currentLink.style.display !== "none" : true;
+  return currentLink ? currentLink.style.display !== "none" && currentLink.offsetParent !== null : true;
 }
 
 function getCurrentPageFromHash() {
@@ -177,11 +199,13 @@ function isNavPageVisible(page) {
 function getModeMappedPage(currentPage, mode) {
   const toStaff = {
     "project-status": "project-status-staff",
-    "borrow-assets": "borrow-assets-staff"
+    "borrow-assets": "borrow-assets-staff",
+    "meeting-room-booking": "meeting-room-staff"
   };
   const toNormal = {
     "project-status-staff": "project-status",
-    "borrow-assets-staff": "borrow-assets"
+    "borrow-assets-staff": "borrow-assets",
+    "meeting-room-staff": "meeting-room-booking"
   };
   const map = mode === "staff" ? toStaff : toNormal;
   return map[currentPage] || "";
@@ -189,8 +213,8 @@ function getModeMappedPage(currentPage, mode) {
 
 function applyStaffViewMode() {
   const staffMode = !!staffAuthUser && staffViewMode === "staff";
-  updateNavLabelsForStaff(staffMode);
   updateNavVisibility(isUserAuthenticated);
+  syncRoleNavContainers();
   updateNavForStaff(staffMode ? staffAuthUser : null);
 
   if (staffModeToggleEl) {
@@ -226,13 +250,13 @@ function updateNavForStaff(staffUser) {
   if (staffViewMode !== "staff") return;
 
   const roleAllowedMap = {
-    "00": new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "login"]),
-    "01": new Set(["project-status-staff", "dashboard-staff", "login"]),
+    "00": new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]),
+    "01": new Set(["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"]),
     "04": new Set(["borrow-assets-staff", "login"])
   };
 
   const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||
-    new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "login"]);
+    new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]);
 
   navLinksAll.forEach((link) => {
     const page = link.dataset.page || "";
@@ -241,9 +265,8 @@ function updateNavForStaff(staffUser) {
 }
 
 function getPreferredPageForState(isAuth) {
-  if (isAuth) {
-    return "login";
-  }
+  if (isAuth && !!staffAuthUser && staffViewMode === "staff") return "dashboard-staff";
+  if (isAuth) return "home";
   return "home";
 }
 
@@ -251,7 +274,7 @@ function goToFirstVisibleNavPageWithPreference(preferredPage) {
   if (!navLinksAll.length) return;
 
   function isVisible(link) {
-    return link && link.style.display !== "none";
+    return link && link.style.display !== "none" && link.offsetParent !== null;
   }
 
   let targetPage = preferredPage;
@@ -280,29 +303,8 @@ function goToFirstVisibleNavPageWithPreference(preferredPage) {
 }
 
 function updateNavLabelsForStaff(isStaff) {
-  const labelMap = {
-    "project-status": {
-      default: "Project Status",
-      staff: "Project Status for Staff",
-      staffPage: "project-status-staff"
-    },
-    "borrow-assets": {
-      default: "Borrow & Return Assets",
-      staff: "Borrow & Return Assets For Staff",
-      staffPage: "borrow-assets-staff"
-    }
-  };
-
-  Object.entries(labelMap).forEach(([page, labels]) => {
-    const targetPage = isStaff ? labels.staffPage : page;
-    const targetLabel = isStaff ? labels.staff : labels.default;
-    document
-      .querySelectorAll(`a[data-page="${page}"], a[data-page="${labels.staffPage}"]`)
-      .forEach((el) => {
-        el.textContent = targetLabel;
-        el.dataset.page = targetPage;
-      });
-  });
+  // Kept for backward compatibility with older calls.
+  // New nav structure uses dedicated role menus, so labels/pages are static.
 }
 
 function initAuthUI() {
@@ -408,7 +410,7 @@ function initAuthUI() {
     toggleProjectStatusAccess(isAuth, "staff");
 
     // เปลี่ยนหน้าเฉพาะเมื่อหน้าปัจจุบันไม่สามารถมองเห็นได้
-    const preferredPage = getPreferredPageForState(isAuth, hasStaff ? staffAuthUser : null);
+    const preferredPage = getPreferredPageForState(isAuth);
     const currentPage = getCurrentPageFromHash();
     if (!isNavPageVisible(currentPage)) {
       goToFirstVisibleNavPageWithPreference(preferredPage);
@@ -421,7 +423,7 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= AUTH_SESSION_MAX_AGE_MS) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired)", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:425", err);
         });
         refreshAuthDisplay(null);
         return;
@@ -475,7 +477,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:325", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:479", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");

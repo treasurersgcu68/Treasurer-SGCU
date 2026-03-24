@@ -10,6 +10,7 @@ function initMeetingRoomStaffApproval() {
   const staffMeetingAllSection = document.getElementById("staffMeetingAll");
   const panelTitleEl = document.getElementById("meetingRoomStaffPanelTitle");
   const panelCaptionEl = document.getElementById("meetingRoomStaffPanelCaption");
+  const staffActionMessageEl = document.getElementById("meetingRoomStaffActionMessage");
   const roomManageForm = document.getElementById("meetingRoomManageForm");
   const roomManageInput = document.getElementById("meetingRoomManageInput");
   const roomManageMessage = document.getElementById("meetingRoomManageMessage");
@@ -31,9 +32,9 @@ function initMeetingRoomStaffApproval() {
   const COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
   const DEFAULT_ROOMS = [
-    { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", isDefault: true },
-    { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", isDefault: true },
-    { id: "room-3", name: "ห้องประชุม 3 ชั้น 2", isDefault: true }
+    { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public", isDefault: true },
+    { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public", isDefault: true },
+    { id: "room-3", name: "ห้องประชุม 3 ชั้น 2", bookingAccess: "public", isDefault: true }
   ];
 
   const firestore = window.sgcuFirestore || {};
@@ -52,14 +53,24 @@ function initMeetingRoomStaffApproval() {
 
   const normalizeStatus = (status) => {
     const value = (status || "pending").toString().trim().toLowerCase();
-    if (value === "approved" || value === "rejected" || value === "cancel_requested") return value;
+    if (value === "approved" || value === "rejected" || value === "cancel_requested" || value === "reschedule_requested") return value;
     return "pending";
   };
+
+  const normalizeRoomBookingAccess = (value) =>
+    value === "staff_only" ? "staff_only" : "public";
+
+  const roomBookingAccessLabel = (value) =>
+    value === "staff_only" ? "สตาฟจองเท่านั้น" : "คนทั่วไปจอง";
+
+  const roomBookingAccessClass = (value) =>
+    value === "staff_only" ? "is-staff-only" : "is-public";
 
   const statusLabel = (status) => {
     if (status === "approved") return '<span class="badge badge-approved">อนุมัติแล้ว</span>';
     if (status === "rejected") return '<span class="badge badge-rejected">ปฏิเสธ</span>';
     if (status === "cancel_requested") return '<span class="badge badge-warning">ขอยกเลิก</span>';
+    if (status === "reschedule_requested") return '<span class="badge badge-warning">ขอเปลี่ยนเวลา</span>';
     return '<span class="badge badge-pending">รออนุมัติ</span>';
   };
 
@@ -137,7 +148,7 @@ function initMeetingRoomStaffApproval() {
   const calendarStatusClass = (status) => {
     if (status === "approved") return "approved";
     if (status === "rejected") return "cancelled";
-    if (status === "cancel_requested") return "cancel-requested";
+    if (status === "cancel_requested" || status === "reschedule_requested") return "cancel-requested";
     return "pending";
   };
 
@@ -179,14 +190,43 @@ function initMeetingRoomStaffApproval() {
       contactPhone: data.contactPhone || "",
       contactInfo: data.contactInfo || "",
       cancelRequestReason: data.cancelRequestReason || "",
+      rescheduleBaseStatus: normalizeStatus(data.rescheduleBaseStatus),
+      rescheduleRequestedDate: data.rescheduleRequestedDate || "",
+      rescheduleRequestedStartTime: data.rescheduleRequestedStartTime || "",
+      rescheduleRequestedEndTime: data.rescheduleRequestedEndTime || "",
+      rescheduleRequestReason: data.rescheduleRequestReason || "",
+      startAt: data.startAt || "",
+      endAt: data.endAt || "",
       status: normalizeStatus(data.status)
     };
+  };
+
+  const toDateTime = (date, time) => new Date(`${date}T${time}:00`);
+
+  const hasOverlap = (candidate, list, options = {}) => {
+    const ignoredBookingId = options.ignoredBookingId || "";
+    const candidateStart = toDateTime(candidate.date, candidate.startTime);
+    const candidateEnd = toDateTime(candidate.date, candidate.endTime);
+    return list.some((item) => {
+      if (ignoredBookingId && item.id === ignoredBookingId) return false;
+      if (item.roomId !== candidate.roomId || item.date !== candidate.date) return false;
+      if (item.status === "rejected") return false;
+      const itemStart = new Date(item.startAt || toDateTime(item.date, item.startTime).toISOString());
+      const itemEnd = new Date(item.endAt || toDateTime(item.date, item.endTime).toISOString());
+      return candidateStart < itemEnd && candidateEnd > itemStart;
+    });
   };
 
   const setRoomManageMessage = (text = "", color = "#374151") => {
     if (!roomManageMessage) return;
     roomManageMessage.textContent = text;
     roomManageMessage.style.color = color;
+  };
+
+  const setStaffActionMessage = (text = "", color = "#374151") => {
+    if (!staffActionMessageEl) return;
+    staffActionMessageEl.textContent = text;
+    staffActionMessageEl.style.color = color;
   };
 
   const renderRoomManageList = () => {
@@ -214,9 +254,33 @@ function initMeetingRoomStaffApproval() {
                   maxlength="100"
                 />
               `
-              : `<div class="meeting-room-manage-name">${room.name}</div>`
+              : `
+                <div class="meeting-room-manage-name">${room.name}</div>
+                <div class="meeting-room-manage-access-pill ${roomBookingAccessClass(room.bookingAccess)}">
+                  <span class="meeting-room-manage-access-bar" aria-hidden="true"></span>
+                  <span>${roomBookingAccessLabel(room.bookingAccess)}</span>
+                </div>
+              `
             }
             <div class="meeting-room-manage-actions">
+              <button
+                type="button"
+                class="btn-ghost meeting-room-manage-btn meeting-room-access-btn is-public-btn ${room.bookingAccess === "public" ? "is-active" : ""}"
+                data-action="set-room-access"
+                data-room-id="${room.id}"
+                data-access="public"
+              >
+                คนทั่วไปจอง
+              </button>
+              <button
+                type="button"
+                class="btn-ghost meeting-room-manage-btn meeting-room-access-btn is-staff-only-btn ${room.bookingAccess === "staff_only" ? "is-active" : ""}"
+                data-action="set-room-access"
+                data-room-id="${room.id}"
+                data-access="staff_only"
+              >
+                สตาฟจองเท่านั้น
+              </button>
               ${isEditing
                 ? `
                   <button
@@ -270,6 +334,7 @@ function initMeetingRoomStaffApproval() {
       for (const room of DEFAULT_ROOMS) {
         await firestore.addDoc(firestore.collection(firestore.db, ROOM_COLLECTION_NAME), {
           name: room.name,
+          bookingAccess: normalizeRoomBookingAccess(room.bookingAccess),
           createdAt: firestore.serverTimestamp(),
           updatedAt: firestore.serverTimestamp()
         });
@@ -296,7 +361,12 @@ function initMeetingRoomStaffApproval() {
               const data = docItem.data() || {};
               const name = (data.name || "").toString().trim();
               if (!name) return null;
-              return { id: docItem.id, name, isDefault: false };
+              return {
+                id: docItem.id,
+                name,
+                bookingAccess: normalizeRoomBookingAccess(data.bookingAccess),
+                isDefault: false
+              };
             })
             .filter(Boolean)
             .sort((a, b) => a.name.localeCompare(b.name, "th"));
@@ -341,6 +411,7 @@ function initMeetingRoomStaffApproval() {
     try {
       await firestore.addDoc(firestore.collection(firestore.db, ROOM_COLLECTION_NAME), {
         name,
+        bookingAccess: "public",
         createdAt: firestore.serverTimestamp(),
         updatedAt: firestore.serverTimestamp()
       });
@@ -400,6 +471,31 @@ function initMeetingRoomStaffApproval() {
       setRoomManageMessage("แก้ไขชื่อห้องประชุมเรียบร้อยแล้ว", "#047857");
     } catch (err) {
       setRoomManageMessage("ไม่สามารถแก้ไขชื่อห้องประชุมได้ในขณะนี้", "#b91c1c");
+    }
+  };
+
+  const updateRoomBookingAccess = async (roomId, accessValue) => {
+    if (!roomId || !hasFirestore) return;
+    const room = rooms.find((item) => item.id === roomId);
+    if (!room) return;
+    const nextAccess = normalizeRoomBookingAccess(accessValue);
+    if (room.bookingAccess === nextAccess) return;
+    try {
+      await firestore.updateDoc(
+        firestore.doc(firestore.db, ROOM_COLLECTION_NAME, roomId),
+        {
+          bookingAccess: nextAccess,
+          updatedAt: firestore.serverTimestamp()
+        }
+      );
+      setRoomManageMessage(
+        nextAccess === "staff_only"
+          ? `อัปเดตแล้ว: ${room.name} เป็น "สตาฟจองเท่านั้น"`
+          : `อัปเดตแล้ว: ${room.name} เป็น "คนทั่วไปจอง"`,
+        "#047857"
+      );
+    } catch (err) {
+      setRoomManageMessage("ไม่สามารถอัปเดตสิทธิ์การจองได้ในขณะนี้", "#b91c1c");
     }
   };
 
@@ -470,6 +566,7 @@ function initMeetingRoomStaffApproval() {
     if (value === "approved") return "อนุมัติแล้ว";
     if (value === "rejected") return "ไม่อนุมัติ";
     if (value === "cancel_requested") return "ขอยกเลิก";
+    if (value === "reschedule_requested") return "ขอเปลี่ยนเวลา";
     if (value === "pending") return "รออนุมัติ";
     return value;
   };
@@ -477,7 +574,7 @@ function initMeetingRoomStaffApproval() {
   const statusSelectClass = (value) => {
     if (value === "approved") return "is-approved";
     if (value === "rejected") return "is-rejected";
-    if (value === "cancel_requested") return "is-cancel-requested";
+    if (value === "cancel_requested" || value === "reschedule_requested") return "is-cancel-requested";
     if (value === "delete") return "is-delete";
     return "is-pending";
   };
@@ -501,6 +598,10 @@ function initMeetingRoomStaffApproval() {
       <option value="cancel_requested" ${booking.status === "cancel_requested" ? "selected" : ""}>
         ${getStatusOptionLabel("cancel_requested")}
       </option>
+      ${booking.status === "reschedule_requested"
+        ? `<option value="reschedule_requested" selected>${getStatusOptionLabel("reschedule_requested")}</option>`
+        : ""
+      }
       <option value="delete">ลบคำขอ</option>
     </select>
   `;
@@ -617,7 +718,7 @@ function initMeetingRoomStaffApproval() {
     });
 
     const pending = sorted.filter(
-      (booking) => booking.status === "pending" || booking.status === "cancel_requested"
+      (booking) => booking.status === "pending" || booking.status === "cancel_requested" || booking.status === "reschedule_requested"
     );
     const pendingCount = pending.length;
     const approvedCount = sorted.filter((booking) => booking.status === "approved").length;
@@ -636,13 +737,16 @@ function initMeetingRoomStaffApproval() {
             const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName);
             const dateText = formatDate(booking.date);
             const timeText = `${booking.startTime || "-"} - ${booking.endTime || "-"}`;
+            const rescheduleLine = booking.status === "reschedule_requested"
+              ? `<div class="meeting-row-meta">ขอเปลี่ยนเป็น: ${formatDate(booking.rescheduleRequestedDate)} ${booking.rescheduleRequestedStartTime || "-"} - ${booking.rescheduleRequestedEndTime || "-"}</div><div class="meeting-row-meta">เหตุผล: ${booking.rescheduleRequestReason || "-"}</div>`
+              : "";
             return `
               <tr data-booking-id="${booking.id}">
                 <td>${roomName}</td>
                 <td>${dateText}</td>
                 <td>${timeText}</td>
                 <td>${booking.requester || "-"}</td>
-                <td>${booking.purpose || "-"}</td>
+                <td>${booking.purpose || "-"}${rescheduleLine}</td>
                 <td>${statusLabel(booking.status)}</td>
                 <td>
                   ${getStatusDropdown(booking, "คิวรออนุมัติ")}
@@ -670,13 +774,16 @@ function initMeetingRoomStaffApproval() {
             const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName);
             const dateText = formatDate(booking.date);
             const timeText = `${booking.startTime || "-"} - ${booking.endTime || "-"}`;
+            const rescheduleLine = booking.status === "reschedule_requested"
+              ? `<div class="meeting-row-meta">ขอเปลี่ยนเป็น: ${formatDate(booking.rescheduleRequestedDate)} ${booking.rescheduleRequestedStartTime || "-"} - ${booking.rescheduleRequestedEndTime || "-"}</div><div class="meeting-row-meta">เหตุผล: ${booking.rescheduleRequestReason || "-"}</div>`
+              : "";
             return `
               <tr data-booking-id="${booking.id}">
                 <td>${roomName}</td>
                 <td>${dateText}</td>
                 <td>${timeText}</td>
                 <td>${booking.requester || "-"}</td>
-                <td>${booking.purpose || "-"}</td>
+                <td>${booking.purpose || "-"}${rescheduleLine}</td>
                 <td>
                   ${getStatusDropdown(booking, activeTab === "history" ? "ประวัติการขอ" : "รายการคำขอ")}
                 </td>
@@ -698,16 +805,59 @@ function initMeetingRoomStaffApproval() {
 
   const setStatusById = async (id, status) => {
     if (!hasFirestore || !id) return;
+    const booking = bookings.find((item) => item.id === id);
+    if (!booking) return;
+    const payload = {
+      status,
+      updatedAt: firestore.serverTimestamp()
+    };
+    if (booking.status === "reschedule_requested" && status === "approved") {
+      const nextDate = booking.rescheduleRequestedDate || "";
+      const nextStartTime = booking.rescheduleRequestedStartTime || "";
+      const nextEndTime = booking.rescheduleRequestedEndTime || "";
+      if (!nextDate || !nextStartTime || !nextEndTime) {
+        setStaffActionMessage("ไม่พบวัน/เวลาใหม่ที่ขอเปลี่ยน โปรดตรวจสอบข้อมูลคำขอ", "#b91c1c");
+        return;
+      }
+      const candidate = {
+        roomId: booking.roomId,
+        date: nextDate,
+        startTime: nextStartTime,
+        endTime: nextEndTime
+      };
+      if (hasOverlap(candidate, bookings, { ignoredBookingId: id })) {
+        const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName);
+        setStaffActionMessage(`อนุมัติเปลี่ยนเวลาไม่ได้เพราะชนเวลา (${roomName} ${formatDate(nextDate)} ${nextStartTime}-${nextEndTime})`, "#b91c1c");
+        return;
+      }
+      payload.status = "approved";
+      payload.date = nextDate;
+      payload.startTime = nextStartTime;
+      payload.endTime = nextEndTime;
+      payload.startAt = toDateTime(nextDate, nextStartTime).toISOString();
+      payload.endAt = toDateTime(nextDate, nextEndTime).toISOString();
+      payload.rescheduleBaseStatus = "";
+      payload.rescheduleRequestedDate = "";
+      payload.rescheduleRequestedStartTime = "";
+      payload.rescheduleRequestedEndTime = "";
+      payload.rescheduleRequestReason = "";
+    }
+    if (booking.status === "reschedule_requested" && status === "rejected") {
+      payload.status = normalizeStatus(booking.rescheduleBaseStatus || "approved");
+      payload.rescheduleBaseStatus = "";
+      payload.rescheduleRequestedDate = "";
+      payload.rescheduleRequestedStartTime = "";
+      payload.rescheduleRequestedEndTime = "";
+      payload.rescheduleRequestReason = "";
+    }
     try {
       await firestore.updateDoc(
         firestore.doc(firestore.db, COLLECTION_NAME, id),
-        {
-          status,
-          updatedAt: firestore.serverTimestamp()
-        }
+        payload
       );
+      setStaffActionMessage("อัปเดตสถานะคำขอเรียบร้อยแล้ว", "#047857");
     } catch (err) {
-      // ignore approval errors
+      setStaffActionMessage("ไม่สามารถอัปเดตสถานะคำขอได้ในขณะนี้", "#b91c1c");
     }
   };
 
@@ -842,6 +992,13 @@ function initMeetingRoomStaffApproval() {
         void renameRoom(roomId, nextName);
         return;
       }
+      if (action === "set-room-access") {
+        const roomId = button.dataset.roomId;
+        const access = button.dataset.access;
+        if (!roomId || !access) return;
+        void updateRoomBookingAccess(roomId, access);
+        return;
+      }
       if (action === "remove-room") {
         const roomId = button.dataset.roomId;
         if (!roomId) return;
@@ -875,7 +1032,7 @@ function initMeetingRoomStaffApproval() {
         deleteById(id);
         return;
       }
-      if (value !== "pending" && value !== "approved" && value !== "rejected" && value !== "cancel_requested") return;
+      if (value !== "pending" && value !== "approved" && value !== "rejected" && value !== "cancel_requested" && value !== "reschedule_requested") return;
       if (booking && booking.status === value) return;
       setStatusById(id, value);
     });

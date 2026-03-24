@@ -257,10 +257,6 @@
           <div class="auth-panel" id="authPanel">
             <span id="userInfo" class="auth-user"></span>
           </div>
-          <div id="staffModeToggle" class="staff-mode-toggle">
-            <button class="staff-mode-btn is-active" data-staff-mode="normal" type="button">ปกติ</button>
-            <button class="staff-mode-btn" data-staff-mode="staff" type="button">Staff</button>
-          </div>
 
           <button
             id="hamburgerBtn"
@@ -1874,6 +1870,49 @@
                   <span id="meetingCancelMessage" class="section-text-sm" aria-live="polite"></span>
                 </div>
               </form>
+
+              <div class="separator-gradient" style="margin: 14px 0 10px;"></div>
+
+              <form id="meetingRescheduleForm" class="meeting-booking-form">
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRescheduleBookingSelect">คำขอของฉัน (ขอเปลี่ยนเวลา)</label>
+                    <select id="meetingRescheduleBookingSelect" class="login-input" required>
+                      <option value="">เลือกรายการที่ต้องการขอเปลี่ยนเวลา</option>
+                    </select>
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRescheduleDate">วันที่ใหม่</label>
+                    <input id="meetingRescheduleDate" class="login-input" type="date" required />
+                  </div>
+                </div>
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRescheduleStartTime">เวลาเริ่มใหม่</label>
+                    <input id="meetingRescheduleStartTime" class="login-input" type="time" required />
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRescheduleEndTime">เวลาสิ้นสุดใหม่</label>
+                    <input id="meetingRescheduleEndTime" class="login-input" type="time" required />
+                  </div>
+                </div>
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRescheduleReason">เหตุผลการขอเปลี่ยนเวลา</label>
+                    <textarea
+                      id="meetingRescheduleReason"
+                      class="login-input"
+                      rows="2"
+                      placeholder="ระบุเหตุผลที่ต้องการเปลี่ยนเวลา"
+                      required
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="meeting-form-actions">
+                  <button class="btn-ghost" type="submit">ส่งคำขอเปลี่ยนเวลา</button>
+                  <span id="meetingRescheduleMessage" class="section-text-sm" aria-live="polite"></span>
+                </div>
+              </form>
             </div>
           </div>
 
@@ -1888,16 +1927,18 @@
               </div>
             </div>
             <div class="panel-body">
-              <div class="calendar-weekday-row" aria-hidden="true">
-                <div class="calendar-weekday">อา</div>
-                <div class="calendar-weekday">จ</div>
-                <div class="calendar-weekday">อ</div>
-                <div class="calendar-weekday">พ</div>
-                <div class="calendar-weekday">พฤ</div>
-                <div class="calendar-weekday">ศ</div>
-                <div class="calendar-weekday">ส</div>
+              <div class="calendar-grid-scroll">
+                <div class="calendar-weekday-row" aria-hidden="true">
+                  <div class="calendar-weekday">อา</div>
+                  <div class="calendar-weekday">จ</div>
+                  <div class="calendar-weekday">อ</div>
+                  <div class="calendar-weekday">พ</div>
+                  <div class="calendar-weekday">พฤ</div>
+                  <div class="calendar-weekday">ศ</div>
+                  <div class="calendar-weekday">ส</div>
+                </div>
+                <div id="meetingRoomCalendar" class="calendar-grid"></div>
               </div>
-              <div id="meetingRoomCalendar" class="calendar-grid"></div>
             </div>
           </div>
         </div>
@@ -1937,6 +1978,7 @@
               <div>
                 <div id="meetingRoomStaffPanelTitle" class="panel-title">รายการคำขอ</div>
                 <div id="meetingRoomStaffPanelCaption" class="panel-caption">แสดงคำขอที่ยังไม่เลยวันขอ</div>
+                <div id="meetingRoomStaffActionMessage" class="section-text-sm" aria-live="polite"></div>
               </div>
             </div>
             <div class="table-wrapper">
@@ -1971,16 +2013,18 @@
               </div>
             </div>
             <div class="panel-body">
-              <div class="calendar-weekday-row" aria-hidden="true">
-                <div class="calendar-weekday">อา</div>
-                <div class="calendar-weekday">จ</div>
-                <div class="calendar-weekday">อ</div>
-                <div class="calendar-weekday">พ</div>
-                <div class="calendar-weekday">พฤ</div>
-                <div class="calendar-weekday">ศ</div>
-                <div class="calendar-weekday">ส</div>
+              <div class="calendar-grid-scroll">
+                <div class="calendar-weekday-row" aria-hidden="true">
+                  <div class="calendar-weekday">อา</div>
+                  <div class="calendar-weekday">จ</div>
+                  <div class="calendar-weekday">อ</div>
+                  <div class="calendar-weekday">พ</div>
+                  <div class="calendar-weekday">พฤ</div>
+                  <div class="calendar-weekday">ศ</div>
+                  <div class="calendar-weekday">ส</div>
+                </div>
+                <div id="meetingRoomStaffCalendar" class="calendar-grid"></div>
               </div>
-              <div id="meetingRoomStaffCalendar" class="calendar-grid"></div>
             </div>
           </div>
 
@@ -1988,7 +2032,7 @@
             <div class="panel-header">
               <div>
                 <div class="panel-title">จัดการห้องประชุม</div>
-                <div class="panel-caption">เพิ่มห้องใหม่ หรือลบห้องที่ไม่ใช้งาน</div>
+                <div class="panel-caption">เพิ่มห้องใหม่ ลบห้องที่ไม่ใช้งาน และกำหนดสิทธิ์การจองของแต่ละห้อง</div>
                 <div id="meetingRoomManageCount" class="panel-meta">พบ 0 ห้อง</div>
               </div>
             </div>
@@ -2616,6 +2660,10 @@
           <div>
             <h1 class="page-title">เข้าสู่ระบบ</h1>
             <p class="page-subtitle">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต</p>
+          </div>
+          <div id="staffModeToggle" class="staff-mode-toggle login-staff-mode-toggle tabs">
+            <button class="staff-mode-btn tab-btn view-toggle-btn is-active" data-staff-mode="normal" type="button">ทั่วไป</button>
+            <button class="staff-mode-btn tab-btn view-toggle-btn" data-staff-mode="staff" type="button">สตาฟ</button>
           </div>
         </div>
 

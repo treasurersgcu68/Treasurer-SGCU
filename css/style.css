@@ -184,34 +184,35 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .staff-mode-toggle {
   display: none;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: 2px;
+  padding: 3px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ffe4f1, #fbcfe8);
-  border: 1px solid var(--theme-pink-300);
-  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.18);
+  background: #fdf2f8;
+  border: 1px solid #f9a8d4;
 }
 
 .staff-mode-btn {
-  border: 0;
+  border: none;
   background: transparent;
-  color: var(--theme-pink-800);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 10px;
+  color: #be185d;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 12px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
-}
-
-.staff-mode-btn:hover {
-  transform: translateY(-1px);
+  opacity: 0.75;
+  transition: background 0.16s ease-out, color 0.16s ease-out, opacity 0.16s ease-out;
 }
 
 .staff-mode-btn.is-active {
-  background: var(--theme-pink-600);
-  color: #fff;
-  box-shadow: 0 6px 14px rgba(219, 39, 119, 0.28);
+  background: #ffe4f1;
+  color: #be185d;
+  opacity: 1;
+}
+
+.login-staff-mode-toggle {
+  margin: 0;
+  margin-left: auto;
 }
 
 .login-grid {
@@ -365,6 +366,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   font-weight: 600;
 }
 
+#meetingRescheduleMessage {
+  min-height: 18px;
+  font-weight: 600;
+}
+
+#meetingRoomStaffActionMessage {
+  min-height: 18px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
 #meetingProjectCodeState {
   margin-top: 6px;
 }
@@ -383,7 +395,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 #meetingPurpose,
-#meetingCancelReason {
+#meetingCancelReason,
+#meetingRescheduleReason {
   resize: none;
   min-height: 92px;
   height: 92px;
@@ -479,6 +492,31 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: #111827;
 }
 
+.meeting-room-manage-access-pill {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.meeting-room-manage-access-bar {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.meeting-room-manage-access-pill.is-public .meeting-room-manage-access-bar {
+  background: #22c55e;
+}
+
+.meeting-room-manage-access-pill.is-staff-only .meeting-room-manage-access-bar {
+  background: #ec4899;
+}
+
 .meeting-room-manage-edit-input {
   min-width: 220px;
   background: #ffffff;
@@ -495,6 +533,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   min-width: 64px;
   padding: 6px 10px;
   font-size: 12px;
+}
+
+.meeting-room-access-btn.is-public-btn.is-active {
+  border-color: #22c55e;
+  color: #15803d;
+  background: #f0fdf4;
+}
+
+.meeting-room-access-btn.is-staff-only-btn.is-active {
+  border-color: #ec4899;
+  color: #be185d;
+  background: #fdf2f8;
 }
 
 .meeting-room-manage-empty {
@@ -623,6 +673,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .staff-status-select option[value="cancel_requested"] {
+  color: #92400e;
+}
+
+.staff-status-select option[value="reschedule_requested"] {
   color: #92400e;
 }
 
@@ -902,6 +956,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .login-hero-title {
     font-size: 24px;
   }
+
+  .login-staff-mode-toggle {
+    width: auto;
+    justify-content: center;
+    margin: 0;
+    margin-left: 0;
+  }
 }
 
 @keyframes loginFadeIn {
@@ -1014,7 +1075,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   background: var(--menu-glass-bg);
   border: none;
   border-radius: 16px;
-  box-shadow: var(--menu-shadow);
+  box-shadow: none;
   padding: 6px;
   margin-left: auto;
 }

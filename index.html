@@ -1759,7 +1759,7 @@
         <div class="page">
           <div class="page-header-flex section-appear meeting-room-header">
             <div>
-              <h2 class="page-title">Meeting Room Booking</h2>
+              <h2 class="page-title">Meeting Room Booking (กำลังพัฒนา)</h2>
               <p class="page-subtitle">กรอกคำขอเพื่อจองห้องประชุม และติดตามสถานะอนุมัติจากทีม Staff</p>
             </div>
           </div>
@@ -1851,8 +1851,6 @@
               <div class="separator-gradient" style="margin: 14px 0 10px;"></div>
 
               <form id="meetingCancelForm" class="meeting-booking-form">
-                <div class="meeting-subsection-title">ขอยกเลิกคำขอของฉัน</div>
-                <div class="meeting-subsection-caption">คำขอยกเลิกจะถูกส่งให้ Staff ตรวจสอบก่อนยืนยันผล</div>
                 <div class="borrow-form-row">
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingCancelBookingSelect">คำขอของฉัน</label>
@@ -1876,37 +1874,6 @@
                   <span id="meetingCancelMessage" class="section-text-sm" aria-live="polite"></span>
                 </div>
               </form>
-
-              <form id="meetingRescheduleForm" class="meeting-booking-form">
-                <div class="meeting-subsection-title">เลื่อนเวลาคำขอของฉัน</div>
-                <div class="meeting-subsection-caption">เมื่อเลื่อนเวลาแล้ว คำขอจะกลับไปอยู่สถานะรออนุมัติ</div>
-                <div class="borrow-form-row">
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleBookingSelect">คำขอที่ต้องการเลื่อนเวลา</label>
-                    <select id="meetingRescheduleBookingSelect" class="login-input" required>
-                      <option value="">เลือกคำขอ</option>
-                    </select>
-                  </div>
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleDate">วันที่ใหม่</label>
-                    <input id="meetingRescheduleDate" class="login-input" type="date" required />
-                  </div>
-                </div>
-                <div class="borrow-form-row">
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleStartTime">เวลาเริ่มใหม่</label>
-                    <input id="meetingRescheduleStartTime" class="login-input" type="time" required />
-                  </div>
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleEndTime">เวลาสิ้นสุดใหม่</label>
-                    <input id="meetingRescheduleEndTime" class="login-input" type="time" required />
-                  </div>
-                </div>
-                <div class="meeting-form-actions">
-                  <button class="btn-ghost" type="submit">บันทึกการเลื่อนเวลา</button>
-                  <span id="meetingRescheduleMessage" class="section-text-sm" aria-live="polite"></span>
-                </div>
-              </form>
             </div>
           </div>
 
@@ -1921,18 +1888,16 @@
               </div>
             </div>
             <div class="panel-body">
-              <div class="calendar-grid-scroll">
-                <div class="calendar-weekday-row" aria-hidden="true">
-                  <div class="calendar-weekday">อา</div>
-                  <div class="calendar-weekday">จ</div>
-                  <div class="calendar-weekday">อ</div>
-                  <div class="calendar-weekday">พ</div>
-                  <div class="calendar-weekday">พฤ</div>
-                  <div class="calendar-weekday">ศ</div>
-                  <div class="calendar-weekday">ส</div>
-                </div>
-                <div id="meetingRoomCalendar" class="calendar-grid"></div>
+              <div class="calendar-weekday-row" aria-hidden="true">
+                <div class="calendar-weekday">อา</div>
+                <div class="calendar-weekday">จ</div>
+                <div class="calendar-weekday">อ</div>
+                <div class="calendar-weekday">พ</div>
+                <div class="calendar-weekday">พฤ</div>
+                <div class="calendar-weekday">ศ</div>
+                <div class="calendar-weekday">ส</div>
               </div>
+              <div id="meetingRoomCalendar" class="calendar-grid"></div>
             </div>
           </div>
         </div>
@@ -2006,18 +1971,16 @@
               </div>
             </div>
             <div class="panel-body">
-              <div class="calendar-grid-scroll">
-                <div class="calendar-weekday-row" aria-hidden="true">
-                  <div class="calendar-weekday">อา</div>
-                  <div class="calendar-weekday">จ</div>
-                  <div class="calendar-weekday">อ</div>
-                  <div class="calendar-weekday">พ</div>
-                  <div class="calendar-weekday">พฤ</div>
-                  <div class="calendar-weekday">ศ</div>
-                  <div class="calendar-weekday">ส</div>
-                </div>
-                <div id="meetingRoomStaffCalendar" class="calendar-grid"></div>
+              <div class="calendar-weekday-row" aria-hidden="true">
+                <div class="calendar-weekday">อา</div>
+                <div class="calendar-weekday">จ</div>
+                <div class="calendar-weekday">อ</div>
+                <div class="calendar-weekday">พ</div>
+                <div class="calendar-weekday">พฤ</div>
+                <div class="calendar-weekday">ศ</div>
+                <div class="calendar-weekday">ส</div>
               </div>
+              <div id="meetingRoomStaffCalendar" class="calendar-grid"></div>
             </div>
           </div>
 
@@ -2025,7 +1988,7 @@
             <div class="panel-header">
               <div>
                 <div class="panel-title">จัดการห้องประชุม</div>
-                <div class="panel-caption">เพิ่ม/แก้ไขห้อง พร้อมกำหนดสิทธิ์การจองของแต่ละห้อง</div>
+                <div class="panel-caption">เพิ่มห้องใหม่ หรือลบห้องที่ไม่ใช้งาน</div>
                 <div id="meetingRoomManageCount" class="panel-meta">พบ 0 ห้อง</div>
               </div>
             </div>
@@ -2040,10 +2003,6 @@
                     maxlength="100"
                     required
                   />
-                  <select id="meetingRoomManageAccess" class="login-input meeting-room-manage-access" aria-label="สิทธิ์การจองห้องประชุม">
-                    <option value="public" selected>ให้ทุกคนจองได้</option>
-                    <option value="staff_only">เฉพาะ Staff จองได้</option>
-                  </select>
                   <button class="btn-primary" type="submit">เพิ่มห้อง</button>
                 </div>
                 <div id="meetingRoomManageMessage" class="section-text-sm" aria-live="polite"></div>

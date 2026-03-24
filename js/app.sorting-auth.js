@@ -95,21 +95,11 @@ function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatus
 function updateNavVisibility(isAuthenticated) {
   if (!navLinksAll.length) return;
   const allowedPages = getAllowedPagesForCurrentState();
-  const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
   navLinksAll.forEach((link) => {
     const mode = link.dataset.visible || "public";
     const page = link.dataset.page || "";
     if (!allowedPages.has(page)) {
       link.style.display = "none";
-      return;
-    }
-    if (!isAuthenticated && !publicAllowed.has(page)) {
-      link.style.display = "none";
-      return;
-    }
-
-    if (mode === "protected") {
-      link.style.display = isAuthenticated ? "" : "none";
     } else if (mode === "public-only") {
       link.style.display = isAuthenticated ? "none" : "";
     } else {

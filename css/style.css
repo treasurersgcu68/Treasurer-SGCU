@@ -334,11 +334,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   line-height: 1.45;
 }
 
-.meeting-form-panel .panel-body {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 249, 252, 0.9));
-  border-radius: 14px;
-}
-
 .meeting-booking-form .borrow-form-row {
   margin-bottom: 10px;
 }
@@ -355,14 +350,69 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-top: 10px;
 }
 
-#meetingBookingMessage {
-  min-height: 18px;
+.meeting-form-panel .panel-body {
+  background: linear-gradient(180deg, #fffefe 0%, #fff8fb 100%);
+  border-radius: 14px;
+}
+
+.meeting-booking-form {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: inset 0 0 0 1px #f3e8ef;
+}
+
+.meeting-booking-form + .meeting-booking-form {
+  margin-top: 10px;
+}
+
+.meeting-subsection-title {
+  font-size: 14px;
   font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.meeting-subsection-caption {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+#meetingBookingMessage {
+  min-height: 20px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f8fafc;
 }
 
 #meetingCancelMessage {
-  min-height: 18px;
+  min-height: 20px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+#meetingRescheduleMessage {
+  min-height: 20px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+#meetingBookingMessage:empty,
+#meetingCancelMessage:empty,
+#meetingRescheduleMessage:empty {
+  display: none;
 }
 
 #meetingProjectCodeState {
@@ -447,9 +497,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .meeting-room-manage-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 220px) auto;
   gap: 10px;
-  align-items: center;
+  align-items: stretch;
 }
 
 #meetingRoomManageMessage {
@@ -467,10 +517,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   border-radius: 12px;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px #f1f5f9;
+  background: #fffdfd;
+  box-shadow: inset 0 0 0 1px #f3e8ef;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.meeting-room-manage-item:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px #fbcfe8, 0 8px 20px rgba(190, 24, 93, 0.08);
 }
 
 .meeting-room-manage-name {
@@ -479,9 +535,81 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: #111827;
 }
 
+.meeting-room-manage-name-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meeting-room-manage-access-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.meeting-room-manage-access-badge.is-public {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.meeting-room-manage-access-badge.is-staff-only {
+  color: var(--theme-pink-800);
+  background: #fce7f3;
+}
+
+.meeting-room-manage-access,
+.meeting-room-manage-edit-access {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9ca3af 50%),
+    linear-gradient(135deg, #9ca3af 50%, transparent 50%),
+    linear-gradient(to right, #ffffff, #ffffff);
+  background-position:
+    calc(100% - 16px) calc(1em + 2px),
+    calc(100% - 11px) calc(1em + 2px),
+    100% 0;
+  background-size: 5px 5px, 5px 5px, 2.6em 2.6em;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--theme-pink-200);
+  color: var(--theme-pink-800);
+}
+
+.meeting-room-manage-row .btn-primary {
+  min-height: 40px;
+  padding-inline: 16px;
+}
+
+.meeting-room-manage-row .login-input {
+  min-height: 40px;
+}
+
+.meeting-room-manage-edit-access,
+.meeting-room-manage-access {
+  border-radius: 999px;
+}
+
+.meeting-room-manage-edit-access:focus,
+.meeting-room-manage-access:focus {
+  border-color: var(--theme-pink-500);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.16);
+}
+
 .meeting-room-manage-edit-input {
   min-width: 220px;
   background: #ffffff;
+}
+
+.meeting-room-manage-edit-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+  gap: 8px;
+  width: min(560px, 100%);
 }
 
 .meeting-room-manage-actions {
@@ -660,6 +788,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .meeting-room-manage-item {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .meeting-booking-form {
+    padding: 12px;
+  }
+
+  .meeting-room-manage-edit-wrap {
+    grid-template-columns: 1fr;
+    width: 100%;
   }
 
   .meeting-room-manage-edit-input {

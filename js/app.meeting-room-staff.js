@@ -12,6 +12,7 @@ function initMeetingRoomStaffApproval() {
   const panelCaptionEl = document.getElementById("meetingRoomStaffPanelCaption");
   const roomManageForm = document.getElementById("meetingRoomManageForm");
   const roomManageInput = document.getElementById("meetingRoomManageInput");
+  const roomManageAccessSelect = document.getElementById("meetingRoomManageAccess");
   const roomManageMessage = document.getElementById("meetingRoomManageMessage");
   const roomManageList = document.getElementById("meetingRoomManageList");
   const roomManageCountEl = document.getElementById("meetingRoomManageCount");
@@ -30,10 +31,12 @@ function initMeetingRoomStaffApproval() {
 
   const COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
+  const ROOM_ACCESS_PUBLIC = "public";
+  const ROOM_ACCESS_STAFF_ONLY = "staff_only";
   const DEFAULT_ROOMS = [
-    { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", isDefault: true },
-    { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", isDefault: true },
-    { id: "room-3", name: "ห้องประชุม 3 ชั้น 2", isDefault: true }
+    { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", isDefault: true, bookingAccess: ROOM_ACCESS_PUBLIC },
+    { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", isDefault: true, bookingAccess: ROOM_ACCESS_PUBLIC },
+    { id: "room-3", name: "ห้องประชุม 3 ชั้น 2", isDefault: true, bookingAccess: ROOM_ACCESS_PUBLIC }
   ];
 
   const firestore = window.sgcuFirestore || {};
@@ -163,6 +166,21 @@ function initMeetingRoomStaffApproval() {
     return matched?.name || roomName || roomId || "-";
   };
 
+  const normalizeRoomAccess = (value) => {
+    const normalized = (value || "").toString().trim().toLowerCase();
+    return normalized === ROOM_ACCESS_STAFF_ONLY ? ROOM_ACCESS_STAFF_ONLY : ROOM_ACCESS_PUBLIC;
+  };
+
+  const roomAccessLabel = (access) =>
+    normalizeRoomAccess(access) === ROOM_ACCESS_STAFF_ONLY
+      ? "Staff เท่านั้น"
+      : "ทุกคนจองได้";
+
+  const roomAccessClassName = (access) =>
+    normalizeRoomAccess(access) === ROOM_ACCESS_STAFF_ONLY
+      ? "is-staff-only"
+      : "is-public";
+
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
     const roomId = data.roomId || "";
@@ -205,16 +223,32 @@ function initMeetingRoomStaffApproval() {
           <div class="meeting-room-manage-item">
             ${isEditing
               ? `
-                <input
-                  type="text"
-                  class="login-input meeting-room-manage-edit-input"
-                  data-role="room-edit-input"
-                  data-room-id="${room.id}"
-                  value="${room.name}"
-                  maxlength="100"
-                />
+                <div class="meeting-room-manage-edit-wrap">
+                  <input
+                    type="text"
+                    class="login-input meeting-room-manage-edit-input"
+                    data-role="room-edit-input"
+                    data-room-id="${room.id}"
+                    value="${room.name}"
+                    maxlength="100"
+                  />
+                  <select
+                    class="login-input meeting-room-manage-edit-access"
+                    data-role="room-edit-access"
+                    data-room-id="${room.id}"
+                    aria-label="สิทธิ์การจองของห้อง ${room.name}"
+                  >
+                    <option value="${ROOM_ACCESS_PUBLIC}" ${normalizeRoomAccess(room.bookingAccess) === ROOM_ACCESS_PUBLIC ? "selected" : ""}>ให้ทุกคนจองได้</option>
+                    <option value="${ROOM_ACCESS_STAFF_ONLY}" ${normalizeRoomAccess(room.bookingAccess) === ROOM_ACCESS_STAFF_ONLY ? "selected" : ""}>เฉพาะ Staff จองได้</option>
+                  </select>
+                </div>
               `
-              : `<div class="meeting-room-manage-name">${room.name}</div>`
+              : `
+                <div class="meeting-room-manage-name-wrap">
+                  <div class="meeting-room-manage-name">${room.name}</div>
+                  <div class="meeting-room-manage-access-badge ${roomAccessClassName(room.bookingAccess)}">${roomAccessLabel(room.bookingAccess)}</div>
+                </div>
+              `
             }
             <div class="meeting-room-manage-actions">
               ${isEditing
@@ -270,6 +304,7 @@ function initMeetingRoomStaffApproval() {
       for (const room of DEFAULT_ROOMS) {
         await firestore.addDoc(firestore.collection(firestore.db, ROOM_COLLECTION_NAME), {
           name: room.name,
+          bookingAccess: normalizeRoomAccess(room.bookingAccess),
           createdAt: firestore.serverTimestamp(),
           updatedAt: firestore.serverTimestamp()
         });
@@ -296,7 +331,12 @@ function initMeetingRoomStaffApproval() {
               const data = docItem.data() || {};
               const name = (data.name || "").toString().trim();
               if (!name) return null;
-              return { id: docItem.id, name, isDefault: false };
+              return {
+                id: docItem.id,
+                name,
+                isDefault: false,
+                bookingAccess: normalizeRoomAccess(data.bookingAccess)
+              };
             })
             .filter(Boolean)
             .sort((a, b) => a.name.localeCompare(b.name, "th"));
@@ -323,8 +363,9 @@ function initMeetingRoomStaffApproval() {
     }
   };
 
-  const addRoom = async (nameValue) => {
+  const addRoom = async (nameValue, accessValue) => {
     const name = (nameValue || "").toString().trim().replace(/\s+/g, " ");
+    const bookingAccess = normalizeRoomAccess(accessValue);
     if (!name) {
       setRoomManageMessage("กรุณากรอกชื่อห้องประชุม", "#b91c1c");
       return;
@@ -341,11 +382,13 @@ function initMeetingRoomStaffApproval() {
     try {
       await firestore.addDoc(firestore.collection(firestore.db, ROOM_COLLECTION_NAME), {
         name,
+        bookingAccess,
         createdAt: firestore.serverTimestamp(),
         updatedAt: firestore.serverTimestamp()
       });
       setRoomManageMessage("เพิ่มห้องประชุมเรียบร้อยแล้ว", "#047857");
       if (roomManageInput) roomManageInput.value = "";
+      if (roomManageAccessSelect) roomManageAccessSelect.value = ROOM_ACCESS_PUBLIC;
     } catch (err) {
       setRoomManageMessage("ไม่สามารถเพิ่มห้องประชุมได้ในขณะนี้", "#b91c1c");
     }
@@ -367,17 +410,20 @@ function initMeetingRoomStaffApproval() {
     }
   };
 
-  const renameRoom = async (roomId, nextNameValue) => {
+  const renameRoom = async (roomId, nextNameValue, nextAccessValue) => {
     if (!roomId || !hasFirestore) return;
     const room = rooms.find((item) => item.id === roomId);
     if (!room) return;
     const nextName = (nextNameValue || "").toString().trim().replace(/\s+/g, " ");
+    const nextAccess = normalizeRoomAccess(nextAccessValue || room.bookingAccess);
     if (!nextName) {
       setRoomManageMessage("กรุณากรอกชื่อห้องประชุมใหม่", "#b91c1c");
       return;
     }
-    if (nextName.toLowerCase() === room.name.toLowerCase()) {
-      setRoomManageMessage("ชื่อห้องประชุมยังเหมือนเดิม", "#6b7280");
+    const sameName = nextName.toLowerCase() === room.name.toLowerCase();
+    const sameAccess = normalizeRoomAccess(room.bookingAccess) === nextAccess;
+    if (sameName && sameAccess) {
+      setRoomManageMessage("ยังไม่มีการเปลี่ยนแปลงข้อมูลห้อง", "#6b7280");
       return;
     }
     const duplicate = rooms.some(
@@ -392,14 +438,15 @@ function initMeetingRoomStaffApproval() {
         firestore.doc(firestore.db, ROOM_COLLECTION_NAME, roomId),
         {
           name: nextName,
+          bookingAccess: nextAccess,
           updatedAt: firestore.serverTimestamp()
         }
       );
       editingRoomId = "";
       renderRoomManageList();
-      setRoomManageMessage("แก้ไขชื่อห้องประชุมเรียบร้อยแล้ว", "#047857");
+      setRoomManageMessage("อัปเดตข้อมูลห้องประชุมเรียบร้อยแล้ว", "#047857");
     } catch (err) {
-      setRoomManageMessage("ไม่สามารถแก้ไขชื่อห้องประชุมได้ในขณะนี้", "#b91c1c");
+      setRoomManageMessage("ไม่สามารถอัปเดตข้อมูลห้องประชุมได้ในขณะนี้", "#b91c1c");
     }
   };
 
@@ -838,8 +885,14 @@ function initMeetingRoomStaffApproval() {
         const input = root.querySelector(
           `.meeting-room-manage-edit-input[data-room-id="${roomId}"]`
         );
+        const accessSelect = root.querySelector(
+          `.meeting-room-manage-edit-access[data-room-id="${roomId}"]`
+        );
         const nextName = input instanceof HTMLInputElement ? input.value : "";
-        void renameRoom(roomId, nextName);
+        const nextAccess = accessSelect instanceof HTMLSelectElement
+          ? accessSelect.value
+          : ROOM_ACCESS_PUBLIC;
+        void renameRoom(roomId, nextName, nextAccess);
         return;
       }
       if (action === "remove-room") {
@@ -888,7 +941,13 @@ function initMeetingRoomStaffApproval() {
       event.preventDefault();
       const roomId = target.dataset.roomId || "";
       if (!roomId) return;
-      void renameRoom(roomId, target.value);
+      const accessSelect = root.querySelector(
+        `.meeting-room-manage-edit-access[data-room-id="${roomId}"]`
+      );
+      const nextAccess = accessSelect instanceof HTMLSelectElement
+        ? accessSelect.value
+        : ROOM_ACCESS_PUBLIC;
+      void renameRoom(roomId, target.value, nextAccess);
     });
 
     if (staffCalendarPanel) {
@@ -924,7 +983,10 @@ function initMeetingRoomStaffApproval() {
   if (roomManageForm) {
     roomManageForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      void addRoom(roomManageInput?.value || "");
+      void addRoom(
+        roomManageInput?.value || "",
+        roomManageAccessSelect?.value || ROOM_ACCESS_PUBLIC
+      );
     });
   }
   renderRoomManageList();

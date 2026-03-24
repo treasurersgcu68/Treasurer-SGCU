@@ -257,10 +257,6 @@
           <div class="auth-panel" id="authPanel">
             <span id="userInfo" class="auth-user"></span>
           </div>
-          <div id="staffModeToggle" class="staff-mode-toggle">
-            <button class="staff-mode-btn is-active" data-staff-mode="normal" type="button">ปกติ</button>
-            <button class="staff-mode-btn" data-staff-mode="staff" type="button">Staff</button>
-          </div>
 
           <button
             id="hamburgerBtn"
@@ -1759,7 +1755,7 @@
         <div class="page">
           <div class="page-header-flex section-appear meeting-room-header">
             <div>
-              <h2 class="page-title">Meeting Room Booking</h2>
+              <h2 class="page-title">Meeting Room Booking (กำลังพัฒนา)</h2>
               <p class="page-subtitle">กรอกคำขอเพื่อจองห้องประชุม และติดตามสถานะอนุมัติจากทีม Staff</p>
             </div>
           </div>
@@ -1851,8 +1847,6 @@
               <div class="separator-gradient" style="margin: 14px 0 10px;"></div>
 
               <form id="meetingCancelForm" class="meeting-booking-form">
-                <div class="meeting-subsection-title">ขอยกเลิกคำขอของฉัน</div>
-                <div class="meeting-subsection-caption">คำขอยกเลิกจะถูกส่งให้ Staff ตรวจสอบก่อนยืนยันผล</div>
                 <div class="borrow-form-row">
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingCancelBookingSelect">คำขอของฉัน</label>
@@ -1877,14 +1871,14 @@
                 </div>
               </form>
 
+              <div class="separator-gradient" style="margin: 14px 0 10px;"></div>
+
               <form id="meetingRescheduleForm" class="meeting-booking-form">
-                <div class="meeting-subsection-title">เลื่อนเวลาคำขอของฉัน</div>
-                <div class="meeting-subsection-caption">เมื่อเลื่อนเวลาแล้ว คำขอจะกลับไปอยู่สถานะรออนุมัติ</div>
                 <div class="borrow-form-row">
                   <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleBookingSelect">คำขอที่ต้องการเลื่อนเวลา</label>
+                    <label class="login-label" for="meetingRescheduleBookingSelect">คำขอของฉัน (ขอเปลี่ยนเวลา)</label>
                     <select id="meetingRescheduleBookingSelect" class="login-input" required>
-                      <option value="">เลือกคำขอ</option>
+                      <option value="">เลือกรายการที่ต้องการขอเปลี่ยนเวลา</option>
                     </select>
                   </div>
                   <div class="borrow-form-field">
@@ -1902,8 +1896,20 @@
                     <input id="meetingRescheduleEndTime" class="login-input" type="time" required />
                   </div>
                 </div>
+                <div class="borrow-form-row">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="meetingRescheduleReason">เหตุผลการขอเปลี่ยนเวลา</label>
+                    <textarea
+                      id="meetingRescheduleReason"
+                      class="login-input"
+                      rows="2"
+                      placeholder="ระบุเหตุผลที่ต้องการเปลี่ยนเวลา"
+                      required
+                    ></textarea>
+                  </div>
+                </div>
                 <div class="meeting-form-actions">
-                  <button class="btn-ghost" type="submit">บันทึกการเลื่อนเวลา</button>
+                  <button class="btn-ghost" type="submit">ส่งคำขอเปลี่ยนเวลา</button>
                   <span id="meetingRescheduleMessage" class="section-text-sm" aria-live="polite"></span>
                 </div>
               </form>
@@ -1972,6 +1978,7 @@
               <div>
                 <div id="meetingRoomStaffPanelTitle" class="panel-title">รายการคำขอ</div>
                 <div id="meetingRoomStaffPanelCaption" class="panel-caption">แสดงคำขอที่ยังไม่เลยวันขอ</div>
+                <div id="meetingRoomStaffActionMessage" class="section-text-sm" aria-live="polite"></div>
               </div>
             </div>
             <div class="table-wrapper">
@@ -2025,7 +2032,7 @@
             <div class="panel-header">
               <div>
                 <div class="panel-title">จัดการห้องประชุม</div>
-                <div class="panel-caption">เพิ่ม/แก้ไขห้อง พร้อมกำหนดสิทธิ์การจองของแต่ละห้อง</div>
+                <div class="panel-caption">เพิ่มห้องใหม่ ลบห้องที่ไม่ใช้งาน และกำหนดสิทธิ์การจองของแต่ละห้อง</div>
                 <div id="meetingRoomManageCount" class="panel-meta">พบ 0 ห้อง</div>
               </div>
             </div>
@@ -2040,10 +2047,6 @@
                     maxlength="100"
                     required
                   />
-                  <select id="meetingRoomManageAccess" class="login-input meeting-room-manage-access" aria-label="สิทธิ์การจองห้องประชุม">
-                    <option value="public" selected>ให้ทุกคนจองได้</option>
-                    <option value="staff_only">เฉพาะ Staff จองได้</option>
-                  </select>
                   <button class="btn-primary" type="submit">เพิ่มห้อง</button>
                 </div>
                 <div id="meetingRoomManageMessage" class="section-text-sm" aria-live="polite"></div>
@@ -2657,6 +2660,10 @@
           <div>
             <h1 class="page-title">เข้าสู่ระบบ</h1>
             <p class="page-subtitle">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต</p>
+          </div>
+          <div id="staffModeToggle" class="staff-mode-toggle login-staff-mode-toggle tabs">
+            <button class="staff-mode-btn tab-btn view-toggle-btn is-active" data-staff-mode="normal" type="button">ทั่วไป</button>
+            <button class="staff-mode-btn tab-btn view-toggle-btn" data-staff-mode="staff" type="button">สตาฟ</button>
           </div>
         </div>
 

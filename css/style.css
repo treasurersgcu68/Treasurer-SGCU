@@ -184,34 +184,35 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .staff-mode-toggle {
   display: none;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: 2px;
+  padding: 3px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ffe4f1, #fbcfe8);
-  border: 1px solid var(--theme-pink-300);
-  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.18);
+  background: #fdf2f8;
+  border: 1px solid #f9a8d4;
 }
 
 .staff-mode-btn {
-  border: 0;
+  border: none;
   background: transparent;
-  color: var(--theme-pink-800);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 10px;
+  color: #be185d;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 12px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
-}
-
-.staff-mode-btn:hover {
-  transform: translateY(-1px);
+  opacity: 0.75;
+  transition: background 0.16s ease-out, color 0.16s ease-out, opacity 0.16s ease-out;
 }
 
 .staff-mode-btn.is-active {
-  background: var(--theme-pink-600);
-  color: #fff;
-  box-shadow: 0 6px 14px rgba(219, 39, 119, 0.28);
+  background: #ffe4f1;
+  color: #be185d;
+  opacity: 1;
+}
+
+.login-staff-mode-toggle {
+  margin: 0;
+  margin-left: auto;
 }
 
 .login-grid {
@@ -334,6 +335,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   line-height: 1.45;
 }
 
+.meeting-form-panel .panel-body {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 249, 252, 0.9));
+  border-radius: 14px;
+}
+
 .meeting-booking-form .borrow-form-row {
   margin-bottom: 10px;
 }
@@ -350,69 +356,25 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-top: 10px;
 }
 
-.meeting-form-panel .panel-body {
-  background: linear-gradient(180deg, #fffefe 0%, #fff8fb 100%);
-  border-radius: 14px;
-}
-
-.meeting-booking-form {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 14px;
-  box-shadow: inset 0 0 0 1px #f3e8ef;
-}
-
-.meeting-booking-form + .meeting-booking-form {
-  margin-top: 10px;
-}
-
-.meeting-subsection-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 2px;
-}
-
-.meeting-subsection-caption {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 10px;
-}
-
 #meetingBookingMessage {
-  min-height: 20px;
+  min-height: 18px;
   font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #f8fafc;
 }
 
 #meetingCancelMessage {
-  min-height: 20px;
+  min-height: 18px;
   font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #f8fafc;
 }
 
 #meetingRescheduleMessage {
-  min-height: 20px;
+  min-height: 18px;
   font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #f8fafc;
 }
 
-#meetingBookingMessage:empty,
-#meetingCancelMessage:empty,
-#meetingRescheduleMessage:empty {
-  display: none;
+#meetingRoomStaffActionMessage {
+  min-height: 18px;
+  margin-top: 4px;
+  font-weight: 600;
 }
 
 #meetingProjectCodeState {
@@ -433,7 +395,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 #meetingPurpose,
-#meetingCancelReason {
+#meetingCancelReason,
+#meetingRescheduleReason {
   resize: none;
   min-height: 92px;
   height: 92px;
@@ -497,9 +460,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .meeting-room-manage-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(170px, 220px) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
-  align-items: stretch;
+  align-items: center;
 }
 
 #meetingRoomManageMessage {
@@ -517,16 +480,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 11px 12px;
+  padding: 10px 12px;
   border-radius: 12px;
-  background: #fffdfd;
-  box-shadow: inset 0 0 0 1px #f3e8ef;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
-
-.meeting-room-manage-item:hover {
-  transform: translateY(-1px);
-  box-shadow: inset 0 0 0 1px #fbcfe8, 0 8px 20px rgba(190, 24, 93, 0.08);
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #f1f5f9;
 }
 
 .meeting-room-manage-name {
@@ -535,81 +492,34 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: #111827;
 }
 
-.meeting-room-manage-name-wrap {
+.meeting-room-manage-access-pill {
+  margin-top: 6px;
   display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
-}
-
-.meeting-room-manage-access-badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
+  color: #374151;
+}
+
+.meeting-room-manage-access-bar {
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
-  padding: 3px 8px;
+  display: inline-block;
 }
 
-.meeting-room-manage-access-badge.is-public {
-  color: #166534;
-  background: #dcfce7;
+.meeting-room-manage-access-pill.is-public .meeting-room-manage-access-bar {
+  background: #22c55e;
 }
 
-.meeting-room-manage-access-badge.is-staff-only {
-  color: var(--theme-pink-800);
-  background: #fce7f3;
-}
-
-.meeting-room-manage-access,
-.meeting-room-manage-edit-access {
-  background-image:
-    linear-gradient(45deg, transparent 50%, #9ca3af 50%),
-    linear-gradient(135deg, #9ca3af 50%, transparent 50%),
-    linear-gradient(to right, #ffffff, #ffffff);
-  background-position:
-    calc(100% - 16px) calc(1em + 2px),
-    calc(100% - 11px) calc(1em + 2px),
-    100% 0;
-  background-size: 5px 5px, 5px 5px, 2.6em 2.6em;
-  background-repeat: no-repeat;
-  padding-right: 34px;
-  appearance: none;
-  -webkit-appearance: none;
-  border: 1px solid var(--theme-pink-200);
-  color: var(--theme-pink-800);
-}
-
-.meeting-room-manage-row .btn-primary {
-  min-height: 40px;
-  padding-inline: 16px;
-}
-
-.meeting-room-manage-row .login-input {
-  min-height: 40px;
-}
-
-.meeting-room-manage-edit-access,
-.meeting-room-manage-access {
-  border-radius: 999px;
-}
-
-.meeting-room-manage-edit-access:focus,
-.meeting-room-manage-access:focus {
-  border-color: var(--theme-pink-500);
-  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.16);
+.meeting-room-manage-access-pill.is-staff-only .meeting-room-manage-access-bar {
+  background: #ec4899;
 }
 
 .meeting-room-manage-edit-input {
   min-width: 220px;
   background: #ffffff;
-}
-
-.meeting-room-manage-edit-wrap {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
-  gap: 8px;
-  width: min(560px, 100%);
 }
 
 .meeting-room-manage-actions {
@@ -623,6 +533,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   min-width: 64px;
   padding: 6px 10px;
   font-size: 12px;
+}
+
+.meeting-room-access-btn.is-public-btn.is-active {
+  border-color: #22c55e;
+  color: #15803d;
+  background: #f0fdf4;
+}
+
+.meeting-room-access-btn.is-staff-only-btn.is-active {
+  border-color: #ec4899;
+  color: #be185d;
+  background: #fdf2f8;
 }
 
 .meeting-room-manage-empty {
@@ -754,6 +676,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: #92400e;
 }
 
+.staff-status-select option[value="reschedule_requested"] {
+  color: #92400e;
+}
+
 .staff-status-select option[value="delete"] {
   color: #b91c1c;
 }
@@ -790,6 +716,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     flex-direction: column;
   }
 
+<<<<<<< dev
   .meeting-booking-form {
     padding: 12px;
   }
@@ -799,6 +726,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     width: 100%;
   }
 
+=======
+>>>>>>> main
   .meeting-room-manage-edit-input {
     min-width: 0;
     width: 100%;
@@ -1027,6 +956,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .login-hero-title {
     font-size: 24px;
   }
+
+  .login-staff-mode-toggle {
+    width: auto;
+    justify-content: center;
+    margin: 0;
+    margin-left: 0;
+  }
 }
 
 @keyframes loginFadeIn {
@@ -1139,7 +1075,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   background: var(--menu-glass-bg);
   border: none;
   border-radius: 16px;
-  box-shadow: var(--menu-shadow);
+  box-shadow: none;
   padding: 6px;
   margin-left: auto;
 }

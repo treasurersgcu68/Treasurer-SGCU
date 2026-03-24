@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const rescheduleDateInput = document.getElementById("meetingRescheduleDate");
   const rescheduleStartTimeInput = document.getElementById("meetingRescheduleStartTime");
   const rescheduleEndTimeInput = document.getElementById("meetingRescheduleEndTime");
+  const rescheduleReasonInput = document.getElementById("meetingRescheduleReason");
   const rescheduleMessageEl = document.getElementById("meetingRescheduleMessage");
   const projectModeSelect = document.getElementById("meetingProjectMode");
   const projectCodeInput = document.getElementById("meetingProjectCode");
@@ -49,12 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const LOCAL_MIGRATED_KEY = "meetingRoomBookingsMigratedToFirestore-v1";
   const BOOKING_COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
-  const ROOM_ACCESS_PUBLIC = "public";
-  const ROOM_ACCESS_STAFF_ONLY = "staff_only";
   const DEFAULT_MEETING_ROOMS = [
-    { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: ROOM_ACCESS_PUBLIC },
-    { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: ROOM_ACCESS_PUBLIC },
-    { id: "room-3", name: "ห้องประชุม 3 ชั้น 2", bookingAccess: ROOM_ACCESS_PUBLIC }
+    { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public" },
+    { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public" },
+    { id: "room-3", name: "ห้องประชุม 3 ชั้น 2", bookingAccess: "public" }
   ];
   const MONTH_NAMES_TH = [
     "มกราคม",
@@ -91,17 +90,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const normalizeStatus = (status) => {
     const value = (status || "pending").toString().trim().toLowerCase();
-    if (value === "approved" || value === "rejected" || value === "cancel_requested") return value;
+    if (value === "approved" || value === "rejected" || value === "cancel_requested" || value === "reschedule_requested") return value;
     return "pending";
   };
+
+  const normalizeRoomBookingAccess = (value) =>
+    value === "staff_only" ? "staff_only" : "public";
 
   const normalizeRoomDisplay = (roomId, roomName) =>
     meetingRooms.find((room) => room.id === roomId)?.name || roomName || roomId || "-";
 
-  const normalizeRoomAccess = (value) => {
-    const normalized = (value || "").toString().trim().toLowerCase();
-    return normalized === ROOM_ACCESS_STAFF_ONLY ? ROOM_ACCESS_STAFF_ONLY : ROOM_ACCESS_PUBLIC;
-  };
+  const getRoomBookingAccess = (roomId) =>
+    normalizeRoomBookingAccess(meetingRooms.find((room) => room.id === roomId)?.bookingAccess);
 
   const toDateTime = (date, time) => new Date(`${date}T${time}:00`);
 
@@ -331,16 +331,24 @@ document.addEventListener("DOMContentLoaded", () => {
     projectMode: item.projectMode || DEFAULT_PROJECT_MODE,
     projectCode: item.projectCode || "",
     projectName: item.projectName || "",
+    roomBookingAccess: normalizeRoomBookingAccess(item.roomBookingAccess),
+    rescheduleBaseStatus: normalizeStatus(item.rescheduleBaseStatus),
+    rescheduleRequestedDate: item.rescheduleRequestedDate || "",
+    rescheduleRequestedStartTime: item.rescheduleRequestedStartTime || "",
+    rescheduleRequestedEndTime: item.rescheduleRequestedEndTime || "",
+    rescheduleRequestReason: item.rescheduleRequestReason || "",
     startAt: item.startAt || "",
     endAt: item.endAt || "",
     status: normalizeStatus(item.status)
   });
 
-  const hasOverlap = (candidate, list) => {
+  const hasOverlap = (candidate, list, options = {}) => {
+    const ignoredBookingId = options.ignoredBookingId || "";
     const candidateStart = toDateTime(candidate.date, candidate.startTime);
     const candidateEnd = toDateTime(candidate.date, candidate.endTime);
 
     return list.some((item) => {
+      if (ignoredBookingId && item.id === ignoredBookingId) return false;
       if (item.roomId !== candidate.roomId || item.date !== candidate.date) return false;
       if (item.status === "rejected") return false;
       const itemStart = new Date(item.startAt);
@@ -374,6 +382,12 @@ document.addEventListener("DOMContentLoaded", () => {
       projectMode: data.projectMode || DEFAULT_PROJECT_MODE,
       projectCode: data.projectCode || "",
       projectName: data.projectName || "",
+      roomBookingAccess: normalizeRoomBookingAccess(data.roomBookingAccess),
+      rescheduleBaseStatus: normalizeStatus(data.rescheduleBaseStatus),
+      rescheduleRequestedDate: data.rescheduleRequestedDate || "",
+      rescheduleRequestedStartTime: data.rescheduleRequestedStartTime || "",
+      rescheduleRequestedEndTime: data.rescheduleRequestedEndTime || "",
+      rescheduleRequestReason: data.rescheduleRequestReason || "",
       status: normalizeStatus(data.status),
       startAt: data.startAt || "",
       endAt: data.endAt || "",
@@ -461,73 +475,54 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!currentUserEmail) return [];
     return sortBookings(bookings).filter((item) => {
       const status = (item.status || "").toString().toLowerCase();
-      if (status === "rejected" || status === "cancel_requested") return false;
+      if (status === "rejected" || status === "cancel_requested" || status === "reschedule_requested") return false;
       const email = (item.requesterEmail || "").toString().trim().toLowerCase();
       return !!email && email === currentUserEmail;
     });
   };
 
-  const bookingOptionLabel = (item) => {
-    const room = normalizeRoomDisplay(item.roomId, item.roomName);
-    return `${formatDate(item.date)} ${item.startTime || "-"}-${item.endTime || "-"} | ${room} | ${item.purpose || "-"}`;
-  };
-
-  const applyRescheduleDraftFromBooking = (bookingId) => {
-    if (!rescheduleDateInput || !rescheduleStartTimeInput || !rescheduleEndTimeInput) return;
-    const booking = ownCancelableBookings().find((item) => item.id === bookingId);
-    if (!booking) {
-      rescheduleDateInput.value = "";
-      rescheduleStartTimeInput.value = "";
-      rescheduleEndTimeInput.value = "";
-      return;
-    }
-    rescheduleDateInput.value = booking.date || "";
-    rescheduleStartTimeInput.value = booking.startTime || "";
-    rescheduleEndTimeInput.value = booking.endTime || "";
+  const ownReschedulableBookings = () => {
+    if (!currentUserEmail) return [];
+    return sortBookings(bookings).filter((item) => {
+      const status = (item.status || "").toString().toLowerCase();
+      if (status === "rejected" || status === "cancel_requested" || status === "reschedule_requested") return false;
+      const email = (item.requesterEmail || "").toString().trim().toLowerCase();
+      return !!email && email === currentUserEmail;
+    });
   };
 
   const renderOwnBookingOptions = () => {
-    if (!cancelBookingSelect && !rescheduleBookingSelect) return;
-    const cancelSelected = cancelBookingSelect?.value || "";
-    const rescheduleSelected = rescheduleBookingSelect?.value || "";
+    if (!cancelBookingSelect) return;
+    const selected = cancelBookingSelect.value;
     const list = ownCancelableBookings();
-    if (cancelBookingSelect) {
-      cancelBookingSelect.innerHTML = `
-        <option value="">เลือกคำขอที่ต้องการยกเลิก</option>
-      `;
-    }
-    if (rescheduleBookingSelect) {
-      rescheduleBookingSelect.innerHTML = `
-        <option value="">เลือกคำขอ</option>
-      `;
-    }
+    cancelBookingSelect.innerHTML = `
+      <option value="">เลือกคำขอที่ต้องการยกเลิก</option>
+    `;
     list.forEach((item) => {
-      if (cancelBookingSelect) {
-        const option = document.createElement("option");
-        option.value = item.id;
-        option.textContent = bookingOptionLabel(item);
-        option.selected = cancelSelected === item.id;
-        cancelBookingSelect.appendChild(option);
-      }
-      if (rescheduleBookingSelect) {
-        const option = document.createElement("option");
-        option.value = item.id;
-        option.textContent = bookingOptionLabel(item);
-        option.selected = rescheduleSelected === item.id;
-        rescheduleBookingSelect.appendChild(option);
-      }
+      const option = document.createElement("option");
+      option.value = item.id;
+      const room = normalizeRoomDisplay(item.roomId, item.roomName);
+      option.textContent = `${formatDate(item.date)} ${item.startTime || "-"}-${item.endTime || "-"} | ${room} | ${item.purpose || "-"}`;
+      option.selected = selected === item.id;
+      cancelBookingSelect.appendChild(option);
     });
-    if (cancelBookingSelect) {
-      cancelBookingSelect.disabled = !currentUserEmail || !list.length;
-    }
-    if (rescheduleBookingSelect) {
-      rescheduleBookingSelect.disabled = !currentUserEmail || !list.length;
-      if (rescheduleSelected && list.some((item) => item.id === rescheduleSelected)) {
-        applyRescheduleDraftFromBooking(rescheduleSelected);
-      } else {
-        applyRescheduleDraftFromBooking("");
-      }
-    }
+    cancelBookingSelect.disabled = !currentUserEmail || !list.length;
+
+    if (!rescheduleBookingSelect) return;
+    const selectedReschedule = rescheduleBookingSelect.value;
+    const rescheduleList = ownReschedulableBookings();
+    rescheduleBookingSelect.innerHTML = `
+      <option value="">เลือกรายการที่ต้องการขอเปลี่ยนเวลา</option>
+    `;
+    rescheduleList.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.id;
+      const room = normalizeRoomDisplay(item.roomId, item.roomName);
+      option.textContent = `${formatDate(item.date)} ${item.startTime || "-"}-${item.endTime || "-"} | ${room} | ${item.purpose || "-"}`;
+      option.selected = selectedReschedule === item.id;
+      rescheduleBookingSelect.appendChild(option);
+    });
+    rescheduleBookingSelect.disabled = !currentUserEmail || !rescheduleList.length;
   };
 
   const getCalendarMonthState = (dateLike = new Date()) => {
@@ -567,6 +562,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (status === "approved") return "approved";
     if (status === "rejected") return "rejected";
     if (status === "cancel_requested") return "cancel_requested";
+    if (status === "reschedule_requested") return "reschedule_requested";
     return "pending";
   };
 
@@ -574,7 +570,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const normalized = safeStatus(status);
     if (normalized === "approved") return "approved";
     if (normalized === "rejected") return "cancelled";
-    if (normalized === "cancel_requested") return "cancel-requested";
+    if (normalized === "cancel_requested" || normalized === "reschedule_requested") return "cancel-requested";
     return "pending";
   };
 
@@ -583,6 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (normalized === "approved") return "อนุมัติแล้ว";
     if (normalized === "rejected") return "ไม่อนุมัติ / ยกเลิกแล้ว";
     if (normalized === "cancel_requested") return "ขอยกเลิก (รออนุมัติ)";
+    if (normalized === "reschedule_requested") return "ขอเปลี่ยนเวลา (รออนุมัติ)";
     return "รออนุมัติ";
   };
 
@@ -597,6 +594,11 @@ document.addEventListener("DOMContentLoaded", () => {
       ? `${booking.projectCode || "-"}${booking.projectName ? ` (${booking.projectName})` : ""}`
       : "ประชุมทั่วไป";
     const cancelReason = booking.cancelRequestReason || "-";
+    const rescheduleReason = booking.rescheduleRequestReason || "-";
+    const requestedDate = booking.rescheduleRequestedDate || "-";
+    const requestedTime = booking.rescheduleRequestedDate
+      ? `${booking.rescheduleRequestedStartTime || "-"} - ${booking.rescheduleRequestedEndTime || "-"}`
+      : "-";
     const contactText = [booking.contactPhone, booking.contactInfo]
       .filter((value) => (value || "").toString().trim())
       .join(" / ") || "-";
@@ -608,7 +610,10 @@ document.addEventListener("DOMContentLoaded", () => {
       ["สถานะ", statusText(booking.status)],
       ["ประเภทคำขอ", projectText],
       ["วัตถุประสงค์", booking.purpose || "-"],
-      ["เหตุผลขอยกเลิก", cancelReason]
+      ["เหตุผลขอยกเลิก", cancelReason],
+      ["วันที่ใหม่ที่ขอ", formatDate(requestedDate)],
+      ["เวลาใหม่ที่ขอ", requestedTime],
+      ["เหตุผลขอเปลี่ยนเวลา", rescheduleReason]
     ];
     if (includeContact) {
       rows.splice(7, 0, ["ข้อมูลติดต่อ", contactText]);
@@ -824,6 +829,12 @@ document.addEventListener("DOMContentLoaded", () => {
             projectMode: payload.projectMode || DEFAULT_PROJECT_MODE,
             projectCode: payload.projectCode || "",
             projectName: payload.projectName || "",
+            roomBookingAccess: normalizeRoomBookingAccess(payload.roomBookingAccess),
+            rescheduleBaseStatus: normalizeStatus(payload.rescheduleBaseStatus),
+            rescheduleRequestedDate: payload.rescheduleRequestedDate || "",
+            rescheduleRequestedStartTime: payload.rescheduleRequestedStartTime || "",
+            rescheduleRequestedEndTime: payload.rescheduleRequestedEndTime || "",
+            rescheduleRequestReason: payload.rescheduleRequestReason || "",
             status: normalizeStatus(payload.status),
             startAt: payload.startAt || toDateTime(payload.date, payload.startTime).toISOString(),
             endAt: payload.endAt || toDateTime(payload.date, payload.endTime).toISOString(),
@@ -843,33 +854,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const setupRoomOptions = () => {
     const selectedRoomId = roomSelect.value;
-    const isStaff = isStaffUser();
-    const visibleRooms = meetingRooms.filter((room) => {
-      const access = normalizeRoomAccess(room.bookingAccess);
-      return access === ROOM_ACCESS_PUBLIC || isStaff;
-    });
-    const canKeepSelected = visibleRooms.some((room) => room.id === selectedRoomId);
+    const allowStaffOnlyRoom = isStaffUser();
     roomSelect.innerHTML = `
-      <option value="" disabled ${canKeepSelected ? "" : "selected"}>เลือกห้องประชุม</option>
+      <option value="" disabled ${selectedRoomId ? "" : "selected"}>เลือกห้องประชุม</option>
     `;
-    visibleRooms.forEach((room) => {
+    let canKeepSelected = false;
+    meetingRooms.forEach((room) => {
+      const bookingAccess = normalizeRoomBookingAccess(room.bookingAccess);
+      const isStaffOnly = bookingAccess === "staff_only";
       const option = document.createElement("option");
       option.value = room.id;
-      option.textContent = room.name;
-      option.selected = selectedRoomId === room.id;
+      option.textContent = isStaffOnly ? `${room.name} (สตาฟจองเท่านั้น)` : room.name;
+      option.disabled = isStaffOnly && !allowStaffOnlyRoom;
+      option.selected = selectedRoomId === room.id && !option.disabled;
+      if (option.selected) canKeepSelected = true;
       roomSelect.appendChild(option);
     });
-    if (!visibleRooms.length) {
-      const option = document.createElement("option");
-      option.value = "";
-      option.textContent = "ยังไม่มีห้องที่สิทธิ์นี้จองได้";
-      option.disabled = true;
-      option.selected = true;
-      roomSelect.appendChild(option);
-      roomSelect.value = "";
-      return;
-    }
-    if (!canKeepSelected) {
+    if (selectedRoomId && !canKeepSelected) {
       roomSelect.value = "";
     }
   };
@@ -893,7 +894,7 @@ document.addEventListener("DOMContentLoaded", () => {
               return {
                 id: docItem.id,
                 name,
-                bookingAccess: normalizeRoomAccess(data.bookingAccess)
+                bookingAccess: normalizeRoomBookingAccess(data.bookingAccess)
               };
             })
             .filter(Boolean)
@@ -924,6 +925,9 @@ document.addEventListener("DOMContentLoaded", () => {
     dateInput.min = today.toISOString().slice(0, 10);
     if (!dateInput.value) {
       dateInput.value = dateInput.min;
+    }
+    if (rescheduleDateInput) {
+      rescheduleDateInput.min = dateInput.min;
     }
   };
 
@@ -964,19 +968,14 @@ document.addEventListener("DOMContentLoaded", () => {
       ? (document.getElementById("meetingProjectCode")?.value || "").trim()
       : "";
     let projectName = "";
+    const roomBookingAccess = getRoomBookingAccess(roomId);
 
     if (!roomId || !date || !startTime || !endTime || !requester || !purpose) {
       setMessage("กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำรายการจอง", "#b91c1c");
       return;
     }
-    const selectedRoom = meetingRooms.find((room) => room.id === roomId);
-    if (!selectedRoom) {
-      setMessage("ไม่พบห้องประชุมที่เลือก กรุณาเลือกใหม่อีกครั้ง", "#b91c1c");
-      return;
-    }
-    if (normalizeRoomAccess(selectedRoom.bookingAccess) === ROOM_ACCESS_STAFF_ONLY && !isStaffUser()) {
-      setMessage("ห้องประชุมนี้สงวนสิทธิ์สำหรับ Staff เท่านั้น", "#b91c1c");
-      setupRoomOptions();
+    if (roomBookingAccess === "staff_only" && !isStaffUser()) {
+      setMessage("ห้องที่เลือกเปิดให้สตาฟจองเท่านั้น", "#b91c1c");
       return;
     }
     if (!contactPhone && !contactInfo) {
@@ -1025,7 +1024,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const candidate = {
       roomId,
-      roomName: selectedRoom.name || normalizeRoomDisplay(roomId, ""),
+      roomName: normalizeRoomDisplay(roomId, ""),
       date,
       startTime,
       endTime,
@@ -1036,6 +1035,7 @@ document.addEventListener("DOMContentLoaded", () => {
       projectMode,
       projectCode,
       projectName,
+      roomBookingAccess,
       startAt: startAt.toISOString(),
       endAt: endAt.toISOString(),
       status: "pending"
@@ -1066,6 +1066,7 @@ document.addEventListener("DOMContentLoaded", () => {
         projectMode,
         projectCode,
         projectName,
+        roomBookingAccess,
         status: "pending",
         startAt: candidate.startAt,
         endAt: candidate.endAt,
@@ -1123,6 +1124,10 @@ document.addEventListener("DOMContentLoaded", () => {
       setCancelMessage("คำขอนี้อยู่ระหว่างรออนุมัติการยกเลิก", "#6b7280");
       return;
     }
+    if (booking.status === "reschedule_requested") {
+      setCancelMessage("คำขอนี้อยู่ระหว่างรออนุมัติการเปลี่ยนเวลา", "#6b7280");
+      return;
+    }
 
     try {
       await firestore.updateDoc(
@@ -1142,24 +1147,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const rescheduleOwnBooking = async () => {
+  const submitRescheduleRequest = async () => {
     const bookingId = (rescheduleBookingSelect?.value || "").trim();
     const nextDate = (rescheduleDateInput?.value || "").trim();
     const nextStartTime = (rescheduleStartTimeInput?.value || "").trim();
     const nextEndTime = (rescheduleEndTimeInput?.value || "").trim();
-
+    const reason = (rescheduleReasonInput?.value || "").trim();
     if (!bookingId) {
-      setRescheduleMessage("กรุณาเลือกรายการที่ต้องการเลื่อนเวลา", "#b91c1c");
+      setRescheduleMessage("กรุณาเลือกรายการที่ต้องการขอเปลี่ยนเวลา", "#b91c1c");
       return;
     }
     if (!nextDate || !nextStartTime || !nextEndTime) {
-      setRescheduleMessage("กรุณากรอกวันและเวลาใหม่ให้ครบถ้วน", "#b91c1c");
+      setRescheduleMessage("กรุณาระบุวันและเวลาใหม่ให้ครบถ้วน", "#b91c1c");
       return;
     }
-
+    if (!reason) {
+      setRescheduleMessage("กรุณาระบุเหตุผลการขอเปลี่ยนเวลา", "#b91c1c");
+      return;
+    }
     currentUserEmail = readCurrentUserEmail();
     if (!currentUserEmail) {
-      setRescheduleMessage("กรุณา Sign in ก่อนเลื่อนเวลา", "#b91c1c");
+      setRescheduleMessage("กรุณา Sign in ก่อนส่งคำขอเปลี่ยนเวลา", "#b91c1c");
       return;
     }
     if (!hasFirestore) {
@@ -1184,33 +1192,31 @@ document.addEventListener("DOMContentLoaded", () => {
       setRescheduleMessage("คำขอนี้อยู่ระหว่างรออนุมัติการยกเลิก", "#6b7280");
       return;
     }
-
-    const startAt = toDateTime(nextDate, nextStartTime);
-    const endAt = toDateTime(nextDate, nextEndTime);
-    if (!(startAt < endAt)) {
-      setRescheduleMessage("กรุณากำหนดเวลาเริ่มต้นให้ก่อนเวลาสิ้นสุด", "#b91c1c");
+    if (booking.status === "reschedule_requested") {
+      setRescheduleMessage("คำขอนี้อยู่ระหว่างรออนุมัติการเปลี่ยนเวลาอยู่แล้ว", "#6b7280");
+      return;
+    }
+    if (booking.date === nextDate && booking.startTime === nextStartTime && booking.endTime === nextEndTime) {
+      setRescheduleMessage("วันและเวลาใหม่ตรงกับคำขอเดิม", "#6b7280");
       return;
     }
 
+    const nextStartAt = toDateTime(nextDate, nextStartTime);
+    const nextEndAt = toDateTime(nextDate, nextEndTime);
     const now = new Date();
     const earliestAllowed = new Date(now.getTime() - (60 * 60 * 1000));
     const latestAllowed = new Date(now);
     latestAllowed.setMonth(latestAllowed.getMonth() + 1);
-    if (startAt < earliestAllowed) {
-      setRescheduleMessage("เลื่อนย้อนหลังได้ไม่เกิน 1 ชั่วโมง", "#b91c1c");
+    if (!(nextStartAt < nextEndAt)) {
+      setRescheduleMessage("กรุณากำหนดเวลาเริ่มต้นให้ก่อนเวลาสิ้นสุด", "#b91c1c");
       return;
     }
-    if (!isStaffUser() && startAt > latestAllowed) {
-      setRescheduleMessage("เลื่อนล่วงหน้าได้ไม่เกิน 1 เดือน", "#b91c1c");
+    if (nextStartAt < earliestAllowed) {
+      setRescheduleMessage("ปรับเวลาเป็นย้อนหลังได้ไม่เกิน 1 ชั่วโมง", "#b91c1c");
       return;
     }
-
-    const isSameSlot =
-      booking.date === nextDate &&
-      booking.startTime === nextStartTime &&
-      booking.endTime === nextEndTime;
-    if (isSameSlot) {
-      setRescheduleMessage("เวลาใหม่ยังเหมือนเดิม", "#6b7280");
+    if (!isStaffUser() && nextStartAt > latestAllowed) {
+      setRescheduleMessage("ปรับเวลาเป็นล่วงหน้าได้ไม่เกิน 1 เดือน", "#b91c1c");
       return;
     }
 
@@ -1220,9 +1226,8 @@ document.addEventListener("DOMContentLoaded", () => {
       startTime: nextStartTime,
       endTime: nextEndTime
     };
-    const otherBookings = bookings.filter((item) => item.id !== bookingId);
-    if (hasOverlap(candidate, otherBookings)) {
-      setRescheduleMessage("ช่วงเวลาใหม่นี้ของห้องที่เลือกมีการจองทับซ้อน", "#b91c1c");
+    if (hasOverlap(candidate, bookings, { ignoredBookingId: bookingId })) {
+      setRescheduleMessage("ช่วงเวลาใหม่ของห้องนี้มีการจองทับซ้อน", "#b91c1c");
       return;
     }
 
@@ -1230,19 +1235,23 @@ document.addEventListener("DOMContentLoaded", () => {
       await firestore.updateDoc(
         firestore.doc(firestore.db, BOOKING_COLLECTION_NAME, bookingId),
         {
-          date: nextDate,
-          startTime: nextStartTime,
-          endTime: nextEndTime,
-          startAt: startAt.toISOString(),
-          endAt: endAt.toISOString(),
-          status: "pending",
-          rescheduledByRequester: true,
+          status: "reschedule_requested",
+          rescheduleBaseStatus: normalizeStatus(booking.status),
+          rescheduleRequestedDate: nextDate,
+          rescheduleRequestedStartTime: nextStartTime,
+          rescheduleRequestedEndTime: nextEndTime,
+          rescheduleRequestReason: reason,
           updatedAt: firestore.serverTimestamp()
         }
       );
-      setRescheduleMessage("เลื่อนเวลาคำขอเรียบร้อยแล้ว (รอ Staff อนุมัติ)", "#047857");
+      setRescheduleMessage("ส่งคำขอเปลี่ยนเวลาเรียบร้อยแล้ว (รอ Staff อนุมัติ)", "#047857");
+      if (rescheduleBookingSelect) rescheduleBookingSelect.value = "";
+      if (rescheduleDateInput) rescheduleDateInput.value = "";
+      if (rescheduleStartTimeInput) rescheduleStartTimeInput.value = "";
+      if (rescheduleEndTimeInput) rescheduleEndTimeInput.value = "";
+      if (rescheduleReasonInput) rescheduleReasonInput.value = "";
     } catch (err) {
-      setRescheduleMessage("ไม่สามารถเลื่อนเวลาคำขอได้ในขณะนี้", "#b91c1c");
+      setRescheduleMessage("ไม่สามารถส่งคำขอเปลี่ยนเวลาได้ในขณะนี้", "#b91c1c");
     }
   };
 
@@ -1261,14 +1270,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (rescheduleForm) {
     rescheduleForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      void rescheduleOwnBooking();
-    });
-  }
-
-  if (rescheduleBookingSelect) {
-    rescheduleBookingSelect.addEventListener("change", () => {
-      applyRescheduleDraftFromBooking(rescheduleBookingSelect.value || "");
-      setRescheduleMessage("");
+      void submitRescheduleRequest();
     });
   }
 

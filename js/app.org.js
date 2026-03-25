@@ -58,6 +58,7 @@ function renderOrgStructure(rows) {
   const COL_YEAR   = 9;   // J ชั้นปี
   const COL_FAC    = 10;  // K คณะ
   const COL_STAFF_EMAIL = 11; // L อีเมล Staff
+  const COL_STAFF_CODE = 28; // AC รหัสรูปแบบ XX.YY.XX-XXX (ใช้ YY เป็น role)
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
   const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
@@ -75,6 +76,13 @@ function renderOrgStructure(rows) {
     const l = (r[COL_LAST] || "").charAt(0);
     const s = (f + l).toUpperCase();
     return s || "SG";
+  };
+
+  const getRoleFromStaffCode = (value) => {
+    const raw = (value || "").toString().trim();
+    if (!raw) return "00";
+    const matched = raw.match(/^[^.]+\.(\d{2})\.[^.]+-[^.]+$/);
+    return matched?.[1] || "00";
   };
 
   const AVATAR_BASE_PATH = "img/org/";
@@ -155,7 +163,7 @@ function renderOrgStructure(rows) {
       staffProfilesByEmail[staffEmail] = {
         position: pos,
         nick: (r[COL_NICK] || "").toString().trim(),
-        role: "00"
+        role: getRoleFromStaffCode(r[COL_STAFF_CODE])
       };
     }
   }

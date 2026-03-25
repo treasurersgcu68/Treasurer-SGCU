@@ -338,6 +338,29 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .meeting-form-panel .panel-body {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 249, 252, 0.9));
   border-radius: 14px;
+  padding: 14px;
+}
+
+.meeting-booking-form {
+  border-radius: 12px;
+  border: 1px solid var(--theme-border);
+  background: linear-gradient(180deg, #ffffff, #fffafb);
+  padding: 12px;
+}
+
+.meeting-booking-form-main {
+  border-color: var(--theme-border);
+  background: linear-gradient(180deg, #ffffff, var(--theme-pink-50));
+}
+
+.meeting-booking-form-cancel {
+  border-color: rgba(190, 24, 93, 0.22);
+  background: linear-gradient(180deg, #ffffff, #fff5fa);
+}
+
+.meeting-booking-form-reschedule {
+  border-color: rgba(219, 39, 119, 0.2);
+  background: linear-gradient(180deg, #ffffff, #fff7fc);
 }
 
 .meeting-booking-form .borrow-form-row {
@@ -354,6 +377,54 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 10px;
   align-items: center;
   margin-top: 10px;
+}
+
+.meeting-form-actions .btn-primary,
+.meeting-form-actions .btn-ghost {
+  min-height: 38px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.meeting-form-divider {
+  height: 1px;
+  margin: 14px 0 10px;
+  background: linear-gradient(90deg, rgba(236, 72, 153, 0), rgba(236, 72, 153, 0.28), rgba(236, 72, 153, 0));
+}
+
+.meeting-form-subhead {
+  margin-bottom: 8px;
+  border-left: 3px solid var(--theme-pink-300);
+  padding-left: 10px;
+}
+
+.meeting-form-subtitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--theme-pink-700);
+}
+
+.meeting-form-subcaption {
+  font-size: 12px;
+  color: #7a3b61;
+  margin-top: 2px;
+}
+
+.meeting-form-subhead-cancel {
+  border-left-color: var(--theme-pink-500);
+}
+
+.meeting-form-subhead-reschedule {
+  border-left-color: var(--theme-pink-400);
+}
+
+.meeting-booking-form .borrow-form-field .login-label {
+  font-weight: 600;
+}
+
+.meeting-booking-form .login-input {
+  background: #ffffff;
+  border-color: rgba(236, 72, 153, 0.2);
 }
 
 #meetingBookingMessage {
@@ -716,18 +787,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     flex-direction: column;
   }
 
-<<<<<<< dev
   .meeting-booking-form {
     padding: 12px;
+  }
+
+  .meeting-form-panel .panel-body {
+    padding: 10px;
+  }
+
+  .meeting-form-actions .btn-primary,
+  .meeting-form-actions .btn-ghost {
+    width: 100%;
+    justify-content: center;
   }
 
   .meeting-room-manage-edit-wrap {
     grid-template-columns: 1fr;
     width: 100%;
   }
-
-=======
->>>>>>> main
   .meeting-room-manage-edit-input {
     min-width: 0;
     width: 100%;

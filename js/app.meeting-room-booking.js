@@ -467,8 +467,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const isStaffUser = () => {
-    if (typeof staffAuthUser === "undefined") return false;
-    return !!staffAuthUser;
+    if (typeof staffAuthUser !== "undefined" && !!staffAuthUser) return true;
+    const email = readCurrentUserEmail();
+    if (!email) return false;
+    if (typeof getStaffProfileByEmail === "function") {
+      return !!getStaffProfileByEmail(email);
+    }
+    if (typeof staffEmails !== "undefined" && staffEmails instanceof Set) {
+      return staffEmails.has(email);
+    }
+    return false;
   };
 
   const ownCancelableBookings = () => {
@@ -854,25 +862,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const setupRoomOptions = () => {
     const selectedRoomId = roomSelect.value;
-    const allowStaffOnlyRoom = isStaffUser();
     roomSelect.innerHTML = `
       <option value="" disabled ${selectedRoomId ? "" : "selected"}>เลือกห้องประชุม</option>
     `;
-    let canKeepSelected = false;
     meetingRooms.forEach((room) => {
       const bookingAccess = normalizeRoomBookingAccess(room.bookingAccess);
       const isStaffOnly = bookingAccess === "staff_only";
       const option = document.createElement("option");
       option.value = room.id;
       option.textContent = isStaffOnly ? `${room.name} (สตาฟจองเท่านั้น)` : room.name;
-      option.disabled = isStaffOnly && !allowStaffOnlyRoom;
-      option.selected = selectedRoomId === room.id && !option.disabled;
-      if (option.selected) canKeepSelected = true;
+      option.selected = selectedRoomId === room.id;
       roomSelect.appendChild(option);
     });
-    if (selectedRoomId && !canKeepSelected) {
-      roomSelect.value = "";
-    }
   };
 
   const subscribeRooms = () => {
@@ -1121,7 +1122,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     if (booking.status === "cancel_requested") {
-      setCancelMessage("คำขอนี้อยู่ระหว่างรออนุมัติการยกเลิก", "#6b7280");
+      setCancelMessage("คำขอนี้ถูกส่งขอยกเลิกไว้แล้ว", "#6b7280");
       return;
     }
     if (booking.status === "reschedule_requested") {
@@ -1133,13 +1134,14 @@ document.addEventListener("DOMContentLoaded", () => {
       await firestore.updateDoc(
         firestore.doc(firestore.db, BOOKING_COLLECTION_NAME, bookingId),
         {
-          status: "cancel_requested",
+          status: "rejected",
           cancelledByRequester: true,
           cancelRequestReason: cancelReason,
+          cancelledAt: firestore.serverTimestamp(),
           updatedAt: firestore.serverTimestamp()
         }
       );
-      setCancelMessage("ส่งคำขอยกเลิกเรียบร้อยแล้ว (รอ Staff อนุมัติ)", "#047857");
+      setCancelMessage("ยกเลิกคำขอเรียบร้อยแล้ว", "#047857");
       if (cancelBookingSelect) cancelBookingSelect.value = "";
       if (cancelReasonInput) cancelReasonInput.value = "";
     } catch (err) {
@@ -1299,6 +1301,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (viewListBtn) {
     viewListBtn.addEventListener("click", () => {
       updateMeetingRoomView("list");
+    });
+  }
+
+  if (roomSelect) {
+    roomSelect.addEventListener("focus", () => {
+      setupRoomOptions();
     });
   }
 

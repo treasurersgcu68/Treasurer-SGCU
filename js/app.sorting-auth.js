@@ -146,8 +146,9 @@ function getAllowedPagesForCurrentState() {
   if (staffAuthUser && staffViewMode === "staff") {
     const roleAllowedMap = {
       "00": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"],
-      "01": ["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"],
-      "04": ["borrow-assets-staff", "login"]
+      "01": ["project-status-staff", "dashboard-staff", "login"],
+      "04": ["borrow-assets-staff", "meeting-room-staff", "login"],
+      "09": ["meeting-room-staff", "login"]
     };
     const roleAllowed = roleAllowedMap[staffAuthUser.role || ""] ||
       ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"];
@@ -246,8 +247,9 @@ function updateNavForStaff(staffUser) {
 
   const roleAllowedMap = {
     "00": new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]),
-    "01": new Set(["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"]),
-    "04": new Set(["borrow-assets-staff", "login"])
+    "01": new Set(["project-status-staff", "dashboard-staff", "login"]),
+    "04": new Set(["borrow-assets-staff", "meeting-room-staff", "login"]),
+    "09": new Set(["meeting-room-staff", "login"])
   };
 
   const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||

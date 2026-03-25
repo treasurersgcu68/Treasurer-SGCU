@@ -1770,7 +1770,7 @@
               </div>
             </div>
             <div class="panel-body">
-              <form id="meetingRoomBookingForm" class="meeting-booking-form">
+              <form id="meetingRoomBookingForm" class="meeting-booking-form meeting-booking-form-main">
                 <div class="borrow-form-row">
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingRoomName">ห้องประชุม</label>
@@ -1844,9 +1844,13 @@
                 </div>
               </form>
 
-              <div class="separator-gradient" style="margin: 14px 0 10px;"></div>
+              <div class="meeting-form-divider"></div>
 
-              <form id="meetingCancelForm" class="meeting-booking-form">
+              <div class="meeting-form-subhead meeting-form-subhead-cancel">
+                <div class="meeting-form-subtitle">ยกเลิกคำขอ</div>
+              </div>
+
+              <form id="meetingCancelForm" class="meeting-booking-form meeting-booking-form-cancel">
                 <div class="borrow-form-row">
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingCancelBookingSelect">คำขอของฉัน</label>
@@ -1871,9 +1875,13 @@
                 </div>
               </form>
 
-              <div class="separator-gradient" style="margin: 14px 0 10px;"></div>
+              <div class="meeting-form-divider"></div>
 
-              <form id="meetingRescheduleForm" class="meeting-booking-form">
+              <div class="meeting-form-subhead meeting-form-subhead-reschedule">
+                <div class="meeting-form-subtitle">ขอเปลี่ยนเวลา</div>
+              </div>
+
+              <form id="meetingRescheduleForm" class="meeting-booking-form meeting-booking-form-reschedule">
                 <div class="borrow-form-row">
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingRescheduleBookingSelect">คำขอของฉัน (ขอเปลี่ยนเวลา)</label>

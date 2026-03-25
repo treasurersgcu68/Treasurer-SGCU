@@ -58,7 +58,7 @@ function renderOrgStructure(rows) {
   const COL_YEAR   = 9;   // J ชั้นปี
   const COL_FAC    = 10;  // K คณะ
   const COL_STAFF_EMAIL = 11; // L อีเมล Staff
-  const COL_STAFF_CODE = 28; // AC รหัสรูปแบบ XX.YY.XX-XXX (ใช้ YY เป็น role)
+  const COL_STAFF_ROLE = 32; // AG role
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
   const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
@@ -76,13 +76,6 @@ function renderOrgStructure(rows) {
     const l = (r[COL_LAST] || "").charAt(0);
     const s = (f + l).toUpperCase();
     return s || "SG";
-  };
-
-  const getRoleFromStaffCode = (value) => {
-    const raw = (value || "").toString().trim();
-    if (!raw) return "00";
-    const matched = raw.match(/^[^.]+\.(\d{2})\.[^.]+-[^.]+$/);
-    return matched?.[1] || "00";
   };
 
   const AVATAR_BASE_PATH = "img/org/";
@@ -160,11 +153,27 @@ function renderOrgStructure(rows) {
     const staffEmail = (r[COL_STAFF_EMAIL] || "").toString().trim().toLowerCase();
     if (staffEmail) {
       staffEmails.add(staffEmail);
-      staffProfilesByEmail[staffEmail] = {
-        position: pos,
-        nick: (r[COL_NICK] || "").toString().trim(),
-        role: getRoleFromStaffCode(r[COL_STAFF_CODE])
-      };
+      const nextRole = (r[COL_STAFF_ROLE] || "").toString().trim() || "0";
+      const existingProfile = staffProfilesByEmail[staffEmail];
+      if (existingProfile) {
+        const mergedRoles = new Set(
+          [existingProfile.role, nextRole]
+            .flatMap((value) => (value || "").toString().split(","))
+            .map((value) => value.trim())
+            .filter(Boolean)
+        );
+        staffProfilesByEmail[staffEmail] = {
+          position: existingProfile.position || pos,
+          nick: existingProfile.nick || (r[COL_NICK] || "").toString().trim(),
+          role: Array.from(mergedRoles).join(",")
+        };
+      } else {
+        staffProfilesByEmail[staffEmail] = {
+          position: pos,
+          nick: (r[COL_NICK] || "").toString().trim(),
+          role: nextRole
+        };
+      }
     }
   }
 

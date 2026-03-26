@@ -58,7 +58,7 @@ function renderOrgStructure(rows) {
   const COL_YEAR   = 9;   // J ชั้นปี
   const COL_FAC    = 10;  // K คณะ
   const COL_STAFF_EMAIL = 11; // L อีเมล Staff
-  const COL_STAFF_ROLE = 32; // AG role
+  const COL_STAFF_ROLE = 27; // AB role
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
   const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL

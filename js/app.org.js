@@ -57,7 +57,7 @@ function renderOrgStructure(rows) {
   const COL_NICK   = 7;   // ชื่อเล่น (ใช้เป็น key)
   const COL_YEAR   = 9;   // J ชั้นปี
   const COL_FAC    = 10;  // K คณะ
-  const COL_STAFF_EMAIL = 11; // L อีเมล Staff
+  const COL_STAFF_EMAIL = 28; // AC อีเมล Staff
   const COL_STAFF_ROLE = 27; // AB role
   const COL_LINE   = 12;
   const COL_PHONE  = 13;
@@ -150,7 +150,10 @@ function renderOrgStructure(rows) {
     if (!peopleByPos[pos]) peopleByPos[pos] = [];
     peopleByPos[pos].push(r);
 
-    const staffEmail = (r[COL_STAFF_EMAIL] || "").toString().trim().toLowerCase();
+    const staffEmail = (r[COL_STAFF_EMAIL] || r[COL_STAFF_EMAIL_LEGACY] || "")
+      .toString()
+      .trim()
+      .toLowerCase();
     if (staffEmail) {
       staffEmails.add(staffEmail);
       const nextRole = (r[COL_STAFF_ROLE] || "").toString().trim() || "0";

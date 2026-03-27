@@ -50,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const LOCAL_MIGRATED_KEY = "meetingRoomBookingsMigratedToFirestore-v1";
   const BOOKING_COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
+  const HOLIDAY_COLLECTION_NAME = "meetingRoomHolidays";
   const DEFAULT_MEETING_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public" },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public" },
@@ -360,6 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let bookings = [];
   let unsubscribe = null;
   let unsubscribeRooms = null;
+  let unsubscribeHolidays = null;
   let hasMigrated = false;
   let currentUserEmail = "";
 
@@ -566,6 +568,68 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${year}-${month}-${day}`;
   };
 
+  const DEFAULT_THAI_PUBLIC_HOLIDAYS = [
+    { md: "01-01", name: "วันขึ้นปีใหม่" },
+    { md: "04-06", name: "วันจักรี" },
+    { md: "04-13", name: "วันสงกรานต์" },
+    { md: "04-14", name: "วันสงกรานต์" },
+    { md: "04-15", name: "วันสงกรานต์" },
+    { md: "05-01", name: "วันแรงงานแห่งชาติ" },
+    { md: "05-04", name: "วันฉัตรมงคล" },
+    { md: "06-03", name: "วันเฉลิมพระชนมพรรษาสมเด็จพระราชินี" },
+    { md: "07-28", name: "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว" },
+    { md: "08-12", name: "วันแม่แห่งชาติ" },
+    { md: "10-13", name: "วันนวมินทรมหาราช" },
+    { md: "10-23", name: "วันปิยมหาราช" },
+    { md: "12-05", name: "วันพ่อแห่งชาติ" },
+    { md: "12-10", name: "วันรัฐธรรมนูญ" },
+    { md: "12-31", name: "วันสิ้นปี" }
+  ];
+
+  const getHolidayYears = () => {
+    const currentYear = new Date().getFullYear();
+    return [currentYear - 1, currentYear, currentYear + 1];
+  };
+
+  const readHolidayLookup = () => {
+    const map = new Map();
+    getHolidayYears().forEach((year) => {
+      DEFAULT_THAI_PUBLIC_HOLIDAYS.forEach((item) => {
+        map.set(`${year}-${item.md}`, item.name);
+      });
+    });
+    const source = window.sgcuHolidayData;
+    if (Array.isArray(source)) {
+      source.forEach((item) => {
+        const date = (item?.date || "").toString().trim();
+        if (!date) return;
+        const name = (item?.name || item?.title || "วันหยุด").toString().trim() || "วันหยุด";
+        map.set(date, name);
+      });
+    }
+    return map;
+  };
+
+  const defaultHolidayLookup = readHolidayLookup();
+  let holidayLookup = new Map(defaultHolidayLookup);
+
+  const refreshHolidayLookup = (customHolidays = []) => {
+    holidayLookup = new Map(defaultHolidayLookup);
+    customHolidays.forEach((item) => {
+      if (!item?.date) return;
+      const name = (item.name || "").toString().trim() || "วันหยุด";
+      holidayLookup.set(item.date, name);
+    });
+  };
+
+  const getHolidayName = (date, dateKey) => {
+    const explicit = holidayLookup.get(dateKey);
+    if (explicit) return explicit;
+    const day = date.getDay();
+    if (day === 0) return "วันหยุดสุดสัปดาห์";
+    return "";
+  };
+
   const safeStatus = (status) => {
     if (status === "approved") return "approved";
     if (status === "rejected") return "rejected";
@@ -749,8 +813,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const visibleItems = items.slice(0, maxEvents);
       const remainingCount = items.length - maxEvents;
       const isToday = dateKey === todayKey;
+      const holidayName = getHolidayName(date, dateKey);
+      const isHoliday = !!holidayName;
       const todayBadge = isToday
         ? `<span class="calendar-today-pill">วันนี้</span>`
+        : "";
+      const holidayBadge = isHoliday
+        ? `<span class="calendar-holiday-pill" title="${escapeText(holidayName)}">วันหยุด</span>`
         : "";
 
       const eventRows = visibleItems
@@ -771,11 +840,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const className = ["calendar-day"];
       if (isToday) className.push("calendar-day-today");
       if (items.length) className.push("calendar-day-has-events");
+      if (isHoliday) className.push("calendar-day-holiday");
 
       cells.push(`
         <div class="${className.join(" ")}" data-date="${dateKey}">
           <div class="calendar-day-header">
-            ${day}${todayBadge}
+            ${day}${todayBadge}${holidayBadge}
           </div>
           ${eventRows}
           ${moreText}
@@ -952,6 +1022,39 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     } catch (err) {
       setMessage("ไม่สามารถเชื่อมต่อ Firestore ได้", "#b91c1c");
+    }
+  };
+
+  const subscribeHolidays = () => {
+    if (!hasFirestore) return;
+    try {
+      const colRef = firestore.collection(firestore.db, HOLIDAY_COLLECTION_NAME);
+      const q = firestore.query(colRef, firestore.orderBy("date", "asc"));
+      unsubscribeHolidays = firestore.onSnapshot(
+        q,
+        (snapshot) => {
+          const custom = snapshot.docs
+            .map((docItem) => {
+              const data = docItem.data() || {};
+              const date = (data.date || "").toString().trim();
+              if (!date) return null;
+              return {
+                date,
+                name: (data.name || "วันหยุด").toString().trim() || "วันหยุด"
+              };
+            })
+            .filter(Boolean);
+          refreshHolidayLookup(custom);
+          renderCalendarOverview();
+        },
+        () => {
+          refreshHolidayLookup([]);
+          renderCalendarOverview();
+        }
+      );
+    } catch (err) {
+      refreshHolidayLookup([]);
+      renderCalendarOverview();
     }
   };
 
@@ -1353,6 +1456,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   subscribeBookings();
+  subscribeHolidays();
 
   if (bookingDetailCloseEl) {
     bookingDetailCloseEl.addEventListener("click", closeBookingDetailModal);
@@ -1373,6 +1477,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (typeof unsubscribeRooms === "function") {
       unsubscribeRooms();
+    }
+    if (typeof unsubscribeHolidays === "function") {
+      unsubscribeHolidays();
     }
   });
 });

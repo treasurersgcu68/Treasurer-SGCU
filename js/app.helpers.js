@@ -79,9 +79,22 @@ function isProjectClosed(project) {
   return (
     close === "ส่งกิจการนิสิตเรียบร้อย" ||
     close === "ยกเลิกโครงการ" ||
+    close === "ไม่ปิดโครงการ" ||
     close === "ไม่ส่งปิดโครงการ" ||
     decree === "ปิดโครงการเรียบร้อย"
   );
+}
+
+function isProjectNoClose(project) {
+  const close = (project.statusClose || "").trim();
+  return close === "ไม่ปิดโครงการ" || close === "ไม่ส่งปิดโครงการ";
+}
+
+function getProjectOverviewStatus(project) {
+  if (isProjectNoClose(project)) {
+    return (project.statusClose || "").trim();
+  }
+  return (project.statusMain || "").trim();
 }
 
 function getCloseDurationDays(project) {

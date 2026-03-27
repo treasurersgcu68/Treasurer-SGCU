@@ -275,20 +275,19 @@ function getOrgsByGroup(group) {
 function updateClosureStatusChart(filtered) {
   if (!budgetByMonthChart) return;
 
-  const closureTrackedProjects = filtered.filter(
-    (p) => ((p.statusMain || "").trim()) !== ""
+  const closureTrackedProjects = filtered.filter((p) =>
+    ((p.statusMain || "").trim()) !== "" || isProjectNoClose(p)
   );
 
-  const isNoCloseSubmission = (p) =>
-    (p.statusClose || "").trim() === "ไม่ส่งปิดโครงการ";
+  const isNoCloseSubmission = (p) => isProjectNoClose(p);
 
   const classifyClosureBucket = (p) => {
     const mainStatus = (p.statusMain || "").trim();
+    if (isNoCloseSubmission(p)) return "black";
     if (mainStatus !== "อนุมัติโครงการ" && mainStatus !== "ยกเลิกโครงการ") {
       return "pending";
     }
     if (mainStatus === "ยกเลิกโครงการ") return "gray";
-    if (isNoCloseSubmission(p)) return "black";
 
     const isClosed = (p.statusClose || "").trim() === "ส่งกิจการนิสิตเรียบร้อย";
     if (isClosed) return "green";

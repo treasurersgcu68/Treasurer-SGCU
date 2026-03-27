@@ -364,6 +364,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let unsubscribeHolidays = null;
   let hasMigrated = false;
   let currentUserEmail = "";
+  let activeDetailBookingId = "";
+  let activeDetailOptions = {};
 
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
@@ -655,8 +657,111 @@ document.addEventListener("DOMContentLoaded", () => {
     return "รออนุมัติ";
   };
 
+  const getStatusOptionLabel = (value) => {
+    if (value === "approved") return "อนุมัติแล้ว";
+    if (value === "rejected") return "ไม่อนุมัติ";
+    if (value === "cancel_requested") return "ขอยกเลิก";
+    if (value === "reschedule_requested") return "ขอเปลี่ยนเวลา";
+    if (value === "pending") return "รออนุมัติ";
+    return value;
+  };
+
+  const statusSelectClass = (value) => {
+    if (value === "approved") return "is-approved";
+    if (value === "rejected") return "is-rejected";
+    if (value === "cancel_requested" || value === "reschedule_requested") return "is-cancel-requested";
+    return "is-pending";
+  };
+
+  const canEditBookingStatusInModal = (options = {}) => {
+    if (!hasFirestore) return false;
+    if (options.allowStatusEdit === true) return true;
+    return isStaffUser();
+  };
+
+  const setBookingDetailStatusMessage = (text = "", color = "#374151") => {
+    if (!bookingDetailBodyEl) return;
+    const messageEl = bookingDetailBodyEl.querySelector("#meetingBookingDetailStatusMessage");
+    if (!messageEl) return;
+    messageEl.textContent = text;
+    messageEl.style.color = color;
+  };
+
+  const applyStatusByIdFromModal = async (bookingId, nextStatus) => {
+    if (!hasFirestore || !bookingId) return;
+    const booking = bookings.find((item) => item.id === bookingId);
+    if (!booking) {
+      setBookingDetailStatusMessage("ไม่พบรายการจองนี้", "#b91c1c");
+      return;
+    }
+    if (!["pending", "approved", "rejected", "cancel_requested", "reschedule_requested"].includes(nextStatus)) {
+      setBookingDetailStatusMessage("สถานะที่เลือกไม่ถูกต้อง", "#b91c1c");
+      return;
+    }
+    if (booking.status === nextStatus) {
+      setBookingDetailStatusMessage("สถานะยังเหมือนเดิม", "#6b7280");
+      return;
+    }
+    const payload = {
+      status: nextStatus,
+      updatedAt: firestore.serverTimestamp()
+    };
+    if (booking.status === "reschedule_requested" && nextStatus === "approved") {
+      const nextDate = booking.rescheduleRequestedDate || "";
+      const nextStartTime = booking.rescheduleRequestedStartTime || "";
+      const nextEndTime = booking.rescheduleRequestedEndTime || "";
+      if (!nextDate || !nextStartTime || !nextEndTime) {
+        setBookingDetailStatusMessage("ไม่พบวัน/เวลาใหม่ที่ขอเปลี่ยน", "#b91c1c");
+        return;
+      }
+      const candidate = {
+        roomId: booking.roomId,
+        date: nextDate,
+        startTime: nextStartTime,
+        endTime: nextEndTime
+      };
+      if (hasOverlap(candidate, bookings, { ignoredBookingId: bookingId })) {
+        const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName);
+        setBookingDetailStatusMessage(
+          `อนุมัติเปลี่ยนเวลาไม่ได้เพราะชนเวลา (${roomName} ${formatDate(nextDate)} ${nextStartTime}-${nextEndTime})`,
+          "#b91c1c"
+        );
+        return;
+      }
+      payload.status = "approved";
+      payload.date = nextDate;
+      payload.startTime = nextStartTime;
+      payload.endTime = nextEndTime;
+      payload.startAt = toDateTime(nextDate, nextStartTime).toISOString();
+      payload.endAt = toDateTime(nextDate, nextEndTime).toISOString();
+      payload.rescheduleBaseStatus = "";
+      payload.rescheduleRequestedDate = "";
+      payload.rescheduleRequestedStartTime = "";
+      payload.rescheduleRequestedEndTime = "";
+      payload.rescheduleRequestReason = "";
+    }
+    if (booking.status === "reschedule_requested" && nextStatus === "rejected") {
+      payload.status = normalizeStatus(booking.rescheduleBaseStatus || "approved");
+      payload.rescheduleBaseStatus = "";
+      payload.rescheduleRequestedDate = "";
+      payload.rescheduleRequestedStartTime = "";
+      payload.rescheduleRequestedEndTime = "";
+      payload.rescheduleRequestReason = "";
+    }
+    try {
+      await firestore.updateDoc(
+        firestore.doc(firestore.db, BOOKING_COLLECTION_NAME, bookingId),
+        payload
+      );
+      setBookingDetailStatusMessage("อัปเดตสถานะคำขอเรียบร้อยแล้ว", "#047857");
+    } catch (err) {
+      setBookingDetailStatusMessage("ไม่สามารถอัปเดตสถานะคำขอได้ในขณะนี้", "#b91c1c");
+    }
+  };
+
   const setBookingDetailBody = (booking, options = {}) => {
     const includeContact = !!options.includeContact;
+    const allowStatusEdit = canEditBookingStatusInModal(options);
     if (!bookingDetailBodyEl) return;
     if (!booking) {
       bookingDetailBodyEl.innerHTML = '<div class="section-text-sm">ไม่พบรายละเอียดรายการจอง</div>';
@@ -690,6 +795,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (includeContact) {
       rows.splice(7, 0, ["ข้อมูลติดต่อ", contactText]);
     }
+    const selectOptions = [
+      "pending",
+      "approved",
+      "rejected",
+      "cancel_requested",
+      ...(booking.status === "reschedule_requested" ? ["reschedule_requested"] : [])
+    ];
     bookingDetailBodyEl.innerHTML = `
       <div class="meeting-booking-detail-grid">
         ${rows.map(([label, value]) => `
@@ -699,6 +811,26 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `).join("")}
       </div>
+      ${allowStatusEdit
+        ? `
+          <div class="modal-actions">
+            <select
+              id="meetingBookingDetailStatusSelect"
+              class="staff-status-select ${statusSelectClass(booking.status)}"
+              aria-label="ปรับสถานะคำขอ"
+            >
+              ${selectOptions.map((statusValue) => `
+                <option value="${statusValue}" ${booking.status === statusValue ? "selected" : ""}>
+                  ${getStatusOptionLabel(statusValue)}
+                </option>
+              `).join("")}
+            </select>
+            <button id="meetingBookingDetailStatusApply" type="button" class="btn-primary">บันทึกสถานะ</button>
+          </div>
+          <div id="meetingBookingDetailStatusMessage" class="section-text-sm" aria-live="polite"></div>
+        `
+        : ""
+      }
     `;
   };
 
@@ -706,6 +838,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const booking = typeof bookingOrId === "string"
       ? bookings.find((item) => item.id === bookingOrId)
       : bookingOrId;
+    activeDetailBookingId = booking?.id || "";
+    activeDetailOptions = options || {};
     setBookingDetailBody(booking || null, options);
     if (bookingDetailModalEl && typeof openDialog === "function") {
       openDialog(bookingDetailModalEl, { focusSelector: "#meetingBookingDetailClose" });
@@ -713,6 +847,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const closeBookingDetailModal = () => {
+    activeDetailBookingId = "";
+    activeDetailOptions = {};
     if (bookingDetailModalEl && typeof closeDialog === "function") {
       closeDialog(bookingDetailModalEl);
     }
@@ -1466,6 +1602,34 @@ document.addEventListener("DOMContentLoaded", () => {
       if (event.target === bookingDetailModalEl) {
         closeBookingDetailModal();
       }
+    });
+  }
+  if (bookingDetailBodyEl) {
+    bookingDetailBodyEl.addEventListener("change", (event) => {
+      const select = event.target;
+      if (!(select instanceof HTMLSelectElement)) return;
+      if (select.id !== "meetingBookingDetailStatusSelect") return;
+      select.classList.remove("is-pending", "is-approved", "is-rejected", "is-cancel-requested");
+      select.classList.add(statusSelectClass(select.value));
+      setBookingDetailStatusMessage("");
+    });
+
+    bookingDetailBodyEl.addEventListener("click", (event) => {
+      const button = event.target;
+      if (!(button instanceof HTMLButtonElement)) return;
+      if (button.id !== "meetingBookingDetailStatusApply") return;
+      const select = bookingDetailBodyEl.querySelector("#meetingBookingDetailStatusSelect");
+      if (!(select instanceof HTMLSelectElement)) return;
+      const bookingId = activeDetailBookingId;
+      if (!bookingId) return;
+      button.disabled = true;
+      void applyStatusByIdFromModal(bookingId, select.value).finally(() => {
+        button.disabled = false;
+        const latest = bookings.find((item) => item.id === bookingId);
+        if (latest) {
+          setBookingDetailBody(latest, activeDetailOptions);
+        }
+      });
     });
   }
 

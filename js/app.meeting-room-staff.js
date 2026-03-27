@@ -16,6 +16,12 @@ function initMeetingRoomStaffApproval() {
   const roomManageMessage = document.getElementById("meetingRoomManageMessage");
   const roomManageList = document.getElementById("meetingRoomManageList");
   const roomManageCountEl = document.getElementById("meetingRoomManageCount");
+  const holidayManageForm = document.getElementById("meetingHolidayManageForm");
+  const holidayManageDateInput = document.getElementById("meetingHolidayManageDate");
+  const holidayManageNameInput = document.getElementById("meetingHolidayManageName");
+  const holidayManageMessage = document.getElementById("meetingHolidayManageMessage");
+  const holidayManageList = document.getElementById("meetingHolidayManageList");
+  const holidayManageCountEl = document.getElementById("meetingHolidayManageCount");
   const staffCalendarPanel = document.getElementById("meetingRoomStaffCalendar");
   const staffCalendarTitle = document.getElementById("meetingStaffCalendarTitle");
   const staffCalendarPrevBtn = document.getElementById("meetingStaffCalendarPrevMonth");
@@ -31,6 +37,7 @@ function initMeetingRoomStaffApproval() {
 
   const COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
+  const HOLIDAY_COLLECTION_NAME = "meetingRoomHolidays";
   const DEFAULT_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public", isDefault: true },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public", isDefault: true },
@@ -135,6 +142,59 @@ function initMeetingRoomStaffApproval() {
     return `${year}-${month}-${day}`;
   };
 
+  const DEFAULT_THAI_PUBLIC_HOLIDAYS = [
+    { md: "01-01", name: "วันขึ้นปีใหม่" },
+    { md: "04-06", name: "วันจักรี" },
+    { md: "04-13", name: "วันสงกรานต์" },
+    { md: "04-14", name: "วันสงกรานต์" },
+    { md: "04-15", name: "วันสงกรานต์" },
+    { md: "05-01", name: "วันแรงงานแห่งชาติ" },
+    { md: "05-04", name: "วันฉัตรมงคล" },
+    { md: "06-03", name: "วันเฉลิมพระชนมพรรษาสมเด็จพระราชินี" },
+    { md: "07-28", name: "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว" },
+    { md: "08-12", name: "วันแม่แห่งชาติ" },
+    { md: "10-13", name: "วันนวมินทรมหาราช" },
+    { md: "10-23", name: "วันปิยมหาราช" },
+    { md: "12-05", name: "วันพ่อแห่งชาติ" },
+    { md: "12-10", name: "วันรัฐธรรมนูญ" },
+    { md: "12-31", name: "วันสิ้นปี" }
+  ];
+
+  const getHolidayYears = () => {
+    const currentYear = new Date().getFullYear();
+    return [currentYear - 1, currentYear, currentYear + 1];
+  };
+
+  const readHolidayLookup = () => {
+    const map = new Map();
+    getHolidayYears().forEach((year) => {
+      DEFAULT_THAI_PUBLIC_HOLIDAYS.forEach((item) => {
+        map.set(`${year}-${item.md}`, item.name);
+      });
+    });
+    const source = window.sgcuHolidayData;
+    if (Array.isArray(source)) {
+      source.forEach((item) => {
+        const date = (item?.date || "").toString().trim();
+        if (!date) return;
+        const name = (item?.name || item?.title || "วันหยุด").toString().trim() || "วันหยุด";
+        map.set(date, name);
+      });
+    }
+    return map;
+  };
+
+  const defaultHolidayLookup = readHolidayLookup();
+  let holidayLookup = new Map(defaultHolidayLookup);
+
+  const getHolidayName = (date, dateKey) => {
+    const explicit = holidayLookup.get(dateKey);
+    if (explicit) return explicit;
+    const day = date.getDay();
+    if (day === 0) return "วันหยุดสุดสัปดาห์";
+    return "";
+  };
+
   const escapeText = (value) => {
     const safe = (value ?? "").toString();
     return safe
@@ -160,8 +220,10 @@ function initMeetingRoomStaffApproval() {
 
   let bookings = [];
   let rooms = [...DEFAULT_ROOMS];
+  let customHolidays = [];
   let unsubscribe = null;
   let unsubscribeRooms = null;
+  let unsubscribeHolidays = null;
   let hasRenderedOnce = false;
   let subscribeGuardTimer = null;
   let activeTab = "requests";
@@ -221,6 +283,56 @@ function initMeetingRoomStaffApproval() {
     if (!roomManageMessage) return;
     roomManageMessage.textContent = text;
     roomManageMessage.style.color = color;
+  };
+
+  const setHolidayManageMessage = (text = "", color = "#374151") => {
+    if (!holidayManageMessage) return;
+    holidayManageMessage.textContent = text;
+    holidayManageMessage.style.color = color;
+  };
+
+  const refreshHolidayLookup = () => {
+    holidayLookup = new Map(defaultHolidayLookup);
+    customHolidays.forEach((item) => {
+      if (!item?.date) return;
+      const name = (item.name || "").toString().trim() || "วันหยุด";
+      holidayLookup.set(item.date, name);
+    });
+  };
+
+  const renderHolidayManageList = () => {
+    if (!holidayManageList) return;
+    if (holidayManageCountEl) {
+      holidayManageCountEl.textContent = `พบ ${customHolidays.length} วัน`;
+    }
+    if (!customHolidays.length) {
+      holidayManageList.innerHTML = '<div class="meeting-room-manage-empty">ยังไม่มีวันหยุดเพิ่มเติม</div>';
+      return;
+    }
+    holidayManageList.innerHTML = customHolidays
+      .slice()
+      .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")))
+      .map((item) => {
+        return `
+          <div class="meeting-room-manage-item">
+            <div>
+              <div class="meeting-room-holiday-date">${formatDate(item.date)}</div>
+              <div class="meeting-room-manage-name">${escapeText(item.name || "วันหยุด")}</div>
+            </div>
+            <div class="meeting-room-manage-actions">
+              <button
+                type="button"
+                class="btn-ghost meeting-room-manage-btn"
+                data-action="remove-holiday"
+                data-holiday-id="${escapeText(item.id)}"
+              >
+                ลบ
+              </button>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
   };
 
   const setStaffActionMessage = (text = "", color = "#374151") => {
@@ -393,6 +505,51 @@ function initMeetingRoomStaffApproval() {
     }
   };
 
+  const subscribeHolidays = () => {
+    if (!hasFirestore) {
+      customHolidays = [];
+      refreshHolidayLookup();
+      renderHolidayManageList();
+      renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+      return;
+    }
+    try {
+      const colRef = firestore.collection(firestore.db, HOLIDAY_COLLECTION_NAME);
+      const q = firestore.query(colRef, firestore.orderBy("date", "asc"));
+      unsubscribeHolidays = firestore.onSnapshot(
+        q,
+        (snapshot) => {
+          customHolidays = snapshot.docs
+            .map((docItem) => {
+              const data = docItem.data() || {};
+              const date = (data.date || "").toString().trim();
+              if (!date) return null;
+              return {
+                id: docItem.id,
+                date,
+                name: (data.name || "วันหยุด").toString().trim() || "วันหยุด"
+              };
+            })
+            .filter(Boolean);
+          refreshHolidayLookup();
+          renderHolidayManageList();
+          renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+        },
+        () => {
+          customHolidays = [];
+          refreshHolidayLookup();
+          renderHolidayManageList();
+          renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+        }
+      );
+    } catch (err) {
+      customHolidays = [];
+      refreshHolidayLookup();
+      renderHolidayManageList();
+      renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+    }
+  };
+
   const addRoom = async (nameValue) => {
     const name = (nameValue || "").toString().trim().replace(/\s+/g, " ");
     if (!name) {
@@ -419,6 +576,51 @@ function initMeetingRoomStaffApproval() {
       if (roomManageInput) roomManageInput.value = "";
     } catch (err) {
       setRoomManageMessage("ไม่สามารถเพิ่มห้องประชุมได้ในขณะนี้", "#b91c1c");
+    }
+  };
+
+  const addHoliday = async (dateValue, nameValue) => {
+    const date = (dateValue || "").toString().trim();
+    const name = (nameValue || "").toString().trim();
+    if (!date) {
+      setHolidayManageMessage("กรุณาเลือกวันที่วันหยุด", "#b91c1c");
+      return;
+    }
+    if (!name) {
+      setHolidayManageMessage("กรุณากรอกชื่อวันหยุด", "#b91c1c");
+      return;
+    }
+    if (!hasFirestore) {
+      setHolidayManageMessage("ระบบยังไม่เชื่อมต่อ Firestore", "#b91c1c");
+      return;
+    }
+    const duplicate = customHolidays.some((item) => item.date === date);
+    if (duplicate) {
+      setHolidayManageMessage("มีวันหยุดวันที่นี้อยู่แล้ว", "#b91c1c");
+      return;
+    }
+    try {
+      await firestore.addDoc(firestore.collection(firestore.db, HOLIDAY_COLLECTION_NAME), {
+        date,
+        name,
+        createdAt: firestore.serverTimestamp(),
+        updatedAt: firestore.serverTimestamp()
+      });
+      setHolidayManageMessage("เพิ่มวันหยุดเรียบร้อยแล้ว", "#047857");
+      if (holidayManageDateInput) holidayManageDateInput.value = "";
+      if (holidayManageNameInput) holidayManageNameInput.value = "";
+    } catch (err) {
+      setHolidayManageMessage("ไม่สามารถเพิ่มวันหยุดได้ในขณะนี้", "#b91c1c");
+    }
+  };
+
+  const removeHoliday = async (holidayId) => {
+    if (!holidayId || !hasFirestore) return;
+    try {
+      await firestore.deleteDoc(firestore.doc(firestore.db, HOLIDAY_COLLECTION_NAME, holidayId));
+      setHolidayManageMessage("ลบวันหยุดเรียบร้อยแล้ว", "#047857");
+    } catch (err) {
+      setHolidayManageMessage("ไม่สามารถลบวันหยุดได้ในขณะนี้", "#b91c1c");
     }
   };
 
@@ -674,6 +876,11 @@ function initMeetingRoomStaffApproval() {
       const visibleItems = items.slice(0, maxEvents);
       const remainingCount = items.length - maxEvents;
       const isToday = dateKey === todayKey;
+      const holidayName = getHolidayName(date, dateKey);
+      const isHoliday = !!holidayName;
+      const holidayBadge = isHoliday
+        ? `<span class="calendar-holiday-pill" title="${escapeText(holidayName)}">วันหยุด</span>`
+        : "";
 
       const eventRows = visibleItems
         .map((item) => {
@@ -692,10 +899,11 @@ function initMeetingRoomStaffApproval() {
       const className = ["calendar-day"];
       if (isToday) className.push("calendar-day-today");
       if (items.length) className.push("calendar-day-has-events");
+      if (isHoliday) className.push("calendar-day-holiday");
 
       cells.push(`
         <div class="${className.join(" ")}">
-          <div class="calendar-day-header">${day}</div>
+          <div class="calendar-day-header">${day}${holidayBadge}</div>
           ${eventRows}
           ${moreText}
         </div>
@@ -1005,6 +1213,12 @@ function initMeetingRoomStaffApproval() {
         void removeRoom(roomId);
         return;
       }
+      if (action === "remove-holiday") {
+        const holidayId = button.dataset.holidayId;
+        if (!holidayId) return;
+        void removeHoliday(holidayId);
+        return;
+      }
       if (!id) return;
       if (action === "approve") {
         setStatusById(id, "approved");
@@ -1085,6 +1299,14 @@ function initMeetingRoomStaffApproval() {
     });
   }
   renderRoomManageList();
+  renderHolidayManageList();
+
+  if (holidayManageForm) {
+    holidayManageForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void addHoliday(holidayManageDateInput?.value || "", holidayManageNameInput?.value || "");
+    });
+  }
 
   if (!hasFirestore) {
     rooms = [...DEFAULT_ROOMS];
@@ -1111,6 +1333,7 @@ function initMeetingRoomStaffApproval() {
   }
 
   subscribeRooms();
+  subscribeHolidays();
   subscribeBookings();
   window.addEventListener("beforeunload", () => {
     if (typeof unsubscribe === "function") {
@@ -1118,6 +1341,9 @@ function initMeetingRoomStaffApproval() {
     }
     if (typeof unsubscribeRooms === "function") {
       unsubscribeRooms();
+    }
+    if (typeof unsubscribeHolidays === "function") {
+      unsubscribeHolidays();
     }
   });
   return true;

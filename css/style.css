@@ -392,6 +392,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   background: linear-gradient(90deg, rgba(236, 72, 153, 0), rgba(236, 72, 153, 0.28), rgba(236, 72, 153, 0));
 }
 
+.meeting-form-secondary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.meeting-form-secondary-item {
+  min-width: 0;
+}
+
 .meeting-form-subhead {
   margin-bottom: 8px;
   border-left: 3px solid var(--theme-pink-300);
@@ -425,6 +436,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .meeting-booking-form .login-input {
   background: #ffffff;
   border-color: rgba(236, 72, 153, 0.2);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.meeting-booking-form .borrow-form-field {
+  min-width: 0;
+}
+
+.meeting-form-actions .section-text-sm {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 #meetingBookingMessage {
@@ -523,6 +547,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   border-radius: 14px;
 }
 
+.meeting-room-holiday-panel .panel-body {
+  background: linear-gradient(180deg, #ffffff, #fff8fb);
+  border-radius: 14px;
+}
+
 .meeting-room-manage-form {
   margin-bottom: 12px;
   padding-bottom: 8px;
@@ -536,7 +565,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   align-items: center;
 }
 
+.meeting-room-holiday-panel .meeting-room-manage-row {
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto;
+}
+
 #meetingRoomManageMessage {
+  min-height: 18px;
+  margin-top: 6px;
+}
+
+#meetingHolidayManageMessage {
   min-height: 18px;
   margin-top: 6px;
 }
@@ -561,6 +599,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   font-size: 14px;
   font-weight: 500;
   color: #111827;
+}
+
+.meeting-room-holiday-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: #be185d;
 }
 
 .meeting-room-manage-access-pill {
@@ -782,6 +826,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     grid-template-columns: 1fr;
   }
 
+  .meeting-room-holiday-panel .meeting-room-manage-row {
+    grid-template-columns: 1fr;
+  }
+
   .meeting-room-manage-item {
     align-items: flex-start;
     flex-direction: column;
@@ -793,6 +841,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   .meeting-form-panel .panel-body {
     padding: 10px;
+  }
+
+  .meeting-form-secondary-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .meeting-booking-form .borrow-form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .meeting-form-actions .btn-primary,
@@ -2392,6 +2450,22 @@ th.sortable.sort-desc::after {
 
 .calendar-day-today .calendar-day-header {
   color: #b91c1c;
+}
+
+.calendar-day-holiday {
+  background: #fff8fb;
+  border-color: rgba(236, 72, 153, 0.24);
+}
+
+.calendar-holiday-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #ffe4f1;
+  color: #be185d;
+  font-size: 9px;
+  font-weight: 700;
 }
 
 .calendar-event {

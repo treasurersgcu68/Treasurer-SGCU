@@ -1781,6 +1781,7 @@
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingDate">วันที่</label>
                     <input id="meetingDate" class="login-input" type="date" required />
+                    <div class="section-text-sm">กรุณากรอกปีเป็น ค.ศ. (เช่น 2026)</div>
                   </div>
                 </div>
 
@@ -1892,6 +1893,7 @@
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingRescheduleDate">วันที่ใหม่</label>
                     <input id="meetingRescheduleDate" class="login-input" type="date" required />
+                    <div class="section-text-sm">กรุณากรอกปีเป็น ค.ศ. (เช่น 2026)</div>
                   </div>
                 </div>
                 <div class="borrow-form-row">
@@ -2060,6 +2062,34 @@
                 <div id="meetingRoomManageMessage" class="section-text-sm" aria-live="polite"></div>
               </form>
               <div id="meetingRoomManageList" class="meeting-room-manage-list"></div>
+            </div>
+          </div>
+
+          <div class="panel panel-hover section-appear section-delay-4 meeting-room-holiday-panel" style="margin-top: 18px;">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">จัดการวันหยุด</div>
+                <div class="panel-caption">เพิ่ม/ลบวันหยุดราชการเพิ่มเติมสำหรับปฏิทินจองห้องประชุม</div>
+                <div id="meetingHolidayManageCount" class="panel-meta">พบ 0 วัน</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <form id="meetingHolidayManageForm" class="meeting-room-manage-form">
+                <div class="meeting-room-manage-row">
+                  <input id="meetingHolidayManageDate" class="login-input" type="date" required />
+                  <input
+                    id="meetingHolidayManageName"
+                    class="login-input"
+                    type="text"
+                    placeholder="เช่น วันหยุดพิเศษ"
+                    maxlength="100"
+                    required
+                  />
+                  <button class="btn-primary" type="submit">เพิ่มวันหยุด</button>
+                </div>
+                <div id="meetingHolidayManageMessage" class="section-text-sm" aria-live="polite"></div>
+              </form>
+              <div id="meetingHolidayManageList" class="meeting-room-manage-list"></div>
             </div>
           </div>
         </div>
@@ -2708,7 +2738,7 @@
             <div class="login-hero-panel">
               <div class="login-grid">
                 <div id="loginGooglePanel" class="panel panel-hover login-card">
-                  <h3 class="login-title">ล็อกอินด้วย Google</h3>
+                  <h3 class="login-title">ล็อกอินด้วย Mail CHULA</h3>
                   <p class="login-caption">ใช้บัญชีที่ได้รับสิทธิ์เพื่อเข้าใช้งานระบบ</p>
                   <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Sign in with Google</button>
                   <div class="login-status" id="loginPageStatus"></div>

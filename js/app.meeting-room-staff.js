@@ -1159,7 +1159,10 @@ function initMeetingRoomStaffApproval() {
         if (bookingId && typeof window.openMeetingBookingDetailModal === "function") {
           const booking = bookings.find((item) => item.id === bookingId);
           if (booking) {
-            window.openMeetingBookingDetailModal(booking, { includeContact: true });
+            window.openMeetingBookingDetailModal(booking, {
+              includeContact: true,
+              allowStatusEdit: true
+            });
             return;
           }
         }
@@ -1269,7 +1272,10 @@ function initMeetingRoomStaffApproval() {
         const booking = bookings.find((item) => item.id === target.dataset.bookingId);
         if (!booking) return;
         if (typeof window.openMeetingBookingDetailModal === "function") {
-          window.openMeetingBookingDetailModal(booking, { includeContact: true });
+          window.openMeetingBookingDetailModal(booking, {
+            includeContact: true,
+            allowStatusEdit: true
+          });
         }
       });
     }

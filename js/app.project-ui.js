@@ -44,6 +44,8 @@ function initOrgOptions() {
 }
 
 const EXCLUDED_PENDING_STATUSES = new Set([
+  "ไม่ปิดโครงการ",
+  "ไม่ส่งปิดโครงการ",
   "ไม่รับรองจากที่ประชุมนายก",
   "สภาไม่รับหลักการ",
   "ไม่ผ่านกมธ.วิสามัญ",
@@ -95,11 +97,11 @@ function updateSummaryCards(filtered) {
   let totalBudget = 0;
 
   filtered.forEach((p) => {
-    const statusMain = (p.statusMain || "").trim();
-    if (statusMain && !EXCLUDED_PENDING_STATUSES.has(statusMain)) {
+    const overviewStatus = getProjectOverviewStatus(p);
+    if (overviewStatus && !EXCLUDED_PENDING_STATUSES.has(overviewStatus)) {
       pending += 1;
     }
-    if (statusMain === "อนุมัติโครงการ") {
+    if (overviewStatus === "อนุมัติโครงการ") {
       approved += 1;
     }
     if (isProjectClosed(p)) {
@@ -205,7 +207,7 @@ function updateDashboardInsights(filtered, summary) {
     approvalRateBarEl.style.width = `${Math.min(approvalRate, 100)}%`;
   }
   if (approvalRateDonutCanvas) {
-    const approvedList = filtered.filter(p => (p.statusMain || "").trim() === "อนุมัติโครงการ");
+    const approvedList = filtered.filter((p) => getProjectOverviewStatus(p) === "อนุมัติโครงการ");
     approvalRateDonutChart = updateDonutChart(
       approvalRateDonutChart,
       approvalRateDonutCanvas,

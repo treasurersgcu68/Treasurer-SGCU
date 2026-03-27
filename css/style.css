@@ -542,6 +542,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   vertical-align: top;
 }
 
+.meeting-room-page #meetingRoomTableBody td:nth-child(5),
+#meetingRoomAllTableBody td:nth-child(5) {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .meeting-room-page #meetingRoomTableBody td:nth-child(5),
+  #meetingRoomAllTableBody td:nth-child(5) {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+}
+
 .meeting-room-manage-panel .panel-body {
   background: linear-gradient(180deg, #ffffff, #fff9fc);
   border-radius: 14px;

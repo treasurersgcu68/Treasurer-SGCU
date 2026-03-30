@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const pendingCountEl = document.getElementById("meetingRoomPendingCount");
   const latestDateEl = document.getElementById("meetingRoomLatestDate");
   const bookingDetailModalEl = document.getElementById("meetingBookingDetailModal");
+  const bookingDetailTitleEl = document.getElementById("meetingBookingDetailTitle");
   const bookingDetailBodyEl = document.getElementById("meetingBookingDetailBody");
   const bookingDetailCloseEl = document.getElementById("meetingBookingDetailClose");
 
@@ -657,6 +658,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return "รออนุมัติ";
   };
 
+  const statusBadgeClass = (status) => {
+    const normalized = safeStatus(status);
+    if (normalized === "approved") return "badge-approved";
+    if (normalized === "rejected") return "badge-rejected";
+    if (normalized === "cancel_requested" || normalized === "reschedule_requested") return "badge-warning";
+    return "badge-pending";
+  };
+
   const getStatusOptionLabel = (value) => {
     if (value === "approved") return "อนุมัติแล้ว";
     if (value === "rejected") return "ไม่อนุมัติ";
@@ -838,9 +847,60 @@ document.addEventListener("DOMContentLoaded", () => {
     const booking = typeof bookingOrId === "string"
       ? bookings.find((item) => item.id === bookingOrId)
       : bookingOrId;
+    if (bookingDetailTitleEl) {
+      bookingDetailTitleEl.textContent = "รายละเอียดการจองห้องประชุม";
+    }
     activeDetailBookingId = booking?.id || "";
     activeDetailOptions = options || {};
     setBookingDetailBody(booking || null, options);
+    if (bookingDetailModalEl && typeof openDialog === "function") {
+      openDialog(bookingDetailModalEl, { focusSelector: "#meetingBookingDetailClose" });
+    }
+  };
+
+  const openDayBookingListModal = (dateText, options = {}) => {
+    if (!bookingDetailBodyEl) return;
+    const sourceBookings = Array.isArray(options.sourceBookings) ? options.sourceBookings : bookings;
+    const titlePrefix = (options.titlePrefix || "รายการจองวันที่").toString().trim() || "รายการจองวันที่";
+    const dayBookings = sortBookings(sourceBookings).filter((item) => item.date === dateText);
+    if (bookingDetailTitleEl) {
+      bookingDetailTitleEl.textContent = `${titlePrefix} ${formatDate(dateText)}`;
+    }
+    activeDetailBookingId = "";
+    activeDetailOptions = {};
+    if (!dayBookings.length) {
+      bookingDetailBodyEl.innerHTML = '<div class="section-text-sm">ยังไม่มีรายการจองในวันนี้</div>';
+    } else {
+      bookingDetailBodyEl.innerHTML = `
+        <div class="meeting-day-list-summary">
+          <span class="meeting-day-list-count">ทั้งหมด ${dayBookings.length} รายการ</span>
+        </div>
+        <div class="meeting-day-list">
+          ${dayBookings.map((item, index) => `
+            <div class="meeting-day-list-card">
+              <div class="meeting-day-list-card-head">
+                <div class="meeting-day-list-card-index">รายการ ${index + 1}</div>
+                <span class="badge ${statusBadgeClass(item.status)}">${escapeText(statusText(item.status))}</span>
+              </div>
+              <div class="meeting-day-list-card-main">
+                <div class="meeting-day-list-time">${escapeText(`${item.startTime || "-"} - ${item.endTime || "-"}`)}</div>
+                <div class="meeting-day-list-room">${escapeText(normalizeRoomDisplay(item.roomId, item.roomName))}</div>
+              </div>
+              <div class="meeting-day-list-meta">
+                <div class="meeting-day-list-meta-row">
+                  <span class="meeting-day-list-meta-label">ผู้ขอ</span>
+                  <span class="meeting-day-list-meta-value">${escapeText(item.requester || "-")}</span>
+                </div>
+                <div class="meeting-day-list-meta-row">
+                  <span class="meeting-day-list-meta-label">วัตถุประสงค์</span>
+                  <span class="meeting-day-list-meta-value">${escapeText(item.purpose || "-")}</span>
+                </div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
     if (bookingDetailModalEl && typeof openDialog === "function") {
       openDialog(bookingDetailModalEl, { focusSelector: "#meetingBookingDetailClose" });
     }
@@ -1569,6 +1629,7 @@ document.addEventListener("DOMContentLoaded", () => {
       dateInput.value = nextValue;
       setCalendarCursorFromDate(nextValue);
       renderCalendarOverview();
+      openDayBookingListModal(nextValue);
     });
   }
 
@@ -1634,6 +1695,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.openMeetingBookingDetailModal = openBookingDetailModal;
+  window.openMeetingBookingDayListModal = openDayBookingListModal;
 
   window.addEventListener("beforeunload", () => {
     if (typeof unsubscribe === "function") {

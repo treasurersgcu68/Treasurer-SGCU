@@ -334,7 +334,6 @@ function updateDashboardInsights(filtered, summary) {
       if (days <= 0) return null;
       const statusText = (p.statusClose || "").trim() || "-";
       return {
-        project: p,
         code: (p.code || "").trim(),
         name: (p.name || "").trim() || "(ไม่ระบุชื่อโครงการ)",
         org: (p.orgName || "").trim() || "(ไม่ระบุฝ่าย/ชมรม)",
@@ -385,11 +384,6 @@ function updateDashboardInsights(filtered, summary) {
       openItems.forEach((item) => {
         const tr = document.createElement("tr");
         const orgText = item.org ? `<span class="kpi-caption">${item.org}</span>` : "";
-        tr.className = "project-row";
-        tr.style.cursor = "pointer";
-        tr.tabIndex = 0;
-        tr.setAttribute("role", "button");
-        tr.setAttribute("aria-label", `ดูรายละเอียดโครงการ ${item.name}`);
         tr.innerHTML = `
           <td class="col-code" data-label="รหัสโครงการ">${item.code}</td>
           <td class="col-name" data-label="ชื่อโครงการ">${item.name}<br>${orgText}</td>
@@ -397,16 +391,6 @@ function updateDashboardInsights(filtered, summary) {
           <td class="col-status" data-label="สถานะปิดโครงการ">${item.statusBadge || item.status}</td>
           <td class="col-budget" data-label="ยอดวันที่ค้าง" style="text-align:right;">${item.days} วัน</td>
         `;
-        const openProjectDetail = () => {
-          if (item.project) openProjectModal(item.project);
-        };
-        tr.addEventListener("click", openProjectDetail);
-        tr.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            openProjectDetail();
-          }
-        });
         longestOpenTableBodyEl.appendChild(tr);
       });
     }

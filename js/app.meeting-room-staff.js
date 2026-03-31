@@ -902,7 +902,7 @@ function initMeetingRoomStaffApproval() {
       if (isHoliday) className.push("calendar-day-holiday");
 
       cells.push(`
-        <div class="${className.join(" ")}" data-date="${dateKey}">
+        <div class="${className.join(" ")}">
           <div class="calendar-day-header">${day}${holidayBadge}</div>
           ${eventRows}
           ${moreText}
@@ -1268,23 +1268,13 @@ function initMeetingRoomStaffApproval() {
     if (staffCalendarPanel) {
       staffCalendarPanel.addEventListener("click", (event) => {
         const target = event.target.closest(".calendar-event[data-booking-id]");
-        if (target && target.dataset.bookingId) {
-          const booking = bookings.find((item) => item.id === target.dataset.bookingId);
-          if (!booking) return;
-          if (typeof window.openMeetingBookingDetailModal === "function") {
-            window.openMeetingBookingDetailModal(booking, {
-              includeContact: true,
-              allowStatusEdit: true
-            });
-          }
-          return;
-        }
-        const dayCell = event.target.closest(".calendar-day[data-date]");
-        if (!dayCell || !dayCell.dataset.date) return;
-        if (typeof window.openMeetingBookingDayListModal === "function") {
-          window.openMeetingBookingDayListModal(dayCell.dataset.date, {
-            sourceBookings: getVisibleRowsForActiveTab(bookings),
-            titlePrefix: "รายการคำขอวันที่"
+        if (!target || !target.dataset.bookingId) return;
+        const booking = bookings.find((item) => item.id === target.dataset.bookingId);
+        if (!booking) return;
+        if (typeof window.openMeetingBookingDetailModal === "function") {
+          window.openMeetingBookingDetailModal(booking, {
+            includeContact: true,
+            allowStatusEdit: true
           });
         }
       });

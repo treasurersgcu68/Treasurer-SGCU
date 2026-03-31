@@ -38,6 +38,7 @@ function initMeetingRoomStaffApproval() {
   const COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
   const HOLIDAY_COLLECTION_NAME = "meetingRoomHolidays";
+  const AUDIT_COLLECTION_NAME = "auditLogs";
   const DEFAULT_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public", isDefault: true },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public", isDefault: true },
@@ -252,6 +253,7 @@ function initMeetingRoomStaffApproval() {
       contactPhone: data.contactPhone || "",
       contactInfo: data.contactInfo || "",
       cancelRequestReason: data.cancelRequestReason || "",
+      requesterEmail: (data.requesterEmail || "").toString().trim().toLowerCase(),
       rescheduleBaseStatus: normalizeStatus(data.rescheduleBaseStatus),
       rescheduleRequestedDate: data.rescheduleRequestedDate || "",
       rescheduleRequestedStartTime: data.rescheduleRequestedStartTime || "",
@@ -261,6 +263,60 @@ function initMeetingRoomStaffApproval() {
       endAt: data.endAt || "",
       status: normalizeStatus(data.status)
     };
+  };
+
+  const pickBookingAuditFields = (item = {}) => ({
+    id: item.id || "",
+    roomId: item.roomId || "",
+    roomName: item.roomName || "",
+    date: item.date || "",
+    startTime: item.startTime || "",
+    endTime: item.endTime || "",
+    requester: item.requester || "",
+    requesterEmail: (item.requesterEmail || "").toString().trim().toLowerCase(),
+    purpose: item.purpose || "",
+    status: normalizeStatus(item.status),
+    rescheduleBaseStatus: normalizeStatus(item.rescheduleBaseStatus),
+    rescheduleRequestedDate: item.rescheduleRequestedDate || "",
+    rescheduleRequestedStartTime: item.rescheduleRequestedStartTime || "",
+    rescheduleRequestedEndTime: item.rescheduleRequestedEndTime || "",
+    rescheduleRequestReason: item.rescheduleRequestReason || "",
+    cancelRequestReason: item.cancelRequestReason || ""
+  });
+
+  const getAuditActor = () => {
+    const authUser = window.sgcuAuth?.auth?.currentUser || null;
+    const email = (authUser?.email || "").toString().trim().toLowerCase();
+    return {
+      actorUid: authUser?.uid || "",
+      actorEmail: email,
+      actorRole: "staff"
+    };
+  };
+
+  const writeAuditLog = async (action, entityType, entityId, beforeData, afterData, metadata = {}) => {
+    if (!hasFirestore) return;
+    try {
+      const actor = getAuditActor();
+      await firestore.addDoc(
+        firestore.collection(firestore.db, AUDIT_COLLECTION_NAME),
+        {
+          action,
+          entityType,
+          entityId: entityId || "",
+          before: beforeData || null,
+          after: afterData || null,
+          actorUid: actor.actorUid,
+          actorEmail: actor.actorEmail,
+          actorRole: actor.actorRole,
+          source: "web_app_staff",
+          metadata: metadata || {},
+          timestamp: firestore.serverTimestamp()
+        }
+      );
+    } catch (err) {
+      // Keep audit logging non-blocking for staff actions.
+    }
   };
 
   const toDateTime = (date, time) => new Date(`${date}T${time}:00`);
@@ -566,12 +622,20 @@ function initMeetingRoomStaffApproval() {
       return;
     }
     try {
-      await firestore.addDoc(firestore.collection(firestore.db, ROOM_COLLECTION_NAME), {
+      const createdDoc = await firestore.addDoc(firestore.collection(firestore.db, ROOM_COLLECTION_NAME), {
         name,
         bookingAccess: "public",
         createdAt: firestore.serverTimestamp(),
         updatedAt: firestore.serverTimestamp()
       });
+      await writeAuditLog(
+        "meeting_room.created",
+        "meetingRoom",
+        createdDoc?.id || "",
+        null,
+        { id: createdDoc?.id || "", name, bookingAccess: "public" },
+        { context: "staff_room_manage" }
+      );
       setRoomManageMessage("เพิ่มห้องประชุมเรียบร้อยแล้ว", "#047857");
       if (roomManageInput) roomManageInput.value = "";
     } catch (err) {
@@ -600,12 +664,20 @@ function initMeetingRoomStaffApproval() {
       return;
     }
     try {
-      await firestore.addDoc(firestore.collection(firestore.db, HOLIDAY_COLLECTION_NAME), {
+      const createdDoc = await firestore.addDoc(firestore.collection(firestore.db, HOLIDAY_COLLECTION_NAME), {
         date,
         name,
         createdAt: firestore.serverTimestamp(),
         updatedAt: firestore.serverTimestamp()
       });
+      await writeAuditLog(
+        "meeting_holiday.created",
+        "meetingRoomHoliday",
+        createdDoc?.id || "",
+        null,
+        { id: createdDoc?.id || "", date, name },
+        { context: "staff_holiday_manage" }
+      );
       setHolidayManageMessage("เพิ่มวันหยุดเรียบร้อยแล้ว", "#047857");
       if (holidayManageDateInput) holidayManageDateInput.value = "";
       if (holidayManageNameInput) holidayManageNameInput.value = "";
@@ -616,8 +688,17 @@ function initMeetingRoomStaffApproval() {
 
   const removeHoliday = async (holidayId) => {
     if (!holidayId || !hasFirestore) return;
+    const holiday = customHolidays.find((item) => item.id === holidayId) || null;
     try {
       await firestore.deleteDoc(firestore.doc(firestore.db, HOLIDAY_COLLECTION_NAME, holidayId));
+      await writeAuditLog(
+        "meeting_holiday.deleted",
+        "meetingRoomHoliday",
+        holidayId,
+        holiday ? { id: holiday.id, date: holiday.date || "", name: holiday.name || "" } : null,
+        null,
+        { context: "staff_holiday_manage" }
+      );
       setHolidayManageMessage("ลบวันหยุดเรียบร้อยแล้ว", "#047857");
     } catch (err) {
       setHolidayManageMessage("ไม่สามารถลบวันหยุดได้ในขณะนี้", "#b91c1c");
@@ -634,6 +715,14 @@ function initMeetingRoomStaffApproval() {
     }
     try {
       await firestore.deleteDoc(firestore.doc(firestore.db, ROOM_COLLECTION_NAME, roomId));
+      await writeAuditLog(
+        "meeting_room.deleted",
+        "meetingRoom",
+        roomId,
+        { id: room.id, name: room.name, bookingAccess: room.bookingAccess || "public" },
+        null,
+        { context: "staff_room_manage" }
+      );
       setRoomManageMessage("ลบห้องประชุมเรียบร้อยแล้ว", "#047857");
     } catch (err) {
       setRoomManageMessage("ไม่สามารถลบห้องประชุมได้ในขณะนี้", "#b91c1c");
@@ -668,6 +757,14 @@ function initMeetingRoomStaffApproval() {
           updatedAt: firestore.serverTimestamp()
         }
       );
+      await writeAuditLog(
+        "meeting_room.renamed",
+        "meetingRoom",
+        roomId,
+        { id: room.id, name: room.name, bookingAccess: room.bookingAccess || "public" },
+        { id: room.id, name: nextName, bookingAccess: room.bookingAccess || "public" },
+        { context: "staff_room_manage" }
+      );
       editingRoomId = "";
       renderRoomManageList();
       setRoomManageMessage("แก้ไขชื่อห้องประชุมเรียบร้อยแล้ว", "#047857");
@@ -689,6 +786,14 @@ function initMeetingRoomStaffApproval() {
           bookingAccess: nextAccess,
           updatedAt: firestore.serverTimestamp()
         }
+      );
+      await writeAuditLog(
+        "meeting_room.booking_access_updated",
+        "meetingRoom",
+        roomId,
+        { id: room.id, name: room.name, bookingAccess: room.bookingAccess || "public" },
+        { id: room.id, name: room.name, bookingAccess: nextAccess },
+        { context: "staff_room_manage" }
       );
       setRoomManageMessage(
         nextAccess === "staff_only"
@@ -1063,6 +1168,14 @@ function initMeetingRoomStaffApproval() {
         firestore.doc(firestore.db, COLLECTION_NAME, id),
         payload
       );
+      await writeAuditLog(
+        "booking.status_updated_by_staff",
+        "meetingRoomBooking",
+        id,
+        pickBookingAuditFields(booking),
+        pickBookingAuditFields({ ...booking, ...payload }),
+        { context: "staff_approval" }
+      );
       setStaffActionMessage("อัปเดตสถานะคำขอเรียบร้อยแล้ว", "#047857");
     } catch (err) {
       setStaffActionMessage("ไม่สามารถอัปเดตสถานะคำขอได้ในขณะนี้", "#b91c1c");
@@ -1071,8 +1184,17 @@ function initMeetingRoomStaffApproval() {
 
   const deleteById = async (id) => {
     if (!hasFirestore || !id) return;
+    const booking = bookings.find((item) => item.id === id) || null;
     try {
       await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_NAME, id));
+      await writeAuditLog(
+        "booking.deleted_by_staff",
+        "meetingRoomBooking",
+        id,
+        booking ? pickBookingAuditFields(booking) : null,
+        null,
+        { context: "staff_approval" }
+      );
     } catch (err) {
       // ignore delete errors
     }

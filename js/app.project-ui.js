@@ -334,6 +334,7 @@ function updateDashboardInsights(filtered, summary) {
       if (days <= 0) return null;
       const statusText = (p.statusClose || "").trim() || "-";
       return {
+        project: p,
         code: (p.code || "").trim(),
         name: (p.name || "").trim() || "(ไม่ระบุชื่อโครงการ)",
         org: (p.orgName || "").trim() || "(ไม่ระบุฝ่าย/ชมรม)",
@@ -375,14 +376,17 @@ function updateDashboardInsights(filtered, summary) {
   renderRankList(longestOpenListEl, openItems, "ยังไม่มีโครงการที่ค้างปิด");
 
   if (longestOpenTableBodyEl) {
+    lastLongestOpenProjects = openItems.map((item) => item.project).filter(Boolean);
     longestOpenTableBodyEl.innerHTML = "";
     if (!openItems.length) {
       const tr = document.createElement("tr");
       tr.innerHTML = `<td colspan="5" class="table-empty" style="text-align:center; color:#9ca3af;">ยังไม่มีโครงการที่ค้างปิด</td>`;
       longestOpenTableBodyEl.appendChild(tr);
     } else {
-      openItems.forEach((item) => {
+      openItems.forEach((item, idx) => {
         const tr = document.createElement("tr");
+        tr.classList.add("project-row");
+        tr.dataset.longestOpenIdx = String(idx);
         const orgText = item.org ? `<span class="kpi-caption">${item.org}</span>` : "";
         tr.innerHTML = `
           <td class="col-code" data-label="รหัสโครงการ">${item.code}</td>
@@ -393,6 +397,17 @@ function updateDashboardInsights(filtered, summary) {
         `;
         longestOpenTableBodyEl.appendChild(tr);
       });
+    }
+
+    if (!longestOpenTableBodyEl.dataset.boundClick) {
+      longestOpenTableBodyEl.addEventListener("click", (e) => {
+        const row = e.target.closest("tr[data-longest-open-idx]");
+        if (!row || !longestOpenTableBodyEl.contains(row)) return;
+        const idx = Number(row.dataset.longestOpenIdx);
+        const project = lastLongestOpenProjects[idx];
+        if (project) openProjectModal(project);
+      });
+      longestOpenTableBodyEl.dataset.boundClick = "true";
     }
   }
 }

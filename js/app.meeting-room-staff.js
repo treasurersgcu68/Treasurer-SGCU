@@ -946,15 +946,15 @@ function initMeetingRoomStaffApproval() {
             const dateText = formatDate(booking.date);
             const timeText = `${booking.startTime || "-"} - ${booking.endTime || "-"}`;
             const rescheduleLine = booking.status === "reschedule_requested"
-              ? `<div class="meeting-row-meta">ขอเปลี่ยนเป็น: ${escapeText(formatDate(booking.rescheduleRequestedDate))} ${escapeText(booking.rescheduleRequestedStartTime || "-")} - ${escapeText(booking.rescheduleRequestedEndTime || "-")}</div><div class="meeting-row-meta">เหตุผล: ${escapeText(booking.rescheduleRequestReason || "-")}</div>`
+              ? `<div class="meeting-row-meta">ขอเปลี่ยนเป็น: ${formatDate(booking.rescheduleRequestedDate)} ${booking.rescheduleRequestedStartTime || "-"} - ${booking.rescheduleRequestedEndTime || "-"}</div><div class="meeting-row-meta">เหตุผล: ${booking.rescheduleRequestReason || "-"}</div>`
               : "";
             return `
-              <tr data-booking-id="${escapeText(booking.id)}">
-                <td>${escapeText(roomName)}</td>
-                <td>${escapeText(dateText)}</td>
-                <td>${escapeText(timeText)}</td>
-                <td>${escapeText(booking.requester || "-")}</td>
-                <td>${escapeText(booking.purpose || "-")}${rescheduleLine}</td>
+              <tr data-booking-id="${booking.id}">
+                <td>${roomName}</td>
+                <td>${dateText}</td>
+                <td>${timeText}</td>
+                <td>${booking.requester || "-"}</td>
+                <td>${booking.purpose || "-"}${rescheduleLine}</td>
                 <td>${statusLabel(booking.status)}</td>
                 <td>
                   ${getStatusDropdown(booking, "คิวรออนุมัติ")}
@@ -983,15 +983,15 @@ function initMeetingRoomStaffApproval() {
             const dateText = formatDate(booking.date);
             const timeText = `${booking.startTime || "-"} - ${booking.endTime || "-"}`;
             const rescheduleLine = booking.status === "reschedule_requested"
-              ? `<div class="meeting-row-meta">ขอเปลี่ยนเป็น: ${escapeText(formatDate(booking.rescheduleRequestedDate))} ${escapeText(booking.rescheduleRequestedStartTime || "-")} - ${escapeText(booking.rescheduleRequestedEndTime || "-")}</div><div class="meeting-row-meta">เหตุผล: ${escapeText(booking.rescheduleRequestReason || "-")}</div>`
+              ? `<div class="meeting-row-meta">ขอเปลี่ยนเป็น: ${formatDate(booking.rescheduleRequestedDate)} ${booking.rescheduleRequestedStartTime || "-"} - ${booking.rescheduleRequestedEndTime || "-"}</div><div class="meeting-row-meta">เหตุผล: ${booking.rescheduleRequestReason || "-"}</div>`
               : "";
             return `
-              <tr data-booking-id="${escapeText(booking.id)}">
-                <td>${escapeText(roomName)}</td>
-                <td>${escapeText(dateText)}</td>
-                <td>${escapeText(timeText)}</td>
-                <td>${escapeText(booking.requester || "-")}</td>
-                <td>${escapeText(booking.purpose || "-")}${rescheduleLine}</td>
+              <tr data-booking-id="${booking.id}">
+                <td>${roomName}</td>
+                <td>${dateText}</td>
+                <td>${timeText}</td>
+                <td>${booking.requester || "-"}</td>
+                <td>${booking.purpose || "-"}${rescheduleLine}</td>
                 <td>
                   ${getStatusDropdown(booking, activeTab === "history" ? "ประวัติการขอ" : "รายการคำขอ")}
                 </td>

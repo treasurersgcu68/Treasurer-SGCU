@@ -441,19 +441,19 @@ document.addEventListener("DOMContentLoaded", () => {
         tableBody.innerHTML = sorted
           .map((item) => {
             const projectLine = item.projectMode === "project"
-              ? `<div class="meeting-row-meta">โครงการ: ${escapeText(item.projectCode || "-")} ${item.projectName ? `(${escapeText(item.projectName)})` : ""}</div>`
+              ? `<div class="meeting-row-meta">โครงการ: ${item.projectCode || "-" } ${item.projectName ? `(${item.projectName})` : ""}</div>`
               : "";
             const contactLine = item.contactPhone || item.contactInfo
-              ? `<div class="meeting-row-meta">ติดต่อ: ${escapeText(item.contactPhone || "-")}${item.contactInfo ? ` / ${escapeText(item.contactInfo)}` : ""}</div>`
+              ? `<div class="meeting-row-meta">ติดต่อ: ${item.contactPhone || "-"}${item.contactInfo ? ` / ${item.contactInfo}` : ""}</div>`
               : "";
             return `
               <tr>
-                <td>${escapeText(normalizeRoomDisplay(item.roomId, item.roomName))}</td>
-                <td>${escapeText(formatDate(item.date))}</td>
-                <td>${escapeText(item.startTime || "-")} - ${escapeText(item.endTime || "-")}</td>
-                <td>${escapeText(item.requester || "-")}</td>
+                <td>${normalizeRoomDisplay(item.roomId, item.roomName)}</td>
+                <td>${formatDate(item.date)}</td>
+                <td>${item.startTime || "-"} - ${item.endTime || "-"}</td>
+                <td>${item.requester || "-"}</td>
                 <td>
-                  ${escapeText(item.purpose || "-")}${projectLine}${contactLine}
+                  ${item.purpose || "-"}${projectLine}${contactLine}
                 </td>
               </tr>
             `;

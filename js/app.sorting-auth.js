@@ -141,9 +141,13 @@ function syncRoleNavContainers() {
   const isStaffMode = !!staffAuthUser && staffViewMode === "staff";
   const desktopGeneral = document.getElementById("desktopNavGeneral");
   const desktopStaff = document.getElementById("desktopNavStaff");
+  const mobileGeneral = document.getElementById("mobileNavGeneral");
+  const mobileStaff = document.getElementById("mobileNavStaff");
 
   if (desktopGeneral) desktopGeneral.style.display = isStaffMode ? "none" : "flex";
   if (desktopStaff) desktopStaff.style.display = isStaffMode ? "flex" : "none";
+  if (mobileGeneral) mobileGeneral.style.display = isStaffMode ? "none" : "block";
+  if (mobileStaff) mobileStaff.style.display = isStaffMode ? "block" : "none";
 }
 
 function getAllowedPagesForCurrentState() {
@@ -361,6 +365,7 @@ function initAuthUI() {
 
   if (!auth) return;
   const AUTH_SESSION_KEY = "sgcu_auth_session_started_at";
+  const AUTH_SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 1 วัน
 
   function readAuthSession() {
     try {
@@ -453,7 +458,15 @@ function initAuthUI() {
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      resolveSessionStart(user);
+      const startedAt = resolveSessionStart(user);
+      if (startedAt && Date.now() - startedAt >= AUTH_SESSION_MAX_AGE_MS) {
+        clearAuthSession();
+        signOut(auth).catch((err) => {
+          console.error("auto logout error (session expired) - app.sorting-auth.js:465", err);
+        });
+        refreshAuthDisplay(null);
+        return;
+      }
     } else {
       clearAuthSession();
     }
@@ -503,7 +516,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:506", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:519", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");

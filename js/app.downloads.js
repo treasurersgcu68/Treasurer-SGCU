@@ -64,31 +64,8 @@ function initDownloadCategoryFilter(listEl) {
   applyDownloadCategoryFilter(listEl, selectEl.value);
 }
 
-function setDownloadListState(listEl, type, message, options = {}) {
-  if (!listEl) return;
-  const safeType = (type || "").toString().trim();
-  const text = (message || "").toString().trim();
-  if (!safeType || !text) return;
-  const canRetry = !!options.showRetry;
-  listEl.innerHTML = `
-    <div class="panel" style="background:#f8fafc;">
-      <div class="panel-caption" style="color:#475569;">${text}</div>
-      ${canRetry ? '<button id="downloadRetryButton" class="btn-ghost" type="button" style="margin-top:8px;">ลองใหม่</button>' : ""}
-    </div>
-  `;
-  if (canRetry) {
-    const retryBtn = listEl.querySelector("#downloadRetryButton");
-    if (retryBtn) {
-      retryBtn.addEventListener("click", () => {
-        void loadDownloadDocuments();
-      });
-    }
-  }
-}
-
 async function loadDownloadDocuments() {
   const listEl = document.getElementById("downloadList");
-  const categorySelectEl = document.getElementById("downloadCategorySelect");
   if (!listEl) {
     if (typeof markLoaderStep === "function") {
       markLoaderStep("downloads");
@@ -98,14 +75,11 @@ async function loadDownloadDocuments() {
 
   try {
     toggleDownloadSkeleton(true);
-    listEl.setAttribute("aria-busy", "true");
-    if (categorySelectEl) categorySelectEl.disabled = true;
 
     const cached = getCache(CACHE_KEYS.DOWNLOADS, CACHE_TTL_MS);
     if (cached && typeof cached === "string" && cached.trim()) {
       listEl.innerHTML = cached;
       initDownloadCategoryFilter(listEl);
-      if (categorySelectEl) categorySelectEl.disabled = false;
       return;
     }
 
@@ -120,11 +94,7 @@ async function loadDownloadDocuments() {
     // เคลียร์ก่อน
     listEl.innerHTML = "";
 
-    if (!rows || rows.length < 2) {
-      setDownloadListState(listEl, "empty", "ยังไม่มีเอกสารดาวน์โหลด");
-      if (categorySelectEl) categorySelectEl.disabled = false;
-      return;
-    }
+    if (!rows || rows.length < 2) return;
 
     // โครงสร้างกลุ่มหมวดหมู่
     const categories = {};
@@ -157,14 +127,7 @@ async function loadDownloadDocuments() {
     });
 
     // Render ออกหน้าเว็บ – 1 การ์ดต่อ 1 หมวด
-    const categoryNames = Object.keys(categories);
-    if (!categoryNames.length) {
-      setDownloadListState(listEl, "empty", "ยังไม่มีเอกสารดาวน์โหลด");
-      if (categorySelectEl) categorySelectEl.disabled = false;
-      return;
-    }
-
-    for (const categoryName of categoryNames) {
+    for (const categoryName in categories) {
       const section = document.createElement("section");
       section.className = "download-section-card";
       section.dataset.category = categoryName;
@@ -221,16 +184,13 @@ async function loadDownloadDocuments() {
 
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
-    if (categorySelectEl) categorySelectEl.disabled = false;
   } catch (err) {
     console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:4572", err);
     recordLoadError("downloads", "โหลดรายการดาวน์โหลดไม่สำเร็จ", { showRetry: true });
-    setDownloadListState(listEl, "error", "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้", { showRetry: true });
-    if (categorySelectEl) categorySelectEl.disabled = true;
+    setInlineError(listEl, "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้");
   } finally {
     toggleDownloadSkeleton(false);
-    listEl.removeAttribute("aria-busy");
-    listEl.style.display = "";
+    listEl.style.display = listEl.innerHTML.trim() ? "" : "none";
     if (typeof markLoaderStep === "function") {
       markLoaderStep("downloads");
     }

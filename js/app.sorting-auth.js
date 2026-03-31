@@ -111,30 +111,6 @@ function updateNavVisibility(isAuthenticated) {
       link.style.display = "";
     }
   });
-  syncDesktopNavGroupVisibility();
-}
-
-function syncDesktopNavGroupVisibility() {
-  const navGroups = Array.from(document.querySelectorAll(".desktop-nav .nav-group"));
-  navGroups.forEach((group) => {
-    const links = Array.from(group.querySelectorAll(".nav-group-menu a[data-page]"));
-    const hasVisibleLink = links.some((link) => link.style.display !== "none");
-    const toggle = group.querySelector(".nav-group-toggle");
-    const menu = group.querySelector(".nav-group-menu");
-
-    if (hasVisibleLink) {
-      group.style.display = "";
-      return;
-    }
-
-    group.style.display = "none";
-    group.classList.remove("is-open");
-    if (toggle) toggle.setAttribute("aria-expanded", "false");
-    if (menu) {
-      menu.classList.remove("show");
-      menu.setAttribute("aria-hidden", "true");
-    }
-  });
 }
 
 function syncRoleNavContainers() {
@@ -164,7 +140,14 @@ function getAllowedPagesForCurrentState() {
   protectedAllowed.forEach((page) => allowed.add(page));
 
   if (staffAuthUser && staffViewMode === "staff") {
-    return getAllowedPagesForRoles(staffAuthUser.role);
+    const roleAllowedMap = {
+      "00": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"],
+      "01": ["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"],
+      "04": ["borrow-assets-staff", "login"]
+    };
+    const roleAllowed = roleAllowedMap[staffAuthUser.role || ""] ||
+      ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"];
+    return new Set(roleAllowed);
   }
 
   if (staffViewMode !== "staff") {
@@ -185,42 +168,8 @@ function getStaffProfileByEmail(email) {
     email: normalized,
     position: profile.position || "",
     nick: profile.nick || "",
-    role: (profile.role || "").toString().trim() || "0"
+    role: profile.role || "00"
   };
-}
-
-function normalizeRoleCode(value) {
-  const raw = (value || "").toString().trim();
-  if (!raw) return "0";
-  if (/^\d+$/.test(raw)) return String(Number.parseInt(raw, 10));
-  const digits = raw.replace(/\D+/g, "");
-  if (!digits) return "0";
-  return String(Number.parseInt(digits, 10));
-}
-
-function normalizeRoleCodes(value) {
-  const parts = Array.isArray(value)
-    ? value
-    : (value || "").toString().split(",");
-  const normalized = parts
-    .map((item) => normalizeRoleCode(item))
-    .filter(Boolean);
-  return normalized.length ? Array.from(new Set(normalized)) : ["0"];
-}
-
-function getAllowedPagesForRoles(roleValue) {
-  const roleAllowedMap = {
-    "0": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"],
-    "1": ["project-status-staff", "dashboard-staff", "login"],
-    "4": ["borrow-assets-staff", "meeting-room-staff", "login"],
-    "9": ["meeting-room-staff", "login"]
-  };
-  const allowed = new Set(["login"]);
-  normalizeRoleCodes(roleValue).forEach((roleKey) => {
-    const pages = roleAllowedMap[roleKey] || [];
-    pages.forEach((page) => allowed.add(page));
-  });
-  return allowed;
 }
 
 function isCurrentNavVisible() {
@@ -291,7 +240,14 @@ function updateNavForStaff(staffUser) {
   if (!navLinksAll.length || !staffUser) return;
   if (staffViewMode !== "staff") return;
 
-  const allowedStaffPages = getAllowedPagesForRoles(staffUser.role);
+  const roleAllowedMap = {
+    "00": new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]),
+    "01": new Set(["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"]),
+    "04": new Set(["borrow-assets-staff", "login"])
+  };
+
+  const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||
+    new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]);
 
   navLinksAll.forEach((link) => {
     const page = link.dataset.page || "";
@@ -453,7 +409,15 @@ function initAuthUI() {
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      resolveSessionStart(user);
+      const startedAt = resolveSessionStart(user);
+      if (startedAt && Date.now() - startedAt >= AUTH_SESSION_MAX_AGE_MS) {
+        clearAuthSession();
+        signOut(auth).catch((err) => {
+          console.error("auto logout error (session expired) - app.sorting-auth.js:421", err);
+        });
+        refreshAuthDisplay(null);
+        return;
+      }
     } else {
       clearAuthSession();
     }
@@ -503,7 +467,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:506", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");

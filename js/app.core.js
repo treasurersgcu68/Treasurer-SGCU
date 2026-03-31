@@ -74,6 +74,7 @@ let longestOpenAssistantFilterEl;
 let longestOpenStatusFilterEl;
 let longestOpenTableCaptionEl;
 let longestOpenTableBodyEl;
+let lastLongestOpenProjects = [];
 let tableBodyEl;
 let tableCaptionEl;
 let lastTableProjects = [];

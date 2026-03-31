@@ -26,6 +26,9 @@ function initMeetingRoomStaffApproval() {
   const staffCalendarTitle = document.getElementById("meetingStaffCalendarTitle");
   const staffCalendarPrevBtn = document.getElementById("meetingStaffCalendarPrevMonth");
   const staffCalendarNextBtn = document.getElementById("meetingStaffCalendarNextMonth");
+  const bookingDayModalEl = document.getElementById("meetingBookingDayModal");
+  const bookingDayModalTitleEl = document.getElementById("meetingBookingDayTitle");
+  const bookingDayModalBodyEl = document.getElementById("meetingBookingDayBody");
   const tabButtons = Array.from(
     document.querySelectorAll(".tab-btn[data-meeting-staff-tab]")
   );
@@ -219,6 +222,90 @@ function initMeetingRoomStaffApproval() {
     return 4;
   };
 
+  const statusText = (status) => {
+    if (status === "approved") return "อนุมัติแล้ว";
+    if (status === "rejected") return "ไม่อนุมัติ / ยกเลิกแล้ว";
+    if (status === "cancel_requested") return "ขอยกเลิก (รออนุมัติ)";
+    if (status === "reschedule_requested") return "ขอเปลี่ยนเวลา (รออนุมัติ)";
+    return "รออนุมัติ";
+  };
+
+  const statusBadgeClass = (status) => {
+    if (status === "approved") return "badge-approved";
+    if (status === "rejected") return "badge-rejected";
+    if (status === "cancel_requested" || status === "reschedule_requested") return "badge-warning";
+    return "badge-pending";
+  };
+
+  const formatLongDate = (dateText = "") => {
+    if (!dateText) return "-";
+    const parsed = new Date(`${dateText}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return dateText;
+    return parsed.toLocaleDateString("th-TH", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+  };
+
+  const getStaffDayBookings = (dateText = "", sourceRows = []) => {
+    if (!dateText) return [];
+    return [...sourceRows]
+      .filter((item) => item.date === dateText)
+      .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
+  };
+
+  const setStaffBookingDayBody = (dateText = "", sourceRows = []) => {
+    if (!bookingDayModalTitleEl || !bookingDayModalBodyEl) return;
+    const items = getStaffDayBookings(dateText, sourceRows);
+    bookingDayModalTitleEl.textContent = `รายการคำขอวันที่ ${formatLongDate(dateText)} (${items.length} รายการ)`;
+    if (!items.length) {
+      bookingDayModalBodyEl.innerHTML = '<div class="section-text-sm">ไม่มีรายการคำขอในวันที่เลือก</div>';
+      return;
+    }
+    bookingDayModalBodyEl.innerHTML = `
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>ห้อง</th>
+              <th>ผู้ขอ</th>
+              <th>วัตถุประสงค์</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map((item) => `
+              <tr
+                data-booking-id="${escapeText(item.id || "")}"
+                data-include-contact="true"
+                data-allow-status-edit="true"
+              >
+                <td>${escapeText(`${item.startTime || "-"} - ${item.endTime || "-"}`)}</td>
+                <td>${escapeText(normalizeRoomDisplay(item.roomId, item.roomName))}</td>
+                <td>${escapeText(item.requester || "-")}</td>
+                <td>${escapeText(item.purpose || "-")}</td>
+                <td>
+                  <span class="status-pill ${statusBadgeClass(item.status)}">${escapeText(statusText(item.status))}</span>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="section-text-sm" style="margin-top:8px;color:#6b7280;">คลิกแถวเพื่อดูรายละเอียดรายการจอง</div>
+    `;
+  };
+
+  const openStaffBookingDayModal = (dateText = "", sourceRows = []) => {
+    if (!dateText || !bookingDayModalEl || typeof openDialog !== "function") return;
+    activeStaffDayModalDate = dateText;
+    setStaffBookingDayBody(dateText, sourceRows);
+    openDialog(bookingDayModalEl, { focusSelector: "#meetingBookingDayClose" });
+  };
+
   let bookings = [];
   let rooms = [...DEFAULT_ROOMS];
   let customHolidays = [];
@@ -231,6 +318,7 @@ function initMeetingRoomStaffApproval() {
   let isSeedingDefaultRooms = false;
   let editingRoomId = "";
   let calendarCursor = new Date();
+  let activeStaffDayModalDate = "";
 
   const normalizeRoomDisplay = (roomId, roomName) => {
     const matched = rooms.find((room) => room.id === roomId);
@@ -1114,6 +1202,9 @@ function initMeetingRoomStaffApproval() {
       staffMeetingAllSection.style.display = "block";
     }
     renderStaffCalendar(rowsForTab);
+    if (activeStaffDayModalDate) {
+      setStaffBookingDayBody(activeStaffDayModalDate, rowsForTab);
+    }
   };
 
   const setStatusById = async (id, status) => {
@@ -1396,9 +1487,11 @@ function initMeetingRoomStaffApproval() {
 
     if (staffCalendarPanel) {
       staffCalendarPanel.addEventListener("click", (event) => {
-        const target = event.target.closest(".calendar-event[data-booking-id]");
-        if (target && target.dataset.bookingId) {
-          const booking = bookings.find((item) => item.id === target.dataset.bookingId);
+        const clickedElement = event.target;
+        if (!(clickedElement instanceof Element)) return;
+        const eventTarget = clickedElement.closest(".calendar-event[data-booking-id]");
+        if (eventTarget && eventTarget.dataset.bookingId) {
+          const booking = bookings.find((item) => item.id === eventTarget.dataset.bookingId);
           if (!booking) return;
           if (typeof window.openMeetingBookingDetailModal === "function") {
             window.openMeetingBookingDetailModal(booking, {
@@ -1408,14 +1501,10 @@ function initMeetingRoomStaffApproval() {
           }
           return;
         }
-        const dayCell = event.target.closest(".calendar-day[data-date]");
-        if (!dayCell || !dayCell.dataset.date) return;
-        if (typeof window.openMeetingBookingDayListModal === "function") {
-          window.openMeetingBookingDayListModal(dayCell.dataset.date, {
-            sourceBookings: getVisibleRowsForActiveTab(bookings),
-            titlePrefix: "รายการคำขอวันที่"
-          });
-        }
+        const dayTarget = clickedElement.closest(".calendar-day[data-date]");
+        if (!dayTarget || !dayTarget.dataset.date) return;
+        const visibleRows = getVisibleRowsForActiveTab(bookings);
+        openStaffBookingDayModal(dayTarget.dataset.date, visibleRows);
       });
     }
   }

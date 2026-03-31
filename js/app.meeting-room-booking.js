@@ -41,6 +41,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const bookingDetailTitleEl = document.getElementById("meetingBookingDetailTitle");
   const bookingDetailBodyEl = document.getElementById("meetingBookingDetailBody");
   const bookingDetailCloseEl = document.getElementById("meetingBookingDetailClose");
+  const bookingDayModalEl = document.getElementById("meetingBookingDayModal");
+  const bookingDayModalTitleEl = document.getElementById("meetingBookingDayTitle");
+  const bookingDayModalBodyEl = document.getElementById("meetingBookingDayBody");
+  const bookingDayModalCloseEl = document.getElementById("meetingBookingDayClose");
 
   if (!form || !roomSelect || !dateInput || !startTimeInput || !endTimeInput ||
       !requesterInput || !purposeInput || !messageEl) {
@@ -373,6 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let roomsLoadFailed = false;
   let bookingsLoadFailed = false;
   let meetingStateEl = null;
+  let activeDayModalDate = "";
 
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
@@ -1053,6 +1058,76 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  const getDayBookings = (dateText = "") => {
+    if (!dateText) return [];
+    return sortBookings(bookings.filter((item) => item.date === dateText));
+  };
+
+  const formatLongDate = (dateText = "") => {
+    if (!dateText) return "-";
+    const parsed = new Date(`${dateText}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return dateText;
+    return parsed.toLocaleDateString("th-TH", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+  };
+
+  const setBookingDayBody = (dateText = "") => {
+    if (!bookingDayModalBodyEl || !bookingDayModalTitleEl) return;
+    const items = getDayBookings(dateText);
+    bookingDayModalTitleEl.textContent = `รายการจองวันที่ ${formatLongDate(dateText)} (${items.length} รายการ)`;
+    if (!items.length) {
+      bookingDayModalBodyEl.innerHTML = '<div class="section-text-sm">ไม่มีรายการจองในวันที่เลือก</div>';
+      return;
+    }
+    bookingDayModalBodyEl.innerHTML = `
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>ห้อง</th>
+              <th>ผู้ขอ</th>
+              <th>วัตถุประสงค์</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map((item) => `
+              <tr data-booking-id="${escapeText(item.id || "")}">
+                <td>${escapeText(`${item.startTime || "-"} - ${item.endTime || "-"}`)}</td>
+                <td>${escapeText(normalizeRoomDisplay(item.roomId, item.roomName))}</td>
+                <td>${escapeText(item.requester || "-")}</td>
+                <td>${escapeText(item.purpose || "-")}</td>
+                <td>
+                  <span class="status-pill ${statusBadgeClass(item.status)}">${escapeText(statusText(item.status))}</span>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="section-text-sm" style="margin-top:8px;color:#6b7280;">คลิกแถวเพื่อดูรายละเอียดรายการจอง</div>
+    `;
+  };
+
+  const openBookingDayModal = (dateText = "") => {
+    if (!dateText || !bookingDayModalEl || typeof openDialog !== "function") return;
+    activeDayModalDate = dateText;
+    setBookingDayBody(dateText);
+    openDialog(bookingDayModalEl, { focusSelector: "#meetingBookingDayClose" });
+  };
+
+  const closeBookingDayModal = () => {
+    activeDayModalDate = "";
+    if (bookingDayModalEl && typeof closeDialog === "function") {
+      closeDialog(bookingDayModalEl);
+    }
+  };
+
   const setCalendarCursorFromDate = (dateText = "") => {
     if (!dateText) return;
     const parsed = new Date(`${dateText}T00:00:00`);
@@ -1362,6 +1437,9 @@ document.addEventListener("DOMContentLoaded", () => {
           bookingsLoaded = true;
           bookingsLoadFailed = false;
           renderRows();
+          if (activeDayModalDate) {
+            setBookingDayBody(activeDayModalDate);
+          }
           if (!window.localStorage?.getItem(LOCAL_MIGRATED_KEY) && !hasMigrated) {
             void migrateLocalStorageToFirestore();
           }
@@ -1831,7 +1909,7 @@ document.addEventListener("DOMContentLoaded", () => {
       dateInput.value = nextValue;
       setCalendarCursorFromDate(nextValue);
       renderCalendarOverview();
-      openDayBookingListModal(nextValue);
+      openBookingDayModal(nextValue);
     });
   }
 
@@ -1894,6 +1972,34 @@ document.addEventListener("DOMContentLoaded", () => {
           setBookingDetailBody(latest, activeDetailOptions);
         }
       });
+    });
+  }
+
+  if (bookingDayModalCloseEl) {
+    bookingDayModalCloseEl.addEventListener("click", closeBookingDayModal);
+  }
+  if (bookingDayModalEl) {
+    bookingDayModalEl.addEventListener("click", (event) => {
+      if (event.target === bookingDayModalEl) {
+        closeBookingDayModal();
+      }
+    });
+  }
+  if (bookingDayModalBodyEl) {
+    bookingDayModalBodyEl.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const row = target.closest("tr[data-booking-id]");
+      if (!row || !row.dataset.bookingId) return;
+      const detailOptions = {};
+      if (row.dataset.includeContact === "true") {
+        detailOptions.includeContact = true;
+      }
+      if (row.dataset.allowStatusEdit === "true") {
+        detailOptions.allowStatusEdit = true;
+      }
+      closeBookingDayModal();
+      openBookingDetailModal(row.dataset.bookingId, detailOptions);
     });
   }
 

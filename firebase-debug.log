@@ -1,0 +1,316 @@
+[debug] [2026-03-31T05:49:24.680Z] ----------------------------------------------------------------------
+[debug] [2026-03-31T05:49:24.682Z] Command:       /usr/local/bin/node /Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/.bin/firebase projects:list
+[debug] [2026-03-31T05:49:24.682Z] CLI Version:   15.12.0
+[debug] [2026-03-31T05:49:24.683Z] Platform:      darwin
+[debug] [2026-03-31T05:49:24.683Z] Node Version:  v20.17.0
+[debug] [2026-03-31T05:49:24.683Z] Time:          Tue Mar 31 2026 12:49:24 GMT+0700 (Indochina Time)
+[debug] [2026-03-31T05:49:24.683Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-31T05:49:24.684Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-03-31T05:49:24.719Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-31T05:49:24.727Z] Error: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+    at GoogleAuth.getApplicationDefaultAsync (/Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/google-auth-library/build/src/auth/googleauth.js:287:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async GoogleAuth._GoogleAuth_determineClient (/Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/google-auth-library/build/src/auth/googleauth.js:834:32)
+    at async GoogleAuth.getClient (/Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/google-auth-library/build/src/auth/googleauth.js:698:20)
+    at async GoogleAuth.getAccessToken (/Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/google-auth-library/build/src/auth/googleauth.js:722:24)
+    at async autoAuth (/Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/requireAuth.js:28:19)
+    at async Object.requireAuth [as fn] (/Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/requireAuth.js:90:20)
+    at async /Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/command.js:264:17
+[error] 
+[error] Error: Failed to authenticate, have you run firebase login?
+[debug] [2026-03-31T05:50:10.053Z] ----------------------------------------------------------------------
+[debug] [2026-03-31T05:50:10.055Z] Command:       /usr/local/bin/node /Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/.bin/firebase login --no-localhost
+[debug] [2026-03-31T05:50:10.056Z] CLI Version:   15.12.0
+[debug] [2026-03-31T05:50:10.056Z] Platform:      darwin
+[debug] [2026-03-31T05:50:10.056Z] Node Version:  v20.17.0
+[debug] [2026-03-31T05:50:10.056Z] Time:          Tue Mar 31 2026 12:50:10 GMT+0700 (Indochina Time)
+[debug] [2026-03-31T05:50:10.057Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-31T05:50:10.058Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] i  The Firebase CLI’s MCP server feature can optionally make use of Gemini in Firebase. Learn more about Gemini in Firebase and how it uses your data: https://firebase.google.com/docs/gemini-in-firebase#how-gemini-in-firebase-uses-your-data 
+[debug] [2026-03-31T05:50:11.354Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-03-31T05:50:11.354Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[info] 
+[info] i  Firebase optionally collects CLI and Emulator Suite usage and error reporting information to help improve our products. Data is collected in accordance with Google's privacy policy (https://policies.google.com/privacy) and is not used to identify you. 
+[debug] [2026-03-31T05:51:14.398Z] >>> [apiv2][query] POST https://auth.firebase.tools/attest [none]
+[debug] [2026-03-31T05:51:14.402Z] >>> [apiv2][body] POST https://auth.firebase.tools/attest {"session_id":"6b79c819-9638-47c5-928f-e0818959f1c6"}
+[debug] [2026-03-31T05:51:21.693Z] <<< [apiv2][status] POST https://auth.firebase.tools/attest 200
+[debug] [2026-03-31T05:51:21.696Z] <<< [apiv2][body] POST https://auth.firebase.tools/attest {"token":"YEybEg7kz5ECiVSPWcxzc22IhA_OG0ZZmySM1Vr8e6c"}
+[info] 
+[info] To sign in to the Firebase CLI:
+[info] 
+[info] 1. Take note of your session ID:
+[info] 
+[info]    6B79C
+[info] 
+[info] 2. Visit the URL below on any device and follow the instructions to get your code:
+[info] 
+[info]    https://auth.firebase.tools/login?code_challenge=R4NyT0ZqA62CQV0qXNKjUrhCv6TY0wRWaOxqB1A5Dyo&session=6b79c819-9638-47c5-928f-e0818959f1c6&attest=YEybEg7kz5ECiVSPWcxzc22IhA_OG0ZZmySM1Vr8e6c
+[info] 
+[info] 3. Paste or enter the authorization code below once you have it:
+[info] 
+[debug] [2026-03-31T06:09:06.437Z] >>> [apiv2][query] POST https://accounts.google.com/o/oauth2/token [none]
+[debug] [2026-03-31T06:09:06.441Z] >>> [apiv2][body] POST https://accounts.google.com/o/oauth2/token [omitted]
+[debug] [2026-03-31T06:09:07.048Z] <<< [apiv2][status] POST https://accounts.google.com/o/oauth2/token 400
+[debug] [2026-03-31T06:09:07.048Z] <<< [apiv2][body] POST https://accounts.google.com/o/oauth2/token [omitted]
+[debug] [2026-03-31T06:09:07.070Z] Token Fetch Error: FirebaseError: Request to https://accounts.google.com/o/oauth2/token had HTTP Error: 400, invalid_grant
+    at responseToError (/Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/responseToError.js:53:12)
+    at RetryOperation._fn (/Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/apiv2.js:333:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[error] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[error] 
+[error] Error: Unable to authenticate using the provided code. Please try again.
+[debug] [2026-03-31T06:09:28.837Z] ----------------------------------------------------------------------
+[debug] [2026-03-31T06:09:28.844Z] Command:       /usr/local/bin/node /Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/.bin/firebase deploy --only firestore:rules
+[debug] [2026-03-31T06:09:28.845Z] CLI Version:   15.12.0
+[debug] [2026-03-31T06:09:28.846Z] Platform:      darwin
+[debug] [2026-03-31T06:09:28.847Z] Node Version:  v20.17.0
+[debug] [2026-03-31T06:09:28.847Z] Time:          Tue Mar 31 2026 13:09:28 GMT+0700 (Indochina Time)
+[debug] [2026-03-31T06:09:28.847Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-31T06:09:31.191Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-31T06:09:31.193Z] > authorizing via signed-in user (treasurer.sgcu68@gmail.com)
+[debug] [2026-03-31T06:09:31.193Z] [iam] checking project departmentwebsite-5aec1 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-03-31T06:09:31.194Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:31.195Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:31.196Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions [none]
+[debug] [2026-03-31T06:09:31.196Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions  x-goog-user-project=departmentwebsite-5aec1
+[debug] [2026-03-31T06:09:31.196Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-03-31T06:09:32.818Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions 200
+[debug] [2026-03-31T06:09:32.822Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'departmentwebsite-5aec1'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-31T06:09:32.840Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:32.840Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:32.841Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/departmentwebsite-5aec1/services/firestore.googleapis.com [none]
+[debug] [2026-03-31T06:09:32.841Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/departmentwebsite-5aec1/services/firestore.googleapis.com  x-goog-user-project=departmentwebsite-5aec1
+[debug] [2026-03-31T06:09:34.875Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/departmentwebsite-5aec1/services/firestore.googleapis.com 200
+[debug] [2026-03-31T06:09:34.877Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/departmentwebsite-5aec1/services/firestore.googleapis.com [omitted]
+[info] ✔  firestore: required API firestore.googleapis.com is enabled 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-31T06:09:34.913Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:34.914Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:34.914Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) [none]
+[debug] [2026-03-31T06:09:35.460Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) 200
+[debug] [2026-03-31T06:09:35.460Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) {"name":"projects/departmentwebsite-5aec1/databases/(default)","uid":"c8182372-9edb-43cd-92b0-b34f6a93ea8a","createTime":"2026-02-27T19:03:51.233957Z","updateTime":"2026-02-27T19:03:51.233957Z","locationId":"asia-southeast3","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-31T05:09:35.645225Z","appEngineIntegrationMode":"DISABLED","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IKC4mP68yZMDMIL8gby3+pID"}
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-03-31T06:09:35.462Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:35.462Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:35.462Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test [none]
+[debug] [2026-03-31T06:09:35.462Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test [omitted]
+[debug] [2026-03-31T06:09:36.343Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test 200
+[debug] [2026-03-31T06:09:36.343Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test {}
+[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-03-31T06:09:36.346Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:36.347Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:36.347Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases pageSize=10&pageToken=
+[debug] [2026-03-31T06:09:37.757Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases 200
+[debug] [2026-03-31T06:09:37.759Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases {"releases":[{"name":"projects/departmentwebsite-5aec1/releases/cloud.firestore","rulesetName":"projects/departmentwebsite-5aec1/rulesets/1ebc06e6-162f-4bba-a524-b74f36387f5b","createTime":"2026-02-27T19:03:59.323553Z","updateTime":"2026-02-27T19:05:02.040028Z"}]}
+[debug] [2026-03-31T06:09:37.760Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:37.761Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:37.761Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/1ebc06e6-162f-4bba-a524-b74f36387f5b [none]
+[debug] [2026-03-31T06:09:39.162Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/1ebc06e6-162f-4bba-a524-b74f36387f5b 200
+[debug] [2026-03-31T06:09:39.165Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/1ebc06e6-162f-4bba-a524-b74f36387f5b [omitted]
+[info] i  firestore: uploading rules firestore.rules... 
+[debug] [2026-03-31T06:09:39.171Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:39.171Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:39.172Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets [none]
+[debug] [2026-03-31T06:09:39.172Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets [omitted]
+[debug] [2026-03-31T06:09:40.567Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets 200
+[debug] [2026-03-31T06:09:40.567Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets {"name":"projects/departmentwebsite-5aec1/rulesets/12fd2039-385e-4be4-856a-518411765240","source":{"files":[{"content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n\n    function isSignedIn() {\n      return request.auth != null;\n    }\n\n    function isStaff() {\n      return isSignedIn() && (\n        request.auth.token.staff == true ||\n        request.auth.token.isStaff == true ||\n        request.auth.token.role in [\"staff\", \"admin\"]\n      );\n    }\n\n    function isRequester(resourceData) {\n      return isSignedIn() &&\n        request.auth.token.email is string &&\n        resourceData.requesterEmail is string &&\n        request.auth.token.email == resourceData.requesterEmail;\n    }\n\n    function hasBookingCreateFields() {\n      return request.resource.data.keys().hasAll([\n        \"roomId\",\n        \"roomName\",\n        \"date\",\n        \"startTime\",\n        \"endTime\",\n        \"requester\",\n        \"purpose\",\n        \"requesterEmail\",\n        \"status\",\n        \"startAt\",\n        \"endAt\",\n        \"createdAt\",\n        \"updatedAt\"\n      ]);\n    }\n\n    function isValidBookingStatus(status) {\n      return status in [\"pending\", \"approved\", \"rejected\", \"cancel_requested\", \"reschedule_requested\"];\n    }\n\n    function requesterAllowedBookingUpdate() {\n      return request.resource.data.diff(resource.data).changedKeys().hasOnly([\n        \"status\",\n        \"cancelledByRequester\",\n        \"cancelRequestReason\",\n        \"cancelledAt\",\n        \"rescheduleBaseStatus\",\n        \"rescheduleRequestedDate\",\n        \"rescheduleRequestedStartTime\",\n        \"rescheduleRequestedEndTime\",\n        \"rescheduleRequestReason\",\n        \"updatedAt\"\n      ]);\n    }\n\n    match /meetingRoomBookings/{bookingId} {\n      allow read: if isSignedIn();\n\n      allow create: if isSignedIn() &&\n        hasBookingCreateFields() &&\n        request.resource.data.requesterEmail == request.auth.token.email &&\n        isValidBookingStatus(request.resource.data.status);\n\n      allow update: if (\n        isStaff() && isValidBookingStatus(request.resource.data.status)\n      ) || (\n        isRequester(resource.data) &&\n        requesterAllowedBookingUpdate() &&\n        isValidBookingStatus(request.resource.data.status)\n      );\n\n      allow delete: if isStaff();\n    }\n\n    match /meetingRooms/{roomId} {\n      allow read: if isSignedIn();\n      allow create, update, delete: if isStaff();\n    }\n\n    match /meetingRoomHolidays/{holidayId} {\n      allow read: if isSignedIn();\n      allow create, update, delete: if isStaff();\n    }\n\n    match /auditLogs/{logId} {\n      allow create: if isSignedIn() && (\n        isStaff() || request.resource.data.actorUid == request.auth.uid\n      );\n      allow read: if isStaff();\n      allow update, delete: if false;\n    }\n\n    match /{document=**} {\n      allow read, write: if false;\n    }\n  }\n}\n","name":"firestore.rules"}]},"createTime":"2026-03-31T06:09:40.619871Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2026-03-31T06:09:40.567Z] [rules] created ruleset projects/departmentwebsite-5aec1/rulesets/12fd2039-385e-4be4-856a-518411765240
+[debug] [2026-03-31T06:09:40.568Z] [rules] releasing cloud.firestore/(default) with ruleset projects/departmentwebsite-5aec1/rulesets/12fd2039-385e-4be4-856a-518411765240
+[debug] [2026-03-31T06:09:40.569Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:40.569Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:09:40.570Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) [none]
+[debug] [2026-03-31T06:09:40.570Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) {"release":{"name":"projects/departmentwebsite-5aec1/releases/cloud.firestore/(default)","rulesetName":"projects/departmentwebsite-5aec1/rulesets/12fd2039-385e-4be4-856a-518411765240"}}
+[debug] [2026-03-31T06:09:41.029Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) 200
+[debug] [2026-03-31T06:15:17.474Z] ----------------------------------------------------------------------
+[debug] [2026-03-31T06:15:17.478Z] Command:       /usr/local/bin/node /Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/.bin/firebase deploy --only firestore:rules
+[debug] [2026-03-31T06:15:17.478Z] CLI Version:   15.12.0
+[debug] [2026-03-31T06:15:17.479Z] Platform:      darwin
+[debug] [2026-03-31T06:15:17.479Z] Node Version:  v20.17.0
+[debug] [2026-03-31T06:15:17.479Z] Time:          Tue Mar 31 2026 13:15:17 GMT+0700 (Indochina Time)
+[debug] [2026-03-31T06:15:17.479Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-31T06:15:20.564Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-31T06:15:20.565Z] > authorizing via signed-in user (treasurer.sgcu68@gmail.com)
+[debug] [2026-03-31T06:15:20.566Z] [iam] checking project departmentwebsite-5aec1 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-03-31T06:15:20.568Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:20.568Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:20.570Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions [none]
+[debug] [2026-03-31T06:15:20.571Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions  x-goog-user-project=departmentwebsite-5aec1
+[debug] [2026-03-31T06:15:20.571Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-03-31T06:15:22.232Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions 200
+[debug] [2026-03-31T06:15:22.233Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'departmentwebsite-5aec1'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-31T06:15:22.243Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:22.243Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:22.244Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) [none]
+[debug] [2026-03-31T06:15:22.906Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) 200
+[debug] [2026-03-31T06:15:22.912Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) {"name":"projects/departmentwebsite-5aec1/databases/(default)","uid":"c8182372-9edb-43cd-92b0-b34f6a93ea8a","createTime":"2026-02-27T19:03:51.233957Z","updateTime":"2026-02-27T19:03:51.233957Z","locationId":"asia-southeast3","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-31T05:15:23.023984Z","appEngineIntegrationMode":"DISABLED","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"INfh6qO+yZMDMIL8gby3+pID"}
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-03-31T06:15:22.957Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:22.958Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:22.959Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test [none]
+[debug] [2026-03-31T06:15:22.960Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test [omitted]
+[debug] [2026-03-31T06:15:23.625Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test 200
+[debug] [2026-03-31T06:15:23.625Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test {}
+[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-03-31T06:15:23.628Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:23.628Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:23.629Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases pageSize=10&pageToken=
+[debug] [2026-03-31T06:15:23.946Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases 200
+[debug] [2026-03-31T06:15:23.947Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases {"releases":[{"name":"projects/departmentwebsite-5aec1/releases/cloud.firestore","rulesetName":"projects/departmentwebsite-5aec1/rulesets/12fd2039-385e-4be4-856a-518411765240","createTime":"2026-02-27T19:03:59.323553Z","updateTime":"2026-03-31T06:09:40.952691Z"}]}
+[debug] [2026-03-31T06:15:23.952Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:23.953Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:23.954Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/12fd2039-385e-4be4-856a-518411765240 [none]
+[debug] [2026-03-31T06:15:25.327Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/12fd2039-385e-4be4-856a-518411765240 200
+[debug] [2026-03-31T06:15:25.327Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/12fd2039-385e-4be4-856a-518411765240 [omitted]
+[info] i  firestore: uploading rules firestore.rules... 
+[debug] [2026-03-31T06:15:25.331Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:25.331Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:25.332Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets [none]
+[debug] [2026-03-31T06:15:25.332Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets [omitted]
+[debug] [2026-03-31T06:15:26.877Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets 200
+[debug] [2026-03-31T06:15:26.879Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets {"name":"projects/departmentwebsite-5aec1/rulesets/a5d225ad-fff2-4aff-9c32-4348bd35ed80","source":{"files":[{"content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n\n    function isSignedIn() {\n      return request.auth != null;\n    }\n\n    function isStaff() {\n      return isSignedIn() && (\n        request.auth.token.staff == true ||\n        request.auth.token.isStaff == true ||\n        request.auth.token.role in [\"staff\", \"admin\"] ||\n        (\n          request.auth.token.email is string &&\n          request.auth.token.email in [\n            \"treasurer.sgcu68@gmail.com\"\n          ]\n        )\n      );\n    }\n\n    function isRequester(resourceData) {\n      return isSignedIn() &&\n        request.auth.token.email is string &&\n        resourceData.requesterEmail is string &&\n        request.auth.token.email == resourceData.requesterEmail;\n    }\n\n    function hasBookingCreateFields() {\n      return request.resource.data.keys().hasAll([\n        \"roomId\",\n        \"roomName\",\n        \"date\",\n        \"startTime\",\n        \"endTime\",\n        \"requester\",\n        \"purpose\",\n        \"requesterEmail\",\n        \"status\",\n        \"startAt\",\n        \"endAt\",\n        \"createdAt\",\n        \"updatedAt\"\n      ]);\n    }\n\n    function isValidBookingStatus(status) {\n      return status in [\"pending\", \"approved\", \"rejected\", \"cancel_requested\", \"reschedule_requested\"];\n    }\n\n    function requesterAllowedBookingUpdate() {\n      return request.resource.data.diff(resource.data).changedKeys().hasOnly([\n        \"status\",\n        \"cancelledByRequester\",\n        \"cancelRequestReason\",\n        \"cancelledAt\",\n        \"rescheduleBaseStatus\",\n        \"rescheduleRequestedDate\",\n        \"rescheduleRequestedStartTime\",\n        \"rescheduleRequestedEndTime\",\n        \"rescheduleRequestReason\",\n        \"updatedAt\"\n      ]);\n    }\n\n    match /meetingRoomBookings/{bookingId} {\n      allow read: if isSignedIn();\n\n      allow create: if isSignedIn() &&\n        hasBookingCreateFields() &&\n        request.resource.data.requesterEmail == request.auth.token.email &&\n        isValidBookingStatus(request.resource.data.status);\n\n      allow update: if (\n        isStaff() && isValidBookingStatus(request.resource.data.status)\n      ) || (\n        isRequester(resource.data) &&\n        requesterAllowedBookingUpdate() &&\n        isValidBookingStatus(request.resource.data.status)\n      );\n\n      allow delete: if isStaff();\n    }\n\n    match /meetingRooms/{roomId} {\n      allow read: if isSignedIn();\n      allow create, update, delete: if isStaff();\n    }\n\n    match /meetingRoomHolidays/{holidayId} {\n      allow read: if isSignedIn();\n      allow create, update, delete: if isStaff();\n    }\n\n    match /auditLogs/{logId} {\n      allow create: if isSignedIn() && (\n        isStaff() || request.resource.data.actorUid == request.auth.uid\n      );\n      allow read: if isStaff();\n      allow update, delete: if false;\n    }\n\n    match /{document=**} {\n      allow read, write: if false;\n    }\n  }\n}\n","name":"firestore.rules"}]},"createTime":"2026-03-31T06:15:26.875183Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2026-03-31T06:15:26.879Z] [rules] created ruleset projects/departmentwebsite-5aec1/rulesets/a5d225ad-fff2-4aff-9c32-4348bd35ed80
+[debug] [2026-03-31T06:15:26.887Z] [rules] releasing cloud.firestore/(default) with ruleset projects/departmentwebsite-5aec1/rulesets/a5d225ad-fff2-4aff-9c32-4348bd35ed80
+[debug] [2026-03-31T06:15:27.010Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:27.033Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:15:27.037Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) [none]
+[debug] [2026-03-31T06:15:27.039Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) {"release":{"name":"projects/departmentwebsite-5aec1/releases/cloud.firestore/(default)","rulesetName":"projects/departmentwebsite-5aec1/rulesets/a5d225ad-fff2-4aff-9c32-4348bd35ed80"}}
+[debug] [2026-03-31T06:15:28.510Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) 200
+[debug] [2026-03-31T06:28:18.478Z] ----------------------------------------------------------------------
+[debug] [2026-03-31T06:28:18.483Z] Command:       /usr/local/bin/node /Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/.bin/firebase deploy --only firestore:rules
+[debug] [2026-03-31T06:28:18.483Z] CLI Version:   15.12.0
+[debug] [2026-03-31T06:28:18.484Z] Platform:      darwin
+[debug] [2026-03-31T06:28:18.484Z] Node Version:  v20.17.0
+[debug] [2026-03-31T06:28:18.484Z] Time:          Tue Mar 31 2026 13:28:18 GMT+0700 (Indochina Time)
+[debug] [2026-03-31T06:28:18.484Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-31T06:28:21.592Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-31T06:28:21.598Z] > authorizing via signed-in user (treasurer.sgcu68@gmail.com)
+[debug] [2026-03-31T06:28:21.599Z] [iam] checking project departmentwebsite-5aec1 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-03-31T06:28:21.604Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:21.605Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:21.610Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions [none]
+[debug] [2026-03-31T06:28:21.610Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions  x-goog-user-project=departmentwebsite-5aec1
+[debug] [2026-03-31T06:28:21.611Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-03-31T06:28:23.349Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions 200
+[debug] [2026-03-31T06:28:23.354Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'departmentwebsite-5aec1'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-31T06:28:23.398Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:23.398Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:23.398Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) [none]
+[debug] [2026-03-31T06:28:23.795Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) 200
+[debug] [2026-03-31T06:28:23.796Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) {"name":"projects/departmentwebsite-5aec1/databases/(default)","uid":"c8182372-9edb-43cd-92b0-b34f6a93ea8a","createTime":"2026-02-27T19:03:51.233957Z","updateTime":"2026-02-27T19:03:51.233957Z","locationId":"asia-southeast3","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-31T05:28:24.003431Z","appEngineIntegrationMode":"DISABLED","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IMb7nZjByZMDMIL8gby3+pID"}
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-03-31T06:28:23.797Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:23.797Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:23.797Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test [none]
+[debug] [2026-03-31T06:28:23.798Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test [omitted]
+[debug] [2026-03-31T06:28:24.468Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test 200
+[debug] [2026-03-31T06:28:24.469Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test {}
+[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-03-31T06:28:24.475Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:24.476Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:24.477Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases pageSize=10&pageToken=
+[debug] [2026-03-31T06:28:24.772Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases 200
+[debug] [2026-03-31T06:28:24.772Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases {"releases":[{"name":"projects/departmentwebsite-5aec1/releases/cloud.firestore","rulesetName":"projects/departmentwebsite-5aec1/rulesets/a5d225ad-fff2-4aff-9c32-4348bd35ed80","createTime":"2026-02-27T19:03:59.323553Z","updateTime":"2026-03-31T06:15:28.512533Z"}]}
+[debug] [2026-03-31T06:28:24.772Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:24.772Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:24.773Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/a5d225ad-fff2-4aff-9c32-4348bd35ed80 [none]
+[debug] [2026-03-31T06:28:26.163Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/a5d225ad-fff2-4aff-9c32-4348bd35ed80 200
+[debug] [2026-03-31T06:28:26.164Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/a5d225ad-fff2-4aff-9c32-4348bd35ed80 [omitted]
+[info] i  firestore: uploading rules firestore.rules... 
+[debug] [2026-03-31T06:28:26.165Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:26.165Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:26.168Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets [none]
+[debug] [2026-03-31T06:28:26.168Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets [omitted]
+[debug] [2026-03-31T06:28:26.752Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets 200
+[debug] [2026-03-31T06:28:26.752Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets {"name":"projects/departmentwebsite-5aec1/rulesets/5787cf2d-7fe0-4239-b1b0-4a8956cb9f6c","source":{"files":[{"content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n\n    function isSignedIn() {\n      return request.auth != null;\n    }\n\n    function isStaff() {\n      return isSignedIn() && (\n        request.auth.token.staff == true ||\n        request.auth.token.isStaff == true ||\n        request.auth.token.role in [\"staff\", \"admin\"] ||\n        (\n          request.auth.token.email is string &&\n          request.auth.token.email in [\n            \"treasurer.sgcu68@gmail.com\",\n            \"6534324223@student.chula.ac.th\"\n          ]\n        )\n      );\n    }\n\n    function isRequester(resourceData) {\n      return isSignedIn() &&\n        request.auth.token.email is string &&\n        resourceData.requesterEmail is string &&\n        request.auth.token.email == resourceData.requesterEmail;\n    }\n\n    function hasBookingCreateFields() {\n      return request.resource.data.keys().hasAll([\n        \"roomId\",\n        \"roomName\",\n        \"date\",\n        \"startTime\",\n        \"endTime\",\n        \"requester\",\n        \"purpose\",\n        \"requesterEmail\",\n        \"status\",\n        \"startAt\",\n        \"endAt\",\n        \"createdAt\",\n        \"updatedAt\"\n      ]);\n    }\n\n    function isValidBookingStatus(status) {\n      return status in [\"pending\", \"approved\", \"rejected\", \"cancel_requested\", \"reschedule_requested\"];\n    }\n\n    function requesterAllowedBookingUpdate() {\n      return request.resource.data.diff(resource.data).changedKeys().hasOnly([\n        \"status\",\n        \"cancelledByRequester\",\n        \"cancelRequestReason\",\n        \"cancelledAt\",\n        \"rescheduleBaseStatus\",\n        \"rescheduleRequestedDate\",\n        \"rescheduleRequestedStartTime\",\n        \"rescheduleRequestedEndTime\",\n        \"rescheduleRequestReason\",\n        \"updatedAt\"\n      ]);\n    }\n\n    match /meetingRoomBookings/{bookingId} {\n      allow read: if isSignedIn();\n\n      allow create: if isSignedIn() &&\n        hasBookingCreateFields() &&\n        request.resource.data.requesterEmail == request.auth.token.email &&\n        isValidBookingStatus(request.resource.data.status);\n\n      allow update: if (\n        isStaff() && isValidBookingStatus(request.resource.data.status)\n      ) || (\n        isRequester(resource.data) &&\n        requesterAllowedBookingUpdate() &&\n        isValidBookingStatus(request.resource.data.status)\n      );\n\n      allow delete: if isStaff();\n    }\n\n    match /meetingRooms/{roomId} {\n      allow read: if isSignedIn();\n      allow create, update, delete: if isStaff();\n    }\n\n    match /meetingRoomHolidays/{holidayId} {\n      allow read: if isSignedIn();\n      allow create, update, delete: if isStaff();\n    }\n\n    match /auditLogs/{logId} {\n      allow create: if isSignedIn() && (\n        isStaff() || request.resource.data.actorUid == request.auth.uid\n      );\n      allow read: if isStaff();\n      allow update, delete: if false;\n    }\n\n    match /{document=**} {\n      allow read, write: if false;\n    }\n  }\n}\n","name":"firestore.rules"}]},"createTime":"2026-03-31T06:28:26.805919Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2026-03-31T06:28:26.752Z] [rules] created ruleset projects/departmentwebsite-5aec1/rulesets/5787cf2d-7fe0-4239-b1b0-4a8956cb9f6c
+[debug] [2026-03-31T06:28:26.753Z] [rules] releasing cloud.firestore/(default) with ruleset projects/departmentwebsite-5aec1/rulesets/5787cf2d-7fe0-4239-b1b0-4a8956cb9f6c
+[debug] [2026-03-31T06:28:26.753Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:26.753Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:28:26.753Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) [none]
+[debug] [2026-03-31T06:28:26.753Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) {"release":{"name":"projects/departmentwebsite-5aec1/releases/cloud.firestore/(default)","rulesetName":"projects/departmentwebsite-5aec1/rulesets/5787cf2d-7fe0-4239-b1b0-4a8956cb9f6c"}}
+[debug] [2026-03-31T06:28:27.110Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) 200
+[debug] [2026-03-31T06:39:20.343Z] ----------------------------------------------------------------------
+[debug] [2026-03-31T06:39:20.344Z] Command:       /usr/local/bin/node /Users/tuwanonkimchiang/.npm/_npx/7750544ccf494d8b/node_modules/.bin/firebase deploy --only firestore:rules
+[debug] [2026-03-31T06:39:20.345Z] CLI Version:   15.12.0
+[debug] [2026-03-31T06:39:20.345Z] Platform:      darwin
+[debug] [2026-03-31T06:39:20.345Z] Node Version:  v20.17.0
+[debug] [2026-03-31T06:39:20.345Z] Time:          Tue Mar 31 2026 13:39:20 GMT+0700 (Indochina Time)
+[debug] [2026-03-31T06:39:20.345Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-31T06:39:21.313Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-31T06:39:21.314Z] > authorizing via signed-in user (treasurer.sgcu68@gmail.com)
+[debug] [2026-03-31T06:39:21.314Z] [iam] checking project departmentwebsite-5aec1 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-03-31T06:39:21.315Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:21.315Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:21.316Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions [none]
+[debug] [2026-03-31T06:39:21.316Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions  x-goog-user-project=departmentwebsite-5aec1
+[debug] [2026-03-31T06:39:21.316Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-03-31T06:39:22.846Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions 200
+[debug] [2026-03-31T06:39:22.846Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/departmentwebsite-5aec1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'departmentwebsite-5aec1'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-31T06:39:22.852Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:22.853Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:22.853Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) [none]
+[debug] [2026-03-31T06:39:23.314Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) 200
+[debug] [2026-03-31T06:39:23.314Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/departmentwebsite-5aec1/databases/(default) {"name":"projects/departmentwebsite-5aec1/databases/(default)","uid":"c8182372-9edb-43cd-92b0-b34f6a93ea8a","createTime":"2026-02-27T19:03:51.233957Z","updateTime":"2026-02-27T19:03:51.233957Z","locationId":"asia-southeast3","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-31T05:39:23.536369Z","appEngineIntegrationMode":"DISABLED","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IPrU3NLDyZMDMIL8gby3+pID"}
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-03-31T06:39:23.316Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:23.316Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:23.316Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test [none]
+[debug] [2026-03-31T06:39:23.316Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test [omitted]
+[debug] [2026-03-31T06:39:24.278Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test 200
+[debug] [2026-03-31T06:39:24.278Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1:test {}
+[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-03-31T06:39:24.286Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:24.286Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:24.288Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases pageSize=10&pageToken=
+[debug] [2026-03-31T06:39:25.673Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases 200
+[debug] [2026-03-31T06:39:25.674Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases {"releases":[{"name":"projects/departmentwebsite-5aec1/releases/cloud.firestore","rulesetName":"projects/departmentwebsite-5aec1/rulesets/5787cf2d-7fe0-4239-b1b0-4a8956cb9f6c","createTime":"2026-02-27T19:03:59.323553Z","updateTime":"2026-03-31T06:28:27.169230Z"}]}
+[debug] [2026-03-31T06:39:25.676Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:25.676Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:25.676Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/5787cf2d-7fe0-4239-b1b0-4a8956cb9f6c [none]
+[debug] [2026-03-31T06:39:27.168Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/5787cf2d-7fe0-4239-b1b0-4a8956cb9f6c 200
+[debug] [2026-03-31T06:39:27.169Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets/5787cf2d-7fe0-4239-b1b0-4a8956cb9f6c [omitted]
+[info] i  firestore: uploading rules firestore.rules... 
+[debug] [2026-03-31T06:39:27.171Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:27.171Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:27.171Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets [none]
+[debug] [2026-03-31T06:39:27.171Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets [omitted]
+[debug] [2026-03-31T06:39:28.730Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets 200
+[debug] [2026-03-31T06:39:28.731Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/rulesets {"name":"projects/departmentwebsite-5aec1/rulesets/7a25e00b-3193-4cff-bd68-66a760472f75","source":{"files":[{"content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n\n    function isSignedIn() {\n      return request.auth != null;\n    }\n\n    function isStaff() {\n      return isSignedIn() && (\n        request.auth.token.staff == true ||\n        request.auth.token.isStaff == true ||\n        request.auth.token.role in [\"staff\", \"admin\"] ||\n        (\n          request.auth.token.email is string &&\n          request.auth.token.email in [\n            \"treasurer.sgcu68@gmail.com\",\n            \"6534324223@student.chula.ac.th\"\n          ]\n        )\n      );\n    }\n\n    function isRequester(resourceData) {\n      return isSignedIn() &&\n        request.auth.token.email is string &&\n        resourceData.requesterEmail is string &&\n        request.auth.token.email == resourceData.requesterEmail;\n    }\n\n    function hasBookingCreateFields() {\n      return request.resource.data.keys().hasAll([\n        \"roomId\",\n        \"roomName\",\n        \"date\",\n        \"startTime\",\n        \"endTime\",\n        \"requester\",\n        \"purpose\",\n        \"requesterEmail\",\n        \"status\",\n        \"startAt\",\n        \"endAt\",\n        \"createdAt\",\n        \"updatedAt\"\n      ]);\n    }\n\n    function isValidBookingStatus(status) {\n      return status in [\"pending\", \"approved\", \"rejected\", \"cancel_requested\", \"reschedule_requested\"];\n    }\n\n    function requesterAllowedBookingUpdate() {\n      return request.resource.data.diff(resource.data).changedKeys().hasOnly([\n        \"status\",\n        \"cancelledByRequester\",\n        \"cancelRequestReason\",\n        \"cancelledAt\",\n        \"rescheduleBaseStatus\",\n        \"rescheduleRequestedDate\",\n        \"rescheduleRequestedStartTime\",\n        \"rescheduleRequestedEndTime\",\n        \"rescheduleRequestReason\",\n        \"updatedAt\"\n      ]);\n    }\n\n    match /meetingRoomBookings/{bookingId} {\n      allow read: if isSignedIn();\n\n      allow create: if isSignedIn() &&\n        hasBookingCreateFields() &&\n        request.resource.data.requesterEmail == request.auth.token.email &&\n        isValidBookingStatus(request.resource.data.status);\n\n      allow update: if (\n        isStaff() && isValidBookingStatus(request.resource.data.status)\n      ) || (\n        isRequester(resource.data) &&\n        requesterAllowedBookingUpdate() &&\n        isValidBookingStatus(request.resource.data.status)\n      );\n\n      allow delete: if isStaff();\n    }\n\n    match /meetingRooms/{roomId} {\n      allow read: if isSignedIn();\n      allow create, update, delete: if isStaff();\n    }\n\n    match /meetingRoomHolidays/{holidayId} {\n      allow read: if isSignedIn();\n      allow create, update, delete: if isStaff();\n    }\n\n    match /auditLogs/{logId} {\n      allow create: if isSignedIn() && (\n        isStaff() || request.resource.data.actorUid == request.auth.uid\n      );\n      allow read: if isStaff();\n      allow update, delete: if false;\n    }\n\n    // Public visitor counter (used on home page without auth)\n    match /site_daily_visitors/{dateKey} {\n      allow read: if true;\n      allow create, update: if\n        request.resource.data.keys().hasOnly([\"total\", \"updatedAt\"]) &&\n        request.resource.data.total is int &&\n        request.resource.data.total >= 0;\n      allow delete: if false;\n    }\n\n    match /site_stats/{statId} {\n      allow read: if true;\n      allow create, update: if\n        statId == \"visitors_all_time\" &&\n        request.resource.data.keys().hasOnly([\"total\", \"updatedAt\"]) &&\n        request.resource.data.total is int &&\n        request.resource.data.total >= 0;\n      allow delete: if false;\n    }\n\n    match /{document=**} {\n      allow read, write: if false;\n    }\n  }\n}\n","name":"firestore.rules"}]},"createTime":"2026-03-31T06:39:28.800143Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2026-03-31T06:39:28.731Z] [rules] created ruleset projects/departmentwebsite-5aec1/rulesets/7a25e00b-3193-4cff-bd68-66a760472f75
+[debug] [2026-03-31T06:39:28.732Z] [rules] releasing cloud.firestore/(default) with ruleset projects/departmentwebsite-5aec1/rulesets/7a25e00b-3193-4cff-bd68-66a760472f75
+[debug] [2026-03-31T06:39:28.732Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:28.733Z] Checked if tokens are valid: true, expires at: 1774940921730
+[debug] [2026-03-31T06:39:28.733Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) [none]
+[debug] [2026-03-31T06:39:28.733Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) {"release":{"name":"projects/departmentwebsite-5aec1/releases/cloud.firestore/(default)","rulesetName":"projects/departmentwebsite-5aec1/rulesets/7a25e00b-3193-4cff-bd68-66a760472f75"}}
+[debug] [2026-03-31T06:39:30.402Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/departmentwebsite-5aec1/releases/cloud.firestore/(default) 200

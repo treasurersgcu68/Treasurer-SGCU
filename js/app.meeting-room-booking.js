@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const BOOKING_COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
   const HOLIDAY_COLLECTION_NAME = "meetingRoomHolidays";
+  const AUDIT_COLLECTION_NAME = "auditLogs";
   const DEFAULT_MEETING_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public" },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public" },
@@ -367,6 +368,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentUserEmail = "";
   let activeDetailBookingId = "";
   let activeDetailOptions = {};
+  let roomsLoaded = false;
+  let bookingsLoaded = false;
+  let roomsLoadFailed = false;
+  let bookingsLoadFailed = false;
+  let meetingStateEl = null;
 
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
@@ -413,6 +419,130 @@ document.addEventListener("DOMContentLoaded", () => {
       const bTime = Number.isFinite(new Date(b.startAt).getTime()) ? new Date(b.startAt).getTime() : Number.MAX_SAFE_INTEGER;
       return aTime - bTime;
     });
+  };
+
+  const pickBookingAuditFields = (item = {}) => ({
+    id: item.id || "",
+    roomId: item.roomId || "",
+    roomName: item.roomName || "",
+    date: item.date || "",
+    startTime: item.startTime || "",
+    endTime: item.endTime || "",
+    requester: item.requester || "",
+    requesterEmail: (item.requesterEmail || "").toString().trim().toLowerCase(),
+    purpose: item.purpose || "",
+    status: normalizeStatus(item.status),
+    projectMode: item.projectMode || DEFAULT_PROJECT_MODE,
+    projectCode: item.projectCode || "",
+    projectName: item.projectName || "",
+    rescheduleBaseStatus: normalizeStatus(item.rescheduleBaseStatus),
+    rescheduleRequestedDate: item.rescheduleRequestedDate || "",
+    rescheduleRequestedStartTime: item.rescheduleRequestedStartTime || "",
+    rescheduleRequestedEndTime: item.rescheduleRequestedEndTime || "",
+    rescheduleRequestReason: item.rescheduleRequestReason || "",
+    cancelRequestReason: item.cancelRequestReason || "",
+    roomBookingAccess: normalizeRoomBookingAccess(item.roomBookingAccess)
+  });
+
+  const getAuditActor = () => {
+    const authUser = window.sgcuAuth?.auth?.currentUser || null;
+    const email = (authUser?.email || "").toString().trim().toLowerCase();
+    return {
+      actorUid: authUser?.uid || "",
+      actorEmail: email,
+      actorRole: isStaffUser() ? "staff" : "member"
+    };
+  };
+
+  const writeAuditLog = async (action, entityType, entityId, beforeData, afterData, metadata = {}) => {
+    if (!hasFirestore) return;
+    try {
+      const actor = getAuditActor();
+      await firestore.addDoc(
+        firestore.collection(firestore.db, AUDIT_COLLECTION_NAME),
+        {
+          action,
+          entityType,
+          entityId: entityId || "",
+          before: beforeData || null,
+          after: afterData || null,
+          actorUid: actor.actorUid,
+          actorEmail: actor.actorEmail,
+          actorRole: actor.actorRole,
+          source: "web_app",
+          metadata: metadata || {},
+          timestamp: firestore.serverTimestamp()
+        }
+      );
+    } catch (err) {
+      // Keep audit logging non-blocking for booking flow.
+    }
+  };
+
+  const ensureMeetingStateEl = () => {
+    if (meetingStateEl) return meetingStateEl;
+    const panelBody = calendarPanelWrap?.querySelector(".panel-body");
+    if (!panelBody) return null;
+    meetingStateEl = document.createElement("div");
+    meetingStateEl.id = "meetingRoomBookingState";
+    meetingStateEl.className = "section-text-sm";
+    meetingStateEl.hidden = true;
+    meetingStateEl.style.marginBottom = "10px";
+    panelBody.prepend(meetingStateEl);
+    return meetingStateEl;
+  };
+
+  const retryMeetingSubscriptions = () => {
+    if (typeof unsubscribe === "function") unsubscribe();
+    if (typeof unsubscribeRooms === "function") unsubscribeRooms();
+    if (typeof unsubscribeHolidays === "function") unsubscribeHolidays();
+    unsubscribe = null;
+    unsubscribeRooms = null;
+    unsubscribeHolidays = null;
+    roomsLoaded = false;
+    bookingsLoaded = false;
+    roomsLoadFailed = false;
+    bookingsLoadFailed = false;
+    subscribeRooms();
+    subscribeBookings();
+    subscribeHolidays();
+    renderMeetingLoadState();
+  };
+
+  const renderMeetingLoadState = () => {
+    const stateEl = ensureMeetingStateEl();
+    if (!stateEl) return;
+    if (!hasFirestore) {
+      stateEl.hidden = false;
+      stateEl.style.color = "#b91c1c";
+      stateEl.innerHTML = "ระบบยังไม่เชื่อมต่อ Firestore โปรดตรวจสอบการตั้งค่า";
+      return;
+    }
+    if (!roomsLoaded || !bookingsLoaded) {
+      stateEl.hidden = false;
+      stateEl.style.color = "#6b7280";
+      stateEl.innerHTML = "กำลังโหลดข้อมูลการจองห้องประชุม...";
+      return;
+    }
+    if (roomsLoadFailed || bookingsLoadFailed) {
+      stateEl.hidden = false;
+      stateEl.style.color = "#b91c1c";
+      stateEl.innerHTML = `
+        โหลดข้อมูลการจองไม่สำเร็จในขณะนี้
+        <button id="meetingRoomRetryButton" type="button" class="btn-ghost" style="margin-left:8px;">ลองใหม่</button>
+      `;
+      const retryBtn = stateEl.querySelector("#meetingRoomRetryButton");
+      if (retryBtn) retryBtn.addEventListener("click", retryMeetingSubscriptions);
+      return;
+    }
+    if (!bookings.length) {
+      stateEl.hidden = false;
+      stateEl.style.color = "#6b7280";
+      stateEl.innerHTML = "ยังไม่มีการจองห้องประชุม";
+      return;
+    }
+    stateEl.hidden = true;
+    stateEl.innerHTML = "";
   };
 
   const renderRows = () => {
@@ -464,6 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderCalendarOverview();
     renderOwnBookingOptions();
+    renderMeetingLoadState();
   };
 
   const readCurrentUserEmail = () => {
@@ -761,6 +892,14 @@ document.addEventListener("DOMContentLoaded", () => {
       await firestore.updateDoc(
         firestore.doc(firestore.db, BOOKING_COLLECTION_NAME, bookingId),
         payload
+      );
+      await writeAuditLog(
+        "booking.status_updated",
+        "meetingRoomBooking",
+        bookingId,
+        pickBookingAuditFields(booking),
+        pickBookingAuditFields({ ...booking, ...payload }),
+        { context: "booking_detail_modal" }
       );
       setBookingDetailStatusMessage("อัปเดตสถานะคำขอเรียบร้อยแล้ว", "#047857");
     } catch (err) {
@@ -1144,6 +1283,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const subscribeRooms = () => {
     if (!hasFirestore) {
+      roomsLoaded = true;
+      roomsLoadFailed = true;
       setupRoomOptions();
       renderRows();
       return;
@@ -1167,12 +1308,16 @@ document.addEventListener("DOMContentLoaded", () => {
             .filter(Boolean)
             .sort((a, b) => a.name.localeCompare(b.name, "th"));
           meetingRooms = loadedRooms.length ? loadedRooms : [...DEFAULT_MEETING_ROOMS];
+          roomsLoaded = true;
+          roomsLoadFailed = false;
           setupRoomOptions();
           renderRows();
           renderCalendarOverview();
         },
         () => {
           meetingRooms = [...DEFAULT_MEETING_ROOMS];
+          roomsLoaded = true;
+          roomsLoadFailed = true;
           setupRoomOptions();
           renderRows();
           renderCalendarOverview();
@@ -1180,6 +1325,8 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     } catch (err) {
       meetingRooms = [...DEFAULT_MEETING_ROOMS];
+      roomsLoaded = true;
+      roomsLoadFailed = true;
       setupRoomOptions();
       renderRows();
       renderCalendarOverview();
@@ -1199,7 +1346,12 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const subscribeBookings = () => {
-    if (!hasFirestore) return;
+    if (!hasFirestore) {
+      bookingsLoaded = true;
+      bookingsLoadFailed = true;
+      renderMeetingLoadState();
+      return;
+    }
     try {
       const colRef = firestore.collection(firestore.db, BOOKING_COLLECTION_NAME);
       const q = firestore.query(colRef, firestore.orderBy("startAt", "asc"));
@@ -1207,17 +1359,25 @@ document.addEventListener("DOMContentLoaded", () => {
         q,
         (snapshot) => {
           bookings = snapshot.docs.map(mapSnapshotDoc);
+          bookingsLoaded = true;
+          bookingsLoadFailed = false;
           renderRows();
           if (!window.localStorage?.getItem(LOCAL_MIGRATED_KEY) && !hasMigrated) {
             void migrateLocalStorageToFirestore();
           }
         },
         () => {
+          bookingsLoaded = true;
+          bookingsLoadFailed = true;
           setMessage("เกิดปัญหาการดึงข้อมูลการจอง", "#b91c1c");
+          renderMeetingLoadState();
         }
       );
     } catch (err) {
+      bookingsLoaded = true;
+      bookingsLoadFailed = true;
       setMessage("ไม่สามารถเชื่อมต่อ Firestore ได้", "#b91c1c");
+      renderMeetingLoadState();
     }
   };
 
@@ -1352,7 +1512,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      await firestore.addDoc(firestore.collection(firestore.db, BOOKING_COLLECTION_NAME), {
+      const createdDoc = await firestore.addDoc(firestore.collection(firestore.db, BOOKING_COLLECTION_NAME), {
         roomId: candidate.roomId,
         roomName: candidate.roomName,
         date,
@@ -1373,6 +1533,18 @@ document.addEventListener("DOMContentLoaded", () => {
         createdAt: firestore.serverTimestamp(),
         updatedAt: firestore.serverTimestamp()
       });
+      await writeAuditLog(
+        "booking.created",
+        "meetingRoomBooking",
+        createdDoc?.id || "",
+        null,
+        pickBookingAuditFields({
+          ...candidate,
+          id: createdDoc?.id || "",
+          requesterEmail: readCurrentUserEmail()
+        }),
+        { context: "booking_form" }
+      );
       form.reset();
       clearProjectFeedback();
       setMessage("บันทึกการจองเรียบร้อยแล้ว", "#047857");
@@ -1439,6 +1611,19 @@ document.addEventListener("DOMContentLoaded", () => {
           cancelledAt: firestore.serverTimestamp(),
           updatedAt: firestore.serverTimestamp()
         }
+      );
+      await writeAuditLog(
+        "booking.cancelled_by_requester",
+        "meetingRoomBooking",
+        bookingId,
+        pickBookingAuditFields(booking),
+        pickBookingAuditFields({
+          ...booking,
+          status: "rejected",
+          cancelledByRequester: true,
+          cancelRequestReason: cancelReason
+        }),
+        { context: "cancel_form" }
       );
       setCancelMessage("ยกเลิกคำขอเรียบร้อยแล้ว", "#047857");
       if (cancelBookingSelect) cancelBookingSelect.value = "";
@@ -1545,6 +1730,22 @@ document.addEventListener("DOMContentLoaded", () => {
           updatedAt: firestore.serverTimestamp()
         }
       );
+      await writeAuditLog(
+        "booking.reschedule_requested",
+        "meetingRoomBooking",
+        bookingId,
+        pickBookingAuditFields(booking),
+        pickBookingAuditFields({
+          ...booking,
+          status: "reschedule_requested",
+          rescheduleBaseStatus: normalizeStatus(booking.status),
+          rescheduleRequestedDate: nextDate,
+          rescheduleRequestedStartTime: nextStartTime,
+          rescheduleRequestedEndTime: nextEndTime,
+          rescheduleRequestReason: reason
+        }),
+        { context: "reschedule_form" }
+      );
       setRescheduleMessage("ส่งคำขอเปลี่ยนเวลาเรียบร้อยแล้ว (รอ Staff อนุมัติ)", "#047857");
       if (rescheduleBookingSelect) rescheduleBookingSelect.value = "";
       if (rescheduleDateInput) rescheduleDateInput.value = "";
@@ -1589,6 +1790,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ensureFormContactFields();
   startCalendar();
   updateMeetingRoomView(meetingRoomActiveView || "calendar");
+  renderMeetingLoadState();
   subscribeRooms();
 
   if (viewCalendarBtn) {
@@ -1649,6 +1851,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!hasFirestore) {
     setMessage("ระบบยังไม่เชื่อมต่อ Firestore โปรดตรวจสอบการตั้งค่า", "#b91c1c");
+    renderMeetingLoadState();
     return;
   }
 

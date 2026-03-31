@@ -9,6 +9,16 @@ function simplifyStatus(statusRaw) {
   return "แบบร่าง";
 }
 
+function escapeHtml(value) {
+  const text = (value ?? "").toString();
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function parseBudget(text) {
   if (!text) return 0;
   const cleaned = text.toString().replace(/,/g, "").replace(/[^\d.-]/g, "");
@@ -231,7 +241,10 @@ function recordLoadError(key, message, options = {}) {
 
 function setInlineError(el, message) {
   if (!el) return;
-  el.innerHTML = `<div class="load-error-text">${message}</div>`;
+  const box = document.createElement("div");
+  box.className = "load-error-text";
+  box.textContent = message;
+  el.replaceChildren(box);
 }
 
 async function fetchTextWithProgress(url, onProgress, options = {}) {

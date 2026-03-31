@@ -41,6 +41,16 @@ async function loadOrgStructure() {
 function renderOrgStructure(rows) {
   const container = document.getElementById("org-structure-content");
   if (!container) return;
+  const esc = (value) =>
+    typeof escapeHtml === "function"
+      ? escapeHtml(value)
+      : (value ?? "")
+          .toString()
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
 
   if (!rows || rows.length < 2) {
     container.innerHTML = `<p>ไม่พบข้อมูลในชีต</p>`;
@@ -113,11 +123,11 @@ function renderOrgStructure(rows) {
     if (url) {
       return `
         <div class="${cls}">
-          <img src="${url}" alt="${fullName(r)}" loading="lazy">
+          <img src="${esc(url)}" alt="${esc(fullName(r))}" loading="lazy">
         </div>
       `;
     }
-    return `<div class="${cls}">${initials(r)}</div>`;
+    return `<div class="${cls}">${esc(initials(r))}</div>`;
   }
 
   // ====== peopleByPos + assistantContactsByName (global) ======
@@ -198,11 +208,11 @@ function renderOrgStructure(rows) {
     const size = opts.size || "lg";
 
     return `
-      <button class="org-node" type="button" data-person-key="${key}">
+      <button class="org-node" type="button" data-person-key="${esc(key)}">
         ${avatarHTML(r, size === "sm" ? "sm" : "lg")}
-        <div class="org-node-role">${(r[COL_POS] || "").trim()}</div>
-        <div class="org-node-name">${fullName(r)}</div>
-        <div class="org-node-nick">${nickNameText(r)}</div>
+        <div class="org-node-role">${esc((r[COL_POS] || "").trim())}</div>
+        <div class="org-node-name">${esc(fullName(r))}</div>
+        <div class="org-node-nick">${esc(nickNameText(r))}</div>
       </button>
     `;
   }
@@ -331,6 +341,16 @@ function renderOrgStructure(rows) {
 function initOrgPersonPopup() {
   const modal = document.getElementById("personModal");
   if (!modal) return;
+  const esc = (value) =>
+    typeof escapeHtml === "function"
+      ? escapeHtml(value)
+      : (value ?? "")
+          .toString()
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
 
   const closeBtn = document.getElementById("personModalClose");
   const avatarEl = document.getElementById("personModalAvatar");
@@ -346,7 +366,10 @@ function initOrgPersonPopup() {
     // avatar
     avatarEl.innerHTML = "";
     if (info.avatarUrl) {
-      avatarEl.innerHTML = `<img src="${info.avatarUrl}" alt="${info.fullName}">`;
+      const img = document.createElement("img");
+      img.src = info.avatarUrl;
+      img.alt = info.fullName || key;
+      avatarEl.appendChild(img);
     } else {
       const initials = (info.fullName || "SG")
         .split(" ")
@@ -367,7 +390,7 @@ function initOrgPersonPopup() {
       rows.push(`
         <div class="person-modal-contact-row">
           <div class="person-modal-contact-label">คณะ</div>
-          <div class="person-modal-contact-value">${info.faculty}</div>
+          <div class="person-modal-contact-value">${esc(info.faculty)}</div>
         </div>
       `);
     }
@@ -377,17 +400,18 @@ function initOrgPersonPopup() {
       rows.push(`
         <div class="person-modal-contact-row">
           <div class="person-modal-contact-label">ชั้นปี</div>
-          <div class="person-modal-contact-value">ปี ${info.year}</div>
+          <div class="person-modal-contact-value">ปี ${esc(info.year)}</div>
         </div>
       `);
     }
 
     if (info.phone) {
+      const safePhone = info.phone.toString().replace(/[^\d+\-()\s]/g, "").trim();
       rows.push(`
         <div class="person-modal-contact-row">
           <div class="person-modal-contact-label">โทร</div>
           <div class="person-modal-contact-value">
-            <a href="tel:${info.phone}">${info.phone}</a>
+            <a href="tel:${esc(safePhone)}">${esc(info.phone)}</a>
           </div>
         </div>
       `);
@@ -397,7 +421,7 @@ function initOrgPersonPopup() {
       rows.push(`
         <div class="person-modal-contact-row">
           <div class="person-modal-contact-label">LINE</div>
-          <div class="person-modal-contact-value">${info.line}</div>
+          <div class="person-modal-contact-value">${esc(info.line)}</div>
         </div>
       `);
     }

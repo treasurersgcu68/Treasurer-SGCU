@@ -1195,8 +1195,15 @@ function initMeetingRoomStaffApproval() {
         null,
         { context: "staff_approval" }
       );
+      setStaffActionMessage("ลบคำขอเรียบร้อยแล้ว", "#047857");
     } catch (err) {
-      // ignore delete errors
+      const code = (err?.code || "").toString().trim();
+      if (code === "permission-denied") {
+        setStaffActionMessage("ไม่มีสิทธิ์ลบคำขอ (ต้องเป็นบัญชี Staff ตาม Firestore rules)", "#b91c1c");
+        return;
+      }
+      const detail = code ? ` (${code})` : "";
+      setStaffActionMessage(`ไม่สามารถลบคำขอได้ในขณะนี้${detail}`, "#b91c1c");
     }
   };
 

@@ -551,6 +551,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.addEventListener("click", () => {
       const page = btn.dataset.gotoPage;
       if (!page) return;
+      if (!isUserAuthenticated && !isNavPageVisible(page)) {
+        void switchPage("login");
+        return;
+      }
       void switchPage(page);
     });
   });

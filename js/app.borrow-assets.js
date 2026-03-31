@@ -122,13 +122,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         return `
           <tr>
-            <td>${row.type || "-"}</td>
-            <td>${row.code || "-"}</td>
-            <td>${row.name || "-"}</td>
-            <td>${row.location || "-"}</td>
-            <td>${remainingText}</td>
+            <td>${escapeHtml(row.type || "-")}</td>
+            <td>${escapeHtml(row.code || "-")}</td>
+            <td>${escapeHtml(row.name || "-")}</td>
+            <td>${escapeHtml(row.location || "-")}</td>
+            <td>${escapeHtml(remainingText)}</td>
             <td><span class="badge ${statusClass}">${statusLabel}</span></td>
-            <td>${row.note || "-"}</td>
+            <td>${escapeHtml(row.note || "-")}</td>
           </tr>
         `;
       })
@@ -149,17 +149,17 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((row) => {
         return `
           <tr>
-            <td>${row.type || "-"}</td>
-            <td>${row.code || "-"}</td>
-            <td>${row.name || "-"}</td>
-            <td>${row.location || "-"}</td>
-            <td>${row.total != null ? row.total : "-"}</td>
-            <td>${row.approvedText || "-"}</td>
-            <td>${row.borrowed != null ? row.borrowed : "-"}</td>
-            <td>${row.damaged != null ? row.damaged : "-"}</td>
-            <td>${row.remaining != null ? row.remaining : "-"}</td>
-            <td>${row.unit || "-"}</td>
-            <td>${row.note || "-"}</td>
+            <td>${escapeHtml(row.type || "-")}</td>
+            <td>${escapeHtml(row.code || "-")}</td>
+            <td>${escapeHtml(row.name || "-")}</td>
+            <td>${escapeHtml(row.location || "-")}</td>
+            <td>${escapeHtml(row.total != null ? row.total : "-")}</td>
+            <td>${escapeHtml(row.approvedText || "-")}</td>
+            <td>${escapeHtml(row.borrowed != null ? row.borrowed : "-")}</td>
+            <td>${escapeHtml(row.damaged != null ? row.damaged : "-")}</td>
+            <td>${escapeHtml(row.remaining != null ? row.remaining : "-")}</td>
+            <td>${escapeHtml(row.unit || "-")}</td>
+            <td>${escapeHtml(row.note || "-")}</td>
           </tr>
         `;
       })

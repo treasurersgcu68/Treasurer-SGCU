@@ -10,7 +10,13 @@ service cloud.firestore {
       return isSignedIn() && (
         request.auth.token.staff == true ||
         request.auth.token.isStaff == true ||
-        request.auth.token.role in ["staff", "admin"]
+        request.auth.token.role in ["staff", "admin"] ||
+        (
+          request.auth.token.email is string &&
+          request.auth.token.email in [
+            "treasurer.sgcu68@gmail.com"
+          ]
+        )
       );
     }
 

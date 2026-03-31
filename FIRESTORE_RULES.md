@@ -59,6 +59,28 @@
 - `request.auth.token.staff == true`
 - `request.auth.token.isStaff == true`
 - `request.auth.token.role in ["staff", "admin"]`
+- และรองรับอีเมลใน allowlist ของ rules (ตอนนี้ตั้งไว้ `treasurer.sgcu68@gmail.com`)
 
 หากโปรเจกต์ยังไม่ได้ตั้ง custom claims ต้องเพิ่มขั้นตอนตั้งค่าในฝั่ง Auth backend ก่อน
 หรือปรับ rules ให้สอดคล้องกับโมเดลสิทธิ์ที่ใช้อยู่จริง
+
+## ขั้นตอนเปิดใช้งานจริง (Deploy)
+
+1. Login Firebase CLI
+```bash
+npx --yes firebase-tools login --no-localhost
+```
+
+2. ตรวจ project ที่ active
+```bash
+npx --yes firebase-tools use
+```
+
+3. Deploy เฉพาะ Firestore Rules
+```bash
+npx --yes firebase-tools deploy --only firestore:rules
+```
+
+4. เช็คผลใน Console
+- Firebase Console -> Firestore Database -> Rules
+- ต้องเห็นกฎชุดเดียวกับไฟล์ `firestore.rules`

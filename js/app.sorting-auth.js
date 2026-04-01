@@ -304,6 +304,29 @@ function initAuthUI() {
     if (panel) {
       panel.style.display = "none";
     }
+    if (loginPageStatusEl) {
+      loginPageStatusEl.textContent = "ปิดใช้งานการเข้าสู่ระบบ (ระบบยืนยันตัวตนถูกถอดออก)";
+    }
+    if (loginPageGoogleBtnEl) {
+      loginPageGoogleBtnEl.style.display = "none";
+      loginPageGoogleBtnEl.disabled = true;
+    }
+    if (loginPageLogoutBtnEl) {
+      loginPageLogoutBtnEl.style.display = "none";
+      loginPageLogoutBtnEl.disabled = true;
+    }
+    if (loginBtnEl) {
+      loginBtnEl.style.display = "none";
+      loginBtnEl.disabled = true;
+    }
+    if (logoutBtnEl) {
+      logoutBtnEl.style.display = "none";
+      logoutBtnEl.disabled = true;
+    }
+    if (mobileLogoutBtnEl) {
+      mobileLogoutBtnEl.style.display = "none";
+      mobileLogoutBtnEl.disabled = true;
+    }
     return;
   }
 

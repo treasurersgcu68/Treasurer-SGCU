@@ -2290,6 +2290,14 @@ th.sortable.sort-desc::after {
   overflow-wrap: break-word;
 }
 
+#longestOpenTableStaff tr.project-row-advance td {
+  background: #fef2f2;
+}
+
+#longestOpenTableStaff tr.project-row-advance td:first-child {
+  box-shadow: inset 4px 0 0 #dc2626;
+}
+
 /* =========================================
    7) Charts & Calendar
 ========================================= */

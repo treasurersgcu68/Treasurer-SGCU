@@ -56,6 +56,28 @@ const EXCLUDED_PENDING_STATUSES = new Set([
   ""
 ]);
 
+const ADVANCE_NOT_BORROWED_STATUSES = new Set([
+  "",
+  "-",
+  "สำรองจ่ายก่อน",
+  "ยกเลิก",
+  "ไม่อนุมัติ / อนุมัติไม่ทันวันจัดกิจกรรม"
+]);
+
+function hasAdvanceBorrow(project) {
+  if (!project || typeof project !== "object") return false;
+  const status = (project.advanceStatus || "").toString().trim();
+  const normalizedStatus = status.toLowerCase();
+  if (
+    normalizedStatus &&
+    !ADVANCE_NOT_BORROWED_STATUSES.has(status) &&
+    !normalizedStatus.includes("ไม่ยืม")
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function filterProjects() {
   const year = yearSelect ? yearSelect.value : "all";
   const orgGroup = orgTypeSelect ? orgTypeSelect.value : "all";
@@ -338,6 +360,7 @@ function updateDashboardInsights(filtered, summary) {
         code: (p.code || "").trim(),
         name: (p.name || "").trim() || "(ไม่ระบุชื่อโครงการ)",
         org: (p.orgName || "").trim() || "(ไม่ระบุฝ่าย/ชมรม)",
+        hasAdvanceBorrow: hasAdvanceBorrow(p),
         assistant: (p.closeChecker || "").trim() || "-",
         status: statusText,
         statusBadge: `<span class="${statusCloseToBadgeClass(statusText)}">${statusText}</span>`,
@@ -386,9 +409,9 @@ function updateDashboardInsights(filtered, summary) {
       openItems.forEach((item, idx) => {
         const tr = document.createElement("tr");
         tr.classList.add("project-row");
+        if (item.hasAdvanceBorrow) tr.classList.add("project-row-advance");
         tr.dataset.longestOpenIdx = String(idx);
         const orgText = item.org ? `<span class="kpi-caption">${item.org}</span>` : "";
-        tr.className = "project-row";
         tr.style.cursor = "pointer";
         tr.tabIndex = 0;
         tr.setAttribute("role", "button");

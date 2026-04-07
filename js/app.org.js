@@ -13,21 +13,32 @@ async function loadOrgStructure() {
   toggleOrgStructureLoading(true);
   const el = document.getElementById("org-structure-content");
   try {
-    const csvText = await fetchTextWithProgress(ORG_SHEET_CSV, (ratio) => {
+    const structureCsvText = await fetchTextWithProgress(ORG_STRUCTURE_SHEET_CSV, (ratio) => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("orgStructure", ratio);
       }
     });
 
-    const parsed = Papa.parse(csvText, {
+    const parsed = Papa.parse(structureCsvText, {
       header: false,
       skipEmptyLines: false
     });
+    let authRows = null;
+    try {
+      const authCsvText = await fetchTextWithProgress(ORG_SHEET_CSV);
+      const authParsed = Papa.parse(authCsvText, {
+        header: false,
+        skipEmptyLines: false
+      });
+      authRows = authParsed.data;
+    } catch (authErr) {
+      console.error("WARN: โหลดข้อมูล staff auth ไม่สำเร็จ, ใช้ข้อมูลเดิมต่อ - app.org.js:35", authErr);
+    }
 
     const rows = parsed.data;
-    renderOrgStructure(rows);
+    renderOrgStructure(rows, authRows);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:30", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:41", err);
     recordLoadError("orgStructure", "โหลดโครงสร้างองค์กรไม่สำเร็จ", { showRetry: true });
     setInlineError(el, "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้");
   } finally {
@@ -38,7 +49,7 @@ async function loadOrgStructure() {
   }
 }
 
-function renderOrgStructure(rows) {
+function renderOrgStructure(rows, authRows = null) {
   const container = document.getElementById("org-structure-content");
   if (!container) return;
   const esc = (value) =>
@@ -59,31 +70,45 @@ function renderOrgStructure(rows) {
 
   const dataRows = rows.slice(1);
 
-  // ====== คอลัมน์ในชีตโครงสร้างองค์กร ======
-  const COL_POS    = 3;   // ตำแหน่ง
-  const COL_PREFIX = 4;   // คำนำหน้า
-  const COL_FIRST  = 5;   // ชื่อ
-  const COL_LAST   = 6;   // นามสกุล
-  const COL_NICK   = 7;   // ชื่อเล่น (ใช้เป็น key)
-  const COL_YEAR   = 9;   // J ชั้นปี
-  const COL_FAC    = 10;  // K คณะ
-  const COL_STAFF_EMAIL = 28; // AC อีเมล Staff
-  const COL_STAFF_ROLE = 27; // AB role
-  const COL_LINE   = 12;
-  const COL_PHONE  = 13;
-  const COL_PHOTO  = 26;  // ชื่อไฟล์รูป หรือ URL
+  // ====== คอลัมน์ในชีตโครงสร้างองค์กร (ORG_STRUCTURE_SHEET_CSV หลังลบ A-B) ======
+  const STRUCT_COL_POS = 1;    // เดิม D -> ใหม่ B
+  const STRUCT_COL_PREFIX = 2; // เดิม E -> ใหม่ C
+  const STRUCT_COL_FIRST = 3;  // เดิม F -> ใหม่ D
+  const STRUCT_COL_LAST = 4;   // เดิม G -> ใหม่ E
+  const STRUCT_COL_NICK = 5;   // เดิม H -> ใหม่ F
+  const STRUCT_COL_YEAR = 7;   // เดิม J -> ใหม่ H
+  const STRUCT_COL_FAC = 8;    // เดิม K -> ใหม่ I
+  const STRUCT_COL_LINE = 10;  // เดิม M -> ใหม่ K
+  const STRUCT_COL_PHONE = 11; // เดิม N -> ใหม่ L
+  const STRUCT_COL_PHOTO = 13; // เดิม AA -> ใหม่ N
 
-  const COL_ASSISTANT_KEY = COL_NICK; // ใช้ชื่อเล่นเป็น key
+  // ====== คอลัมน์ในชีตสิทธิ์ (ORG_SHEET_CSV: คงเดิม) ======
+  const AUTH_COL_POS = 3;
+  const AUTH_COL_PREFIX = 4;
+  const AUTH_COL_FIRST = 5;
+  const AUTH_COL_LAST = 6;
+  const AUTH_COL_NICK = 7;
+  const AUTH_COL_YEAR = 9;
+  const AUTH_COL_FAC = 10;
+  const AUTH_COL_LINE = 12;
+  const AUTH_COL_PHONE = 13;
+  const AUTH_COL_PHOTO = 26;
+  const AUTH_COL_STAFF_EMAIL = 28;
+  const AUTH_COL_STAFF_ROLE = 27;
+  const COL_STAFF_EMAIL_LEGACY =
+    typeof globalThis.COL_STAFF_EMAIL_LEGACY === "number"
+      ? globalThis.COL_STAFF_EMAIL_LEGACY
+      : -1;
 
-  const fullName = (r) =>
-    [r[COL_PREFIX], r[COL_FIRST], r[COL_LAST]].filter(Boolean).join(" ").trim();
+  const fullName = (r, cols) =>
+    [r[cols.prefix], r[cols.first], r[cols.last]].filter(Boolean).join(" ").trim();
 
-  const nickNameText = (r) =>
-    r[COL_NICK] ? `(${r[COL_NICK]})` : "";
+  const nickNameText = (r, cols) =>
+    r[cols.nick] ? `(${r[cols.nick]})` : "";
 
-  const initials = (r) => {
-    const f = (r[COL_FIRST] || "").charAt(0);
-    const l = (r[COL_LAST] || "").charAt(0);
+  const initials = (r, cols) => {
+    const f = (r[cols.first] || "").charAt(0);
+    const l = (r[cols.last] || "").charAt(0);
     const s = (f + l).toUpperCase();
     return s || "SG";
   };
@@ -118,55 +143,93 @@ function renderOrgStructure(rows) {
   }
 
   function avatarHTML(r, size) {
-    const url = buildAvatarUrlFromCell(r[COL_PHOTO]);
+    const url = buildAvatarUrlFromCell(r[STRUCT_COL_PHOTO]);
     const cls = size === "sm" ? "org-node-circle sm" : "org-node-circle";
     if (url) {
       return `
         <div class="${cls}">
-          <img src="${esc(url)}" alt="${esc(fullName(r))}" loading="lazy">
+          <img src="${esc(url)}" alt="${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}" loading="lazy">
         </div>
       `;
     }
-    return `<div class="${cls}">${esc(initials(r))}</div>`;
+    return `<div class="${cls}">${esc(initials(r, { first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}</div>`;
   }
 
   // ====== peopleByPos + assistantContactsByName (global) ======
   assistantContactsByName = {}; // reset global
-  staffEmails = new Set();
-  staffProfilesByEmail = {};
+  const authDataRows = Array.isArray(authRows) && authRows.length > 1 ? authRows.slice(1) : null;
+  if (authDataRows) {
+    staffEmails = new Set();
+    staffProfilesByEmail = {};
+  }
 
   const peopleByPos = {};
   for (const r of dataRows) {
-    const pos = (r[COL_POS] || "").trim();
+    const pos = (r[STRUCT_COL_POS] || "").trim();
     if (!pos) continue;
-
-    const key = (r[COL_ASSISTANT_KEY] || "").toString().trim();
-    const avatarUrl = buildAvatarUrlFromCell(r[COL_PHOTO]);
-
-    if (key) {
-      assistantContactsByName[key] = {
-        key,
-        fullName: fullName(r),
-        nick: r[COL_NICK] || "",
-        position: pos,
-        phone: (r[COL_PHONE] || "").toString().trim(),
-        line: (r[COL_LINE] || "").toString().trim(),
-        faculty: (r[COL_FAC] || "").toString().trim(),
-        year: (r[COL_YEAR] || "").toString().trim(), 
-        avatarUrl
-      };
-    }
-
     if (!peopleByPos[pos]) peopleByPos[pos] = [];
     peopleByPos[pos].push(r);
 
-    const staffEmail = (r[COL_STAFF_EMAIL] || r[COL_STAFF_EMAIL_LEGACY] || "")
-      .toString()
-      .trim()
-      .toLowerCase();
-    if (staffEmail) {
+  }
+
+  // ข้อมูล contact สำหรับ popup/Project Modal ใช้จาก ORG_SHEET_CSV
+  // ถ้าโหลด ORG_SHEET_CSV ไม่สำเร็จ ค่อย fallback ไปข้อมูลโครงสร้าง
+  const contactRows = authDataRows || dataRows;
+  const contactCols = authDataRows
+    ? {
+        pos: AUTH_COL_POS,
+        prefix: AUTH_COL_PREFIX,
+        first: AUTH_COL_FIRST,
+        last: AUTH_COL_LAST,
+        nick: AUTH_COL_NICK,
+        year: AUTH_COL_YEAR,
+        fac: AUTH_COL_FAC,
+        line: AUTH_COL_LINE,
+        phone: AUTH_COL_PHONE,
+        photo: AUTH_COL_PHOTO
+      }
+    : {
+        pos: STRUCT_COL_POS,
+        prefix: STRUCT_COL_PREFIX,
+        first: STRUCT_COL_FIRST,
+        last: STRUCT_COL_LAST,
+        nick: STRUCT_COL_NICK,
+        year: STRUCT_COL_YEAR,
+        fac: STRUCT_COL_FAC,
+        line: STRUCT_COL_LINE,
+        phone: STRUCT_COL_PHONE,
+        photo: STRUCT_COL_PHOTO
+      };
+  for (const r of contactRows) {
+    const key = (r[contactCols.nick] || "").toString().trim();
+    if (!key) continue;
+    const pos = (r[contactCols.pos] || "").trim();
+    const avatarUrl = buildAvatarUrlFromCell(r[contactCols.photo]);
+    assistantContactsByName[key] = {
+      key,
+      fullName: fullName(r, contactCols),
+      nick: r[contactCols.nick] || "",
+      position: pos,
+      phone: (r[contactCols.phone] || "").toString().trim(),
+      line: (r[contactCols.line] || "").toString().trim(),
+      faculty: (r[contactCols.fac] || "").toString().trim(),
+      year: (r[contactCols.year] || "").toString().trim(),
+      avatarUrl
+    };
+  }
+
+  if (authDataRows) {
+    for (const r of authDataRows) {
+      const pos = (r[AUTH_COL_POS] || "").trim();
+      const legacyStaffEmail =
+        COL_STAFF_EMAIL_LEGACY >= 0 ? r[COL_STAFF_EMAIL_LEGACY] : "";
+      const staffEmail = (r[AUTH_COL_STAFF_EMAIL] || legacyStaffEmail || "")
+        .toString()
+        .trim()
+        .toLowerCase();
+      if (!staffEmail) continue;
       staffEmails.add(staffEmail);
-      const nextRole = (r[COL_STAFF_ROLE] || "").toString().trim() || "0";
+      const nextRole = (r[AUTH_COL_STAFF_ROLE] || "").toString().trim() || "0";
       const existingProfile = staffProfilesByEmail[staffEmail];
       if (existingProfile) {
         const mergedRoles = new Set(
@@ -177,13 +240,13 @@ function renderOrgStructure(rows) {
         );
         staffProfilesByEmail[staffEmail] = {
           position: existingProfile.position || pos,
-          nick: existingProfile.nick || (r[COL_NICK] || "").toString().trim(),
+          nick: existingProfile.nick || (r[AUTH_COL_NICK] || "").toString().trim(),
           role: Array.from(mergedRoles).join(",")
         };
       } else {
         staffProfilesByEmail[staffEmail] = {
           position: pos,
-          nick: (r[COL_NICK] || "").toString().trim(),
+          nick: (r[AUTH_COL_NICK] || "").toString().trim(),
           role: nextRole
         };
       }
@@ -195,10 +258,32 @@ function renderOrgStructure(rows) {
     return list[index] || null;
   }
 
+  function getUniquePeople(position) {
+    const list = peopleByPos[position] || [];
+    const seen = new Set();
+    return list.filter((r) => {
+      const nick = (r[STRUCT_COL_NICK] || "").toString().trim();
+      const identity =
+        nick ||
+        fullName(r, {
+          prefix: STRUCT_COL_PREFIX,
+          first: STRUCT_COL_FIRST,
+          last: STRUCT_COL_LAST
+        });
+      if (!identity || seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
+  }
+
   function personKey(r) {
-    const nick = (r[COL_NICK] || "").toString().trim();
+    const nick = (r[STRUCT_COL_NICK] || "").toString().trim();
     if (nick) return nick;
-    return fullName(r);
+    return fullName(r, {
+      prefix: STRUCT_COL_PREFIX,
+      first: STRUCT_COL_FIRST,
+      last: STRUCT_COL_LAST
+    });
   }
 
   function renderPersonNode(r, opts = {}) {
@@ -210,9 +295,9 @@ function renderOrgStructure(rows) {
     return `
       <button class="org-node" type="button" data-person-key="${esc(key)}">
         ${avatarHTML(r, size === "sm" ? "sm" : "lg")}
-        <div class="org-node-role">${esc((r[COL_POS] || "").trim())}</div>
-        <div class="org-node-name">${esc(fullName(r))}</div>
-        <div class="org-node-nick">${esc(nickNameText(r))}</div>
+        <div class="org-node-role">${esc((r[STRUCT_COL_POS] || "").trim())}</div>
+        <div class="org-node-name">${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}</div>
+        <div class="org-node-nick">${esc(nickNameText(r, { nick: STRUCT_COL_NICK }))}</div>
       </button>
     `;
   }
@@ -241,8 +326,9 @@ function renderOrgStructure(rows) {
   const headAsset2  = getPerson("ประธานฝ่ายกายภาพและพัสดุ", 1);
 
   const depBudget   = getPerson("รองประธานฝ่ายบริหารและพัฒนางบประมาณ", 0);
-  const depFunds    = peopleByPos["รองประธานฝ่ายหาทุนและสิทธิประโยชน์"] || []; // อาจมีหลายคน
+  const depFunds    = getUniquePeople("รองประธานฝ่ายหาทุนและสิทธิประโยชน์").slice(0, 2);
   const depAsset    = getPerson("รองประธานฝ่ายกายภาพและพัสดุ", 0);
+  const secAssets   = getUniquePeople("เลขานุการฝ่ายกายภาพและพัสดุ");
 
   // ====== ประกอบ HTML Org Tree ======
   let html = `
@@ -318,6 +404,11 @@ function renderOrgStructure(rows) {
             <div class="org-branch-dep">
               ${depAsset ? renderPersonNode(depAsset, { size: "sm" }) : ""}
             </div>
+            <div class="org-branch-secretary">
+              ${secAssets.length
+                ? secAssets.map(p => renderPersonNode(p, { size: "sm" })).join("")
+                : renderAssistantBox("เลขานุการฝ่ายกายภาพและพัสดุ")}
+            </div>
             <div class="org-branch-assistant">
               ${renderAssistantBox("ผู้ช่วยฝ่ายกายภาพและพัสดุ")}
             </div>
@@ -353,11 +444,18 @@ function initOrgPersonPopup() {
           .replaceAll("'", "&#39;");
 
   const closeBtn = document.getElementById("personModalClose");
+  const dialogEl = modal.querySelector(".person-modal-dialog");
   const avatarEl = document.getElementById("personModalAvatar");
   const nameEl   = document.getElementById("personModalName");
   const nickEl   = document.getElementById("personModalNick");
   const posEl    = document.getElementById("personModalPosition");
   const contactEl= document.getElementById("personModalContact");
+
+  function syncPersonModalSize() {
+    if (!dialogEl) return;
+    const hasRoom = window.innerWidth >= 1180 && window.innerHeight >= 760;
+    dialogEl.classList.toggle("is-roomy", hasRoom);
+  }
 
   function openModalForKey(key) {
     const info = assistantContactsByName[key];
@@ -438,6 +536,7 @@ function initOrgPersonPopup() {
 
     contactEl.innerHTML = rows.join("");
 
+    syncPersonModalSize();
     openDialog(modal, { focusSelector: "#personModalClose" });
   }
 
@@ -464,6 +563,11 @@ function initOrgPersonPopup() {
     if (e.target === modal || e.target.classList.contains("person-modal-backdrop")) {
       closeModal();
     }
+  });
+
+  window.addEventListener("resize", () => {
+    if (!modal.classList.contains("show")) return;
+    syncPersonModalSize();
   });
 
 }

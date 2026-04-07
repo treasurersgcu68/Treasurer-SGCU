@@ -7,6 +7,9 @@ const SHEET_CSV_URL =
 const ORG_SHEET_CSV =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ84XOAc7rrKIloXHL5o_0ekzKdi4cQlPMUCGRPb6equG5WAguoaR2fa5ip3j7cT9noG5u9Ozv-VDot/pub?output=csv";
 
+const ORG_STRUCTURE_SHEET_CSV =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSiGgrustQXlqTrRlPj2sY7pkI7slLhTFSIKjPDHenzt0ddhhoQA6VHbffoiT29J2Hk1ndxYGKVSZ4B/pub?output=csv";
+
 const DOWNLOAD_SHEET =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTburYaUshqF-DOvbwOEinWik0KXNwqqJLfO6frlxUn1iEsLu5RzkNoum4KgnWeSwBdo4--B1eScRD5/pub?output=csv";
 

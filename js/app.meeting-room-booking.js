@@ -1898,12 +1898,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (calendarPanel && dateInput) {
     calendarPanel.addEventListener("click", (event) => {
-      const eventTarget = event.target.closest(".calendar-event[data-booking-id]");
+      const clickedElement = event.target;
+      if (!(clickedElement instanceof Element)) return;
+      const eventTarget = clickedElement.closest(".calendar-event[data-booking-id]");
       if (eventTarget && eventTarget.dataset.bookingId) {
         openBookingDetailModal(eventTarget.dataset.bookingId);
         return;
       }
-      const target = event.target.closest(".calendar-day");
+      const target = clickedElement.closest(".calendar-day");
       if (!target || !target.dataset?.date) return;
       const nextValue = target.dataset.date;
       dateInput.value = nextValue;

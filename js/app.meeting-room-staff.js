@@ -1388,7 +1388,7 @@ function initMeetingRoomStaffApproval() {
         }
       }
 
-      const button = event.target;
+      const button = clickedElement.closest("button");
       if (!(button instanceof HTMLButtonElement)) return;
       const action = button.dataset.action;
       const id = button.dataset.id;

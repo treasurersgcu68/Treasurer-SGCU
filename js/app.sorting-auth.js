@@ -340,6 +340,12 @@ function initAuthUI() {
 
   if (!auth) return;
   const AUTH_SESSION_KEY = "sgcu_auth_session_started_at";
+  const sessionMaxAgeMs =
+    typeof AUTH_SESSION_MAX_AGE_MS === "number" &&
+    Number.isFinite(AUTH_SESSION_MAX_AGE_MS) &&
+    AUTH_SESSION_MAX_AGE_MS > 0
+      ? AUTH_SESSION_MAX_AGE_MS
+      : 8 * 60 * 60 * 1000;
 
   function readAuthSession() {
     try {
@@ -433,7 +439,7 @@ function initAuthUI() {
   onAuthStateChanged(auth, (user) => {
     if (user) {
       const startedAt = resolveSessionStart(user);
-      if (startedAt && Date.now() - startedAt >= AUTH_SESSION_MAX_AGE_MS) {
+      if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
           console.error("auto logout error (session expired) - app.sorting-auth.js:421", err);

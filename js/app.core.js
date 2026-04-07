@@ -32,6 +32,21 @@ const DEFAULT_BASE_GROUPS = [
   "องค์การบริหารสโมสรนิสิต, สภานิสิต"
 ];
 
+// Auth/session defaults (can be overridden from global config before scripts run)
+const AUTH_SESSION_MAX_AGE_MS =
+  typeof globalThis.AUTH_SESSION_MAX_AGE_MS === "number" &&
+  Number.isFinite(globalThis.AUTH_SESSION_MAX_AGE_MS) &&
+  globalThis.AUTH_SESSION_MAX_AGE_MS > 0
+    ? globalThis.AUTH_SESSION_MAX_AGE_MS
+    : 8 * 60 * 60 * 1000; // 8 hours
+
+// Backward-compat for legacy auth sheet column mapping
+const COL_STAFF_EMAIL_LEGACY =
+  typeof globalThis.COL_STAFF_EMAIL_LEGACY === "number" &&
+  Number.isFinite(globalThis.COL_STAFF_EMAIL_LEGACY)
+    ? globalThis.COL_STAFF_EMAIL_LEGACY
+    : -1;
+
 // Cache
 const CACHE_TTL_MS = 3 * 60 * 1000; // 3 นาที
 const CACHE_KEYS = {

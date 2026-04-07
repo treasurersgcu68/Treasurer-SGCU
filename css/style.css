@@ -3650,6 +3650,36 @@ th.sortable.sort-desc::after {
   transform: translateY(0) scale(1);
 }
 
+.person-modal-dialog.is-roomy {
+  width: 560px;
+  padding: 30px 34px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-header {
+  gap: 20px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-avatar {
+  width: 148px;
+  height: 148px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-position {
+  font-size: 20px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-name {
+  font-size: 24px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-nick {
+  font-size: 15px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-contact {
+  font-size: 14px;
+}
+
 .person-modal-close {
   border: none;
   background: none;

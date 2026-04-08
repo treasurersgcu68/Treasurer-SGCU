@@ -25,18 +25,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const projectCodeState = document.getElementById("meetingProjectCodeState");
   const projectNamePreview = document.getElementById("meetingProjectNamePreview");
   const messageEl = document.getElementById("meetingBookingMessage");
-  const tableBody = document.getElementById("meetingRoomTableBody");
+  let tableBody = document.getElementById("meetingRoomTableBody");
   const calendarPanel = document.getElementById("meetingRoomCalendar");
   const calendarTitle = document.getElementById("meetingCalendarTitle");
   const calendarPanelWrap = document.getElementById("meetingRoomCalendarPanel");
-  const listPanel = document.getElementById("meetingRoomListPanel");
-  const viewCalendarBtn = document.getElementById("meetingViewCalendarBtn");
-  const viewListBtn = document.getElementById("meetingViewListBtn");
+  let listPanel = document.getElementById("meetingRoomListPanel");
+  let viewCalendarBtn = document.getElementById("meetingViewCalendarBtn");
+  let viewListBtn = document.getElementById("meetingViewListBtn");
   const calendarPrevBtn = document.getElementById("meetingCalendarPrevMonth");
   const calendarNextBtn = document.getElementById("meetingCalendarNextMonth");
-  const bookingCountEl = document.getElementById("meetingRoomBookingCount");
-  const pendingCountEl = document.getElementById("meetingRoomPendingCount");
-  const latestDateEl = document.getElementById("meetingRoomLatestDate");
+  let bookingCountEl = document.getElementById("meetingRoomBookingCount");
+  let pendingCountEl = document.getElementById("meetingRoomPendingCount");
+  let latestDateEl = document.getElementById("meetingRoomLatestDate");
   const bookingDetailModalEl = document.getElementById("meetingBookingDetailModal");
   const bookingDetailTitleEl = document.getElementById("meetingBookingDetailTitle");
   const bookingDetailBodyEl = document.getElementById("meetingBookingDetailBody");
@@ -322,6 +322,83 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!rescheduleMessageEl) return;
     rescheduleMessageEl.textContent = text || "";
     rescheduleMessageEl.style.color = color;
+  };
+
+  const ensureBookingListUI = () => {
+    if (tableBody && listPanel && viewCalendarBtn && viewListBtn && bookingCountEl && pendingCountEl && latestDateEl) {
+      return;
+    }
+    const bookingPage = document.querySelector('.page-view[data-page="meeting-room-booking"] .page');
+    if (!bookingPage) return;
+    const calendarPanelNode = document.getElementById("meetingRoomCalendarPanel");
+    if (!calendarPanelNode) return;
+
+    let toolbar = document.getElementById("meetingRoomViewToggle");
+    if (!toolbar) {
+      toolbar = document.createElement("div");
+      toolbar.id = "meetingRoomViewToggle";
+      toolbar.className = "tabs";
+      toolbar.style.margin = "14px 0";
+      toolbar.innerHTML = `
+        <button id="meetingViewCalendarBtn" class="tab-btn view-toggle-btn is-active" type="button">มุมมองปฏิทิน</button>
+        <button id="meetingViewListBtn" class="tab-btn view-toggle-btn" type="button">มุมมองรายการ</button>
+      `;
+      calendarPanelNode.parentNode?.insertBefore(toolbar, calendarPanelNode);
+    }
+
+    let summary = document.getElementById("meetingRoomListSummary");
+    if (!summary) {
+      summary = document.createElement("div");
+      summary.id = "meetingRoomListSummary";
+      summary.className = "section-text-sm";
+      summary.style.margin = "0 0 10px";
+      summary.innerHTML = `
+        ทั้งหมด <strong id="meetingRoomBookingCount">0</strong> รายการ ·
+        รอ/กำลังจะถึงเวลา <strong id="meetingRoomPendingCount">0</strong> รายการ ·
+        <span id="meetingRoomLatestDate">ยังไม่มีข้อมูล</span>
+      `;
+      calendarPanelNode.parentNode?.insertBefore(summary, calendarPanelNode);
+    }
+
+    let listPanelNode = document.getElementById("meetingRoomListPanel");
+    if (!listPanelNode) {
+      listPanelNode = document.createElement("div");
+      listPanelNode.id = "meetingRoomListPanel";
+      listPanelNode.className = "panel panel-hover section-appear section-delay-2";
+      listPanelNode.style.display = "none";
+      listPanelNode.innerHTML = `
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">รายการคำขอจองห้องประชุม</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ห้อง</th>
+                  <th>วันที่</th>
+                  <th>เวลา</th>
+                  <th>ผู้ขอ</th>
+                  <th>วัตถุประสงค์</th>
+                </tr>
+              </thead>
+              <tbody id="meetingRoomTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      calendarPanelNode.parentNode?.insertBefore(listPanelNode, calendarPanelNode.nextSibling);
+    }
+
+    viewCalendarBtn = document.getElementById("meetingViewCalendarBtn");
+    viewListBtn = document.getElementById("meetingViewListBtn");
+    bookingCountEl = document.getElementById("meetingRoomBookingCount");
+    pendingCountEl = document.getElementById("meetingRoomPendingCount");
+    latestDateEl = document.getElementById("meetingRoomLatestDate");
+    listPanel = document.getElementById("meetingRoomListPanel");
+    tableBody = document.getElementById("meetingRoomTableBody");
   };
 
   const buildStorageBooking = (item) => ({
@@ -1866,6 +1943,7 @@ document.addEventListener("DOMContentLoaded", () => {
   currentUserEmail = readCurrentUserEmail();
   setMinDate();
   ensureFormContactFields();
+  ensureBookingListUI();
   startCalendar();
   updateMeetingRoomView(meetingRoomActiveView || "calendar");
   renderMeetingLoadState();

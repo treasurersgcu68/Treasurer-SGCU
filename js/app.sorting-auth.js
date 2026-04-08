@@ -473,7 +473,7 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:454", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:476", err);
         });
         refreshAuthDisplay(null);
         return;
@@ -527,7 +527,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:508", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:530", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");

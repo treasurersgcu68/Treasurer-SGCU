@@ -111,6 +111,27 @@ function updateNavVisibility(isAuthenticated) {
       link.style.display = "";
     }
   });
+  syncDesktopNavGroupVisibility();
+}
+
+function syncDesktopNavGroupVisibility() {
+  const navGroups = Array.from(document.querySelectorAll(".desktop-nav .nav-group"));
+  navGroups.forEach((group) => {
+    const toggleBtn = group.querySelector(".nav-group-toggle");
+    const menu = group.querySelector(".nav-group-menu");
+    if (!toggleBtn || !menu) return;
+    const links = Array.from(menu.querySelectorAll("a[data-page]"));
+    const hasVisibleLinks = links.some((link) => link.style.display !== "none");
+
+    group.style.display = hasVisibleLinks ? "" : "none";
+    if (hasVisibleLinks) return;
+
+    // Ensure hidden groups are also closed/reset.
+    group.classList.remove("is-open");
+    toggleBtn.setAttribute("aria-expanded", "false");
+    menu.classList.remove("show");
+    menu.setAttribute("aria-hidden", "true");
+  });
 }
 
 function syncRoleNavContainers() {
@@ -120,6 +141,13 @@ function syncRoleNavContainers() {
 
   if (desktopGeneral) desktopGeneral.style.display = isStaffMode ? "none" : "flex";
   if (desktopStaff) desktopStaff.style.display = isStaffMode ? "flex" : "none";
+}
+
+function normalizeStaffRoleCode(role) {
+  const raw = (role || "").toString().trim();
+  if (!raw) return "0";
+  const normalized = raw.replace(/^0+(?=\d)/, "");
+  return normalized || "0";
 }
 
 function getAllowedPagesForCurrentState() {
@@ -141,11 +169,12 @@ function getAllowedPagesForCurrentState() {
 
   if (staffAuthUser && staffViewMode === "staff") {
     const roleAllowedMap = {
-      "00": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"],
-      "01": ["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"],
-      "04": ["borrow-assets-staff", "login"]
+      "0": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"],
+      "1": ["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"],
+      "4": ["borrow-assets-staff", "login"],
+      "9": ["meeting-room-staff", "login"]
     };
-    const roleAllowed = roleAllowedMap[staffAuthUser.role || ""] ||
+    const roleAllowed = roleAllowedMap[normalizeStaffRoleCode(staffAuthUser.role)] ||
       ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"];
     return new Set(roleAllowed);
   }
@@ -168,7 +197,7 @@ function getStaffProfileByEmail(email) {
     email: normalized,
     position: profile.position || "",
     nick: profile.nick || "",
-    role: profile.role || "00"
+    role: normalizeStaffRoleCode(profile.role)
   };
 }
 
@@ -241,18 +270,20 @@ function updateNavForStaff(staffUser) {
   if (staffViewMode !== "staff") return;
 
   const roleAllowedMap = {
-    "00": new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]),
-    "01": new Set(["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"]),
-    "04": new Set(["borrow-assets-staff", "login"])
+    "0": new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]),
+    "1": new Set(["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"]),
+    "4": new Set(["borrow-assets-staff", "login"]),
+    "9": new Set(["meeting-room-staff", "login"])
   };
 
-  const allowedStaffPages = roleAllowedMap[staffUser.role || ""] ||
+  const allowedStaffPages = roleAllowedMap[normalizeStaffRoleCode(staffUser.role)] ||
     new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]);
 
   navLinksAll.forEach((link) => {
     const page = link.dataset.page || "";
     link.style.display = allowedStaffPages.has(page) ? "" : "none";
   });
+  syncDesktopNavGroupVisibility();
 }
 
 function getPreferredPageForState(isAuth) {
@@ -442,7 +473,7 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:421", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:454", err);
         });
         refreshAuthDisplay(null);
         return;
@@ -496,7 +527,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:508", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");

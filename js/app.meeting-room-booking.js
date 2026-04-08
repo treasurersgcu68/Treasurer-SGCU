@@ -81,18 +81,24 @@ document.addEventListener("DOMContentLoaded", () => {
   let projectLookupReady = false;
   let projectByCode = new Map();
   let meetingRooms = [...DEFAULT_MEETING_ROOMS];
-  const firestore = window.sgcuFirestore || {};
-  const hasFirestore = !!(
-    firestore.db &&
-    firestore.collection &&
-    firestore.addDoc &&
-    firestore.onSnapshot &&
-    firestore.query &&
-    firestore.orderBy &&
-    firestore.doc &&
-    firestore.updateDoc &&
-    firestore.serverTimestamp
-  );
+  let firestore = window.sgcuFirestore || {};
+  let hasFirestore = false;
+  const resolveFirestoreBridge = () => {
+    firestore = window.sgcuFirestore || {};
+    hasFirestore = !!(
+      firestore.db &&
+      firestore.collection &&
+      firestore.addDoc &&
+      firestore.onSnapshot &&
+      firestore.query &&
+      firestore.orderBy &&
+      firestore.doc &&
+      firestore.updateDoc &&
+      firestore.serverTimestamp
+    );
+    return hasFirestore;
+  };
+  resolveFirestoreBridge();
   let meetingRoomActiveView = "calendar";
 
   const normalizeStatus = (status) => {
@@ -325,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const ensureBookingListUI = () => {
-    if (tableBody && listPanel && viewCalendarBtn && viewListBtn && bookingCountEl && pendingCountEl && latestDateEl) {
+    if (tableBody && listPanel) {
       return;
     }
     const bookingPage = document.querySelector('.page-view[data-page="meeting-room-booking"] .page');
@@ -333,32 +339,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const calendarPanelNode = document.getElementById("meetingRoomCalendarPanel");
     if (!calendarPanelNode) return;
 
-    let toolbar = document.getElementById("meetingRoomViewToggle");
-    if (!toolbar) {
-      toolbar = document.createElement("div");
-      toolbar.id = "meetingRoomViewToggle";
-      toolbar.className = "tabs";
-      toolbar.style.margin = "14px 0";
-      toolbar.innerHTML = `
-        <button id="meetingViewCalendarBtn" class="tab-btn view-toggle-btn is-active" type="button">มุมมองปฏิทิน</button>
-        <button id="meetingViewListBtn" class="tab-btn view-toggle-btn" type="button">มุมมองรายการ</button>
-      `;
-      calendarPanelNode.parentNode?.insertBefore(toolbar, calendarPanelNode);
-    }
+    // Remove legacy view-toggle UI and keep calendar-only UX.
+    const toolbar = document.getElementById("meetingRoomViewToggle");
+    if (toolbar) toolbar.remove();
+    if (viewCalendarBtn) viewCalendarBtn.remove();
+    if (viewListBtn) viewListBtn.remove();
 
-    let summary = document.getElementById("meetingRoomListSummary");
-    if (!summary) {
-      summary = document.createElement("div");
-      summary.id = "meetingRoomListSummary";
-      summary.className = "section-text-sm";
-      summary.style.margin = "0 0 10px";
-      summary.innerHTML = `
-        ทั้งหมด <strong id="meetingRoomBookingCount">0</strong> รายการ ·
-        รอ/กำลังจะถึงเวลา <strong id="meetingRoomPendingCount">0</strong> รายการ ·
-        <span id="meetingRoomLatestDate">ยังไม่มีข้อมูล</span>
-      `;
-      calendarPanelNode.parentNode?.insertBefore(summary, calendarPanelNode);
-    }
+    const summary = document.getElementById("meetingRoomListSummary");
+    if (summary) summary.remove();
+    const legacyCount = document.getElementById("meetingRoomBookingCount");
+    if (legacyCount) legacyCount.closest("#meetingRoomListSummary")?.remove();
+    const legacyPending = document.getElementById("meetingRoomPendingCount");
+    if (legacyPending) legacyPending.closest("#meetingRoomListSummary")?.remove();
+    const legacyLatest = document.getElementById("meetingRoomLatestDate");
+    if (legacyLatest) legacyLatest.closest("#meetingRoomListSummary")?.remove();
 
     let listPanelNode = document.getElementById("meetingRoomListPanel");
     if (!listPanelNode) {
@@ -392,11 +386,11 @@ document.addEventListener("DOMContentLoaded", () => {
       calendarPanelNode.parentNode?.insertBefore(listPanelNode, calendarPanelNode.nextSibling);
     }
 
-    viewCalendarBtn = document.getElementById("meetingViewCalendarBtn");
-    viewListBtn = document.getElementById("meetingViewListBtn");
-    bookingCountEl = document.getElementById("meetingRoomBookingCount");
-    pendingCountEl = document.getElementById("meetingRoomPendingCount");
-    latestDateEl = document.getElementById("meetingRoomLatestDate");
+    viewCalendarBtn = null;
+    viewListBtn = null;
+    bookingCountEl = null;
+    pendingCountEl = null;
+    latestDateEl = null;
     listPanel = document.getElementById("meetingRoomListPanel");
     tableBody = document.getElementById("meetingRoomTableBody");
   };
@@ -455,6 +449,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let bookingsLoadFailed = false;
   let meetingStateEl = null;
   let activeDayModalDate = "";
+  let autoRetryTimer = null;
+  let autoRetryAttempt = 0;
 
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
@@ -575,6 +571,15 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const retryMeetingSubscriptions = () => {
+    resolveFirestoreBridge();
+    if (!hasFirestore) {
+      renderMeetingLoadState();
+      return;
+    }
+    if (autoRetryTimer) {
+      window.clearTimeout(autoRetryTimer);
+      autoRetryTimer = null;
+    }
     if (typeof unsubscribe === "function") unsubscribe();
     if (typeof unsubscribeRooms === "function") unsubscribeRooms();
     if (typeof unsubscribeHolidays === "function") unsubscribeHolidays();
@@ -589,6 +594,27 @@ document.addEventListener("DOMContentLoaded", () => {
     subscribeBookings();
     subscribeHolidays();
     renderMeetingLoadState();
+  };
+
+  const scheduleMeetingAutoRetry = () => {
+    resolveFirestoreBridge();
+    if (!hasFirestore) return;
+    if (autoRetryTimer) return;
+    const attempt = Math.min(autoRetryAttempt, 4);
+    const delayMs = Math.min(12000, 1000 * (2 ** attempt));
+    autoRetryAttempt += 1;
+    autoRetryTimer = window.setTimeout(() => {
+      autoRetryTimer = null;
+      retryMeetingSubscriptions();
+    }, delayMs);
+  };
+
+  const clearMeetingAutoRetry = () => {
+    if (autoRetryTimer) {
+      window.clearTimeout(autoRetryTimer);
+      autoRetryTimer = null;
+    }
+    autoRetryAttempt = 0;
   };
 
   const renderMeetingLoadState = () => {
@@ -615,8 +641,10 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       const retryBtn = stateEl.querySelector("#meetingRoomRetryButton");
       if (retryBtn) retryBtn.addEventListener("click", retryMeetingSubscriptions);
+      scheduleMeetingAutoRetry();
       return;
     }
+    clearMeetingAutoRetry();
     if (!bookings.length) {
       stateEl.hidden = false;
       stateEl.style.color = "#6b7280";
@@ -1213,35 +1241,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const updateMeetingRoomView = (mode = "calendar") => {
-    const nextMode = mode === "list" && listPanel ? "list" : "calendar";
-    meetingRoomActiveView = nextMode;
+    meetingRoomActiveView = "calendar";
 
     if (calendarPanelWrap) {
-      calendarPanelWrap.style.display = nextMode === "calendar" ? "" : "none";
+      calendarPanelWrap.style.display = "";
     }
     if (listPanel) {
-      listPanel.style.display = nextMode === "list" ? "" : "none";
+      listPanel.style.display = "none";
     }
 
-    if (viewCalendarBtn) {
-      if (nextMode === "calendar") {
-        viewCalendarBtn.classList.add("is-active");
-      } else {
-        viewCalendarBtn.classList.remove("is-active");
-      }
-    }
-
-    if (viewListBtn) {
-      if (nextMode === "list") {
-        viewListBtn.classList.add("is-active");
-      } else {
-        viewListBtn.classList.remove("is-active");
-      }
-    }
-
-    if (nextMode === "calendar") {
-      renderCalendarOverview();
-    }
+    renderCalendarOverview();
   };
 
   const escapeText = (text) => {
@@ -1473,6 +1482,7 @@ document.addEventListener("DOMContentLoaded", () => {
           setupRoomOptions();
           renderRows();
           renderCalendarOverview();
+          scheduleMeetingAutoRetry();
         }
       );
     } catch (err) {
@@ -1482,6 +1492,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setupRoomOptions();
       renderRows();
       renderCalendarOverview();
+      scheduleMeetingAutoRetry();
     }
   };
 
@@ -1526,6 +1537,7 @@ document.addEventListener("DOMContentLoaded", () => {
           bookingsLoadFailed = true;
           setMessage("เกิดปัญหาการดึงข้อมูลการจอง", "#b91c1c");
           renderMeetingLoadState();
+          scheduleMeetingAutoRetry();
         }
       );
     } catch (err) {
@@ -1533,6 +1545,7 @@ document.addEventListener("DOMContentLoaded", () => {
       bookingsLoadFailed = true;
       setMessage("ไม่สามารถเชื่อมต่อ Firestore ได้", "#b91c1c");
       renderMeetingLoadState();
+      scheduleMeetingAutoRetry();
     }
   };
 
@@ -1936,6 +1949,9 @@ document.addEventListener("DOMContentLoaded", () => {
       currentUserEmail = readCurrentUserEmail();
       setupRoomOptions();
       renderOwnBookingOptions();
+      if (resolveFirestoreBridge() && (roomsLoadFailed || bookingsLoadFailed || !roomsLoaded || !bookingsLoaded)) {
+        retryMeetingSubscriptions();
+      }
     });
   }
 
@@ -1947,7 +1963,6 @@ document.addEventListener("DOMContentLoaded", () => {
   startCalendar();
   updateMeetingRoomView(meetingRoomActiveView || "calendar");
   renderMeetingLoadState();
-  subscribeRooms();
 
   if (viewCalendarBtn) {
     viewCalendarBtn.addEventListener("click", () => {
@@ -2007,14 +2022,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  if (!hasFirestore) {
-    setMessage("ระบบยังไม่เชื่อมต่อ Firestore โปรดตรวจสอบการตั้งค่า", "#b91c1c");
+  if (resolveFirestoreBridge()) {
+    subscribeRooms();
+    subscribeBookings();
+    subscribeHolidays();
+  } else {
+    setMessage("กำลังเชื่อมต่อข้อมูลห้องประชุม...", "#6b7280");
     renderMeetingLoadState();
-    return;
+    const startedAt = Date.now();
+    const waitTimer = window.setInterval(() => {
+      if (resolveFirestoreBridge()) {
+        window.clearInterval(waitTimer);
+        setMessage("");
+        retryMeetingSubscriptions();
+        return;
+      }
+      if (Date.now() - startedAt >= 15000) {
+        window.clearInterval(waitTimer);
+        setMessage("ระบบยังไม่เชื่อมต่อ Firestore โปรดตรวจสอบการตั้งค่า", "#b91c1c");
+        renderMeetingLoadState();
+      }
+    }, 300);
   }
-
-  subscribeBookings();
-  subscribeHolidays();
 
   if (bookingDetailCloseEl) {
     bookingDetailCloseEl.addEventListener("click", closeBookingDetailModal);

@@ -95,7 +95,7 @@ function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatus
 function updateNavVisibility(isAuthenticated) {
   if (!navLinksAll.length) return;
   const allowedPages = getAllowedPagesForCurrentState();
-  const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
+  const publicAllowed = new Set(["home", "about", "project-status", "news", "financial-docs", "login"]);
   navLinksAll.forEach((link) => {
     const mode = link.dataset.visible || "public";
     const page = link.dataset.page || "";
@@ -151,7 +151,7 @@ function normalizeStaffRoleCode(role) {
 }
 
 function getAllowedPagesForCurrentState() {
-  const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
+  const publicAllowed = new Set(["home", "about", "project-status", "news", "financial-docs", "login"]);
   if (!isUserAuthenticated) {
     return publicAllowed;
   }
@@ -473,7 +473,7 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:454", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:476", err);
         });
         refreshAuthDisplay(null);
         return;
@@ -527,7 +527,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:508", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:530", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");

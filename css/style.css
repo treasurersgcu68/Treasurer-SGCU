@@ -2793,12 +2793,206 @@ th.sortable.sort-desc::after {
   padding: 20px 0 40px;
 }
 
+/* ======================
+   ABOUT PAGE
+====================== */
+
+.about-page {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.about-intro {
+  margin-top: 0;
+  background: linear-gradient(180deg, #ffffff, #fff8fc);
+}
+
+.about-intro p {
+  margin: 0;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+}
+
+.about-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.about-card {
+  margin-top: 0;
+  background: linear-gradient(180deg, #ffffff, #fffafb);
+}
+
+.about-card-highlight {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(236, 72, 153, 0.25);
+  box-shadow: 0 14px 32px rgba(236, 72, 153, 0.14);
+}
+
+.about-card-highlight::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f9a8d4, #ec4899, #be185d);
+}
+
+.about-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.about-card-kicker {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9d174d;
+  background: #fce7f3;
+  border: 1px solid rgba(236, 72, 153, 0.25);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.about-list-check {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+.about-list-check li {
+  padding-left: 0;
+}
+
+.about-card-combined {
+  padding-top: 16px;
+}
+
+.about-combined-block + .about-combined-block {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(236, 72, 153, 0.28);
+}
+
+.about-card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #831843;
+}
+
+.about-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #374151;
+}
+
+.about-card p + p {
+  margin-top: 10px;
+}
+
+.about-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #374151;
+}
+
+.about-card li {
+  margin-bottom: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.about-card li:last-child {
+  margin-bottom: 0;
+}
+
+.about-section-block {
+  width: 100%;
+  margin: 0;
+  padding: 10px 0 4px;
+}
+
+.about-page .home-section-header {
+  max-width: none;
+  margin: 0 0 14px;
+  text-align: left;
+}
+
+.about-page .home-section-header h2 {
+  font-size: 20px;
+  color: #831843;
+}
+
+.about-page .home-section-header p {
+  font-size: 13px;
+}
+
+.about-page .home-scope {
+  padding-bottom: 8px;
+}
+
+.about-page .home-scope-pills {
+  justify-content: flex-start;
+}
+
+.about-page .home-scope-grid {
+  max-width: none;
+}
+
+.about-page .scope-team-card {
+  box-shadow: 0 12px 28px rgba(236, 72, 153, 0.1);
+}
+
+.about-page .home-org {
+  padding-bottom: 10px;
+}
+
 .home-news-grid {
   max-width: 1100px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 18px;
+}
+
+.home-origin-card {
+  max-width: 1100px;
+  margin: 0 auto;
+  border-color: rgba(236, 72, 153, 0.22);
+  background: #ffffff;
+}
+
+.home-origin {
+  max-width: 1100px;
+  margin: 10px auto 0;
+  padding-top: 18px;
+  border-top: 1px solid rgba(236, 72, 153, 0.18);
+}
+
+.home-origin-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #831843;
+}
+
+.home-origin-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #374151;
+}
+
+.home-origin-card p + p {
+  margin-top: 10px;
 }
 
 .kpi-label {
@@ -3087,6 +3281,11 @@ th.sortable.sort-desc::after {
   .home-news {
     padding-top: 14px;
     padding-bottom: 28px;
+  }
+
+  .home-origin {
+    margin-top: 2px;
+    padding-top: 14px;
   }
 
   .home-news-grid {
@@ -4379,6 +4578,23 @@ th.sortable.sort-desc::after {
 @media (max-width: 640px) {
   .filter-bar, .cards, .calendar-filter-bar {
     grid-template-columns: 1fr;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .about-card h2 {
+    font-size: 16px;
+  }
+
+  .about-page .home-section-header h2 {
+    font-size: 18px;
+  }
+
+  .about-page .home-scope-pills {
+    justify-content: center;
   }
 
   .dashboard-grid {

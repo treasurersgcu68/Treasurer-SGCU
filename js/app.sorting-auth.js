@@ -95,7 +95,7 @@ function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatus
 function updateNavVisibility(isAuthenticated) {
   if (!navLinksAll.length) return;
   const allowedPages = getAllowedPagesForCurrentState();
-  const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
+  const publicAllowed = new Set(["home", "about", "project-status", "news", "financial-docs", "login"]);
   navLinksAll.forEach((link) => {
     const mode = link.dataset.visible || "public";
     const page = link.dataset.page || "";
@@ -151,7 +151,7 @@ function normalizeStaffRoleCode(role) {
 }
 
 function getAllowedPagesForCurrentState() {
-  const publicAllowed = new Set(["home", "project-status", "news", "financial-docs", "login"]);
+  const publicAllowed = new Set(["home", "about", "project-status", "news", "financial-docs", "login"]);
   if (!isUserAuthenticated) {
     return publicAllowed;
   }

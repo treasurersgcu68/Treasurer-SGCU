@@ -482,7 +482,7 @@ function updateTrendLineChart(filtered) {
 
   trendLineChart.data.labels = labels;
   trendLineChart.data.datasets[0].data = data;
-  trendLineChart.update();
+  trendLineChart.update("none");
 }
 
 function updateDonutChart(existingChart, canvasEl, percent, color, tooltipLines = null) {
@@ -535,7 +535,7 @@ function updateDonutChart(existingChart, canvasEl, percent, color, tooltipLines 
   if (existingChart) {
     existingChart.data = data;
     existingChart.options = options;
-    existingChart.update();
+    existingChart.update("none");
     return existingChart;
   }
 
@@ -841,6 +841,7 @@ function renderHomeKpis(sourceProjects = projects) {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: false,
     scales: {
       y: {
         beginAtZero: true,
@@ -866,7 +867,7 @@ function renderHomeKpis(sourceProjects = projects) {
   if (homeKpiChart) {
     homeKpiChart.data = chartData;
     homeKpiChart.options = options;
-    homeKpiChart.update();
+    homeKpiChart.update("none");
   } else {
     const ctx = document.getElementById("homeKpiChart");
     if (!ctx) return;

@@ -148,7 +148,15 @@ function renderOrgStructure(rows, authRows = null) {
     if (url) {
       return `
         <div class="${cls}">
-          <img src="${esc(url)}" alt="${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}" loading="lazy">
+          <img
+            src="${esc(url)}"
+            alt="${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            width="128"
+            height="128"
+          >
         </div>
       `;
     }

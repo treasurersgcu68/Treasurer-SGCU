@@ -1,4 +1,27 @@
 /* Sorting + auth gating for Project Status */
+const lastProjectStatusRefreshSignatureByContext = {
+  public: "",
+  staff: ""
+};
+const lastProjectStatusProjectsRefByContext = {
+  public: null,
+  staff: null
+};
+
+function buildProjectStatusRefreshSignature(ctxKey) {
+  const ctx = projectStatusContexts[ctxKey] || {};
+  return [
+    ctx.yearSelect?.value || "all",
+    ctx.orgTypeSelect?.value || "all",
+    ctx.orgSelect?.value || "all",
+    (ctx.projectSearchInput?.value || "").trim().toLowerCase(),
+    ctx.longestOpenAssistantFilterEl?.value || "all",
+    ctx.longestOpenStatusFilterEl?.value || "all",
+    currentSort?.key || "",
+    currentSort?.direction || "asc"
+  ].join("||");
+}
+
 function sortProjects(projects, key, direction) {
   const sorted = [...projects];
 
@@ -36,6 +59,14 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   if (!Array.isArray(projects)) return;
 
   setActiveProjectStatusContext(ctxKey);
+  const signature = buildProjectStatusRefreshSignature(ctxKey);
+  if (
+    lastProjectStatusRefreshSignatureByContext[ctxKey] === signature &&
+    lastProjectStatusProjectsRefByContext[ctxKey] === projects
+  ) {
+    syncChartsToContext(ctxKey);
+    return;
+  }
 
   let filtered = filterProjects();
 
@@ -57,6 +88,8 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
     tableCaptionEl.textContent = `แสดง ${filtered.length} โครงการ`;
   }
 
+  lastProjectStatusRefreshSignatureByContext[ctxKey] = signature;
+  lastProjectStatusProjectsRefByContext[ctxKey] = projects;
   syncChartsToContext(ctxKey);
 }
 
@@ -376,7 +409,7 @@ function initAuthUI() {
     Number.isFinite(AUTH_SESSION_MAX_AGE_MS) &&
     AUTH_SESSION_MAX_AGE_MS > 0
       ? AUTH_SESSION_MAX_AGE_MS
-      : 8 * 60 * 60 * 1000;
+      : 7 * 24 * 60 * 60 * 1000;
 
   function readAuthSession() {
     try {

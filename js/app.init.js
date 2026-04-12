@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   appLoaderErrorEl = document.getElementById("appLoaderError");
   appLoaderErrorTextEl = document.getElementById("appLoaderErrorText");
   appLoaderRetryEl = document.getElementById("appLoaderRetry");
-  void initDailyVisitorCounter();
+  scheduleIdleTask(() => runBackgroundTask(initDailyVisitorCounter, "visitors"));
   let loaderPercent = 0;
 
   const setLoaderPercent = (value) => {

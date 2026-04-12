@@ -1475,7 +1475,17 @@ document.addEventListener("DOMContentLoaded", () => {
           renderRows();
           renderCalendarOverview();
         },
-        () => {
+        (err) => {
+          const code = (err?.code || "").toString().trim();
+          const currentUserEmail = readCurrentUserEmail();
+          if (code === "permission-denied" && !currentUserEmail) {
+            roomsLoaded = false;
+            roomsLoadFailed = false;
+            setMessage("กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูล...", "#6b7280");
+            renderMeetingLoadState();
+            scheduleMeetingAutoRetry();
+            return;
+          }
           meetingRooms = [...DEFAULT_MEETING_ROOMS];
           roomsLoaded = true;
           roomsLoadFailed = true;
@@ -1532,7 +1542,17 @@ document.addEventListener("DOMContentLoaded", () => {
             void migrateLocalStorageToFirestore();
           }
         },
-        () => {
+        (err) => {
+          const code = (err?.code || "").toString().trim();
+          const currentUserEmail = readCurrentUserEmail();
+          if (code === "permission-denied" && !currentUserEmail) {
+            bookingsLoaded = false;
+            bookingsLoadFailed = false;
+            setMessage("กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูล...", "#6b7280");
+            renderMeetingLoadState();
+            scheduleMeetingAutoRetry();
+            return;
+          }
           bookingsLoaded = true;
           bookingsLoadFailed = true;
           setMessage("เกิดปัญหาการดึงข้อมูลการจอง", "#b91c1c");

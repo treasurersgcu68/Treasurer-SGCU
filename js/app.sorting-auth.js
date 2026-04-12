@@ -15,6 +15,9 @@ function buildProjectStatusRefreshSignature(ctxKey) {
     ctx.orgTypeSelect?.value || "all",
     ctx.orgSelect?.value || "all",
     (ctx.projectSearchInput?.value || "").trim().toLowerCase(),
+    ctx.projectStatusFilterEl?.value || "all",
+    (ctx.projectBudgetMinInput?.value || "").trim(),
+    (ctx.projectBudgetMaxInput?.value || "").trim(),
     ctx.longestOpenAssistantFilterEl?.value || "all",
     ctx.longestOpenStatusFilterEl?.value || "all",
     currentSort?.key || "",
@@ -36,8 +39,8 @@ function sortProjects(projects, key, direction) {
       case "status":
         v1 = (a.statusMain || "").toString();
         v2 = (b.statusMain || "").toString();
-        if (v1 < v2) return direction === "asc" ? -1 : 1;
-        if (v1 > v2) return direction === "asc" ? 1 : -1;
+        if (v1.localeCompare(v2, "th-TH") < 0) return direction === "asc" ? -1 : 1;
+        if (v1.localeCompare(v2, "th-TH") > 0) return direction === "asc" ? 1 : -1;
         return 0;
       case "budget":
         v1 = Number(a.budget || 0);
@@ -145,6 +148,7 @@ function updateNavVisibility(isAuthenticated) {
     }
   });
   syncDesktopNavGroupVisibility();
+  syncMobileNavGroupVisibility();
 }
 
 function syncDesktopNavGroupVisibility() {
@@ -164,6 +168,16 @@ function syncDesktopNavGroupVisibility() {
     toggleBtn.setAttribute("aria-expanded", "false");
     menu.classList.remove("show");
     menu.setAttribute("aria-hidden", "true");
+  });
+}
+
+function syncMobileNavGroupVisibility() {
+  const mobileGroups = Array.from(document.querySelectorAll(".mobile-menu .mobile-menu-group"));
+  mobileGroups.forEach((group) => {
+    const links = Array.from(group.querySelectorAll("a[data-page]"));
+    const hasVisibleLinks = links.some((link) => link.style.display !== "none");
+    group.style.display = hasVisibleLinks ? "" : "none";
+    if (!hasVisibleLinks) group.removeAttribute("open");
   });
 }
 
@@ -317,6 +331,7 @@ function updateNavForStaff(staffUser) {
     link.style.display = allowedStaffPages.has(page) ? "" : "none";
   });
   syncDesktopNavGroupVisibility();
+  syncMobileNavGroupVisibility();
 }
 
 function getPreferredPageForState(isAuth) {
@@ -506,7 +521,7 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:476", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:512", err);
         });
         refreshAuthDisplay(null);
         return;
@@ -560,7 +575,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:530", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:566", err);
     });
 
     const hamburger = document.getElementById("hamburgerBtn");

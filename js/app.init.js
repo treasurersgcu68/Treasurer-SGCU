@@ -481,6 +481,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===== 10) Hamburger + เมนูมือถือ =====
   const hamburgerBtn = document.getElementById("hamburgerBtn");
   const mobileMenu = document.getElementById("mobileMenu");
+  const mobileMenuGroups = Array.from(document.querySelectorAll(".mobile-menu-group"));
   const navGroupToggles = Array.from(document.querySelectorAll(".nav-group-toggle"));
   const navGroupMenus = Array.from(document.querySelectorAll(".nav-group-menu"));
 
@@ -506,6 +507,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!(target instanceof Element)) return;
       if (mobileMenu.contains(target) || hamburgerBtn.contains(target)) return;
       setMobileMenuState(mobileMenu, hamburgerBtn, false);
+    });
+  }
+  if (mobileMenuGroups.length) {
+    mobileMenuGroups.forEach((group) => {
+      const summary = group.querySelector("summary");
+      if (!summary) return;
+      summary.addEventListener("click", () => {
+        const willOpen = !group.hasAttribute("open");
+        if (!willOpen) return;
+        mobileMenuGroups.forEach((otherGroup) => {
+          if (otherGroup !== group) otherGroup.removeAttribute("open");
+        });
+      });
     });
   }
   if (navGroupToggles.length) {

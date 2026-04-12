@@ -224,8 +224,14 @@
 
         <nav class="desktop-nav">
           <div id="desktopNavGeneral" class="desktop-nav-role" data-role-nav="general">
-            <a href="#" data-page="home" class="nav-pill active" data-visible="public">หน้าหลัก</a>
-            <a href="#" data-page="about" class="nav-pill" data-visible="public">เกี่ยวกับ</a>
+            <div class="nav-group">
+              <button class="nav-group-toggle" type="button" aria-expanded="false">ข้อมูลทั่วไป</button>
+              <div class="nav-group-menu" aria-hidden="true">
+                <a href="#" data-page="home" class="active" data-visible="public">หน้าแรก</a>
+                <a href="#" data-page="about" data-visible="public">เกี่ยวกับ</a>
+                <a href="#" data-page="news" data-visible="public">ข่าวสาร</a>
+              </div>
+            </div>
 
             <a href="#" data-page="project-status" class="nav-pill" data-visible="public">ติดตามสถานะโครงการ</a>
             <a href="#" data-page="financial-docs" class="nav-pill" data-visible="public">เอกสารการเงิน</a>
@@ -277,17 +283,47 @@
 
       <div id="mobileMenu" class="mobile-menu" aria-hidden="true">
         <nav>
-          <a href="#" data-page="home" data-visible="public">หน้าหลัก</a>
-          <a href="#" data-page="about" data-visible="public">เกี่ยวกับ</a>
-          <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมสำหรับ Staff</a>
-          <a href="#" data-page="project-status" data-visible="public">ติดตามสถานะโครงการ</a>
-          <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ (Staff)</a>
-          <a href="#" data-page="financial-docs" data-visible="public">เอกสารการเงิน</a>
-          <a href="#" data-page="borrow-assets" data-visible="protected">ยืม-คืนพัสดุ</a>
-          <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการยืม-คืนพัสดุ (Staff)</a>
-          <a href="#" data-page="meeting-room-booking" data-visible="protected">จองห้องประชุม</a>
-          <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม (Staff)</a>
-          <a href="#" data-page="login" data-visible="public">เข้าสู่ระบบ</a>
+          <details class="mobile-menu-group" open>
+            <summary>ข้อมูลทั่วไป</summary>
+            <div class="mobile-menu-links">
+              <a href="#" data-page="home" data-visible="public">หน้าแรก</a>
+              <a href="#" data-page="about" data-visible="public">เกี่ยวกับ</a>
+              <a href="#" data-page="news" data-visible="public">ข่าวสาร</a>
+            </div>
+          </details>
+
+          <details class="mobile-menu-group">
+            <summary>โครงการและเอกสาร</summary>
+            <div class="mobile-menu-links">
+              <a href="#" data-page="project-status" data-visible="public">ติดตามสถานะโครงการ</a>
+              <a href="#" data-page="financial-docs" data-visible="public">เอกสารการเงิน</a>
+            </div>
+          </details>
+
+          <details class="mobile-menu-group">
+            <summary>การจองและพัสดุ</summary>
+            <div class="mobile-menu-links">
+              <a href="#" data-page="borrow-assets" data-visible="protected">ยืม-คืนพัสดุ</a>
+              <a href="#" data-page="meeting-room-booking" data-visible="protected">จองห้องประชุม</a>
+            </div>
+          </details>
+
+          <details class="mobile-menu-group">
+            <summary>เมนู Staff</summary>
+            <div class="mobile-menu-links">
+              <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมสำหรับ Staff</a>
+              <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ (Staff)</a>
+              <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการยืม-คืนพัสดุ (Staff)</a>
+              <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม (Staff)</a>
+            </div>
+          </details>
+
+          <details class="mobile-menu-group">
+            <summary>บัญชี</summary>
+            <div class="mobile-menu-links">
+              <a href="#" data-page="login" data-visible="public">เข้าสู่ระบบ</a>
+            </div>
+          </details>
           <button
             id="mobileLogoutBtn"
             type="button"
@@ -2075,6 +2111,38 @@
                 <div id="meetingRoomStaffPanelTitle" class="panel-title">รายการคำขอ</div>
                 <div id="meetingRoomStaffPanelCaption" class="panel-caption">แสดงคำขอที่ยังไม่เลยวันขอ</div>
                 <div id="meetingRoomStaffActionMessage" class="section-text-sm" aria-live="polite"></div>
+                <div id="meetingRoomHistorySearchWrap" class="meeting-history-filter-bar" style="display:none;">
+                  <div class="filter-group">
+                    <label for="meetingRoomHistoryDateInput">กรองตามวัน</label>
+                    <input id="meetingRoomHistoryDateInput" type="date" />
+                  </div>
+                  <div class="filter-group">
+                    <label for="meetingRoomHistoryRoomSelect">กรองตามห้อง</label>
+                    <select id="meetingRoomHistoryRoomSelect">
+                      <option value="all">ทุกห้องประชุม</option>
+                    </select>
+                  </div>
+                  <div class="filter-group filter-search">
+                    <label for="meetingRoomHistorySearchInput">ค้นหาประวัติการขอ</label>
+                    <div class="search-box">
+                      <input
+                        id="meetingRoomHistorySearchInput"
+                        type="search"
+                        placeholder="พิมพ์คำค้น เช่น ห้องประชุม 1 หรือ ชื่อผู้ขอ"
+                        autocomplete="off"
+                      />
+                      <button
+                        id="meetingRoomHistorySearchClear"
+                        class="search-clear"
+                        type="button"
+                        aria-label="ล้างคำค้นหา"
+                        style="display:none;"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="table-wrapper">

@@ -422,16 +422,106 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const hasOverlap = (candidate, list, options = {}) => {
     const ignoredBookingId = options.ignoredBookingId || "";
-    const candidateStart = toDateTime(candidate.date, candidate.startTime);
-    const candidateEnd = toDateTime(candidate.date, candidate.endTime);
+    const parseDateOnly = (value) => {
+      const text = (value || "").toString().trim();
+      if (!text) return null;
+      const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+      const ymd = text.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+      if (ymd) return new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+      const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (dmy) {
+        let year = Number(dmy[3]);
+        if (year > 2400) year -= 543;
+        return new Date(year, Number(dmy[2]) - 1, Number(dmy[1]));
+      }
+      const parsed = new Date(text);
+      if (!Number.isFinite(parsed.getTime())) return null;
+      return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    };
+    const parseMinutes = (value) => {
+      const text = (value || "").toString().trim();
+      const match = text.match(/^(\d{1,2}):(\d{2})$/);
+      if (!match) return null;
+      const h = Number(match[1]);
+      const m = Number(match[2]);
+      if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+      return (h * 60) + m;
+    };
+    const dayKey = (dateObj) => {
+      if (!(dateObj instanceof Date) || !Number.isFinite(dateObj.getTime())) return "";
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dateObj.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    };
+    const parseDateTime = (dateTimeValue, dateValue, timeValue) => {
+      const parsed = new Date(dateTimeValue);
+      if (Number.isFinite(parsed.getTime())) return parsed;
+      const dateObj = parseDateOnly(dateValue);
+      const minutes = parseMinutes(timeValue);
+      if (!dateObj || minutes === null) return null;
+      return new Date(
+        dateObj.getFullYear(),
+        dateObj.getMonth(),
+        dateObj.getDate(),
+        Math.floor(minutes / 60),
+        minutes % 60,
+        0,
+        0
+      );
+    };
+    const candidateStart = parseDateTime("", candidate.date, candidate.startTime);
+    const candidateEnd = parseDateTime("", candidate.date, candidate.endTime);
+    if (!candidateStart || !candidateEnd) return false;
+    const candidateDayKey = dayKey(parseDateOnly(candidate.date));
+    const candidateStartMin = parseMinutes(candidate.startTime);
+    const candidateEndMin = parseMinutes(candidate.endTime);
+    const normalizeRoomValue = (value) =>
+      (value || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
+    const candidateRoomId = normalizeRoomValue(candidate.roomId);
+    const candidateRoomName = normalizeRoomValue(candidate.roomName);
+    const candidateRoomDisplay = normalizeRoomValue(
+      normalizeRoomDisplay(candidate.roomId, candidate.roomName)
+    );
 
     return list.some((item) => {
       if (ignoredBookingId && item.id === ignoredBookingId) return false;
-      if (item.roomId !== candidate.roomId || item.date !== candidate.date) return false;
+      const itemRoomId = normalizeRoomValue(item.roomId);
+      const itemRoomName = normalizeRoomValue(item.roomName);
+      const itemRoomDisplay = normalizeRoomValue(
+        normalizeRoomDisplay(item.roomId, item.roomName)
+      );
+      const sameRoomById = !!candidateRoomId && !!itemRoomId && candidateRoomId === itemRoomId;
+      const sameRoomByName = !!candidateRoomName && !!itemRoomName && candidateRoomName === itemRoomName;
+      const sameRoomByDisplay =
+        !!candidateRoomDisplay && !!itemRoomDisplay && candidateRoomDisplay === itemRoomDisplay;
+      if (!sameRoomById && !sameRoomByName && !sameRoomByDisplay) return false;
       if (item.status === "rejected") return false;
-      const itemStart = new Date(item.startAt);
-      const itemEnd = new Date(item.endAt);
-      return candidateStart < itemEnd && candidateEnd > itemStart;
+      const itemStart =
+        parseDateTime("", item.date, item.startTime) ||
+        parseDateTime(item.startAt, item.date, item.startTime);
+      const itemEnd =
+        parseDateTime("", item.date, item.endTime) ||
+        parseDateTime(item.endAt, item.date, item.endTime);
+      if (itemStart && itemEnd) {
+        return candidateStart < itemEnd && candidateEnd > itemStart;
+      }
+      const itemDayKey = dayKey(parseDateOnly(item.date));
+      const itemStartMin = parseMinutes(item.startTime);
+      const itemEndMin = parseMinutes(item.endTime);
+      if (
+        !candidateDayKey ||
+        !itemDayKey ||
+        candidateDayKey !== itemDayKey ||
+        candidateStartMin === null ||
+        candidateEndMin === null ||
+        itemStartMin === null ||
+        itemEndMin === null
+      ) {
+        return false;
+      }
+      return candidateStartMin < itemEndMin && candidateEndMin > itemStartMin;
     });
   };
 
@@ -1527,9 +1617,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     try {
       const colRef = firestore.collection(firestore.db, BOOKING_COLLECTION_NAME);
-      const q = firestore.query(colRef, firestore.orderBy("startAt", "asc"));
       unsubscribe = firestore.onSnapshot(
-        q,
+        colRef,
         (snapshot) => {
           bookings = snapshot.docs.map(mapSnapshotDoc);
           bookingsLoaded = true;
@@ -1617,6 +1706,11 @@ document.addEventListener("DOMContentLoaded", () => {
       : "";
     let projectName = "";
     const roomBookingAccess = getRoomBookingAccess(roomId);
+
+    if (!roomsLoaded || !bookingsLoaded || roomsLoadFailed || bookingsLoadFailed) {
+      setMessage("ข้อมูลการจองยังไม่พร้อมตรวจสอบเวลา กรุณารอสักครู่แล้วลองใหม่", "#b91c1c");
+      return;
+    }
 
     if (!roomId || !date || !startTime || !endTime || !requester || !purpose) {
       setMessage("กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำรายการจอง", "#b91c1c");
@@ -1827,6 +1921,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const nextStartTime = (rescheduleStartTimeInput?.value || "").trim();
     const nextEndTime = (rescheduleEndTimeInput?.value || "").trim();
     const reason = (rescheduleReasonInput?.value || "").trim();
+
+    if (!roomsLoaded || !bookingsLoaded || roomsLoadFailed || bookingsLoadFailed) {
+      setRescheduleMessage("ข้อมูลการจองยังไม่พร้อมตรวจสอบเวลา กรุณารอสักครู่แล้วลองใหม่", "#b91c1c");
+      return;
+    }
     if (!bookingId) {
       setRescheduleMessage("กรุณาเลือกรายการที่ต้องการขอเปลี่ยนเวลา", "#b91c1c");
       return;

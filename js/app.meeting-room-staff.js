@@ -11,6 +11,11 @@ function initMeetingRoomStaffApproval() {
   const panelTitleEl = document.getElementById("meetingRoomStaffPanelTitle");
   const panelCaptionEl = document.getElementById("meetingRoomStaffPanelCaption");
   const staffActionMessageEl = document.getElementById("meetingRoomStaffActionMessage");
+  const historySearchWrapEl = document.getElementById("meetingRoomHistorySearchWrap");
+  const historyDateInputEl = document.getElementById("meetingRoomHistoryDateInput");
+  const historyRoomSelectEl = document.getElementById("meetingRoomHistoryRoomSelect");
+  const historySearchInputEl = document.getElementById("meetingRoomHistorySearchInput");
+  const historySearchClearEl = document.getElementById("meetingRoomHistorySearchClear");
   const roomManageForm = document.getElementById("meetingRoomManageForm");
   const roomManageInput = document.getElementById("meetingRoomManageInput");
   const roomManageMessage = document.getElementById("meetingRoomManageMessage");
@@ -339,6 +344,9 @@ function initMeetingRoomStaffApproval() {
   let editingRoomId = "";
   let calendarCursor = new Date();
   let activeStaffDayModalDate = "";
+  let historyDateFilter = "";
+  let historyRoomFilter = "all";
+  let historySearchQuery = "";
   let roomsLoadFailed = false;
   let bookingsLoadFailed = false;
   let staffAutoRetryTimer = null;
@@ -435,15 +443,105 @@ function initMeetingRoomStaffApproval() {
 
   const hasOverlap = (candidate, list, options = {}) => {
     const ignoredBookingId = options.ignoredBookingId || "";
-    const candidateStart = toDateTime(candidate.date, candidate.startTime);
-    const candidateEnd = toDateTime(candidate.date, candidate.endTime);
+    const parseDateOnly = (value) => {
+      const text = (value || "").toString().trim();
+      if (!text) return null;
+      const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+      const ymd = text.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+      if (ymd) return new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+      const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (dmy) {
+        let year = Number(dmy[3]);
+        if (year > 2400) year -= 543;
+        return new Date(year, Number(dmy[2]) - 1, Number(dmy[1]));
+      }
+      const parsed = new Date(text);
+      if (!Number.isFinite(parsed.getTime())) return null;
+      return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    };
+    const parseMinutes = (value) => {
+      const text = (value || "").toString().trim();
+      const match = text.match(/^(\d{1,2}):(\d{2})$/);
+      if (!match) return null;
+      const h = Number(match[1]);
+      const m = Number(match[2]);
+      if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+      return (h * 60) + m;
+    };
+    const dayKey = (dateObj) => {
+      if (!(dateObj instanceof Date) || !Number.isFinite(dateObj.getTime())) return "";
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dateObj.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    };
+    const parseDateTime = (dateTimeValue, dateValue, timeValue) => {
+      const parsed = new Date(dateTimeValue);
+      if (Number.isFinite(parsed.getTime())) return parsed;
+      const dateObj = parseDateOnly(dateValue);
+      const minutes = parseMinutes(timeValue);
+      if (!dateObj || minutes === null) return null;
+      return new Date(
+        dateObj.getFullYear(),
+        dateObj.getMonth(),
+        dateObj.getDate(),
+        Math.floor(minutes / 60),
+        minutes % 60,
+        0,
+        0
+      );
+    };
+    const candidateStart = parseDateTime("", candidate.date, candidate.startTime);
+    const candidateEnd = parseDateTime("", candidate.date, candidate.endTime);
+    if (!candidateStart || !candidateEnd) return false;
+    const candidateDayKey = dayKey(parseDateOnly(candidate.date));
+    const candidateStartMin = parseMinutes(candidate.startTime);
+    const candidateEndMin = parseMinutes(candidate.endTime);
+    const normalizeRoomValue = (value) =>
+      (value || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
+    const candidateRoomId = normalizeRoomValue(candidate.roomId);
+    const candidateRoomName = normalizeRoomValue(candidate.roomName);
+    const candidateRoomDisplay = normalizeRoomValue(
+      normalizeRoomDisplay(candidate.roomId, candidate.roomName)
+    );
     return list.some((item) => {
       if (ignoredBookingId && item.id === ignoredBookingId) return false;
-      if (item.roomId !== candidate.roomId || item.date !== candidate.date) return false;
+      const itemRoomId = normalizeRoomValue(item.roomId);
+      const itemRoomName = normalizeRoomValue(item.roomName);
+      const itemRoomDisplay = normalizeRoomValue(
+        normalizeRoomDisplay(item.roomId, item.roomName)
+      );
+      const sameRoomById = !!candidateRoomId && !!itemRoomId && candidateRoomId === itemRoomId;
+      const sameRoomByName = !!candidateRoomName && !!itemRoomName && candidateRoomName === itemRoomName;
+      const sameRoomByDisplay =
+        !!candidateRoomDisplay && !!itemRoomDisplay && candidateRoomDisplay === itemRoomDisplay;
+      if (!sameRoomById && !sameRoomByName && !sameRoomByDisplay) return false;
       if (item.status === "rejected") return false;
-      const itemStart = new Date(item.startAt || toDateTime(item.date, item.startTime).toISOString());
-      const itemEnd = new Date(item.endAt || toDateTime(item.date, item.endTime).toISOString());
-      return candidateStart < itemEnd && candidateEnd > itemStart;
+      const itemStart =
+        parseDateTime("", item.date, item.startTime) ||
+        parseDateTime(item.startAt, item.date, item.startTime);
+      const itemEnd =
+        parseDateTime("", item.date, item.endTime) ||
+        parseDateTime(item.endAt, item.date, item.endTime);
+      if (itemStart && itemEnd) {
+        return candidateStart < itemEnd && candidateEnd > itemStart;
+      }
+      const itemDayKey = dayKey(parseDateOnly(item.date));
+      const itemStartMin = parseMinutes(item.startTime);
+      const itemEndMin = parseMinutes(item.endTime);
+      if (
+        !candidateDayKey ||
+        !itemDayKey ||
+        candidateDayKey !== itemDayKey ||
+        candidateStartMin === null ||
+        candidateEndMin === null ||
+        itemStartMin === null ||
+        itemEndMin === null
+      ) {
+        return false;
+      }
+      return candidateStartMin < itemEndMin && candidateEndMin > itemStartMin;
     });
   };
 
@@ -739,7 +837,7 @@ function initMeetingRoomStaffApproval() {
       customHolidays = [];
       refreshHolidayLookup();
       renderHolidayManageList();
-      renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+      renderStaffCalendar(getCalendarRows(bookings));
       return;
     }
     try {
@@ -762,20 +860,20 @@ function initMeetingRoomStaffApproval() {
             .filter(Boolean);
           refreshHolidayLookup();
           renderHolidayManageList();
-          renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+          renderStaffCalendar(getCalendarRows(bookings));
         },
         () => {
           customHolidays = [];
           refreshHolidayLookup();
           renderHolidayManageList();
-          renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+          renderStaffCalendar(getCalendarRows(bookings));
         }
       );
     } catch (err) {
       customHolidays = [];
       refreshHolidayLookup();
       renderHolidayManageList();
-      renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+      renderStaffCalendar(getCalendarRows(bookings));
     }
   };
 
@@ -1096,27 +1194,75 @@ function initMeetingRoomStaffApproval() {
     }
     if (panelCaptionEl) {
       panelCaptionEl.textContent = activeTab === "history"
-        ? "แสดงคำขอที่เลยวันขอแล้ว"
-        : "แสดงคำขอที่ยังไม่เลยวันขอ";
+        ? "แสดงรายการที่อนุมัติแล้วหรือเลยวันแล้ว"
+        : "แสดงรายการที่ยังไม่อนุมัติและยังไม่เลยวัน";
     }
+    if (historySearchWrapEl) {
+      historySearchWrapEl.style.display = activeTab === "history" ? "grid" : "none";
+    }
+    syncHistorySearchUI();
   };
 
-  const getVisibleRowsForActiveTab = (source) => {
-    const ordered = [...source].sort((a, b) => {
+  const sortBookingRows = (source = []) =>
+    [...source].sort((a, b) => {
       if (a.date === b.date) {
         return String(a.startTime || "").localeCompare(String(b.startTime || ""));
       }
       return String(a.date || "").localeCompare(String(b.date || ""));
     });
-    const isActiveStatus = (status) =>
-      status === "pending" || status === "cancel_requested" || status === "reschedule_requested";
-    const upcomingRows = ordered.filter(
-      (booking) => isActiveStatus(booking.status) || !isPastBooking(booking)
-    );
+
+  const getVisibleRowsForActiveTab = (source) => {
+    const ordered = sortBookingRows(source);
     const historyRows = ordered.filter(
-      (booking) => !isActiveStatus(booking.status) && isPastBooking(booking)
+      (booking) => booking.status === "approved" || isPastBooking(booking)
     );
-    return activeTab === "history" ? historyRows : upcomingRows;
+    const requestRows = ordered.filter(
+      (booking) => booking.status !== "approved" && !isPastBooking(booking)
+    );
+    return activeTab === "history" ? historyRows : requestRows;
+  };
+
+  const getCalendarRows = (source) => sortBookingRows(source);
+
+  const buildSearchText = (booking) =>
+    [
+      normalizeRoomDisplay(booking.roomId, booking.roomName),
+      booking.date,
+      formatDate(booking.date),
+      booking.startTime,
+      booking.endTime,
+      booking.requester,
+      booking.purpose,
+      statusText(booking.status)
+    ]
+      .map((value) => (value || "").toString().trim().toLowerCase())
+      .join(" ");
+
+  const syncHistoryRoomFilterOptions = () => {
+    if (!historyRoomSelectEl) return;
+    const currentValue = (historyRoomSelectEl.value || historyRoomFilter || "all").toString();
+    const roomNames = Array.from(
+      new Set(
+        [
+          ...rooms.map((room) => (room?.name || "").toString().trim()),
+          ...bookings.map((booking) => normalizeRoomDisplay(booking.roomId, booking.roomName).trim())
+        ].filter((name) => name && name !== "-")
+      )
+    ).sort((a, b) => a.localeCompare(b, "th"));
+
+    historyRoomSelectEl.innerHTML = [
+      '<option value="all">ทุกห้องประชุม</option>',
+      ...roomNames.map((name) => `<option value="${escapeText(name)}">${escapeText(name)}</option>`)
+    ].join("");
+
+    const nextValue = roomNames.includes(currentValue) ? currentValue : "all";
+    historyRoomSelectEl.value = nextValue;
+    historyRoomFilter = nextValue;
+  };
+
+  const syncHistorySearchUI = () => {
+    if (!historySearchClearEl) return;
+    historySearchClearEl.style.display = historySearchQuery ? "inline-flex" : "none";
   };
 
   const renderStaffCalendar = (sourceRows = []) => {
@@ -1253,15 +1399,31 @@ function initMeetingRoomStaffApproval() {
     if (approvedCountEl) approvedCountEl.textContent = approvedCount;
     if (pendingCountEl) pendingCountEl.textContent = pendingCount;
     if (rejectedCountEl) rejectedCountEl.textContent = rejectedCount;
-    if (allCountEl) allCountEl.textContent = `พบ ${sorted.length} รายการ`;
 
+    syncHistoryRoomFilterOptions();
     const rowsForTab = getVisibleRowsForActiveTab(sorted);
+    const displayRows = activeTab === "history"
+      ? rowsForTab.filter((booking) => {
+          if (historyDateFilter && booking.date !== historyDateFilter) return false;
+          if (historyRoomFilter !== "all") {
+            const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName).trim();
+            if (roomName !== historyRoomFilter) return false;
+          }
+          if (historySearchQuery && !buildSearchText(booking).includes(historySearchQuery)) return false;
+          return true;
+        })
+      : rowsForTab;
+    const calendarRows = getCalendarRows(sorted);
+    const hasHistoryFilters =
+      !!historySearchQuery || !!historyDateFilter || historyRoomFilter !== "all";
     const emptyText = activeTab === "history"
-      ? "ยังไม่มีประวัติการขอ"
+      ? (hasHistoryFilters ? "ไม่พบประวัติการขอตามตัวกรองที่เลือก" : "ยังไม่มีประวัติการขอ")
       : "ยังไม่มีรายการคำขอที่ยังไม่เลยวัน";
 
-    allTableBody.innerHTML = rowsForTab.length
-      ? rowsForTab
+    if (allCountEl) allCountEl.textContent = `พบ ${displayRows.length} รายการ`;
+
+    allTableBody.innerHTML = displayRows.length
+      ? displayRows
           .map((booking) => {
             const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName);
             const dateText = formatDate(booking.date);
@@ -1292,9 +1454,9 @@ function initMeetingRoomStaffApproval() {
     if (staffMeetingAllSection) {
       staffMeetingAllSection.style.display = "block";
     }
-    renderStaffCalendar(rowsForTab);
+    renderStaffCalendar(calendarRows);
     if (activeStaffDayModalDate) {
-      setStaffBookingDayBody(activeStaffDayModalDate, rowsForTab);
+      setStaffBookingDayBody(activeStaffDayModalDate, calendarRows);
     }
   };
 
@@ -1306,6 +1468,23 @@ function initMeetingRoomStaffApproval() {
       status,
       updatedAt: firestore.serverTimestamp()
     };
+    if (booking.status !== "reschedule_requested" && status === "approved") {
+      const candidate = {
+        roomId: booking.roomId,
+        roomName: booking.roomName,
+        date: booking.date,
+        startTime: booking.startTime,
+        endTime: booking.endTime
+      };
+      if (hasOverlap(candidate, bookings, { ignoredBookingId: id })) {
+        const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName);
+        setStaffActionMessage(
+          `อนุมัติไม่ได้เพราะชนเวลา (${roomName} ${formatDate(booking.date)} ${booking.startTime || "-"}-${booking.endTime || "-"})`,
+          "#b91c1c"
+        );
+        return;
+      }
+    }
     if (booking.status === "reschedule_requested" && status === "approved") {
       const nextDate = booking.rescheduleRequestedDate || "";
       const nextStartTime = booking.rescheduleRequestedStartTime || "";
@@ -1393,7 +1572,6 @@ function initMeetingRoomStaffApproval() {
     if (!hasFirestore) return;
     try {
       const colRef = firestore.collection(firestore.db, COLLECTION_NAME);
-      const q = firestore.query(colRef, firestore.orderBy("startAt", "asc"));
       if (subscribeGuardTimer) {
         window.clearTimeout(subscribeGuardTimer);
       }
@@ -1406,7 +1584,7 @@ function initMeetingRoomStaffApproval() {
         `;
       }, 8000);
       unsubscribe = firestore.onSnapshot(
-        q,
+        colRef,
         (snapshot) => {
           bookings = snapshot.docs.map(mapSnapshotDoc);
           bookingsLoadFailed = false;
@@ -1618,8 +1796,8 @@ function initMeetingRoomStaffApproval() {
         }
         const dayTarget = clickedElement.closest(".calendar-day[data-date]");
         if (!dayTarget || !dayTarget.dataset.date) return;
-        const visibleRows = getVisibleRowsForActiveTab(bookings);
-        openStaffBookingDayModal(dayTarget.dataset.date, visibleRows);
+        const calendarRows = getCalendarRows(bookings);
+        openStaffBookingDayModal(dayTarget.dataset.date, calendarRows);
       });
     }
   }
@@ -1630,14 +1808,54 @@ function initMeetingRoomStaffApproval() {
   if (staffCalendarPrevBtn) {
     staffCalendarPrevBtn.addEventListener("click", () => {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
-      renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+      renderStaffCalendar(getCalendarRows(bookings));
     });
   }
 
   if (staffCalendarNextBtn) {
     staffCalendarNextBtn.addEventListener("click", () => {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
-      renderStaffCalendar(getVisibleRowsForActiveTab(bookings));
+      renderStaffCalendar(getCalendarRows(bookings));
+    });
+  }
+
+  if (historySearchInputEl) {
+    historySearchInputEl.addEventListener("input", () => {
+      historySearchQuery = (historySearchInputEl.value || "").toString().trim().toLowerCase();
+      syncHistorySearchUI();
+      render();
+    });
+    historySearchInputEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (!historySearchInputEl.value) return;
+      historySearchInputEl.value = "";
+      historySearchQuery = "";
+      syncHistorySearchUI();
+      render();
+    });
+  }
+
+  if (historySearchClearEl && historySearchInputEl) {
+    historySearchClearEl.addEventListener("click", () => {
+      historySearchInputEl.value = "";
+      historySearchQuery = "";
+      syncHistorySearchUI();
+      historySearchInputEl.focus();
+      render();
+    });
+  }
+
+  if (historyDateInputEl) {
+    historyDateInputEl.addEventListener("change", () => {
+      historyDateFilter = (historyDateInputEl.value || "").toString().trim();
+      render();
+    });
+  }
+
+  if (historyRoomSelectEl) {
+    historyRoomSelectEl.addEventListener("change", () => {
+      historyRoomFilter = (historyRoomSelectEl.value || "all").toString().trim() || "all";
+      render();
     });
   }
 

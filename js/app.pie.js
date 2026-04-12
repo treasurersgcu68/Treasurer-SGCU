@@ -202,5 +202,5 @@ function updateApprovedBudgetPie(filtered) {
     statusPieChart.options.plugins.centerText.subText = "";
   }
 
-  statusPieChart.update();
+  statusPieChart.update("none");
 }

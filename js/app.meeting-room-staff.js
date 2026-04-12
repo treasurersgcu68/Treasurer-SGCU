@@ -36,7 +36,6 @@ function initMeetingRoomStaffApproval() {
   if (!allTableBody) {
     return false;
   }
-  window.__meetingRoomStaffInitDone = true;
 
   const COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
@@ -48,19 +47,40 @@ function initMeetingRoomStaffApproval() {
     { id: "room-3", name: "ห้องประชุม 3 ชั้น 2", bookingAccess: "public", isDefault: true }
   ];
 
-  const firestore = window.sgcuFirestore || {};
-  const hasFirestore = !!(
-    firestore.db &&
-    firestore.collection &&
-    firestore.addDoc &&
-    firestore.onSnapshot &&
-    firestore.query &&
-    firestore.orderBy &&
-    firestore.doc &&
-    firestore.deleteDoc &&
-    firestore.updateDoc &&
-    firestore.serverTimestamp
-  );
+  let firestore = window.sgcuFirestore || {};
+  let hasFirestore = false;
+  const resolveFirestoreBridge = () => {
+    firestore = window.sgcuFirestore || {};
+    hasFirestore = !!(
+      firestore.db &&
+      firestore.collection &&
+      firestore.addDoc &&
+      firestore.onSnapshot &&
+      firestore.query &&
+      firestore.orderBy &&
+      firestore.doc &&
+      firestore.deleteDoc &&
+      firestore.updateDoc &&
+      firestore.serverTimestamp
+    );
+    return hasFirestore;
+  };
+
+  if (!resolveFirestoreBridge()) {
+    if (queueBody) {
+      queueBody.innerHTML = `
+        <tr>
+          <td colspan="7">กำลังเชื่อมต่อข้อมูลการจองห้องประชุม...</td>
+        </tr>
+      `;
+    }
+    allTableBody.innerHTML = `
+      <tr>
+        <td colspan="6">กำลังเชื่อมต่อข้อมูลการจองห้องประชุม...</td>
+      </tr>
+    `;
+    return false;
+  }
 
   const normalizeStatus = (status) => {
     const value = (status || "pending").toString().trim().toLowerCase();
@@ -319,6 +339,10 @@ function initMeetingRoomStaffApproval() {
   let editingRoomId = "";
   let calendarCursor = new Date();
   let activeStaffDayModalDate = "";
+  let roomsLoadFailed = false;
+  let bookingsLoadFailed = false;
+  let staffAutoRetryTimer = null;
+  let staffAutoRetryAttempt = 0;
 
   const normalizeRoomDisplay = (roomId, roomName) => {
     const matched = rooms.find((room) => room.id === roomId);
@@ -485,6 +509,48 @@ function initMeetingRoomStaffApproval() {
     staffActionMessageEl.style.color = color;
   };
 
+  const readCurrentUserEmail = () =>
+    (window.sgcuAuth?.auth?.currentUser?.email || "").toString().trim().toLowerCase();
+
+  const retryStaffSubscriptions = () => {
+    resolveFirestoreBridge();
+    if (!hasFirestore) return;
+    if (staffAutoRetryTimer) {
+      window.clearTimeout(staffAutoRetryTimer);
+      staffAutoRetryTimer = null;
+    }
+    if (typeof unsubscribe === "function") unsubscribe();
+    if (typeof unsubscribeRooms === "function") unsubscribeRooms();
+    if (typeof unsubscribeHolidays === "function") unsubscribeHolidays();
+    unsubscribe = null;
+    unsubscribeRooms = null;
+    unsubscribeHolidays = null;
+    subscribeRooms();
+    subscribeHolidays();
+    subscribeBookings();
+  };
+
+  const scheduleStaffAutoRetry = () => {
+    resolveFirestoreBridge();
+    if (!hasFirestore) return;
+    if (staffAutoRetryTimer) return;
+    const attempt = Math.min(staffAutoRetryAttempt, 4);
+    const delayMs = Math.min(12000, 1000 * (2 ** attempt));
+    staffAutoRetryAttempt += 1;
+    staffAutoRetryTimer = window.setTimeout(() => {
+      staffAutoRetryTimer = null;
+      retryStaffSubscriptions();
+    }, delayMs);
+  };
+
+  const clearStaffAutoRetry = () => {
+    if (staffAutoRetryTimer) {
+      window.clearTimeout(staffAutoRetryTimer);
+      staffAutoRetryTimer = null;
+    }
+    staffAutoRetryAttempt = 0;
+  };
+
   const renderRoomManageList = () => {
     if (!roomManageList) return;
     if (roomManageCountEl) {
@@ -628,24 +694,43 @@ function initMeetingRoomStaffApproval() {
             .sort((a, b) => a.name.localeCompare(b.name, "th"));
           if (!loaded.length) {
             rooms = [...DEFAULT_ROOMS];
+            roomsLoadFailed = false;
             renderRoomManageList();
             void seedDefaultRoomsIfEmpty();
             return;
           }
           rooms = loaded;
+          roomsLoadFailed = false;
+          clearStaffAutoRetry();
           renderRoomManageList();
           render();
         },
-        () => {
+        (err) => {
+          const code = (err?.code || "").toString().trim();
+          if (code === "permission-denied" && !readCurrentUserEmail()) {
+            if (queueBody) {
+              queueBody.innerHTML = `
+                <tr>
+                  <td colspan="7">กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูล...</td>
+                </tr>
+              `;
+            }
+            scheduleStaffAutoRetry();
+            return;
+          }
           rooms = [...DEFAULT_ROOMS];
+          roomsLoadFailed = true;
           renderRoomManageList();
           render();
+          scheduleStaffAutoRetry();
         }
       );
     } catch (err) {
       rooms = [...DEFAULT_ROOMS];
+      roomsLoadFailed = true;
       renderRoomManageList();
       render();
+      scheduleStaffAutoRetry();
     }
   };
 
@@ -1023,8 +1108,14 @@ function initMeetingRoomStaffApproval() {
       }
       return String(a.date || "").localeCompare(String(b.date || ""));
     });
-    const upcomingRows = ordered.filter((booking) => !isPastBooking(booking));
-    const historyRows = ordered.filter((booking) => isPastBooking(booking));
+    const isActiveStatus = (status) =>
+      status === "pending" || status === "cancel_requested" || status === "reschedule_requested";
+    const upcomingRows = ordered.filter(
+      (booking) => isActiveStatus(booking.status) || !isPastBooking(booking)
+    );
+    const historyRows = ordered.filter(
+      (booking) => !isActiveStatus(booking.status) && isPastBooking(booking)
+    );
     return activeTab === "history" ? historyRows : upcomingRows;
   };
 
@@ -1318,9 +1409,30 @@ function initMeetingRoomStaffApproval() {
         q,
         (snapshot) => {
           bookings = snapshot.docs.map(mapSnapshotDoc);
+          bookingsLoadFailed = false;
+          clearStaffAutoRetry();
           render();
         },
         (err) => {
+          const code = (err?.code || "").toString().trim();
+          if (code === "permission-denied" && !readCurrentUserEmail()) {
+            if (queueBody) {
+              queueBody.innerHTML = `
+                <tr>
+                  <td colspan="7">กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูล...</td>
+                </tr>
+              `;
+            }
+            allTableBody.innerHTML = `
+              <tr>
+                <td colspan="6">กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูล...</td>
+              </tr>
+            `;
+            renderStaffCalendar([]);
+            scheduleStaffAutoRetry();
+            return;
+          }
+          bookingsLoadFailed = true;
           const detail = err?.code ? ` (${err.code})` : "";
           if (queueBody) {
             queueBody.innerHTML = `
@@ -1335,9 +1447,11 @@ function initMeetingRoomStaffApproval() {
             </tr>
           `;
           renderStaffCalendar([]);
+          scheduleStaffAutoRetry();
         }
       );
     } catch (err) {
+      bookingsLoadFailed = true;
       const detail = err?.code ? ` (${err.code})` : "";
       if (queueBody) {
         queueBody.innerHTML = `
@@ -1352,6 +1466,7 @@ function initMeetingRoomStaffApproval() {
         </tr>
       `;
       renderStaffCalendar([]);
+      scheduleStaffAutoRetry();
     }
   };
 
@@ -1542,33 +1657,17 @@ function initMeetingRoomStaffApproval() {
     });
   }
 
-  if (!hasFirestore) {
-    rooms = [...DEFAULT_ROOMS];
-    renderRoomManageList();
-    setRoomManageMessage("ระบบยังไม่เชื่อมต่อ Firestore", "#b91c1c");
-    if (queueBody) {
-      queueBody.innerHTML = `
-        <tr>
-          <td colspan="7">ระบบยังไม่เชื่อมต่อ Firestore โปรดตรวจสอบการตั้งค่า</td>
-        </tr>
-      `;
-    }
-    allTableBody.innerHTML = `
-      <tr>
-        <td colspan="6">ระบบยังไม่เชื่อมต่อ Firestore โปรดตรวจสอบการตั้งค่า</td>
-      </tr>
-    `;
-    if (approvedCountEl) approvedCountEl.textContent = "0";
-    if (pendingCountEl) pendingCountEl.textContent = "0";
-    if (rejectedCountEl) rejectedCountEl.textContent = "0";
-    if (allCountEl) allCountEl.textContent = "พบ 0 รายการ";
-    renderStaffCalendar([]);
-    return;
-  }
-
+  window.__meetingRoomStaffInitDone = true;
   subscribeRooms();
   subscribeHolidays();
   subscribeBookings();
+  if (window.sgcuAuth?.auth && typeof window.sgcuAuth.onAuthStateChanged === "function") {
+    window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {
+      if (roomsLoadFailed || bookingsLoadFailed || !hasRenderedOnce) {
+        retryStaffSubscriptions();
+      }
+    });
+  }
   window.addEventListener("beforeunload", () => {
     if (typeof unsubscribe === "function") {
       unsubscribe();
@@ -1579,13 +1678,14 @@ function initMeetingRoomStaffApproval() {
     if (typeof unsubscribeHolidays === "function") {
       unsubscribeHolidays();
     }
+    clearStaffAutoRetry();
   });
   return true;
 }
 
 function bootstrapMeetingRoomStaffApproval() {
   let attempts = 0;
-  const maxAttempts = 20;
+  const maxAttempts = 60;
   const attemptInit = () => {
     const initialized = initMeetingRoomStaffApproval();
     if (initialized) return;

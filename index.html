@@ -1425,7 +1425,7 @@
         <div class="page">
           <div class="page-header-flex section-appear">
             <div>
-              <h2 class="page-title">Borrow & Return (กำลังพัฒนา)</h2>
+              <h2 class="page-title">Borrow & Return</h2>
               <p class="page-subtitle">
                 กรอกคำขอยืมพัสดุ/ครุภัณฑ์จากส่วนกลาง และติดตามสถานะการอนุมัติ
               </p>
@@ -1726,8 +1726,8 @@
               <button class="tab-btn view-toggle-btn is-active" data-assets-staff-tab="queue" type="button">
                 คิวคำขอ
               </button>
-              <button class="tab-btn view-toggle-btn" data-assets-staff-tab="assets" type="button">
-                รายการพัสดุ
+              <button class="tab-btn view-toggle-btn" data-assets-staff-tab="history" type="button">
+                ประวัติการขอ
               </button>
             </div>
           </div>
@@ -1749,19 +1749,23 @@
                       <th>รายการ</th>
                       <th>ช่วงเวลา</th>
                       <th>สถานะ</th>
-                      <th>การดำเนินการ</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody id="staffBorrowQueueTableBody">
                     <tr>
                       <td>08/10/2568</td>
                       <td>ชมรมดนตรีไทย</td>
                       <td>ไมค์ไร้สาย 2 ชุด</td>
                       <td>10-12 ต.ค. 2568</td>
-                      <td><span class="badge badge-pending">รออนุมัติ</span></td>
                       <td>
-                        <button class="btn-primary staff-queue-approve" type="button">อนุมัติ</button>
-                        <button class="btn-ghost staff-queue-reject" type="button">ตีกลับแก้ไข</button>
+                        <select class="staff-status-select is-pending" aria-label="จัดการสถานะคำขอ">
+                          <option value="pending" selected>รออนุมัติ</option>
+                          <option value="approved">อนุมัติแล้ว</option>
+                          <option value="rejected">ไม่อนุมัติ</option>
+                          <option value="cancelled">ยกเลิก</option>
+                          <option value="returned">คืนแล้ว</option>
+                          <option value="delete">ลบคำขอ</option>
+                        </select>
                       </td>
                     </tr>
                     <tr>
@@ -1769,9 +1773,15 @@
                       <td>ฝ่ายกิจกรรม SGCU</td>
                       <td>เก้าอี้พลาสติก 50 ตัว</td>
                       <td>09-11 ต.ค. 2568</td>
-                      <td><span class="badge badge-warning">รอเช็คสต็อก</span></td>
                       <td>
-                        <button class="btn-ghost" type="button">ดูรายละเอียด</button>
+                        <select class="staff-status-select is-approved" aria-label="จัดการสถานะคำขอ">
+                          <option value="pending">รออนุมัติ</option>
+                          <option value="approved" selected>อนุมัติแล้ว</option>
+                          <option value="rejected">ไม่อนุมัติ</option>
+                          <option value="cancelled">ยกเลิก</option>
+                          <option value="returned">คืนแล้ว</option>
+                          <option value="delete">ลบคำขอ</option>
+                        </select>
                       </td>
                     </tr>
                     <!-- ตัวอย่างเท่านั้น: ผูกข้อมูลจริงด้วย JS -->
@@ -1781,34 +1791,6 @@
             </div>
 
             <div class="panel panel-hover section-appear section-delay-2" style="margin-top: 18px;">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title">สรุปการอนุมัติวันนี้</div>
-                  <div class="panel-caption">ภาพรวมการดำเนินการของทีม Staff</div>
-                </div>
-              </div>
-              <div class="cards">
-                <article class="card card-hover">
-                  <div class="card-title">คำขอที่อนุมัติแล้ว</div>
-                  <div class="card-value" data-countup="6">6</div>
-                  <div class="card-caption">วันนี้</div>
-                </article>
-                <article class="card card-hover">
-                  <div class="card-title">คำขอรอเอกสาร</div>
-                  <div class="card-value" data-countup="3">3</div>
-                  <div class="card-caption">ต้องตีกลับให้ผู้ขอ</div>
-                </article>
-                <article class="card card-hover">
-                  <div class="card-title">รายการค้างสต็อก</div>
-                  <div class="card-value" data-countup="2">2</div>
-                  <div class="card-caption">รอตรวจสอบคลัง</div>
-                </article>
-              </div>
-            </div>
-          </div>
-
-          <div id="staffBorrowAssets" class="section-appear section-delay-1" style="display: none;">
-            <div class="panel panel-hover">
               <div class="panel-header">
                 <div>
                   <div class="panel-title">รายการพัสดุทั้งหมด (Staff)</div>
@@ -1862,6 +1844,35 @@
                   <tbody id="borrowAssetsTableBodyStaff">
                     <tr>
                       <td colspan="11">กำลังโหลดรายการพัสดุ...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="staffBorrowHistory" class="section-appear section-delay-1" style="display: none;">
+            <div class="panel panel-hover">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">ประวัติการขอ</div>
+                  <div class="panel-caption">แสดงคำขอที่ดำเนินการแล้ว</div>
+                </div>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>วันที่ยื่น</th>
+                      <th>ผู้ขอ</th>
+                      <th>รายการ</th>
+                      <th>ช่วงเวลา</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="staffBorrowHistoryTableBody">
+                    <tr>
+                      <td colspan="5">กำลังโหลดประวัติคำขอ...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -2154,12 +2165,12 @@
                     <th>เวลา</th>
                     <th>ผู้ขอ</th>
                     <th>วัตถุประสงค์</th>
-                    <th>สถานะ/การจัดการ</th>
+                    <th>สถานะ</th>
                   </tr>
                 </thead>
                 <tbody id="meetingRoomAllTableBody">
                   <tr>
-                    <td colspan="6">กำลังโหลดข้อมูล...</td>
+                    <td colspan="5">กำลังโหลดข้อมูล...</td>
                   </tr>
                 </tbody>
               </table>
@@ -3070,7 +3081,7 @@
     <script src="js/app.downloads.js" defer></script>
     <script src="js/app.scoreboard.js" defer></script>
     <script src="js/app.motion.js" defer></script>
-    <script src="js/app.borrow-assets.js" defer></script>
+    <script src="js/app.borrow-assets.js?v=20260414-4" defer></script>
     <script src="js/app.meeting-room-booking.js" defer></script>
     <script src="js/app.meeting-room-staff.js" defer></script>
     <script src="js/app.init.js" defer></script>

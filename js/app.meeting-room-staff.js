@@ -34,6 +34,12 @@ function initMeetingRoomStaffApproval() {
   const bookingDayModalEl = document.getElementById("meetingBookingDayModal");
   const bookingDayModalTitleEl = document.getElementById("meetingBookingDayTitle");
   const bookingDayModalBodyEl = document.getElementById("meetingBookingDayBody");
+  const rejectReasonModalEl = document.getElementById("meetingRejectReasonModal");
+  const rejectReasonInputEl = document.getElementById("meetingRejectReasonInput");
+  const rejectReasonErrorEl = document.getElementById("meetingRejectReasonError");
+  const rejectReasonSubmitEl = document.getElementById("meetingRejectReasonSubmit");
+  const rejectReasonCancelEl = document.getElementById("meetingRejectReasonCancel");
+  const rejectReasonCloseEl = document.getElementById("meetingRejectReasonClose");
   const tabButtons = Array.from(
     document.querySelectorAll(".tab-btn[data-meeting-staff-tab]")
   );
@@ -89,8 +95,16 @@ function initMeetingRoomStaffApproval() {
 
   const normalizeStatus = (status) => {
     const value = (status || "pending").toString().trim().toLowerCase();
-    if (value === "approved" || value === "rejected" || value === "cancel_requested" || value === "reschedule_requested") return value;
+    if (value === "approved" || value === "rejected" || value === "cancel_requested" || value === "reschedule_requested" || value === "no_show") return value;
     return "pending";
+  };
+  const NO_SHOW_REASON_MARKER = "[NO_SHOW]";
+  const isNoShowReason = (reason) =>
+    (reason || "").toString().trim().toUpperCase().startsWith(NO_SHOW_REASON_MARKER);
+  const buildNoShowReason = (reason = "") => {
+    const text = (reason || "").toString().trim();
+    if (isNoShowReason(text)) return text;
+    return `${NO_SHOW_REASON_MARKER} ไม่มาใช้ห้องตามเวลาจอง`;
   };
 
   const normalizeRoomBookingAccess = (value) =>
@@ -107,6 +121,7 @@ function initMeetingRoomStaffApproval() {
     if (status === "rejected") return '<span class="badge badge-rejected">ปฏิเสธ</span>';
     if (status === "cancel_requested") return '<span class="badge badge-warning">ขอยกเลิก</span>';
     if (status === "reschedule_requested") return '<span class="badge badge-warning">ขอเปลี่ยนเวลา</span>';
+    if (status === "no_show") return '<span class="badge badge-warning">No-show</span>';
     return '<span class="badge badge-pending">รออนุมัติ</span>';
   };
 
@@ -237,7 +252,7 @@ function initMeetingRoomStaffApproval() {
   const calendarStatusClass = (status) => {
     if (status === "approved") return "approved";
     if (status === "rejected") return "cancelled";
-    if (status === "cancel_requested" || status === "reschedule_requested") return "cancel-requested";
+    if (status === "cancel_requested" || status === "reschedule_requested" || status === "no_show") return "cancel-requested";
     return "pending";
   };
 
@@ -252,13 +267,14 @@ function initMeetingRoomStaffApproval() {
     if (status === "rejected") return "ไม่อนุมัติ / ยกเลิกแล้ว";
     if (status === "cancel_requested") return "ขอยกเลิก (รออนุมัติ)";
     if (status === "reschedule_requested") return "ขอเปลี่ยนเวลา (รออนุมัติ)";
+    if (status === "no_show") return "ไม่มาใช้ห้อง (No-show)";
     return "รออนุมัติ";
   };
 
   const statusBadgeClass = (status) => {
     if (status === "approved") return "badge-approved";
     if (status === "rejected") return "badge-rejected";
-    if (status === "cancel_requested" || status === "reschedule_requested") return "badge-warning";
+    if (status === "cancel_requested" || status === "reschedule_requested" || status === "no_show") return "badge-warning";
     return "badge-pending";
   };
 
@@ -360,6 +376,11 @@ function initMeetingRoomStaffApproval() {
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
     const roomId = data.roomId || "";
+    const normalizedDbStatus = normalizeStatus(data.status);
+    const derivedStatus =
+      normalizedDbStatus === "rejected" && isNoShowReason(data.rejectionReason)
+        ? "no_show"
+        : normalizedDbStatus;
     return {
       id: docItem.id,
       roomId,
@@ -370,6 +391,7 @@ function initMeetingRoomStaffApproval() {
       endTime: data.endTime || "",
       requester: data.requester || "",
       purpose: data.purpose || "",
+      rejectionReason: data.rejectionReason || "",
       contactPhone: data.contactPhone || "",
       contactInfo: data.contactInfo || "",
       cancelRequestReason: data.cancelRequestReason || "",
@@ -381,7 +403,7 @@ function initMeetingRoomStaffApproval() {
       rescheduleRequestReason: data.rescheduleRequestReason || "",
       startAt: data.startAt || "",
       endAt: data.endAt || "",
-      status: normalizeStatus(data.status)
+      status: derivedStatus
     };
   };
 
@@ -395,6 +417,7 @@ function initMeetingRoomStaffApproval() {
     requester: item.requester || "",
     requesterEmail: (item.requesterEmail || "").toString().trim().toLowerCase(),
     purpose: item.purpose || "",
+    rejectionReason: item.rejectionReason || "",
     status: normalizeStatus(item.status),
     rescheduleBaseStatus: normalizeStatus(item.rescheduleBaseStatus),
     rescheduleRequestedDate: item.rescheduleRequestedDate || "",
@@ -605,6 +628,81 @@ function initMeetingRoomStaffApproval() {
     if (!staffActionMessageEl) return;
     staffActionMessageEl.textContent = text;
     staffActionMessageEl.style.color = color;
+  };
+
+  const askRejectionReason = async (initialValue = "") => {
+    const fallbackPrompt = () => {
+      if (typeof window.prompt !== "function") return null;
+      const input = window.prompt("กรุณาระบุเหตุผลที่ไม่อนุมัติ", initialValue || "");
+      const reason = (input || "").toString().trim();
+      return reason || null;
+    };
+    if (
+      !rejectReasonModalEl ||
+      !rejectReasonInputEl ||
+      !rejectReasonErrorEl ||
+      !rejectReasonSubmitEl ||
+      !rejectReasonCancelEl ||
+      !rejectReasonCloseEl ||
+      typeof openDialog !== "function" ||
+      typeof closeDialog !== "function"
+    ) {
+      return fallbackPrompt();
+    }
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = (value) => {
+        if (settled) return;
+        settled = true;
+        rejectReasonSubmitEl.removeEventListener("click", onSubmit);
+        rejectReasonCancelEl.removeEventListener("click", onCancel);
+        rejectReasonCloseEl.removeEventListener("click", onCancel);
+        rejectReasonModalEl.removeEventListener("click", onBackdropClick);
+        rejectReasonInputEl.removeEventListener("keydown", onKeydown);
+        resolve(value);
+      };
+      const onSubmit = () => {
+        const reason = (rejectReasonInputEl.value || "").toString().trim();
+        if (!reason) {
+          rejectReasonErrorEl.textContent = "กรุณาระบุเหตุผลที่ไม่อนุมัติ";
+          rejectReasonInputEl.focus();
+          return;
+        }
+        rejectReasonErrorEl.textContent = "";
+        closeDialog(rejectReasonModalEl);
+        done(reason);
+      };
+      const onCancel = () => {
+        rejectReasonErrorEl.textContent = "";
+        closeDialog(rejectReasonModalEl);
+        done(null);
+      };
+      const onBackdropClick = (event) => {
+        if (event.target === rejectReasonModalEl) {
+          onCancel();
+        }
+      };
+      const onKeydown = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+      };
+
+      rejectReasonInputEl.value = (initialValue || "").toString();
+      rejectReasonErrorEl.textContent = "";
+      rejectReasonSubmitEl.addEventListener("click", onSubmit);
+      rejectReasonCancelEl.addEventListener("click", onCancel);
+      rejectReasonCloseEl.addEventListener("click", onCancel);
+      rejectReasonModalEl.addEventListener("click", onBackdropClick);
+      rejectReasonInputEl.addEventListener("keydown", onKeydown);
+      openDialog(rejectReasonModalEl, { focusSelector: "#meetingRejectReasonInput" });
+      window.setTimeout(() => {
+        rejectReasonInputEl.focus();
+        rejectReasonInputEl.select();
+      }, 0);
+    });
   };
 
   const readCurrentUserEmail = () =>
@@ -1145,6 +1243,7 @@ function initMeetingRoomStaffApproval() {
     if (value === "rejected") return "ไม่อนุมัติ";
     if (value === "cancel_requested") return "ขอยกเลิก";
     if (value === "reschedule_requested") return "ขอเปลี่ยนเวลา";
+    if (value === "no_show") return "ไม่มาใช้ห้อง (No-show)";
     if (value === "pending") return "รออนุมัติ";
     return value;
   };
@@ -1152,7 +1251,7 @@ function initMeetingRoomStaffApproval() {
   const statusSelectClass = (value) => {
     if (value === "approved") return "is-approved";
     if (value === "rejected") return "is-rejected";
-    if (value === "cancel_requested" || value === "reschedule_requested") return "is-cancel-requested";
+    if (value === "cancel_requested" || value === "reschedule_requested" || value === "no_show") return "is-cancel-requested";
     if (value === "delete") return "is-delete";
     return "is-pending";
   };
@@ -1175,6 +1274,9 @@ function initMeetingRoomStaffApproval() {
       </option>
       <option value="cancel_requested" ${booking.status === "cancel_requested" ? "selected" : ""}>
         ${getStatusOptionLabel("cancel_requested")}
+      </option>
+      <option value="no_show" ${booking.status === "no_show" ? "selected" : ""}>
+        ${getStatusOptionLabel("no_show")}
       </option>
       ${booking.status === "reschedule_requested"
         ? `<option value="reschedule_requested" selected>${getStatusOptionLabel("reschedule_requested")}</option>`
@@ -1214,10 +1316,10 @@ function initMeetingRoomStaffApproval() {
   const getVisibleRowsForActiveTab = (source) => {
     const ordered = sortBookingRows(source);
     const historyRows = ordered.filter(
-      (booking) => booking.status === "approved" || isPastBooking(booking)
+      (booking) => booking.status === "approved" || booking.status === "no_show" || isPastBooking(booking)
     );
     const requestRows = ordered.filter(
-      (booking) => booking.status !== "approved" && !isPastBooking(booking)
+      (booking) => booking.status !== "approved" && booking.status !== "no_show" && !isPastBooking(booking)
     );
     return activeTab === "history" ? historyRows : requestRows;
   };
@@ -1378,13 +1480,16 @@ function initMeetingRoomStaffApproval() {
             const rescheduleLine = booking.status === "reschedule_requested"
               ? `<div class="meeting-row-meta">ขอเปลี่ยนเป็น: ${escapeText(formatDate(booking.rescheduleRequestedDate))} ${escapeText(booking.rescheduleRequestedStartTime || "-")} - ${escapeText(booking.rescheduleRequestedEndTime || "-")}</div><div class="meeting-row-meta">เหตุผล: ${escapeText(booking.rescheduleRequestReason || "-")}</div>`
               : "";
+            const rejectedLine = booking.status === "rejected" && booking.rejectionReason
+              ? `<div class="meeting-row-meta">เหตุผลไม่อนุมัติ: ${escapeText(booking.rejectionReason)}</div>`
+              : "";
             return `
               <tr data-booking-id="${escapeText(booking.id)}">
                 <td>${escapeText(roomName)}</td>
                 <td>${escapeText(dateText)}</td>
                 <td>${escapeText(timeText)}</td>
                 <td>${escapeText(booking.requester || "-")}</td>
-                <td>${escapeText(booking.purpose || "-")}${rescheduleLine}</td>
+                <td>${escapeText(booking.purpose || "-")}${rescheduleLine}${rejectedLine}</td>
                 <td>${statusLabel(booking.status)}</td>
                 <td>
                   ${getStatusDropdown(booking, "คิวรออนุมัติ")}
@@ -1431,13 +1536,16 @@ function initMeetingRoomStaffApproval() {
             const rescheduleLine = booking.status === "reschedule_requested"
               ? `<div class="meeting-row-meta">ขอเปลี่ยนเป็น: ${escapeText(formatDate(booking.rescheduleRequestedDate))} ${escapeText(booking.rescheduleRequestedStartTime || "-")} - ${escapeText(booking.rescheduleRequestedEndTime || "-")}</div><div class="meeting-row-meta">เหตุผล: ${escapeText(booking.rescheduleRequestReason || "-")}</div>`
               : "";
+            const rejectedLine = booking.status === "rejected" && booking.rejectionReason
+              ? `<div class="meeting-row-meta">เหตุผลไม่อนุมัติ: ${escapeText(booking.rejectionReason)}</div>`
+              : "";
             return `
               <tr data-booking-id="${escapeText(booking.id)}">
                 <td>${escapeText(roomName)}</td>
                 <td>${escapeText(dateText)}</td>
                 <td>${escapeText(timeText)}</td>
                 <td>${escapeText(booking.requester || "-")}</td>
-                <td>${escapeText(booking.purpose || "-")}${rescheduleLine}</td>
+                <td>${escapeText(booking.purpose || "-")}${rescheduleLine}${rejectedLine}</td>
                 <td>
                   ${getStatusDropdown(booking, activeTab === "history" ? "ประวัติการขอ" : "รายการคำขอ")}
                 </td>
@@ -1460,7 +1568,7 @@ function initMeetingRoomStaffApproval() {
     }
   };
 
-  const setStatusById = async (id, status) => {
+  const setStatusById = async (id, status, options = {}) => {
     if (!hasFirestore || !id) return;
     const booking = bookings.find((item) => item.id === id);
     if (!booking) return;
@@ -1468,6 +1576,24 @@ function initMeetingRoomStaffApproval() {
       status,
       updatedAt: firestore.serverTimestamp()
     };
+    if (status === "no_show") {
+      payload.status = "rejected";
+      payload.rejectionReason = buildNoShowReason(booking.rejectionReason || "");
+    }
+    if (booking.status !== "reschedule_requested" && status === "rejected") {
+      let rejectionReason = (options.rejectionReason || "").toString().trim();
+      if (!rejectionReason) {
+        rejectionReason = (await askRejectionReason(booking.rejectionReason || "")) || "";
+      }
+      if (!rejectionReason) {
+        setStaffActionMessage("กรุณาระบุเหตุผลที่ไม่อนุมัติ", "#b91c1c");
+        return;
+      }
+      payload.rejectionReason = rejectionReason;
+    }
+    if (status !== "rejected" && status !== "no_show") {
+      payload.rejectionReason = "";
+    }
     if (booking.status !== "reschedule_requested" && status === "approved") {
       const candidate = {
         roomId: booking.roomId,
@@ -1523,6 +1649,7 @@ function initMeetingRoomStaffApproval() {
       payload.rescheduleRequestedStartTime = "";
       payload.rescheduleRequestedEndTime = "";
       payload.rescheduleRequestReason = "";
+      payload.rejectionReason = "";
     }
     try {
       await firestore.updateDoc(
@@ -1539,6 +1666,14 @@ function initMeetingRoomStaffApproval() {
       );
       setStaffActionMessage("อัปเดตสถานะคำขอเรียบร้อยแล้ว", "#047857");
     } catch (err) {
+      const code = (err?.code || "").toString().trim();
+      if (code === "permission-denied") {
+        setStaffActionMessage(
+          "ไม่มีสิทธิ์อัปเดตสถานะนี้ (ตรวจสอบสิทธิ์บัญชี Staff และ Firestore Rules)",
+          "#b91c1c"
+        );
+        return;
+      }
       setStaffActionMessage("ไม่สามารถอัปเดตสถานะคำขอได้ในขณะนี้", "#b91c1c");
     }
   };
@@ -1762,7 +1897,7 @@ function initMeetingRoomStaffApproval() {
         deleteById(id);
         return;
       }
-      if (value !== "pending" && value !== "approved" && value !== "rejected" && value !== "cancel_requested" && value !== "reschedule_requested") return;
+      if (value !== "pending" && value !== "approved" && value !== "rejected" && value !== "cancel_requested" && value !== "reschedule_requested" && value !== "no_show") return;
       if (booking && booking.status === value) return;
       setStatusById(id, value);
     });

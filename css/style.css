@@ -4736,6 +4736,9 @@ th.sortable.sort-desc::after {
     grid-template-columns: 1fr;
     gap: 2px;
   }
+  .meeting-booking-detail-summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Tighter mobile spacing & stacking */
@@ -5499,11 +5502,49 @@ th.sortable.sort-desc::after {
   gap: 8px;
 }
 
+.meeting-booking-detail-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.meeting-booking-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 8px 10px;
+}
+
+.meeting-booking-summary-item {
+  padding: 4px 6px;
+}
+
+.meeting-booking-summary-label {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.meeting-booking-summary-value {
+  margin-top: 4px;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .meeting-booking-detail-item {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
+  border-bottom: 1px dashed #e5e7eb;
+  padding: 6px 0;
+}
+
+.meeting-booking-detail-item:last-child {
+  border-bottom: 0;
 }
 
 .meeting-booking-detail-label {
@@ -5517,6 +5558,17 @@ th.sortable.sort-desc::after {
   font-size: 13px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.meeting-reject-reason-input {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.meeting-reject-reason-error {
+  min-height: 18px;
+  margin-top: 6px;
+  color: #b91c1c;
 }
 
 .meeting-day-list-summary {

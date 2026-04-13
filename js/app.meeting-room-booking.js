@@ -45,6 +45,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const bookingDayModalTitleEl = document.getElementById("meetingBookingDayTitle");
   const bookingDayModalBodyEl = document.getElementById("meetingBookingDayBody");
   const bookingDayModalCloseEl = document.getElementById("meetingBookingDayClose");
+  const rejectReasonModalEl = document.getElementById("meetingRejectReasonModal");
+  const rejectReasonInputEl = document.getElementById("meetingRejectReasonInput");
+  const rejectReasonErrorEl = document.getElementById("meetingRejectReasonError");
+  const rejectReasonSubmitEl = document.getElementById("meetingRejectReasonSubmit");
+  const rejectReasonCancelEl = document.getElementById("meetingRejectReasonCancel");
+  const rejectReasonCloseEl = document.getElementById("meetingRejectReasonClose");
 
   if (!form || !roomSelect || !dateInput || !startTimeInput || !endTimeInput ||
       !requesterInput || !purposeInput || !messageEl) {
@@ -77,6 +83,12 @@ document.addEventListener("DOMContentLoaded", () => {
     "ธันวาคม"
   ];
   const DEFAULT_PROJECT_MODE = "non_project";
+  const MIN_ADVANCE_BOOKING_HOURS = 24;
+  const MIN_CANCEL_BEFORE_HOURS = 12;
+  const NO_SHOW_LOOKBACK_DAYS = 90;
+  const NO_SHOW_BLOCK_THRESHOLD = 3;
+  const NO_SHOW_BLOCK_DAYS = 30;
+  const NO_SHOW_REASON_MARKER = "[NO_SHOW]";
   let projectLookupPromise = null;
   let projectLookupReady = false;
   let projectByCode = new Map();
@@ -103,8 +115,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const normalizeStatus = (status) => {
     const value = (status || "pending").toString().trim().toLowerCase();
-    if (value === "approved" || value === "rejected" || value === "cancel_requested" || value === "reschedule_requested") return value;
+    if (value === "approved" || value === "rejected" || value === "cancel_requested" || value === "reschedule_requested" || value === "no_show") return value;
     return "pending";
+  };
+  const isNoShowReason = (reason) =>
+    (reason || "").toString().trim().toUpperCase().startsWith(NO_SHOW_REASON_MARKER);
+  const buildNoShowReason = (reason = "") => {
+    const text = (reason || "").toString().trim();
+    if (isNoShowReason(text)) return text;
+    return `${NO_SHOW_REASON_MARKER} ไม่มาใช้ห้องตามเวลาจอง`;
   };
 
   const normalizeRoomBookingAccess = (value) =>
@@ -497,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const sameRoomByDisplay =
         !!candidateRoomDisplay && !!itemRoomDisplay && candidateRoomDisplay === itemRoomDisplay;
       if (!sameRoomById && !sameRoomByName && !sameRoomByDisplay) return false;
-      if (item.status === "rejected") return false;
+      if (item.status === "rejected" || item.status === "no_show") return false;
       const itemStart =
         parseDateTime("", item.date, item.startTime) ||
         parseDateTime(item.startAt, item.date, item.startTime);
@@ -545,6 +564,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
     const roomId = data.roomId || "";
+    const normalizedDbStatus = normalizeStatus(data.status);
+    const derivedStatus =
+      normalizedDbStatus === "rejected" && isNoShowReason(data.rejectionReason)
+        ? "no_show"
+        : normalizedDbStatus;
     const booking = {
       id: docItem.id,
       roomId,
@@ -554,6 +578,7 @@ document.addEventListener("DOMContentLoaded", () => {
       endTime: data.endTime || "",
       requester: data.requester || "",
       purpose: data.purpose || "",
+      rejectionReason: data.rejectionReason || "",
       contactPhone: data.contactPhone || "",
       contactInfo: data.contactInfo || "",
       cancelRequestReason: data.cancelRequestReason || "",
@@ -567,7 +592,7 @@ document.addEventListener("DOMContentLoaded", () => {
       rescheduleRequestedStartTime: data.rescheduleRequestedStartTime || "",
       rescheduleRequestedEndTime: data.rescheduleRequestedEndTime || "",
       rescheduleRequestReason: data.rescheduleRequestReason || "",
-      status: normalizeStatus(data.status),
+      status: derivedStatus,
       startAt: data.startAt || "",
       endAt: data.endAt || "",
       roomDisplay: normalizeRoomDisplay(roomId, data.roomName)
@@ -599,6 +624,7 @@ document.addEventListener("DOMContentLoaded", () => {
     requester: item.requester || "",
     requesterEmail: (item.requesterEmail || "").toString().trim().toLowerCase(),
     purpose: item.purpose || "",
+    rejectionReason: item.rejectionReason || "",
     status: normalizeStatus(item.status),
     projectMode: item.projectMode || DEFAULT_PROJECT_MODE,
     projectCode: item.projectCode || "",
@@ -776,6 +802,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const contactLine = item.contactPhone || item.contactInfo
               ? `<div class="meeting-row-meta">ติดต่อ: ${escapeText(item.contactPhone || "-")}${item.contactInfo ? ` / ${escapeText(item.contactInfo)}` : ""}</div>`
               : "";
+            const rejectedLine = item.status === "rejected" && item.rejectionReason
+              ? `<div class="meeting-row-meta">เหตุผลไม่อนุมัติ: ${escapeText(item.rejectionReason)}</div>`
+              : "";
             return `
               <tr>
                 <td>${escapeText(normalizeRoomDisplay(item.roomId, item.roomName))}</td>
@@ -783,7 +812,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${escapeText(item.startTime || "-")} - ${escapeText(item.endTime || "-")}</td>
                 <td>${escapeText(item.requester || "-")}</td>
                 <td>
-                  ${escapeText(item.purpose || "-")}${projectLine}${contactLine}
+                  ${escapeText(item.purpose || "-")}${projectLine}${contactLine}${rejectedLine}
                 </td>
               </tr>
             `;
@@ -800,6 +829,50 @@ document.addEventListener("DOMContentLoaded", () => {
   const readCurrentUserEmail = () => {
     const email = window.sgcuAuth?.auth?.currentUser?.email || "";
     return email.toString().trim().toLowerCase();
+  };
+
+  const parseBookingStartDateTime = (booking) => {
+    const startAt = new Date(booking?.startAt || "");
+    if (!Number.isNaN(startAt.getTime())) return startAt;
+    const date = (booking?.date || "").toString().trim();
+    const time = (booking?.startTime || "").toString().trim();
+    if (!date || !time) return null;
+    const parsed = toDateTime(date, time);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const getNoShowRestriction = (emailValue) => {
+    const email = (emailValue || "").toString().trim().toLowerCase();
+    if (!email) return { restricted: false, noShowCount: 0, blockedUntil: null };
+    const now = Date.now();
+    const lookbackMs = NO_SHOW_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
+    const recent = bookings
+      .filter((item) => {
+        if (normalizeStatus(item.status) !== "no_show") return false;
+        const requesterEmail = (item.requesterEmail || "").toString().trim().toLowerCase();
+        if (!requesterEmail || requesterEmail !== email) return false;
+        const startAt = parseBookingStartDateTime(item);
+        if (!startAt) return false;
+        return startAt.getTime() >= (now - lookbackMs);
+      })
+      .sort((a, b) => {
+        const aTime = parseBookingStartDateTime(a)?.getTime() || 0;
+        const bTime = parseBookingStartDateTime(b)?.getTime() || 0;
+        return bTime - aTime;
+      });
+    if (recent.length < NO_SHOW_BLOCK_THRESHOLD) {
+      return { restricted: false, noShowCount: recent.length, blockedUntil: null };
+    }
+    const latestStart = parseBookingStartDateTime(recent[0]);
+    if (!latestStart) {
+      return { restricted: false, noShowCount: recent.length, blockedUntil: null };
+    }
+    const blockedUntil = new Date(latestStart.getTime() + (NO_SHOW_BLOCK_DAYS * 24 * 60 * 60 * 1000));
+    return {
+      restricted: blockedUntil.getTime() > now,
+      noShowCount: recent.length,
+      blockedUntil
+    };
   };
 
   const isStaffUser = () => {
@@ -819,7 +892,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!currentUserEmail) return [];
     return sortBookings(bookings).filter((item) => {
       const status = (item.status || "").toString().toLowerCase();
-      if (status === "rejected" || status === "cancel_requested" || status === "reschedule_requested") return false;
+      if (status === "rejected" || status === "cancel_requested" || status === "reschedule_requested" || status === "no_show") return false;
       const email = (item.requesterEmail || "").toString().trim().toLowerCase();
       return !!email && email === currentUserEmail;
     });
@@ -829,7 +902,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!currentUserEmail) return [];
     return sortBookings(bookings).filter((item) => {
       const status = (item.status || "").toString().toLowerCase();
-      if (status === "rejected" || status === "cancel_requested" || status === "reschedule_requested") return false;
+      if (status === "rejected" || status === "cancel_requested" || status === "reschedule_requested" || status === "no_show") return false;
       const email = (item.requesterEmail || "").toString().trim().toLowerCase();
       return !!email && email === currentUserEmail;
     });
@@ -969,6 +1042,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (status === "rejected") return "rejected";
     if (status === "cancel_requested") return "cancel_requested";
     if (status === "reschedule_requested") return "reschedule_requested";
+    if (status === "no_show") return "no_show";
     return "pending";
   };
 
@@ -976,7 +1050,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const normalized = safeStatus(status);
     if (normalized === "approved") return "approved";
     if (normalized === "rejected") return "cancelled";
-    if (normalized === "cancel_requested" || normalized === "reschedule_requested") return "cancel-requested";
+    if (normalized === "cancel_requested" || normalized === "reschedule_requested" || normalized === "no_show") return "cancel-requested";
     return "pending";
   };
 
@@ -986,6 +1060,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (normalized === "rejected") return "ไม่อนุมัติ / ยกเลิกแล้ว";
     if (normalized === "cancel_requested") return "ขอยกเลิก (รออนุมัติ)";
     if (normalized === "reschedule_requested") return "ขอเปลี่ยนเวลา (รออนุมัติ)";
+    if (normalized === "no_show") return "ไม่มาใช้ห้อง (No-show)";
     return "รออนุมัติ";
   };
 
@@ -993,7 +1068,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const normalized = safeStatus(status);
     if (normalized === "approved") return "badge-approved";
     if (normalized === "rejected") return "badge-rejected";
-    if (normalized === "cancel_requested" || normalized === "reschedule_requested") return "badge-warning";
+    if (normalized === "cancel_requested" || normalized === "reschedule_requested" || normalized === "no_show") return "badge-warning";
     return "badge-pending";
   };
 
@@ -1002,6 +1077,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (value === "rejected") return "ไม่อนุมัติ";
     if (value === "cancel_requested") return "ขอยกเลิก";
     if (value === "reschedule_requested") return "ขอเปลี่ยนเวลา";
+    if (value === "no_show") return "ไม่มาใช้ห้อง (No-show)";
     if (value === "pending") return "รออนุมัติ";
     return value;
   };
@@ -1009,7 +1085,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusSelectClass = (value) => {
     if (value === "approved") return "is-approved";
     if (value === "rejected") return "is-rejected";
-    if (value === "cancel_requested" || value === "reschedule_requested") return "is-cancel-requested";
+    if (value === "cancel_requested" || value === "reschedule_requested" || value === "no_show") return "is-cancel-requested";
     return "is-pending";
   };
 
@@ -1027,6 +1103,81 @@ document.addEventListener("DOMContentLoaded", () => {
     messageEl.style.color = color;
   };
 
+  const askRejectionReason = async (initialValue = "") => {
+    const fallbackPrompt = () => {
+      if (typeof window.prompt !== "function") return null;
+      const input = window.prompt("กรุณาระบุเหตุผลที่ไม่อนุมัติ", initialValue || "");
+      const reason = (input || "").toString().trim();
+      return reason || null;
+    };
+    if (
+      !rejectReasonModalEl ||
+      !rejectReasonInputEl ||
+      !rejectReasonErrorEl ||
+      !rejectReasonSubmitEl ||
+      !rejectReasonCancelEl ||
+      !rejectReasonCloseEl ||
+      typeof openDialog !== "function" ||
+      typeof closeDialog !== "function"
+    ) {
+      return fallbackPrompt();
+    }
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = (value) => {
+        if (settled) return;
+        settled = true;
+        rejectReasonSubmitEl.removeEventListener("click", onSubmit);
+        rejectReasonCancelEl.removeEventListener("click", onCancel);
+        rejectReasonCloseEl.removeEventListener("click", onCancel);
+        rejectReasonModalEl.removeEventListener("click", onBackdropClick);
+        rejectReasonInputEl.removeEventListener("keydown", onKeydown);
+        resolve(value);
+      };
+      const onSubmit = () => {
+        const reason = (rejectReasonInputEl.value || "").toString().trim();
+        if (!reason) {
+          rejectReasonErrorEl.textContent = "กรุณาระบุเหตุผลที่ไม่อนุมัติ";
+          rejectReasonInputEl.focus();
+          return;
+        }
+        rejectReasonErrorEl.textContent = "";
+        closeDialog(rejectReasonModalEl);
+        done(reason);
+      };
+      const onCancel = () => {
+        rejectReasonErrorEl.textContent = "";
+        closeDialog(rejectReasonModalEl);
+        done(null);
+      };
+      const onBackdropClick = (event) => {
+        if (event.target === rejectReasonModalEl) {
+          onCancel();
+        }
+      };
+      const onKeydown = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+      };
+
+      rejectReasonInputEl.value = (initialValue || "").toString();
+      rejectReasonErrorEl.textContent = "";
+      rejectReasonSubmitEl.addEventListener("click", onSubmit);
+      rejectReasonCancelEl.addEventListener("click", onCancel);
+      rejectReasonCloseEl.addEventListener("click", onCancel);
+      rejectReasonModalEl.addEventListener("click", onBackdropClick);
+      rejectReasonInputEl.addEventListener("keydown", onKeydown);
+      openDialog(rejectReasonModalEl, { focusSelector: "#meetingRejectReasonInput" });
+      window.setTimeout(() => {
+        rejectReasonInputEl.focus();
+        rejectReasonInputEl.select();
+      }, 0);
+    });
+  };
+
   const applyStatusByIdFromModal = async (bookingId, nextStatus) => {
     if (!hasFirestore || !bookingId) return;
     const booking = bookings.find((item) => item.id === bookingId);
@@ -1034,7 +1185,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setBookingDetailStatusMessage("ไม่พบรายการจองนี้", "#b91c1c");
       return;
     }
-    if (!["pending", "approved", "rejected", "cancel_requested", "reschedule_requested"].includes(nextStatus)) {
+    if (!["pending", "approved", "rejected", "cancel_requested", "reschedule_requested", "no_show"].includes(nextStatus)) {
       setBookingDetailStatusMessage("สถานะที่เลือกไม่ถูกต้อง", "#b91c1c");
       return;
     }
@@ -1046,6 +1197,21 @@ document.addEventListener("DOMContentLoaded", () => {
       status: nextStatus,
       updatedAt: firestore.serverTimestamp()
     };
+    if (nextStatus === "no_show") {
+      payload.status = "rejected";
+      payload.rejectionReason = buildNoShowReason(booking.rejectionReason || "");
+    }
+    if (booking.status !== "reschedule_requested" && nextStatus === "rejected") {
+      let rejectionReason = (await askRejectionReason(booking.rejectionReason || "")) || "";
+      if (!rejectionReason) {
+        setBookingDetailStatusMessage("กรุณาระบุเหตุผลที่ไม่อนุมัติ", "#b91c1c");
+        return;
+      }
+      payload.rejectionReason = rejectionReason;
+    }
+    if (nextStatus !== "rejected" && nextStatus !== "no_show") {
+      payload.rejectionReason = "";
+    }
     if (booking.status === "reschedule_requested" && nextStatus === "approved") {
       const nextDate = booking.rescheduleRequestedDate || "";
       const nextStartTime = booking.rescheduleRequestedStartTime || "";
@@ -1087,6 +1253,7 @@ document.addEventListener("DOMContentLoaded", () => {
       payload.rescheduleRequestedStartTime = "";
       payload.rescheduleRequestedEndTime = "";
       payload.rescheduleRequestReason = "";
+      payload.rejectionReason = "";
     }
     try {
       await firestore.updateDoc(
@@ -1103,6 +1270,14 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       setBookingDetailStatusMessage("อัปเดตสถานะคำขอเรียบร้อยแล้ว", "#047857");
     } catch (err) {
+      const code = (err?.code || "").toString().trim();
+      if (code === "permission-denied") {
+        setBookingDetailStatusMessage(
+          "ไม่มีสิทธิ์อัปเดตสถานะนี้ (ตรวจสอบสิทธิ์บัญชี Staff และ Firestore Rules)",
+          "#b91c1c"
+        );
+        return;
+      }
       setBookingDetailStatusMessage("ไม่สามารถอัปเดตสถานะคำขอได้ในขณะนี้", "#b91c1c");
     }
   };
@@ -1120,6 +1295,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : "ประชุมทั่วไป";
     const cancelReason = booking.cancelRequestReason || "-";
     const rescheduleReason = booking.rescheduleRequestReason || "-";
+    const rejectionReason = booking.rejectionReason || "-";
     const requestedDate = booking.rescheduleRequestedDate || "-";
     const requestedTime = booking.rescheduleRequestedDate
       ? `${booking.rescheduleRequestedStartTime || "-"} - ${booking.rescheduleRequestedEndTime || "-"}`
@@ -1127,37 +1303,60 @@ document.addEventListener("DOMContentLoaded", () => {
     const contactText = [booking.contactPhone, booking.contactInfo]
       .filter((value) => (value || "").toString().trim())
       .join(" / ") || "-";
+    const roomText = normalizeRoomDisplay(booking.roomId, booking.roomName);
+    const dateText = formatDate(booking.date);
+    const timeText = `${booking.startTime || "-"} - ${booking.endTime || "-"}`;
     const rows = [
-      ["ห้องประชุม", normalizeRoomDisplay(booking.roomId, booking.roomName)],
-      ["วันที่", formatDate(booking.date)],
-      ["เวลา", `${booking.startTime || "-"} - ${booking.endTime || "-"}`],
       ["ผู้ขอ", booking.requester || "-"],
-      ["สถานะ", statusText(booking.status)],
       ["ประเภทคำขอ", projectText],
-      ["วัตถุประสงค์", booking.purpose || "-"],
-      ["เหตุผลขอยกเลิก", cancelReason],
-      ["วันที่ใหม่ที่ขอ", formatDate(requestedDate)],
-      ["เวลาใหม่ที่ขอ", requestedTime],
-      ["เหตุผลขอเปลี่ยนเวลา", rescheduleReason]
+      ["วัตถุประสงค์", booking.purpose || "-"]
     ];
     if (includeContact) {
-      rows.splice(7, 0, ["ข้อมูลติดต่อ", contactText]);
+      rows.push(["ข้อมูลติดต่อ", contactText]);
     }
+    if (cancelReason !== "-") rows.push(["เหตุผลขอยกเลิก", cancelReason]);
+    if (rejectionReason !== "-") rows.push(["เหตุผลไม่อนุมัติ", rejectionReason]);
+    if (requestedDate !== "-") rows.push(["วันที่ใหม่ที่ขอ", formatDate(requestedDate)]);
+    if (requestedTime !== "-") rows.push(["เวลาใหม่ที่ขอ", requestedTime]);
+    if (rescheduleReason !== "-") rows.push(["เหตุผลขอเปลี่ยนเวลา", rescheduleReason]);
     const selectOptions = [
       "pending",
       "approved",
       "rejected",
       "cancel_requested",
+      "no_show",
       ...(booking.status === "reschedule_requested" ? ["reschedule_requested"] : [])
     ];
     bookingDetailBodyEl.innerHTML = `
-      <div class="meeting-booking-detail-grid">
-        ${rows.map(([label, value]) => `
-          <div class="meeting-booking-detail-item">
-            <div class="meeting-booking-detail-label">${escapeText(label)}</div>
-            <div class="meeting-booking-detail-value">${escapeText(value)}</div>
+      <div class="meeting-booking-detail-shell">
+        <div class="meeting-booking-detail-summary">
+          <div class="meeting-booking-summary-item">
+            <div class="meeting-booking-summary-label">ห้องประชุม</div>
+            <div class="meeting-booking-summary-value">${escapeText(roomText)}</div>
           </div>
-        `).join("")}
+          <div class="meeting-booking-summary-item">
+            <div class="meeting-booking-summary-label">วันที่</div>
+            <div class="meeting-booking-summary-value">${escapeText(dateText)}</div>
+          </div>
+          <div class="meeting-booking-summary-item">
+            <div class="meeting-booking-summary-label">เวลา</div>
+            <div class="meeting-booking-summary-value">${escapeText(timeText)}</div>
+          </div>
+          <div class="meeting-booking-summary-item">
+            <div class="meeting-booking-summary-label">สถานะ</div>
+            <div class="meeting-booking-summary-value">
+              <span class="status-pill ${statusBadgeClass(booking.status)}">${escapeText(statusText(booking.status))}</span>
+            </div>
+          </div>
+        </div>
+        <div class="meeting-booking-detail-grid">
+          ${rows.map(([label, value]) => `
+            <div class="meeting-booking-detail-item">
+              <div class="meeting-booking-detail-label">${escapeText(label)}</div>
+              <div class="meeting-booking-detail-value">${escapeText(value)}</div>
+            </div>
+          `).join("")}
+        </div>
       </div>
       ${allowStatusEdit
         ? `
@@ -1296,7 +1495,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${escapeText(`${item.startTime || "-"} - ${item.endTime || "-"}`)}</td>
                 <td>${escapeText(normalizeRoomDisplay(item.roomId, item.roomName))}</td>
                 <td>${escapeText(item.requester || "-")}</td>
-                <td>${escapeText(item.purpose || "-")}</td>
+                <td>${escapeText(item.purpose || "-")}${item.status === "rejected" && item.rejectionReason ? `<div class="meeting-row-meta">เหตุผลไม่อนุมัติ: ${escapeText(item.rejectionReason)}</div>` : ""}</td>
                 <td>
                   <span class="status-pill ${statusBadgeClass(item.status)}">${escapeText(statusText(item.status))}</span>
                 </td>
@@ -1759,8 +1958,23 @@ document.addEventListener("DOMContentLoaded", () => {
       setMessage("จองย้อนหลังได้ไม่เกิน 1 ชั่วโมง", "#b91c1c");
       return;
     }
+    if (!isStaffUser() && (startAt.getTime() - now.getTime()) < (MIN_ADVANCE_BOOKING_HOURS * 60 * 60 * 1000)) {
+      setMessage(`ผู้ขอใช้ต้องจองล่วงหน้าไม่น้อยกว่า ${MIN_ADVANCE_BOOKING_HOURS} ชั่วโมง`, "#b91c1c");
+      return;
+    }
     if (!allowLongAdvanceBooking && startAt > latestAllowed) {
       setMessage("จองล่วงหน้าได้ไม่เกิน 1 เดือน", "#b91c1c");
+      return;
+    }
+    const restriction = getNoShowRestriction(readCurrentUserEmail());
+    if (!isStaffUser() && restriction.restricted) {
+      const blockedUntilText = restriction.blockedUntil
+        ? restriction.blockedUntil.toLocaleDateString("th-TH", { day: "2-digit", month: "short", year: "numeric" })
+        : "-";
+      setMessage(
+        `บัญชีนี้ถูกจำกัดสิทธิ์ชั่วคราวจากประวัติ No-show (${restriction.noShowCount} ครั้ง) ใช้งานใหม่ได้หลัง ${blockedUntilText}`,
+        "#b91c1c"
+      );
       return;
     }
 
@@ -1874,12 +2088,25 @@ document.addEventListener("DOMContentLoaded", () => {
       setCancelMessage("คำขอนี้ถูกยกเลิก/ปฏิเสธไปแล้ว", "#6b7280");
       return;
     }
+    if (booking.status === "no_show") {
+      setCancelMessage("คำขอนี้ถูกบันทึกเป็น No-show แล้ว", "#6b7280");
+      return;
+    }
     if (booking.status === "cancel_requested") {
       setCancelMessage("คำขอนี้ถูกส่งขอยกเลิกไว้แล้ว", "#6b7280");
       return;
     }
     if (booking.status === "reschedule_requested") {
       setCancelMessage("คำขอนี้อยู่ระหว่างรออนุมัติการเปลี่ยนเวลา", "#6b7280");
+      return;
+    }
+    const bookingStartAt = parseBookingStartDateTime(booking);
+    if (
+      !isStaffUser() &&
+      bookingStartAt &&
+      (bookingStartAt.getTime() - Date.now()) < (MIN_CANCEL_BEFORE_HOURS * 60 * 60 * 1000)
+    ) {
+      setCancelMessage(`ต้องยกเลิกการจองล่วงหน้าไม่น้อยกว่า ${MIN_CANCEL_BEFORE_HOURS} ชั่วโมง`, "#b91c1c");
       return;
     }
 
@@ -1961,6 +2188,10 @@ document.addEventListener("DOMContentLoaded", () => {
       setRescheduleMessage("คำขอนี้ถูกยกเลิก/ปฏิเสธไปแล้ว", "#6b7280");
       return;
     }
+    if (booking.status === "no_show") {
+      setRescheduleMessage("คำขอนี้ถูกบันทึกเป็น No-show แล้ว", "#6b7280");
+      return;
+    }
     if (booking.status === "cancel_requested") {
       setRescheduleMessage("คำขอนี้อยู่ระหว่างรออนุมัติการยกเลิก", "#6b7280");
       return;
@@ -1988,8 +2219,23 @@ document.addEventListener("DOMContentLoaded", () => {
       setRescheduleMessage("ปรับเวลาเป็นย้อนหลังได้ไม่เกิน 1 ชั่วโมง", "#b91c1c");
       return;
     }
+    if (!isStaffUser() && (nextStartAt.getTime() - now.getTime()) < (MIN_ADVANCE_BOOKING_HOURS * 60 * 60 * 1000)) {
+      setRescheduleMessage(`ต้องขอเปลี่ยนเวลาให้วันใช้งานใหม่ล่วงหน้าไม่น้อยกว่า ${MIN_ADVANCE_BOOKING_HOURS} ชั่วโมง`, "#b91c1c");
+      return;
+    }
     if (!isStaffUser() && nextStartAt > latestAllowed) {
       setRescheduleMessage("ปรับเวลาเป็นล่วงหน้าได้ไม่เกิน 1 เดือน", "#b91c1c");
+      return;
+    }
+    const restriction = getNoShowRestriction(currentUserEmail);
+    if (!isStaffUser() && restriction.restricted) {
+      const blockedUntilText = restriction.blockedUntil
+        ? restriction.blockedUntil.toLocaleDateString("th-TH", { day: "2-digit", month: "short", year: "numeric" })
+        : "-";
+      setRescheduleMessage(
+        `บัญชีนี้ถูกจำกัดสิทธิ์ชั่วคราวจากประวัติ No-show (${restriction.noShowCount} ครั้ง) ใช้งานใหม่ได้หลัง ${blockedUntilText}`,
+        "#b91c1c"
+      );
       return;
     }
 

@@ -2424,6 +2424,93 @@
       </div>
     </div>
 
+    <!-- Meeting Room Consent Modal -->
+    <div
+      id="meetingConsentModal"
+      class="modal"
+      aria-hidden="true"
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby="meetingConsentTitle"
+    >
+      <div class="modal-dialog borrow-consent-dialog">
+        <div class="modal-header">
+          <div>
+            <div id="meetingConsentTitle" class="modal-title">ยืนยันกฎระเบียบและความยินยอม</div>
+            <div class="modal-subtitle">
+              กรุณาอ่านกฎระเบียบการจองห้องประชุม และเงื่อนไข PDPA ก่อนเข้าสู่หน้าจองห้องประชุม
+            </div>
+          </div>
+          <button id="meetingConsentClose" class="modal-close" type="button" aria-label="ปิด">×</button>
+        </div>
+        <div class="modal-body borrow-consent-body">
+          <section class="modal-section">
+            <div class="modal-section-header">
+              <div class="modal-section-icon icon-approve">
+                <span>🏢</span>
+              </div>
+              <div class="modal-section-header-text">
+                <div class="modal-section-title">กฎระเบียบการจองห้องประชุม</div>
+                <div class="modal-section-caption">สรุปข้อกำหนดสำคัญก่อนยื่นคำขอ</div>
+              </div>
+            </div>
+            <ol class="consent-list">
+              <li>ผู้ขอใช้ต้องจองล่วงหน้าไม่น้อยกว่า 24 ชั่วโมง ก่อนเวลาใช้งาน</li>
+              <li>การจองจะสมบูรณ์ต่อเมื่อได้รับ “อนุมัติ” จากเจ้าหน้าที่แล้วเท่านั้น</li>
+              <li>ห้ามจองเวลาซ้อนกับผู้อื่น หากเกิดการซ้อน ระบบอาจปฏิเสธหรือปรับเวลาอัตโนมัติ</li>
+              <li>ผู้ใช้ต้องเข้าใช้ห้องตรงเวลา หากเกิน 15 นาที จะถือว่าสละสิทธิ์</li>
+              <li>ห้ามใช้ห้องเกินเวลาที่ได้รับอนุมัติ</li>
+              <li>ผู้ใช้ต้องดูแลความสะอาดและทรัพย์สินของห้องประชุม</li>
+              <li>หากเกิดความเสียหาย ต้องรับผิดชอบค่าเสียหายตามความเหมาะสม</li>
+              <li>ต้องยกเลิกการจองล่วงหน้าไม่น้อยกว่า 12 ชั่วโมง หากไม่ใช้งาน</li>
+              <li>กรณีไม่มาใช้ห้องโดยไม่แจ้ง (No-show) ระบบจะบันทึกและอาจจำกัดสิทธิ์ในอนาคต</li>
+              <li>เจ้าหน้าที่ผู้ดูแลระบบมีสิทธิ์ยกเลิกหรือปรับเปลี่ยนการจองห้องประชุมได้ตามความเหมาะสม โดยจะแจ้งให้ผู้ใช้งานทราบล่วงหน้า</li>
+            </ol>
+          </section>
+
+          <section class="modal-section">
+            <div class="modal-section-header">
+              <div class="modal-section-icon icon-info">
+                <span>🔒</span>
+              </div>
+              <div class="modal-section-header-text">
+                <div class="modal-section-title">พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)</div>
+                <div class="modal-section-caption">ข้อมูลส่วนบุคคลจะถูกใช้เพื่อยืนยันตัวตนและติดต่อเกี่ยวกับคำขอเท่านั้น</div>
+              </div>
+            </div>
+            <div class="section-text-sm">
+              ข้อมูลส่วนบุคคลที่ท่านระบุจะถูกจัดเก็บเพื่อยืนยันตัวตนและติดต่อเกี่ยวกับคำขอจองห้องประชุมเท่านั้น
+              โดยจะไม่ถูกนำไปใช้ในวัตถุประสงค์อื่นโดยไม่ได้รับอนุญาต
+            </div>
+            <ul class="consent-list">
+              <li>ชื่อ-นามสกุล และอีเมลผู้ขอ</li>
+              <li>เบอร์โทรศัพท์ หรือช่องทางติดต่อ</li>
+              <li>ข้อมูลห้อง วันเวลา และวัตถุประสงค์การจอง</li>
+            </ul>
+            <div class="section-text-sm">
+              อ่านรายละเอียด PDPA: <a href="https://www.ratchakitcha.soc.go.th/DATA/PDF/2562/A/069/T_0052.PDF" target="_blank" rel="noopener noreferrer">ประกาศราชกิจจานุเบกษา</a>
+            </div>
+          </section>
+
+          <div class="consent-checklist">
+            <label class="consent-check">
+              <input id="meetingConsentRules" type="checkbox" />
+              ข้าพเจ้าได้อ่านและยอมรับกฎระเบียบการจองห้องประชุมครบถ้วนแล้ว
+            </label>
+            <label class="consent-check">
+              <input id="meetingConsentPdpa" type="checkbox" />
+              ข้าพเจ้ายินยอมให้มีการเก็บข้อมูลส่วนบุคคลตาม PDPA เพื่อการจองห้องประชุม
+            </label>
+          </div>
+
+          <div class="modal-actions">
+            <button id="meetingConsentCancel" class="btn-ghost" type="button">ยกเลิก</button>
+            <button id="meetingConsentConfirm" class="btn-primary" type="button" disabled>ยอมรับและดำเนินการต่อ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- PDF Template (Hidden, ใช้สร้างไฟล์ดาวน์โหลด) -->
     <div id="pdfRoot" class="pdf-root" aria-hidden="true" style="font-size: 14pt;">
       <!-- Page 1: Advance Letter -->
@@ -2842,6 +2929,41 @@
           <button id="meetingBookingDetailClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
         </div>
         <div id="meetingBookingDetailBody" class="modal-body"></div>
+      </div>
+    </div>
+
+    <div
+      id="meetingRejectReasonModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="meetingRejectReasonTitle"
+    >
+      <div class="modal-dialog" style="max-width: 560px;">
+        <div class="modal-header">
+          <div>
+            <div id="meetingRejectReasonTitle" class="modal-title">ระบุเหตุผลที่ไม่อนุมัติ</div>
+            <div class="modal-subtitle">เหตุผลนี้จะแสดงให้ผู้ยื่นคำขอเห็นเพื่อใช้ประกอบการแก้ไข</div>
+          </div>
+          <button id="meetingRejectReasonClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="borrow-form-field">
+            <label class="login-label" for="meetingRejectReasonInput">เหตุผล</label>
+            <textarea
+              id="meetingRejectReasonInput"
+              class="login-input meeting-reject-reason-input"
+              placeholder="กรุณาระบุเหตุผลที่ไม่อนุมัติ"
+              maxlength="500"
+            ></textarea>
+            <div id="meetingRejectReasonError" class="section-text-sm meeting-reject-reason-error" aria-live="polite"></div>
+          </div>
+          <div class="modal-actions">
+            <button id="meetingRejectReasonCancel" type="button" class="btn-ghost">ยกเลิก</button>
+            <button id="meetingRejectReasonSubmit" type="button" class="btn-primary">ยืนยัน</button>
+          </div>
+        </div>
       </div>
     </div>
 

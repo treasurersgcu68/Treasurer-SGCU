@@ -241,20 +241,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pageViews = document.querySelectorAll(".page-view");
   let currentPage = null;
   let pendingBorrowPage = null;
+  let pendingMeetingPage = null;
   const borrowConsentKey = "borrowAssetsConsent-v1";
+  const meetingConsentKey = "meetingRoomConsent-v1";
   const borrowConsentModal = document.getElementById("borrowConsentModal");
   const borrowConsentConfirm = document.getElementById("borrowConsentConfirm");
   const borrowConsentCancel = document.getElementById("borrowConsentCancel");
   const borrowConsentClose = document.getElementById("borrowConsentClose");
   const borrowConsentRules = document.getElementById("borrowConsentRules");
   const borrowConsentPdpa = document.getElementById("borrowConsentPdpa");
+  const meetingConsentModal = document.getElementById("meetingConsentModal");
+  const meetingConsentConfirm = document.getElementById("meetingConsentConfirm");
+  const meetingConsentCancel = document.getElementById("meetingConsentCancel");
+  const meetingConsentClose = document.getElementById("meetingConsentClose");
+  const meetingConsentRules = document.getElementById("meetingConsentRules");
+  const meetingConsentPdpa = document.getElementById("meetingConsentPdpa");
 
   const hasBorrowConsent = () =>
     window.sessionStorage && sessionStorage.getItem(borrowConsentKey) === "accepted";
+  const hasMeetingConsent = () =>
+    window.sessionStorage && sessionStorage.getItem(meetingConsentKey) === "accepted";
 
   const updateBorrowConsentState = () => {
     if (!borrowConsentConfirm || !borrowConsentRules || !borrowConsentPdpa) return;
     borrowConsentConfirm.disabled = !(borrowConsentRules.checked && borrowConsentPdpa.checked);
+  };
+  const updateMeetingConsentState = () => {
+    if (!meetingConsentConfirm || !meetingConsentRules || !meetingConsentPdpa) return;
+    meetingConsentConfirm.disabled = !(meetingConsentRules.checked && meetingConsentPdpa.checked);
   };
 
   const showBorrowConsentModal = () => {
@@ -271,6 +285,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!borrowConsentModal) return;
     borrowConsentModal.classList.remove("show");
     borrowConsentModal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("has-modal");
+  };
+  const showMeetingConsentModal = () => {
+    if (!meetingConsentModal) return;
+    if (meetingConsentRules) meetingConsentRules.checked = false;
+    if (meetingConsentPdpa) meetingConsentPdpa.checked = false;
+    updateMeetingConsentState();
+    meetingConsentModal.classList.add("show");
+    meetingConsentModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("has-modal");
+  };
+  const hideMeetingConsentModal = () => {
+    if (!meetingConsentModal) return;
+    meetingConsentModal.classList.remove("show");
+    meetingConsentModal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("has-modal");
   };
 
@@ -290,6 +319,43 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = pendingBorrowPage;
         pendingBorrowPage = null;
         void switchPage(target, { fromHash: true, bypassConsent: true });
+      }
+    });
+  }
+  if (meetingConsentRules) {
+    meetingConsentRules.addEventListener("change", updateMeetingConsentState);
+  }
+  if (meetingConsentPdpa) {
+    meetingConsentPdpa.addEventListener("change", updateMeetingConsentState);
+  }
+  if (meetingConsentConfirm) {
+    meetingConsentConfirm.addEventListener("click", () => {
+      if (window.sessionStorage) {
+        sessionStorage.setItem(meetingConsentKey, "accepted");
+      }
+      hideMeetingConsentModal();
+      if (pendingMeetingPage) {
+        const target = pendingMeetingPage;
+        pendingMeetingPage = null;
+        void switchPage(target, { fromHash: true, bypassConsent: true });
+      }
+    });
+  }
+  if (meetingConsentCancel) {
+    meetingConsentCancel.addEventListener("click", () => {
+      hideMeetingConsentModal();
+      pendingMeetingPage = null;
+      if (!currentPage) {
+        void switchPage("home", { fromHash: true, bypassConsent: true });
+      }
+    });
+  }
+  if (meetingConsentClose) {
+    meetingConsentClose.addEventListener("click", () => {
+      hideMeetingConsentModal();
+      pendingMeetingPage = null;
+      if (!currentPage) {
+        void switchPage("home", { fromHash: true, bypassConsent: true });
       }
     });
   }
@@ -345,6 +411,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!bypassConsent && targetPage === "borrow-assets" && !hasBorrowConsent()) {
       pendingBorrowPage = targetPage;
       showBorrowConsentModal();
+      if (currentPage) {
+        if (fromHash) {
+          if (history.replaceState) {
+            history.replaceState(null, "", "#" + currentPage);
+          } else {
+            window.location.hash = "#" + currentPage;
+          }
+        }
+        return;
+      }
+      await switchPage("home", { fromHash: true, bypassConsent: true });
+      return;
+    }
+    if (!bypassConsent && targetPage === "meeting-room-booking" && !hasMeetingConsent()) {
+      pendingMeetingPage = targetPage;
+      showMeetingConsentModal();
       if (currentPage) {
         if (fromHash) {
           if (history.replaceState) {

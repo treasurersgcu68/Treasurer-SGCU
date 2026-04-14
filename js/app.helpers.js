@@ -239,6 +239,12 @@ function recordLoadError(key, message, options = {}) {
   }
 }
 
+function clearLoadError(key) {
+  if (!loadErrors.has(key)) return;
+  loadErrors.delete(key);
+  updateAppAlert();
+}
+
 function setInlineError(el, message) {
   if (!el) return;
   const box = document.createElement("div");

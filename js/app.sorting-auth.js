@@ -380,11 +380,6 @@ function goToFirstVisibleNavPageWithPreference(preferredPage) {
   }
 }
 
-function updateNavLabelsForStaff(isStaff) {
-  // Kept for backward compatibility with older calls.
-  // New nav structure uses dedicated role menus, so labels/pages are static.
-}
-
 function initAuthUI() {
   if (!window.sgcuAuth) {
     const panel = document.getElementById("authPanel");
@@ -511,7 +506,7 @@ function initAuthUI() {
     "37": "สหเวชศาสตร์",
     "38": "จิตวิทยา",
     "39": "วิทยาศาสตร์การกีฬา",
-    "40": "สำนักทรัพยากรทางการเกษตร",
+    "40": "เกษตรและบูรณาการ",
     "56": "สถาบันนวัตกรรมบูรณาการฯ"
   };
 
@@ -564,7 +559,7 @@ function initAuthUI() {
       return { ok: true, code: "" };
     } catch (err) {
       const code = (err?.code || "unknown").toString();
-      console.error("save user profile to firestore failed - app.sorting-auth.js:557", err);
+      console.error("save user profile to firestore failed - app.sorting-auth.js:562", err);
       return { ok: false, code };
     }
   }
@@ -968,7 +963,7 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:925", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:966", err);
         });
         refreshAuthDisplay(null);
         return;
@@ -1055,7 +1050,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:1012", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:1053", err);
     });
     loginProfileLoadedForEmail = "";
     setLoginProfileStatus("ออกจากระบบแล้ว", "#6b7280");

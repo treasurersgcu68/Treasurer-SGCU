@@ -5642,6 +5642,59 @@ th.sortable.sort-desc::after {
   color: #b91c1c;
 }
 
+.borrow-action-reason-input {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.borrow-action-reason-meta {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.borrow-action-reason-helper {
+  color: #6b7280;
+}
+
+.borrow-action-reason-counter {
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.borrow-action-reason-error {
+  min-height: 18px;
+  margin-top: 6px;
+  color: #b91c1c;
+}
+
+.borrow-delete-confirm-message {
+  line-height: 1.55;
+}
+
+.borrow-delete-confirm-warning {
+  margin-top: 2px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff1f2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.borrow-delete-confirm-submit {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 10px 22px rgba(220, 38, 38, 0.25);
+}
+
+.borrow-delete-confirm-submit:hover {
+  box-shadow: 0 14px 30px rgba(220, 38, 38, 0.32);
+}
+
 .meeting-day-list-summary {
   margin-bottom: 10px;
 }

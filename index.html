@@ -40,7 +40,7 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/style.css?v=20260415-7" />
     <!-- Chart.js (กราฟในหน้า Status/Dashboard) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <!-- PapaParse (อ่าน CSV/ข้อมูลตาราง) -->
@@ -1425,6 +1425,173 @@
         </div>
       </section>
 
+      <!-- ============ BUDGET APPROVAL REQUEST ============ -->
+      <section class="page-view" data-page="budget-approval-request">
+        <div class="page">
+          <div class="page-header-flex section-appear">
+            <div>
+              <h2 class="page-title">Budget Approval Request</h2>
+              <p class="page-subtitle">
+                กรอกข้อมูลเพื่อยื่นคำขออนุมัติงบประมาณสำหรับโครงการหรือกิจกรรม
+              </p>
+            </div>
+          </div>
+
+          <div class="separator-gradient"></div>
+
+          <div class="section-appear section-delay-1">
+            <form id="budgetApprovalForm" class="borrow-request-form" aria-label="แบบฟอร์มขออนุมัติงบประมาณ">
+              <div class="panel panel-hover">
+                <div class="panel-header">
+                  <div>
+                    <div class="panel-title">รายละเอียดคำขออนุมัติงบประมาณ</div>
+                    <div class="panel-caption">ตรวจสอบความครบถ้วนของข้อมูลก่อนกดยื่นคำขอ</div>
+                  </div>
+                </div>
+                <div class="panel-body">
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetOrgType">ประเภทองค์กร</label>
+                      <select id="budgetOrgType" class="login-input" required>
+                        <option value="" selected disabled>เลือกประเภทองค์กร</option>
+                      </select>
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetOrgDept">ฝ่าย / ชมรม</label>
+                      <select id="budgetOrgDept" class="login-input" required>
+                        <option value="" selected disabled>เลือกฝ่าย / ชมรม</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetProjectName">ชื่อโครงการ</label>
+                      <input
+                        id="budgetProjectName"
+                        class="login-input"
+                        type="text"
+                        maxlength="200"
+                        placeholder="เช่น โครงการค่ายอาสา SGCU"
+                        required
+                      />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetActivityLocation">สถานที่ที่ทำกิจกรรม</label>
+                      <input
+                        id="budgetActivityLocation"
+                        class="login-input"
+                        type="text"
+                        maxlength="200"
+                        placeholder="เช่น อาคารจามจุรี 9 / พื้นที่ชุมชน..."
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetPrepStartDate">วันเริ่มเตรียมงาน</label>
+                      <input id="budgetPrepStartDate" class="login-input" type="date" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetOperationEndDate">วันสุดท้ายปฏิบัติงาน</label>
+                      <input id="budgetOperationEndDate" class="login-input" type="date" required />
+                    </div>
+                  </div>
+
+                  <div class="borrow-form-row is-3">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStudentOperators">จำนวนนิสิตผู้ปฏิบัติงาน</label>
+                      <input
+                        id="budgetStudentOperators"
+                        class="login-input"
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="เช่น 25"
+                        required
+                      />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStudentParticipants">จำนวนนิสิตผู้เข้าร่วมงาน</label>
+                      <input
+                        id="budgetStudentParticipants"
+                        class="login-input"
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="เช่น 180"
+                        required
+                      />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetEstimatedExpense">ประมาณการรายจ่าย (บาท)</label>
+                      <input
+                        id="budgetEstimatedExpense"
+                        class="login-input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="เช่น 35000"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetProjectDescription">คำอธิบาย</label>
+                      <textarea
+                        id="budgetProjectDescription"
+                        class="login-input"
+                        rows="5"
+                        maxlength="3000"
+                        placeholder="อธิบายเป้าหมาย รูปแบบกิจกรรม และเหตุผลการใช้งบ"
+                        required
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <div class="meeting-form-actions">
+                    <button id="budgetApprovalSubmitBtn" type="submit" class="btn-primary">ยื่นคำขออนุมัติงบประมาณ</button>
+                    <span id="budgetApprovalMessage" class="section-text-sm" aria-live="polite"></span>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <div class="panel panel-hover section-appear section-delay-2" style="margin-top:18px;">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">รายการที่ขอไปทั้งหมด</div>
+                  <div class="panel-caption" id="budgetApprovalListCaption">กำลังโหลดรายการ...</div>
+                </div>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="text-align:center;">วันที่ยื่นคำขอ</th>
+                      <th style="text-align:center;">ประเภทองค์กร / ฝ่าย</th>
+                      <th style="text-align:center;">ชื่อโครงการ</th>
+                      <th style="text-align:center;">ช่วงปฏิบัติงาน</th>
+                      <th style="text-align:right;">ประมาณการรายจ่าย</th>
+                      <th style="text-align:center;">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="budgetApprovalMyRequestsTableBody">
+                    <tr>
+                      <td colspan="6" style="text-align:center; color:#6b7280;">กำลังโหลดข้อมูล...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ============ BORROW ASSETS (REQUEST) ============ -->
       <section class="page-view" data-page="borrow-assets">
         <div class="page">
@@ -1471,7 +1638,7 @@
                       />
                     </div>
                     <div class="borrow-form-field">
-                      <label class="login-label" for="borrowProjectDept">ฝ่ายในโครงการ ชมรม หรือ องค์กร</label>
+                      <label class="login-label" for="borrowProjectDept">ฝ่าย / ชมรม</label>
                       <select id="borrowProjectDept" class="login-input" required>
                         <option value="" selected disabled>เลือกฝ่าย / ชมรม</option>
                         <!-- JS เติมตัวเลือกจากฝ่าย / ชมรม -->
@@ -1850,6 +2017,7 @@
             <div>
               <h2 class="page-title">Meeting Room Booking</h2>
               <p class="page-subtitle">กรอกคำขอเพื่อจองห้องประชุม และติดตามสถานะอนุมัติจากทีม Staff</p>
+              <div id="meetingReminderBanner" class="section-text-sm" aria-live="polite" hidden></div>
             </div>
           </div>
 
@@ -1924,90 +2092,118 @@
               </form>
 
               <div class="meeting-form-divider"></div>
-
-              <div class="meeting-form-subhead meeting-form-subhead-cancel">
-                <div class="meeting-form-subtitle">ยกเลิกคำขอ</div>
+              <div class="meeting-secondary-actions">
+                <button
+                  id="meetingToggleCancelForm"
+                  class="btn-ghost"
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls="meetingCancelSection"
+                >
+                  ยกเลิกคำขอ
+                </button>
+                <button
+                  id="meetingToggleRescheduleForm"
+                  class="btn-ghost"
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls="meetingRescheduleSection"
+                >
+                  ขอเปลี่ยนเวลา
+                </button>
               </div>
 
-              <form id="meetingCancelForm" class="meeting-booking-form meeting-booking-form-cancel">
-                <div class="borrow-form-row">
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingCancelBookingSelect">คำขอของฉัน</label>
-                    <select id="meetingCancelBookingSelect" class="login-input" required>
-                      <option value="">เลือกคำขอที่ต้องการยกเลิก</option>
-                    </select>
-                  </div>
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingCancelReason">เหตุผลการขอยกเลิก</label>
-                    <textarea
-                      id="meetingCancelReason"
-                      class="login-input"
-                      rows="2"
-                      placeholder="ระบุเหตุผลที่ต้องการยกเลิก"
-                      required
-                    ></textarea>
-                  </div>
+              <section id="meetingCancelSection" class="meeting-secondary-section" hidden>
+                <div class="meeting-form-divider"></div>
+                <div class="meeting-form-subhead meeting-form-subhead-cancel">
+                  <div class="meeting-form-subtitle">ยกเลิกคำขอ</div>
                 </div>
-                <div class="meeting-form-actions">
-                  <button class="btn-ghost" type="submit">ยกเลิกคำขอของฉัน</button>
-                  <span id="meetingCancelMessage" class="section-text-sm" aria-live="polite"></span>
-                </div>
-              </form>
+                <form id="meetingCancelForm" class="meeting-booking-form meeting-booking-form-cancel">
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="meetingCancelBookingSelect">คำขอของฉัน</label>
+                      <select id="meetingCancelBookingSelect" class="login-input" required>
+                        <option value="">เลือกคำขอที่ต้องการยกเลิก</option>
+                      </select>
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="meetingCancelReason">เหตุผลการขอยกเลิก</label>
+                      <textarea
+                        id="meetingCancelReason"
+                        class="login-input"
+                        rows="2"
+                        placeholder="ระบุเหตุผลที่ต้องการยกเลิก"
+                        required
+                      ></textarea>
+                    </div>
+                  </div>
+                  <div class="meeting-form-actions">
+                    <button class="btn-ghost" type="submit">ยกเลิกคำขอของฉัน</button>
+                    <span id="meetingCancelMessage" class="section-text-sm" aria-live="polite"></span>
+                  </div>
+                </form>
+              </section>
 
-              <div class="meeting-form-divider"></div>
-
-              <div class="meeting-form-subhead meeting-form-subhead-reschedule">
-                <div class="meeting-form-subtitle">ขอเปลี่ยนเวลา</div>
-              </div>
-
-              <form id="meetingRescheduleForm" class="meeting-booking-form meeting-booking-form-reschedule">
-                <div class="borrow-form-row">
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleBookingSelect">คำขอของฉัน (ขอเปลี่ยนเวลา)</label>
-                    <select id="meetingRescheduleBookingSelect" class="login-input" required>
-                      <option value="">เลือกรายการที่ต้องการขอเปลี่ยนเวลา</option>
-                    </select>
-                  </div>
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleDate">วันที่ใหม่</label>
-                    <input id="meetingRescheduleDate" class="login-input" type="date" required />
-                    <div class="section-text-sm">กรุณากรอกปีเป็น ค.ศ. (เช่น 2026)</div>
-                  </div>
+              <section id="meetingRescheduleSection" class="meeting-secondary-section" hidden>
+                <div class="meeting-form-divider"></div>
+                <div class="meeting-form-subhead meeting-form-subhead-reschedule">
+                  <div class="meeting-form-subtitle">ขอเปลี่ยนเวลา</div>
                 </div>
-                <div class="borrow-form-row">
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleStartTime">เวลาเริ่มใหม่</label>
-                    <input id="meetingRescheduleStartTime" class="login-input" type="time" required />
+                <form id="meetingRescheduleForm" class="meeting-booking-form meeting-booking-form-reschedule">
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="meetingRescheduleBookingSelect">คำขอของฉัน (ขอเปลี่ยนเวลา)</label>
+                      <select id="meetingRescheduleBookingSelect" class="login-input" required>
+                        <option value="">เลือกรายการที่ต้องการขอเปลี่ยนเวลา</option>
+                      </select>
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="meetingRescheduleDate">วันที่ใหม่</label>
+                      <input id="meetingRescheduleDate" class="login-input" type="date" required />
+                      <div class="section-text-sm">กรุณากรอกปีเป็น ค.ศ. (เช่น 2026)</div>
+                    </div>
                   </div>
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleEndTime">เวลาสิ้นสุดใหม่</label>
-                    <input id="meetingRescheduleEndTime" class="login-input" type="time" required />
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="meetingRescheduleStartTime">เวลาเริ่มใหม่</label>
+                      <input id="meetingRescheduleStartTime" class="login-input" type="time" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="meetingRescheduleEndTime">เวลาสิ้นสุดใหม่</label>
+                      <input id="meetingRescheduleEndTime" class="login-input" type="time" required />
+                    </div>
                   </div>
-                </div>
-                <div class="borrow-form-row">
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRescheduleReason">เหตุผลการขอเปลี่ยนเวลา</label>
-                    <textarea
-                      id="meetingRescheduleReason"
-                      class="login-input"
-                      rows="2"
-                      placeholder="ระบุเหตุผลที่ต้องการเปลี่ยนเวลา"
-                      required
-                    ></textarea>
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="meetingRescheduleReason">เหตุผลการขอเปลี่ยนเวลา</label>
+                      <textarea
+                        id="meetingRescheduleReason"
+                        class="login-input"
+                        rows="2"
+                        placeholder="ระบุเหตุผลที่ต้องการเปลี่ยนเวลา"
+                        required
+                      ></textarea>
+                    </div>
                   </div>
-                </div>
-                <div class="meeting-form-actions">
-                  <button class="btn-ghost" type="submit">ส่งคำขอเปลี่ยนเวลา</button>
-                  <span id="meetingRescheduleMessage" class="section-text-sm" aria-live="polite"></span>
-                </div>
-              </form>
+                  <div class="meeting-form-actions">
+                    <button class="btn-ghost" type="submit">ส่งคำขอเปลี่ยนเวลา</button>
+                    <span id="meetingRescheduleMessage" class="section-text-sm" aria-live="polite"></span>
+                  </div>
+                </form>
+              </section>
             </div>
           </div>
 
           <div id="meetingRoomCalendarPanel" class="panel panel-hover section-appear section-delay-2 meeting-calendar-panel">
             <div class="panel-header">
               <div>
-                <div id="meetingCalendarTitle" class="panel-title">ปฏิทินจองห้องประชุม</div>
+                <a
+                  id="meetingCalendarTitle"
+                  class="panel-title meeting-calendar-title-link"
+                  href="meeting-room-calendar.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >ปฏิทินจองห้องประชุม</a>
               </div>
               <div class="meeting-calendar-toolbar">
                 <button id="meetingCalendarPrevMonth" class="btn-ghost" type="button">เดือนก่อน</button>
@@ -2040,6 +2236,7 @@
             <div>
               <h2 class="page-title">Meeting Room Approval For Staff</h2>
               <p class="page-subtitle">อนุมัติหรือปฏิเสธคำขอจองห้องประชุม พร้อมจัดการรายการทั้งหมด</p>
+              <div id="meetingStaffRequestReminder" class="section-text-sm" aria-live="polite" hidden></div>
             </div>
             <div class="tabs">
               <button
@@ -3114,7 +3311,7 @@
     <script src="js/app.downloads.js" defer></script>
     <script src="js/app.scoreboard.js" defer></script>
     <script src="js/app.motion.js" defer></script>
-    <script src="js/app.feature-loader.js" defer></script>
+    <script src="js/app.feature-loader.js?v=20260415-13" defer></script>
     <script src="js/app.init.js" defer></script>
     <script src="js/app.calendar.js" defer></script>
   </body>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ปฏิทินจองห้องประชุม | Treasurer SGCU68</title>
+    <meta
+      name="description"
+      content="ปฏิทินแสดงรายการจองห้องประชุมสำหรับการใช้งานทั่วไปและติดตามความพร้อมห้อง"
+    />
+    <link rel="icon" type="image/png" href="img/logo_treasurur jpg1.png" />
+    <link rel="apple-touch-icon" href="img/logo_treasurur jpg1.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css?v=20260415-10" />
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        onSnapshot,
+        query,
+        orderBy
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDcRIz1Uy1AZd-9JJdLF92SyqU6m8bdSXo",
+        authDomain: "departmentwebsite-5aec1.firebaseapp.com",
+        projectId: "departmentwebsite-5aec1",
+        storageBucket: "departmentwebsite-5aec1.firebasestorage.app",
+        messagingSenderId: "827589080688",
+        appId: "1:827589080688:web:ad89c53218104f908926b5",
+        measurementId: "G-BFW19TSYL0"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      window.sgcuFirestore = {
+        db,
+        collection,
+        onSnapshot,
+        query,
+        orderBy
+      };
+    </script>
+  </head>
+  <body>
+    <main class="page meeting-public-calendar-page">
+      <div class="meeting-public-header">
+        <div>
+          <h1 class="page-title">ปฏิทินจองห้องประชุม</h1>
+          <p class="page-subtitle">
+            ลิงก์สำหรับดูคิวห้องประชุมแบบเรียลไทม์ (เฉพาะการแสดงผล ไม่สามารถแก้ไขข้อมูล)
+          </p>
+        </div>
+        <a href="index.html" class="btn-ghost meeting-public-home-link">กลับหน้าเว็บหลัก</a>
+      </div>
+
+      <div class="separator-gradient"></div>
+
+      <section class="panel panel-hover meeting-calendar-panel">
+        <div class="panel-header">
+          <div>
+            <div id="meetingPublicCalendarTitle" class="panel-title">ปฏิทินจองห้องประชุม</div>
+            <div id="meetingPublicCalendarState" class="panel-caption">กำลังโหลดข้อมูล...</div>
+          </div>
+          <div class="meeting-calendar-toolbar">
+            <button id="meetingPublicCalendarPrevMonth" class="btn-ghost" type="button">เดือนก่อน</button>
+            <button id="meetingPublicCalendarToday" class="btn-ghost" type="button">เดือนปัจจุบัน</button>
+            <button id="meetingPublicCalendarNextMonth" class="btn-ghost" type="button">เดือนถัดไป</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="meeting-public-legend" aria-label="คำอธิบายสีสถานะ">
+            <span class="meeting-public-legend-pill is-approved">อนุมัติแล้ว</span>
+            <span class="meeting-public-legend-pill is-pending">รออนุมัติ</span>
+            <span class="meeting-public-legend-pill is-requested">ขอยกเลิก / ขอเปลี่ยนเวลา</span>
+          </div>
+          <div class="calendar-grid-scroll">
+            <div class="calendar-weekday-row" aria-hidden="true">
+              <div class="calendar-weekday">อา</div>
+              <div class="calendar-weekday">จ</div>
+              <div class="calendar-weekday">อ</div>
+              <div class="calendar-weekday">พ</div>
+              <div class="calendar-weekday">พฤ</div>
+              <div class="calendar-weekday">ศ</div>
+              <div class="calendar-weekday">ส</div>
+            </div>
+            <div id="meetingPublicCalendar" class="calendar-grid"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div
+      id="meetingPublicBookingDayModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="meetingPublicBookingDayTitle"
+    >
+      <div class="modal-dialog" style="max-width: 860px;">
+        <div class="modal-header">
+          <div>
+            <div id="meetingPublicBookingDayTitle" class="modal-title">รายการจองตามวันที่</div>
+          </div>
+          <button id="meetingPublicBookingDayClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
+        </div>
+        <div id="meetingPublicBookingDayBody" class="modal-body"></div>
+      </div>
+    </div>
+
+    <script src="js/app.meeting-room-calendar-public.js?v=20260415-2" defer></script>
+  </body>
+</html>

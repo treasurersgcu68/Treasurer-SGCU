@@ -437,8 +437,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Route guard: กันการเข้าหน้า protected/staff ผ่าน hash โดยตรง
     if (!isNavPageVisible(targetPage)) {
+      const preferredPage = getPreferredPageForState(isUserAuthenticated);
       const fallbackCandidates = isUserAuthenticated
-        ? ["project-status", "project-status-staff", "dashboard-staff", "home"]
+        ? [
+            currentPage,
+            preferredPage,
+            "home",
+            "dashboard-staff",
+            "project-status",
+            "project-status-staff",
+            "login"
+          ]
         : ["home", "login"];
       const fallback =
         fallbackCandidates.find((candidate) => isNavPageVisible(candidate)) ||

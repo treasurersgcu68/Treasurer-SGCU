@@ -256,6 +256,55 @@ document.addEventListener("DOMContentLoaded", async () => {
   const meetingConsentClose = document.getElementById("meetingConsentClose");
   const meetingConsentRules = document.getElementById("meetingConsentRules");
   const meetingConsentPdpa = document.getElementById("meetingConsentPdpa");
+  const featureLoaderConfig = window.sgcuFeatureLoaderConfig || {};
+  const pageFeatureScriptMap = featureLoaderConfig.pageScripts || {};
+  const idlePrefetchPages = Array.isArray(featureLoaderConfig.idlePrefetchPages)
+    ? featureLoaderConfig.idlePrefetchPages
+    : [];
+  const loadedFeatureScripts = new Map();
+
+  const loadFeatureScriptOnce = async (src) => {
+    const scriptSrc = (src || "").toString().trim();
+    if (!scriptSrc) return;
+    if (loadedFeatureScripts.has(scriptSrc)) {
+      await loadedFeatureScripts.get(scriptSrc);
+      return;
+    }
+    const promise = new Promise((resolve, reject) => {
+      const scriptEl = document.createElement("script");
+      scriptEl.src = scriptSrc;
+      scriptEl.defer = true;
+      scriptEl.async = false;
+      scriptEl.onload = () => resolve();
+      scriptEl.onerror = () => reject(new Error(`failed to load ${scriptSrc}`));
+      document.body.appendChild(scriptEl);
+    }).catch((error) => {
+      loadedFeatureScripts.delete(scriptSrc);
+      throw error;
+    });
+    loadedFeatureScripts.set(scriptSrc, promise);
+    await promise;
+  };
+
+  const ensurePageFeatureLoaded = async (page) => {
+    const scriptSrc = pageFeatureScriptMap[page];
+    if (!scriptSrc) return;
+    await loadFeatureScriptOnce(scriptSrc);
+  };
+
+  const prefetchFeatureScriptsInIdle = () => {
+    if (!idlePrefetchPages.length) return;
+    scheduleIdleTask(() => {
+      const pages = idlePrefetchPages.filter((page) => page && page !== currentPage);
+      pages.forEach((page) => {
+        const scriptSrc = pageFeatureScriptMap[page];
+        if (!scriptSrc) return;
+        void loadFeatureScriptOnce(scriptSrc).catch(() => {
+          // ignore prefetch failures; normal navigation loader will retry and report
+        });
+      });
+    }, 2500);
+  };
 
   const hasBorrowConsent = () =>
     window.sessionStorage && sessionStorage.getItem(borrowConsentKey) === "accepted";
@@ -445,6 +494,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    try {
+      await ensurePageFeatureLoaded(targetPage);
+      clearLoadError("feature-loader");
+    } catch (error) {
+      console.error("page feature script failed to load - app.init.js:487", targetPage, error);
+      recordLoadError("feature-loader", "ไม่สามารถโหลดฟีเจอร์ของหน้านี้ได้", { showRetry: true });
+      return;
+    }
+
     pageViews.forEach((section) => {
       const isTarget = section.dataset.page === targetPage;
       if (isTarget) {
@@ -550,6 +608,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       : defaultPage;
 
   await switchPage(initialPage, { fromHash: true });
+  prefetchFeatureScriptsInIdle();
 
   // รองรับเปลี่ยน hash ด้วยตนเอง (#about, #status ฯลฯ)
   window.addEventListener("hashchange", () => {

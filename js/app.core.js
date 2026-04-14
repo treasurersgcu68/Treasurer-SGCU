@@ -38,7 +38,7 @@ const AUTH_SESSION_MAX_AGE_MS =
   Number.isFinite(globalThis.AUTH_SESSION_MAX_AGE_MS) &&
   globalThis.AUTH_SESSION_MAX_AGE_MS > 0
     ? globalThis.AUTH_SESSION_MAX_AGE_MS
-    : 8 * 60 * 60 * 1000; // 8 hours
+    : 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Backward-compat for legacy auth sheet column mapping
 const COL_STAFF_EMAIL_LEGACY =

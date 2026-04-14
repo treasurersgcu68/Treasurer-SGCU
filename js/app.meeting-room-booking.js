@@ -1,5 +1,7 @@
 /* Meeting room booking (Firestore shared data) */
-document.addEventListener("DOMContentLoaded", () => {
+function initMeetingRoomBookingApp() {
+  if (window.__sgcuMeetingRoomBookingInitialized) return;
+  window.__sgcuMeetingRoomBookingInitialized = true;
   const form = document.getElementById("meetingRoomBookingForm");
   const roomSelect = document.getElementById("meetingRoomName");
   const dateInput = document.getElementById("meetingDate");
@@ -2607,4 +2609,10 @@ document.addEventListener("DOMContentLoaded", () => {
       unsubscribeHolidays();
     }
   });
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initMeetingRoomBookingApp, { once: true });
+} else {
+  initMeetingRoomBookingApp();
+}

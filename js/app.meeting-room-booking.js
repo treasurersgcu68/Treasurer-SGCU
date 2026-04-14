@@ -11,10 +11,14 @@ function initMeetingRoomBookingApp() {
   const meetingProfilePhoneEl = document.getElementById("meetingProfilePhone");
   const meetingProfileContactEl = document.getElementById("meetingProfileContact");
   const purposeInput = document.getElementById("meetingPurpose");
+  const cancelSection = document.getElementById("meetingCancelSection");
+  const toggleCancelFormBtn = document.getElementById("meetingToggleCancelForm");
   const cancelForm = document.getElementById("meetingCancelForm");
   const cancelBookingSelect = document.getElementById("meetingCancelBookingSelect");
   const cancelReasonInput = document.getElementById("meetingCancelReason");
   const cancelMessageEl = document.getElementById("meetingCancelMessage");
+  const rescheduleSection = document.getElementById("meetingRescheduleSection");
+  const toggleRescheduleFormBtn = document.getElementById("meetingToggleRescheduleForm");
   const rescheduleForm = document.getElementById("meetingRescheduleForm");
   const rescheduleBookingSelect = document.getElementById("meetingRescheduleBookingSelect");
   const rescheduleDateInput = document.getElementById("meetingRescheduleDate");
@@ -27,6 +31,7 @@ function initMeetingRoomBookingApp() {
   const projectCodeState = document.getElementById("meetingProjectCodeState");
   const projectNamePreview = document.getElementById("meetingProjectNamePreview");
   const messageEl = document.getElementById("meetingBookingMessage");
+  const reminderBannerEl = document.getElementById("meetingReminderBanner");
   let tableBody = document.getElementById("meetingRoomTableBody");
   const calendarPanel = document.getElementById("meetingRoomCalendar");
   const calendarTitle = document.getElementById("meetingCalendarTitle");
@@ -89,6 +94,12 @@ function initMeetingRoomBookingApp() {
   const DEFAULT_PROJECT_MODE = "non_project";
   const MIN_ADVANCE_BOOKING_HOURS = 24;
   const MIN_CANCEL_BEFORE_HOURS = 12;
+  const REMINDER_WINDOWS = [
+    { key: "60m", ms: 60 * 60 * 1000, label: "ภายใน 1 ชั่วโมง" },
+    { key: "15m", ms: 15 * 60 * 1000, label: "ภายใน 15 นาที" }
+  ];
+  const REMINDER_INTERVAL_MS = 60 * 1000;
+  const REMINDER_STORAGE_KEY = "meetingRoomReminderSent-v1";
   const NO_SHOW_LOOKBACK_DAYS = 90;
   const NO_SHOW_BLOCK_THRESHOLD = 3;
   const NO_SHOW_BLOCK_DAYS = 30;
@@ -444,6 +455,278 @@ function initMeetingRoomBookingApp() {
     rescheduleMessageEl.style.color = color;
   };
 
+  const setReminderBanner = (text = "", color = "#9f1239") => {
+    if (!reminderBannerEl) return;
+    reminderBannerEl.classList.remove("is-card");
+    reminderBannerEl.textContent = text || "";
+    reminderBannerEl.style.color = color;
+    reminderBannerEl.hidden = !text;
+  };
+
+  const setReminderBannerCards = (items = []) => {
+    if (!reminderBannerEl) return;
+    if (!Array.isArray(items) || !items.length) {
+      setReminderBanner("");
+      return;
+    }
+    reminderBannerEl.classList.add("is-card");
+    reminderBannerEl.style.color = "";
+    reminderBannerEl.hidden = false;
+    reminderBannerEl.innerHTML = `
+      <div class="meeting-reminder-list">
+        ${items.map((item) => `
+          <div class="meeting-reminder-card-item">
+            <div class="meeting-reminder-card-head">
+              <div class="meeting-reminder-card-title">การประชุมใกล้ถึงเวลา</div>
+              <div class="meeting-reminder-pill">${escapeText(item.remainingText || "-")}</div>
+            </div>
+            <div class="meeting-reminder-card-room">${escapeText(item.room || "-")}</div>
+            <div class="meeting-reminder-card-datetime">
+              <span>${escapeText(item.dateText || "-")}</span>
+              <span class="meeting-reminder-dot">•</span>
+              <span>${escapeText(item.timeText || "-")}</span>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  };
+
+  const readReminderState = () => {
+    try {
+      const raw = window.localStorage?.getItem(REMINDER_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  };
+
+  const writeReminderState = (state) => {
+    try {
+      window.localStorage?.setItem(REMINDER_STORAGE_KEY, JSON.stringify(state || {}));
+    } catch (_) {
+      // ignore localStorage write errors
+    }
+  };
+
+  const buildReminderToken = (booking, windowKey) => {
+    const start = parseBookingStartDateTime(booking);
+    const startKey = start ? start.getTime() : "unknown";
+    return `${booking?.id || "no-id"}:${windowKey}:${startKey}`;
+  };
+
+  const formatRemaining = (remainingMs) => {
+    const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
+    if (minutes < 60) return `อีกประมาณ ${minutes} นาที`;
+    const hours = Math.floor(minutes / 60);
+    const restMin = minutes % 60;
+    if (!restMin) return `อีกประมาณ ${hours} ชั่วโมง`;
+    return `อีกประมาณ ${hours} ชั่วโมง ${restMin} นาที`;
+  };
+
+  const formatReminderBookingLine = (booking) => {
+    const room = normalizeRoomDisplay(booking.roomId, booking.roomName);
+    const dateText = formatDate(booking.date);
+    const timeText = `${booking.startTime || "-"}-${booking.endTime || "-"}`;
+    return `${room} • ${dateText} • ${timeText}`;
+  };
+
+  const getReminderEligibleBookings = (nowMs = Date.now()) => {
+    if (!currentUserEmail) return [];
+    return bookings
+      .filter((item) => {
+        const email = (item.requesterEmail || "").toString().trim().toLowerCase();
+        if (!email || email !== currentUserEmail) return false;
+        const status = normalizeStatus(item.status);
+        if (status === "rejected" || status === "no_show" || status === "cancel_requested" || status === "reschedule_requested") {
+          return false;
+        }
+        const start = parseBookingStartDateTime(item);
+        if (!start) return false;
+        return start.getTime() > nowMs;
+      })
+      .sort((a, b) => {
+        const aTime = parseBookingStartDateTime(a)?.getTime() || Number.MAX_SAFE_INTEGER;
+        const bTime = parseBookingStartDateTime(b)?.getTime() || Number.MAX_SAFE_INTEGER;
+        return aTime - bTime;
+      });
+  };
+
+  const maybeSendBrowserNotification = (title, body) => {
+    if (typeof window === "undefined" || typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+    try {
+      // eslint-disable-next-line no-new
+      new Notification(title, { body });
+    } catch (_) {
+      // ignore browser notification errors
+    }
+  };
+
+  const syncApprovalNotifications = (list = []) => {
+    const email = (currentUserEmail || "").toString().trim().toLowerCase();
+    if (!email) {
+      hasApprovalSnapshotBaseline = false;
+      previousOwnBookingStatusById = new Map();
+      return;
+    }
+
+    const ownBookings = list.filter((item) => {
+      const requesterEmail = (item.requesterEmail || "").toString().trim().toLowerCase();
+      return requesterEmail && requesterEmail === email;
+    });
+    const nextStatusById = new Map(
+      ownBookings.map((item) => [item.id, normalizeStatus(item.status)])
+    );
+
+    if (!hasApprovalSnapshotBaseline) {
+      previousOwnBookingStatusById = nextStatusById;
+      hasApprovalSnapshotBaseline = true;
+      return;
+    }
+
+    const newlyApproved = ownBookings.filter((item) => {
+      const nextStatus = normalizeStatus(item.status);
+      const prevStatus = previousOwnBookingStatusById.get(item.id) || "";
+      return nextStatus === "approved" && prevStatus !== "approved";
+    });
+    const newlyRejected = ownBookings.filter((item) => {
+      const nextStatus = normalizeStatus(item.status);
+      const prevStatus = previousOwnBookingStatusById.get(item.id) || "";
+      return (nextStatus === "rejected" || nextStatus === "no_show") && prevStatus !== nextStatus;
+    });
+
+    if (newlyApproved.length) {
+      const latest = newlyApproved[0];
+      const room = normalizeRoomDisplay(latest.roomId, latest.roomName);
+      const schedule = `${formatDate(latest.date)} ${latest.startTime || "-"}-${latest.endTime || "-"}`;
+      maybeSendBrowserNotification(
+        `คำขอห้องประชุมได้รับอนุมัติ (${newlyApproved.length})`,
+        `${room} • ${schedule}`
+      );
+      setMessage(`มีคำขอได้รับอนุมัติ ${newlyApproved.length} รายการ`, "#047857");
+    }
+    if (newlyRejected.length) {
+      const latest = newlyRejected[0];
+      const latestStatus = normalizeStatus(latest.status);
+      const room = normalizeRoomDisplay(latest.roomId, latest.roomName);
+      const schedule = `${formatDate(latest.date)} ${latest.startTime || "-"}-${latest.endTime || "-"}`;
+      const reasonText = (latest.rejectionReason || latest.cancelRequestReason || "").toString().trim();
+      const statusLabel = latestStatus === "no_show" ? "ถูกบันทึกเป็น No-show" : "ถูกไม่อนุมัติ/ยกเลิก";
+      maybeSendBrowserNotification(
+        `คำขอห้องประชุม${statusLabel} (${newlyRejected.length})`,
+        `${room} • ${schedule}${reasonText ? ` • เหตุผล: ${reasonText}` : ""}`
+      );
+      setMessage(
+        `มีคำขอ${statusLabel} ${newlyRejected.length} รายการ${reasonText ? ` (เหตุผล: ${reasonText})` : ""}`,
+        "#b91c1c"
+      );
+    }
+
+    previousOwnBookingStatusById = nextStatusById;
+  };
+
+
+  const runMeetingReminders = () => {
+    const nowMs = Date.now();
+    const eligible = getReminderEligibleBookings(nowMs);
+    if (!eligible.length) {
+      setReminderBanner("");
+      return;
+    }
+
+    const maxWindowMs = Math.max(...REMINDER_WINDOWS.map((item) => item.ms));
+    const nearestInWindow = eligible
+      .map((booking) => {
+        const start = parseBookingStartDateTime(booking);
+        if (!start) return null;
+        const remainingMs = start.getTime() - nowMs;
+        if (remainingMs <= 0 || remainingMs > maxWindowMs) return null;
+        return { booking, remainingMs };
+      })
+      .filter(Boolean)
+      .slice(0, 3);
+    if (nearestInWindow.length) {
+      setReminderBannerCards(
+        nearestInWindow.map(({ booking, remainingMs }) => ({
+          room: normalizeRoomDisplay(booking.roomId, booking.roomName),
+          dateText: formatDate(booking.date),
+          timeText: `${booking.startTime || "-"}-${booking.endTime || "-"}`,
+          remainingText: formatRemaining(remainingMs)
+        }))
+      );
+    } else {
+      setReminderBanner("");
+    }
+
+    const reminderState = readReminderState();
+    eligible.forEach((booking) => {
+      const startAt = parseBookingStartDateTime(booking);
+      if (!startAt) return;
+      const remainingMs = startAt.getTime() - nowMs;
+      if (remainingMs <= 0 || remainingMs > maxWindowMs) return;
+      REMINDER_WINDOWS.forEach((windowItem) => {
+        if (remainingMs > windowItem.ms) return;
+        const token = buildReminderToken(booking, windowItem.key);
+        if (reminderState[token]) return;
+        maybeSendBrowserNotification(
+          `เตือนการประชุม ${windowItem.label}`,
+          `${formatReminderBookingLine(booking)} (${formatRemaining(remainingMs)})`
+        );
+        reminderState[token] = Date.now();
+      });
+    });
+    writeReminderState(reminderState);
+  };
+
+  const startReminderTimer = () => {
+    if (reminderIntervalId) {
+      window.clearInterval(reminderIntervalId);
+      reminderIntervalId = null;
+    }
+    runMeetingReminders();
+    reminderIntervalId = window.setInterval(runMeetingReminders, REMINDER_INTERVAL_MS);
+  };
+
+  const setSecondaryFormVisibility = (sectionEl, buttonEl, visible) => {
+    if (!sectionEl || !buttonEl) return;
+    sectionEl.hidden = !visible;
+    buttonEl.setAttribute("aria-expanded", visible ? "true" : "false");
+  };
+
+  const bindSecondaryFormToggles = () => {
+    const hideAllSecondaryForms = () => {
+      if (cancelSection && toggleCancelFormBtn) {
+        setSecondaryFormVisibility(cancelSection, toggleCancelFormBtn, false);
+      }
+      if (rescheduleSection && toggleRescheduleFormBtn) {
+        setSecondaryFormVisibility(rescheduleSection, toggleRescheduleFormBtn, false);
+      }
+    };
+    hideAllSecondaryForms();
+
+    if (cancelSection && toggleCancelFormBtn) {
+      toggleCancelFormBtn.addEventListener("click", () => {
+        const shouldOpen = cancelSection.hidden;
+        hideAllSecondaryForms();
+        if (shouldOpen) {
+          setSecondaryFormVisibility(cancelSection, toggleCancelFormBtn, true);
+        }
+      });
+    }
+    if (rescheduleSection && toggleRescheduleFormBtn) {
+      toggleRescheduleFormBtn.addEventListener("click", () => {
+        const shouldOpen = rescheduleSection.hidden;
+        hideAllSecondaryForms();
+        if (shouldOpen) {
+          setSecondaryFormVisibility(rescheduleSection, toggleRescheduleFormBtn, true);
+        }
+      });
+    }
+  };
+
   const ensureBookingListUI = () => {
     if (tableBody && listPanel) {
       return;
@@ -656,6 +939,9 @@ function initMeetingRoomBookingApp() {
   let autoRetryTimer = null;
   let autoRetryAttempt = 0;
   let activeMeetingProfile = null;
+  let reminderIntervalId = null;
+  let hasApprovalSnapshotBaseline = false;
+  let previousOwnBookingStatusById = new Map();
 
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
@@ -937,6 +1223,12 @@ function initMeetingRoomBookingApp() {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
+  const isUpcomingBooking = (booking, nowMs = Date.now()) => {
+    const bookingStartAt = parseBookingStartDateTime(booking);
+    if (!bookingStartAt) return false;
+    return bookingStartAt.getTime() > nowMs;
+  };
+
   const getNoShowRestriction = (emailValue) => {
     const email = (emailValue || "").toString().trim().toLowerCase();
     if (!email) return { restricted: false, noShowCount: 0, blockedUntil: null };
@@ -986,21 +1278,25 @@ function initMeetingRoomBookingApp() {
 
   const ownCancelableBookings = () => {
     if (!currentUserEmail) return [];
+    const nowMs = Date.now();
     return sortBookings(bookings).filter((item) => {
       const status = (item.status || "").toString().toLowerCase();
       if (status === "rejected" || status === "cancel_requested" || status === "reschedule_requested" || status === "no_show") return false;
       const email = (item.requesterEmail || "").toString().trim().toLowerCase();
-      return !!email && email === currentUserEmail;
+      if (!email || email !== currentUserEmail) return false;
+      return isUpcomingBooking(item, nowMs);
     });
   };
 
   const ownReschedulableBookings = () => {
     if (!currentUserEmail) return [];
+    const nowMs = Date.now();
     return sortBookings(bookings).filter((item) => {
       const status = (item.status || "").toString().toLowerCase();
       if (status === "rejected" || status === "cancel_requested" || status === "reschedule_requested" || status === "no_show") return false;
       const email = (item.requesterEmail || "").toString().trim().toLowerCase();
-      return !!email && email === currentUserEmail;
+      if (!email || email !== currentUserEmail) return false;
+      return isUpcomingBooking(item, nowMs);
     });
   };
 
@@ -1916,9 +2212,11 @@ function initMeetingRoomBookingApp() {
         colRef,
         (snapshot) => {
           bookings = snapshot.docs.map(mapSnapshotDoc);
+          syncApprovalNotifications(bookings);
           bookingsLoaded = true;
           bookingsLoadFailed = false;
           renderRows();
+          runMeetingReminders();
           if (activeDayModalDate) {
             setBookingDayBody(activeDayModalDate);
           }
@@ -2204,6 +2502,10 @@ function initMeetingRoomBookingApp() {
       return;
     }
     const bookingStartAt = parseBookingStartDateTime(booking);
+    if (!isUpcomingBooking(booking)) {
+      setCancelMessage("ยกเลิกได้เฉพาะคำขอที่ยังไม่ถึงเวลาใช้งาน", "#b91c1c");
+      return;
+    }
     if (
       !isStaffUser() &&
       bookingStartAt &&
@@ -2301,6 +2603,10 @@ function initMeetingRoomBookingApp() {
     }
     if (booking.status === "reschedule_requested") {
       setRescheduleMessage("คำขอนี้อยู่ระหว่างรออนุมัติการเปลี่ยนเวลาอยู่แล้ว", "#6b7280");
+      return;
+    }
+    if (!isUpcomingBooking(booking)) {
+      setRescheduleMessage("ขอเปลี่ยนเวลาได้เฉพาะคำขอที่ยังไม่ถึงเวลาใช้งาน", "#b91c1c");
       return;
     }
     if (booking.date === nextDate && booking.startTime === nextStartTime && booking.endTime === nextEndTime) {
@@ -2411,16 +2717,21 @@ function initMeetingRoomBookingApp() {
       void submitRescheduleRequest();
     });
   }
+  bindSecondaryFormToggles();
 
   if (window.sgcuAuth?.auth && typeof window.sgcuAuth.onAuthStateChanged === "function") {
     window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {
       currentUserEmail = readCurrentUserEmail();
+      hasApprovalSnapshotBaseline = false;
+      previousOwnBookingStatusById = new Map();
+      if (!currentUserEmail) setReminderBanner("");
       restoreMeetingProfileForCurrentUser();
       void readMeetingProfileFromFirestore().then((profile) => {
         if (profile) applySharedProfileToMeetingForm(profile);
       });
       setupRoomOptions();
       renderOwnBookingOptions();
+      startReminderTimer();
       if (resolveFirestoreBridge() && (roomsLoadFailed || bookingsLoadFailed || !roomsLoaded || !bookingsLoaded)) {
         retryMeetingSubscriptions();
       }
@@ -2429,12 +2740,16 @@ function initMeetingRoomBookingApp() {
 
   setupRoomOptions();
   currentUserEmail = readCurrentUserEmail();
+  hasApprovalSnapshotBaseline = false;
+  previousOwnBookingStatusById = new Map();
+  if (!currentUserEmail) setReminderBanner("");
   restoreMeetingProfileForCurrentUser();
   void readMeetingProfileFromFirestore().then((profile) => {
     if (profile) applySharedProfileToMeetingForm(profile);
   });
   setMinDate();
   ensureFormContactFields();
+  startReminderTimer();
   ensureBookingListUI();
   startCalendar();
   updateMeetingRoomView(meetingRoomActiveView || "calendar");

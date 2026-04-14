@@ -359,6 +359,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   align-items: flex-end;
 }
 
+.meeting-room-header > div {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .meeting-room-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(130px, 1fr));
@@ -373,6 +379,112 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .meeting-room-stats #meetingRoomLatestDate {
   line-height: 1.45;
+}
+
+#meetingStaffRequestReminder {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(236, 72, 153, 0.22);
+  background: linear-gradient(180deg, #fff9fc, #fff4f9);
+  color: #9f1239;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+#meetingReminderBanner {
+  margin-top: 10px;
+  margin-left: auto;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: #6b4861;
+}
+
+#meetingReminderBanner.is-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.meeting-reminder-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.meeting-reminder-card-item {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(236, 72, 153, 0.16);
+  background: #ffffff;
+  padding: 10px 11px;
+  box-shadow: 0 4px 10px rgba(190, 24, 93, 0.04);
+}
+
+.meeting-reminder-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8d3158;
+}
+
+.meeting-reminder-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.meeting-reminder-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(236, 72, 153, 0.35);
+  background: #ffffff;
+  color: #db2777;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.meeting-reminder-card-room {
+  margin-top: 7px;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #643b56;
+  word-break: break-word;
+}
+
+.meeting-reminder-card-datetime {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #7a4a64;
+  flex-wrap: wrap;
+}
+
+.meeting-reminder-dot {
+  opacity: 0.7;
+}
+
+@media (max-width: 1024px) {
+  .meeting-reminder-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .meeting-reminder-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .meeting-form-panel .panel-body {
@@ -430,6 +542,28 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   height: 1px;
   margin: 14px 0 10px;
   background: linear-gradient(90deg, rgba(236, 72, 153, 0), rgba(236, 72, 153, 0.28), rgba(236, 72, 153, 0));
+}
+
+.meeting-secondary-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.meeting-secondary-actions #meetingToggleRescheduleForm {
+  margin-left: auto;
+}
+
+.meeting-secondary-actions .btn-ghost[aria-expanded="true"] {
+  border-color: var(--theme-pink-500);
+  color: var(--theme-pink-700);
+  background: linear-gradient(180deg, rgba(253, 242, 248, 0.95), rgba(255, 255, 255, 1));
+}
+
+.meeting-secondary-section {
+  margin-top: 2px;
 }
 
 .meeting-form-secondary-grid {
@@ -6708,5 +6842,146 @@ th.sortable.sort-desc::after {
   }
   .app-loader-panel::after, .app-loader-logo {
     animation: none;
+  }
+}
+
+.meeting-public-calendar-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-top: 24px;
+  padding-bottom: 40px;
+}
+
+.meeting-public-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.meeting-public-home-link {
+  white-space: nowrap;
+}
+
+.meeting-public-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.meeting-public-legend-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.meeting-public-legend-pill.is-approved {
+  background: #ffe4f1;
+  color: #be185d;
+}
+
+.meeting-public-legend-pill.is-pending {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.meeting-public-legend-pill.is-requested {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.meeting-calendar-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.meeting-calendar-title-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .meeting-public-calendar-page {
+    padding-top: 18px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .meeting-public-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meeting-public-home-link {
+    width: fit-content;
+  }
+
+  .meeting-public-calendar-page .panel-header {
+    gap: 10px;
+  }
+
+  .meeting-public-calendar-page .meeting-calendar-toolbar {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .meeting-public-calendar-page .meeting-calendar-toolbar .btn-ghost {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .meeting-public-calendar-page .calendar-grid-scroll {
+    margin: 0 -4px;
+    padding: 0 4px 6px;
+  }
+
+  .meeting-public-calendar-page .calendar-grid,
+  .meeting-public-calendar-page .calendar-weekday-row {
+    min-width: 520px;
+  }
+
+  .meeting-public-calendar-page .calendar-day {
+    min-height: 76px;
+    padding: 5px;
+  }
+
+  .meeting-public-calendar-page .calendar-day-header {
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .meeting-public-calendar-page .calendar-event {
+    font-size: 9.5px;
+    padding: 3px 5px;
+  }
+
+  .meeting-public-calendar-page .meeting-public-legend {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .meeting-public-calendar-page .meeting-public-legend-pill {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  #meetingPublicBookingDayModal .modal-dialog {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px) !important;
+    margin: 0 auto;
+  }
+
+  #meetingPublicBookingDayModal .modal-body {
+    padding: 12px;
+  }
+
+  #meetingPublicBookingDayModal .modal-table {
+    min-width: 620px;
   }
 }

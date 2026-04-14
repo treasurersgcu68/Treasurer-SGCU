@@ -2584,6 +2584,35 @@ function initBorrowAssetsApp() {
     });
   }
 
+  if (myRequestsTableBody) {
+    myRequestsTableBody.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("button, select, option, input, textarea, a")) return;
+      const row = target.closest("tr[data-request-id]");
+      if (!row) return;
+      const requestId = row.getAttribute("data-request-id") || "";
+      const sourceCollection = row.getAttribute("data-request-source") || "";
+      if (!requestId) return;
+      const item = getBorrowRequestByKey(requestId, sourceCollection);
+      if (item) openBorrowDetailModal(item);
+    });
+
+    myRequestsTableBody.addEventListener("keydown", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const row = target.closest("tr[data-request-id]");
+      if (!row) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      const requestId = row.getAttribute("data-request-id") || "";
+      const sourceCollection = row.getAttribute("data-request-source") || "";
+      if (!requestId) return;
+      const item = getBorrowRequestByKey(requestId, sourceCollection);
+      if (item) openBorrowDetailModal(item);
+    });
+  }
+
   loadBorrowAssets();
 
   if (borrowAssetsSearch) {

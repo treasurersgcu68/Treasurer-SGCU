@@ -8,7 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
     : null;
 
   const borrowProjectName = document.getElementById("borrowProjectName");
+  const borrowProjectNameOther = document.getElementById("borrowProjectNameOther");
   const borrowProjectDept = document.getElementById("borrowProjectDept");
+  const borrowProjectDeptOther = document.getElementById("borrowProjectDeptOther");
+  const borrowProjectDetail = document.getElementById("borrowProjectDetail");
   const borrowPickupDate = document.getElementById("borrowPickupDate");
   const borrowReturnDate = document.getElementById("borrowReturnDate");
   const borrowProfileFullNameEl = document.getElementById("borrowProfileFullName");
@@ -42,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const BORROW_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
   const USER_PROFILE_COLLECTION = "userProfiles";
 
-  const USE_CSV_ASSET_CATALOG = false;
+  const USE_CSV_ASSET_CATALOG = true;
   const BORROW_ASSETS_CSV_URL =
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcx0zotyWntFscUtgXHg4dkJQ6xI16Xrasy58sQfr-29iwgdpujpuvLC7poHH3TG4KR6P36A-bLyZR/pub?gid=0&single=true&output=csv";
   const BORROW_REQUEST_COLLECTION = "borrowAssetRequests";
@@ -144,6 +147,248 @@ document.addEventListener("DOMContentLoaded", () => {
     return Number.isFinite(num) ? num : null;
   };
 
+  const OTHER_ORG_VALUE = "__other__";
+  const collectBorrowOrgTypeOptions = () => {
+    const fromFilters =
+      typeof orgFilters !== "undefined" && Array.isArray(orgFilters)
+        ? orgFilters.map((item) => (item?.group || "").toString().trim())
+        : [];
+    const fromProjects =
+      typeof projects !== "undefined" && Array.isArray(projects)
+        ? projects.map((item) => (item?.orgGroup || "").toString().trim())
+        : [];
+    return Array.from(new Set([...fromFilters, ...fromProjects].filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, "th"));
+  };
+
+  const collectBorrowOrgNameOptions = (orgType) => {
+    const selectedType = (orgType || "").toString().trim();
+    if (!selectedType || selectedType === OTHER_ORG_VALUE) return [];
+    const fromFilters =
+      typeof orgFilters !== "undefined" && Array.isArray(orgFilters)
+        ? orgFilters
+          .filter((item) => (item?.group || "").toString().trim() === selectedType)
+          .map((item) => (item?.name || "").toString().trim())
+        : [];
+    const fromProjects =
+      typeof projects !== "undefined" && Array.isArray(projects)
+        ? projects
+          .filter((item) => (item?.orgGroup || "").toString().trim() === selectedType)
+          .map((item) => (item?.orgName || "").toString().trim())
+        : [];
+    return Array.from(new Set([...fromFilters, ...fromProjects].filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, "th"));
+  };
+
+  const toggleBorrowProjectNameOther = () => {
+    if (!borrowProjectNameOther || !borrowProjectName) return;
+    const showOther = borrowProjectName.value === OTHER_ORG_VALUE;
+    borrowProjectNameOther.style.display = showOther ? "" : "none";
+    borrowProjectNameOther.required = showOther;
+    if (!showOther) {
+      borrowProjectNameOther.value = "";
+    }
+  };
+
+  const toggleBorrowProjectDeptOther = (showOther) => {
+    if (!(borrowProjectDept instanceof HTMLSelectElement)) return;
+    borrowProjectDept.disabled = !!showOther;
+    borrowProjectDept.required = !showOther;
+    if (showOther) {
+      borrowProjectDept.value = "";
+    }
+    if (borrowProjectDeptOther) {
+      borrowProjectDeptOther.style.display = showOther ? "" : "none";
+      borrowProjectDeptOther.required = !!showOther;
+      if (!showOther) {
+        borrowProjectDeptOther.value = "";
+      }
+    }
+  };
+
+  const populateBorrowProjectTypeOptions = () => {
+    if (!(borrowProjectName instanceof HTMLSelectElement)) return;
+    const currentValue = borrowProjectName.value;
+    while (borrowProjectName.options.length) {
+      borrowProjectName.remove(0);
+    }
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "เลือกประเภทองค์กร";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    borrowProjectName.appendChild(placeholder);
+
+    const options = collectBorrowOrgTypeOptions();
+    options.forEach((name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      borrowProjectName.appendChild(option);
+    });
+
+    const otherOption = document.createElement("option");
+    otherOption.value = OTHER_ORG_VALUE;
+    otherOption.textContent = "อื่น ๆ";
+    borrowProjectName.appendChild(otherOption);
+
+    if (currentValue) {
+      const hasCurrent = Array.from(borrowProjectName.options).some((opt) => opt.value === currentValue);
+      if (hasCurrent) {
+        borrowProjectName.value = currentValue;
+      } else if (borrowProjectNameOther && currentValue !== OTHER_ORG_VALUE) {
+        borrowProjectName.value = OTHER_ORG_VALUE;
+        borrowProjectNameOther.value = currentValue;
+      }
+    }
+    toggleBorrowProjectNameOther();
+  };
+
+  const populateBorrowProjectDeptOptions = () => {
+    if (!(borrowProjectDept instanceof HTMLSelectElement)) return;
+    const selectedType = (borrowProjectName?.value || "").toString().trim();
+    const shouldUseOther = selectedType === OTHER_ORG_VALUE;
+    const currentValue = borrowProjectDept.value;
+
+    while (borrowProjectDept.options.length) {
+      borrowProjectDept.remove(0);
+    }
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    placeholder.textContent = shouldUseOther
+      ? "ระบุฝ่าย / ชมรมด้านล่าง"
+      : (selectedType ? "เลือกฝ่าย / ชมรม" : "เลือกประเภทองค์กรก่อน");
+    borrowProjectDept.appendChild(placeholder);
+
+    if (!shouldUseOther && selectedType) {
+      const options = collectBorrowOrgNameOptions(selectedType);
+      options.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        borrowProjectDept.appendChild(option);
+      });
+      if (currentValue) {
+        const hasCurrent = Array.from(borrowProjectDept.options).some((opt) => opt.value === currentValue);
+        if (hasCurrent) borrowProjectDept.value = currentValue;
+      }
+    }
+    toggleBorrowProjectDeptOther(shouldUseOther);
+  };
+
+  const getBorrowProjectNameValueForSubmit = () => {
+    const selected = (borrowProjectName?.value || "").toString().trim();
+    if (selected === OTHER_ORG_VALUE) {
+      return (borrowProjectNameOther?.value || "").toString().trim();
+    }
+    return selected;
+  };
+
+  const getBorrowProjectDeptValueForSubmit = () => {
+    const selectedType = (borrowProjectName?.value || "").toString().trim();
+    if (selectedType === OTHER_ORG_VALUE) {
+      return (borrowProjectDeptOther?.value || "").toString().trim();
+    }
+    return (borrowProjectDept?.value || "").toString().trim();
+  };
+
+  const normalizeOrgCode = (value) => {
+    const raw = (value || "").toString().trim().toUpperCase().replace(/\s+/g, "");
+    if (!raw) return "";
+    const normalized = raw
+      .replace(/-/g, ".")
+      .replace(/\.{2,}/g, ".")
+      .replace(/^\./, "")
+      .replace(/\.$/, "");
+    if (!/^[A-Z0-9.]+$/.test(normalized)) return "";
+    return normalized;
+  };
+
+  const hasBorrowOrgCodeData = () => {
+    const rows =
+      typeof orgFilters !== "undefined" && Array.isArray(orgFilters) ? orgFilters : [];
+    return rows.some((item) => normalizeOrgCode(item?.code || ""));
+  };
+
+  const ensureBorrowOrgCodeData = async () => {
+    if (hasBorrowOrgCodeData()) return;
+    if (typeof loadOrgFilters === "function") {
+      try {
+        await loadOrgFilters();
+      } catch (_) {
+        // ignore and fallback
+      }
+    }
+    if (hasBorrowOrgCodeData()) return;
+    if (typeof ensureProjectDataLoaded === "function") {
+      try {
+        await ensureProjectDataLoaded();
+      } catch (_) {
+        // ignore and fallback
+      }
+    }
+  };
+
+  const resolveBorrowOrgCode = () => {
+    const selectedType = (borrowProjectName?.value || "").toString().trim();
+    if (!selectedType || selectedType === OTHER_ORG_VALUE) return "CU.00";
+    const selectedDept = getBorrowProjectDeptValueForSubmit();
+    const rows =
+      typeof orgFilters !== "undefined" && Array.isArray(orgFilters) ? orgFilters : [];
+    if (!rows.length) return "";
+    const exact = rows.find((item) => {
+      const group = (item?.group || "").toString().trim();
+      const name = (item?.name || "").toString().trim();
+      return group === selectedType && name === selectedDept;
+    });
+    const exactCode = normalizeOrgCode(exact?.code || "");
+    if (exactCode) return exactCode;
+    const firstByGroup = rows.find((item) => {
+      const group = (item?.group || "").toString().trim();
+      return group === selectedType && normalizeOrgCode(item?.code || "");
+    });
+    const groupCode = normalizeOrgCode(firstByGroup?.code || "");
+    return groupCode || "";
+  };
+
+  const getBorrowTermYearTwoDigits = (date = new Date()) => {
+    const d = date instanceof Date ? date : new Date();
+    if (Number.isNaN(d.getTime())) return "00";
+    const beYear = d.getFullYear() + 543;
+    const month = d.getMonth(); // 0-11
+    const termStartYear = month >= 5 ? beYear : beYear - 1; // เริ่มนับวาระ 1 มิ.ย.
+    return String(termStartYear % 100).padStart(2, "0");
+  };
+
+  const getNextBorrowRequestRunning = (prefix) => {
+    const normalizedPrefix = (prefix || "").toString().trim();
+    if (!normalizedPrefix) return "001";
+    const expectedPrefix = `${normalizedPrefix}.`;
+    let maxRunning = 0;
+    borrowRequests.forEach((item) => {
+      const requestNo = (item?.requestNo || "").toString().trim().toUpperCase();
+      if (!requestNo.startsWith(expectedPrefix)) return;
+      const runningText = requestNo.slice(expectedPrefix.length);
+      if (!/^\d+$/.test(runningText)) return;
+      const runningNum = Number(runningText);
+      if (Number.isFinite(runningNum) && runningNum > maxRunning) {
+        maxRunning = runningNum;
+      }
+    });
+    return String(maxRunning + 1).padStart(3, "0");
+  };
+
+  const generateBorrowRequestNo = () => {
+    const termYY = getBorrowTermYearTwoDigits(new Date());
+    const orgCode = resolveBorrowOrgCode();
+    if (!orgCode) return "";
+    const prefix = `B${termYY}.${orgCode}`;
+    const running = getNextBorrowRequestRunning(prefix);
+    return `${prefix}.${running}`;
+  };
+
   const readCurrentUserEmail = () =>
     (window.sgcuAuth?.auth?.currentUser?.email || "").toString().trim().toLowerCase();
 
@@ -156,6 +401,14 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (_) {
       return {};
     }
+  };
+
+  const BORROW_PROFILE_EMPTY_TEXT = "ยังไม่พบข้อมูล";
+  const setBorrowProfileText = (el, value) => {
+    if (!el) return;
+    const text = (value || "").toString().trim();
+    el.textContent = text || BORROW_PROFILE_EMPTY_TEXT;
+    el.classList.toggle("is-empty", !text);
   };
 
   const applyBorrowProfileToForm = (profile) => {
@@ -171,33 +424,41 @@ document.addEventListener("DOMContentLoaded", () => {
       lineId: (profile.lineId || "").toString().trim()
     };
     const fullName = [activeBorrowProfile.firstName, activeBorrowProfile.lastName].filter(Boolean).join(" ");
-    if (borrowProfileFullNameEl) borrowProfileFullNameEl.textContent = fullName || "-";
-    if (borrowProfileNicknameEl) borrowProfileNicknameEl.textContent = activeBorrowProfile.nickname || "-";
-    if (borrowProfileStudentIdEl) borrowProfileStudentIdEl.textContent = activeBorrowProfile.studentId || "-";
+    setBorrowProfileText(borrowProfileFullNameEl, fullName);
+    setBorrowProfileText(borrowProfileNicknameEl, activeBorrowProfile.nickname);
+    setBorrowProfileText(borrowProfileStudentIdEl, activeBorrowProfile.studentId);
     if (borrowProfileFacultyYearEl) {
       const facultyYear = [activeBorrowProfile.faculty, activeBorrowProfile.year ? `ชั้นปี ${activeBorrowProfile.year}` : ""]
         .filter(Boolean)
         .join(" / ");
-      borrowProfileFacultyYearEl.textContent = facultyYear || "-";
+      setBorrowProfileText(borrowProfileFacultyYearEl, facultyYear);
     }
-    if (borrowProfilePhoneEl) borrowProfilePhoneEl.textContent = activeBorrowProfile.phone || "-";
-    if (borrowProfileLineIdEl) borrowProfileLineIdEl.textContent = activeBorrowProfile.lineId || "-";
+    setBorrowProfileText(borrowProfilePhoneEl, activeBorrowProfile.phone);
+    setBorrowProfileText(borrowProfileLineIdEl, activeBorrowProfile.lineId);
   };
 
   const restoreBorrowProfileForCurrentUser = () => {
     const email = (currentUserEmail || "").toString().trim().toLowerCase();
     if (!email) {
       activeBorrowProfile = null;
-      if (borrowProfileFullNameEl) borrowProfileFullNameEl.textContent = "-";
-      if (borrowProfileNicknameEl) borrowProfileNicknameEl.textContent = "-";
-      if (borrowProfileStudentIdEl) borrowProfileStudentIdEl.textContent = "-";
-      if (borrowProfileFacultyYearEl) borrowProfileFacultyYearEl.textContent = "-";
-      if (borrowProfilePhoneEl) borrowProfilePhoneEl.textContent = "-";
-      if (borrowProfileLineIdEl) borrowProfileLineIdEl.textContent = "-";
+      setBorrowProfileText(borrowProfileFullNameEl, "");
+      setBorrowProfileText(borrowProfileNicknameEl, "");
+      setBorrowProfileText(borrowProfileStudentIdEl, "");
+      setBorrowProfileText(borrowProfileFacultyYearEl, "");
+      setBorrowProfileText(borrowProfilePhoneEl, "");
+      setBorrowProfileText(borrowProfileLineIdEl, "");
       return;
     }
     const profile = readBorrowProfiles()[email];
-    if (!profile) return;
+    if (!profile) {
+      setBorrowProfileText(borrowProfileFullNameEl, "");
+      setBorrowProfileText(borrowProfileNicknameEl, "");
+      setBorrowProfileText(borrowProfileStudentIdEl, "");
+      setBorrowProfileText(borrowProfileFacultyYearEl, "");
+      setBorrowProfileText(borrowProfilePhoneEl, "");
+      setBorrowProfileText(borrowProfileLineIdEl, "");
+      return;
+    }
     applyBorrowProfileToForm(profile);
   };
 
@@ -367,7 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!rows.length) {
       borrowAssetsTableBody.innerHTML = `
         <tr>
-          <td colspan="7">ไม่พบรายการพัสดุ</td>
+          <td colspan="6">ไม่พบรายการพัสดุ</td>
         </tr>
       `;
       return;
@@ -378,12 +639,6 @@ document.addEventListener("DOMContentLoaded", () => {
           row.remaining != null
             ? `${row.remaining}${row.unit ? ` ${row.unit}` : ""}`
             : "-";
-        let statusLabel = row.approved ? "พร้อมยืม" : "ไม่อนุมัติ";
-        let statusClass = row.approved ? "badge-approved" : "badge-rejected";
-        if (row.remaining != null && row.remaining <= 0) {
-          statusLabel = "หมด";
-          statusClass = "badge-warning";
-        }
         return `
           <tr>
             <td>${safeEscape(row.type || "-")}</td>
@@ -391,7 +646,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <td>${safeEscape(row.name || "-")}</td>
             <td>${safeEscape(row.location || "-")}</td>
             <td>${safeEscape(remainingText)}</td>
-            <td><span class="badge ${statusClass}">${statusLabel}</span></td>
             <td>${safeEscape(row.note || "-")}</td>
           </tr>
         `;
@@ -475,7 +729,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (borrowAssetsTableBody) {
         borrowAssetsTableBody.innerHTML = `
           <tr>
-            <td colspan="7">ปิดการใช้งานข้อมูลพัสดุจาก CSV ชั่วคราว</td>
+            <td colspan="6">ปิดการใช้งานข้อมูลพัสดุจาก CSV ชั่วคราว</td>
           </tr>
         `;
       }
@@ -552,7 +806,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (borrowAssetsTableBody) {
           borrowAssetsTableBody.innerHTML = `
             <tr>
-              <td colspan="7">ไม่สามารถโหลดรายการพัสดุได้</td>
+              <td colspan="6">ไม่สามารถโหลดรายการพัสดุได้</td>
             </tr>
           `;
         }
@@ -583,29 +837,54 @@ document.addEventListener("DOMContentLoaded", () => {
     const removeBtn = row.querySelector("[data-asset-remove]");
     if (!codeInput || !nameInput) return;
 
+    const setWarningState = (visible, text = "", color = "#b91c1c") => {
+      if (!warning) return;
+      warning.textContent = text;
+      warning.style.color = color;
+      warning.hidden = !visible;
+    };
+
+    const setNameManualMode = (manualMode) => {
+      nameInput.readOnly = !manualMode;
+      nameInput.required = true;
+      nameInput.placeholder = manualMode
+        ? "กรอกชื่อพัสดุ"
+        : "ระบบจะแสดงชื่อพัสดุอัตโนมัติ";
+    };
+
     const updateName = () => {
       if (!USE_CSV_ASSET_CATALOG) {
-        if (warning) warning.hidden = true;
+        setNameManualMode(true);
+        setWarningState(false);
         return;
       }
       const code = codeInput.value.trim().toUpperCase();
       if (!code) {
-        nameInput.value = "";
-        if (warning) warning.hidden = true;
+        setNameManualMode(true);
+        setWarningState(false);
         return;
       }
       const name = assetMap.get(code);
-      nameInput.value = name || "";
-      if (warning) warning.hidden = !!name;
+      if (name) {
+        nameInput.value = name;
+        setNameManualMode(false);
+        setWarningState(false);
+        return;
+      }
+      setNameManualMode(true);
+      setWarningState(
+        true,
+        "ไม่พบรหัสพัสดุในรายการ สามารถกรอกชื่อพัสดุแทนได้",
+        "#92400e"
+      );
     };
 
     codeInput.addEventListener("input", updateName);
     codeInput.addEventListener("blur", updateName);
+    codeInput.required = false;
     if (!USE_CSV_ASSET_CATALOG) {
-      nameInput.readOnly = false;
-      nameInput.required = true;
-      nameInput.placeholder = "กรอกชื่อพัสดุ";
-      if (warning) warning.hidden = true;
+      setNameManualMode(true);
+      setWarningState(false);
     }
 
     if (removeBtn) {
@@ -653,12 +932,26 @@ document.addEventListener("DOMContentLoaded", () => {
       const mappedName = assetMap.get(code);
       const assetRow = assetRowMap.get(code);
       if (USE_CSV_ASSET_CATALOG) {
-        nameInput.value = mappedName || "";
-        if (!code || !mappedName || !assetRow) {
-          if (warning) warning.hidden = false;
-          return { ok: false, message: "พบรหัสพัสดุไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง" };
+        const typedName = nameInput.value.trim();
+        if (!code) {
+          if (!typedName) {
+            return { ok: false, message: "กรุณากรอกชื่อพัสดุเมื่อไม่ระบุรหัสพัสดุ" };
+          }
+          if (warning) warning.hidden = true;
+        } else if (!mappedName || !assetRow) {
+          if (!typedName) {
+            if (warning) warning.hidden = false;
+            return { ok: false, message: "ไม่พบรหัสพัสดุ กรุณากรอกชื่อพัสดุแทน" };
+          }
+          if (warning) {
+            warning.hidden = false;
+            warning.textContent = "ไม่พบรหัสพัสดุในรายการ ระบบจะใช้ชื่อพัสดุที่กรอกแทน";
+            warning.style.color = "#92400e";
+          }
+        } else {
+          nameInput.value = mappedName;
+          if (warning) warning.hidden = true;
         }
-        if (warning) warning.hidden = true;
       } else {
         if (!code || !nameInput.value.trim()) {
           return { ok: false, message: "กรุณากรอกรหัสพัสดุและชื่อพัสดุให้ครบ" };
@@ -669,30 +962,34 @@ document.addEventListener("DOMContentLoaded", () => {
         qtyInput.focus();
         return { ok: false, message: `จำนวนของ ${code} ต้องมากกว่า 0` };
       }
-      if (USE_CSV_ASSET_CATALOG) {
-        if (!assetRow.approved) {
-          codeInput.focus();
-          return { ok: false, message: `พัสดุ ${code} ไม่เปิดให้ยืม` };
-        }
-        if (assetRow.remaining != null) {
-          const currentRequested = requestByCode.get(code) || 0;
-          const nextRequested = currentRequested + qty;
-          if (nextRequested > assetRow.remaining) {
-            qtyInput.focus();
-            return {
-              ok: false,
-              message: `พัสดุ ${code} คงเหลือ ${assetRow.remaining} ${assetRow.unit || ""}`.trim()
-            };
+      if (USE_CSV_ASSET_CATALOG && ENABLE_ASSET_AVAILABILITY_CHECK) {
+        if (code && assetRow) {
+          if (!assetRow.approved) {
+            codeInput.focus();
+            return { ok: false, message: `พัสดุ ${code} ไม่เปิดให้ยืม` };
           }
-          requestByCode.set(code, nextRequested);
+          if (assetRow.remaining != null) {
+            const currentRequested = requestByCode.get(code) || 0;
+            const nextRequested = currentRequested + qty;
+            if (nextRequested > assetRow.remaining) {
+              qtyInput.focus();
+              return {
+                ok: false,
+                message: `พัสดุ ${code} คงเหลือ ${assetRow.remaining} ${assetRow.unit || ""}`.trim()
+              };
+            }
+            requestByCode.set(code, nextRequested);
+          }
         }
       }
 
       assetItems.push({
         code,
-        name: USE_CSV_ASSET_CATALOG ? mappedName : nameInput.value.trim(),
+        name: USE_CSV_ASSET_CATALOG
+          ? ((mappedName && assetRow) ? mappedName : nameInput.value.trim())
+          : nameInput.value.trim(),
         qty: Math.trunc(qty),
-        unit: USE_CSV_ASSET_CATALOG ? (assetRow?.unit || "") : ""
+        unit: USE_CSV_ASSET_CATALOG ? ((code && assetRow) ? (assetRow.unit || "") : "") : ""
       });
     }
 
@@ -738,7 +1035,14 @@ document.addEventListener("DOMContentLoaded", () => {
               ? "เจ้าหน้าที่กำลังตรวจสอบคำขอ"
               : (item.staffNote || "-");
       return `
-        <tr>
+        <tr
+          class="borrow-my-request-row"
+          data-request-id="${safeEscape(item.id || "")}"
+          data-request-source="${safeEscape(item.sourceCollection || "")}"
+          tabindex="0"
+          role="button"
+          aria-label="ดูรายละเอียดคำขอ ${safeEscape(item.id || "-")}"
+        >
           <td>${itemsText}</td>
           <td>${safeEscape(formatDateRange(item.pickupDate, item.returnDate))}</td>
           <td>${statusBadge(item.status)}</td>
@@ -790,6 +1094,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const renderRequesterCell = (item) => {
     const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ").trim() || "-";
     const projectMeta = [item.projectName, item.projectDept].filter(Boolean).join(" • ");
+    const activityMeta = (item.projectDetail || "").toString().trim();
     const contactMeta = [item.phone, item.lineId ? `Line: ${item.lineId}` : ""]
       .filter(Boolean)
       .join(" • ");
@@ -797,6 +1102,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="borrow-staff-requester">
         <div class="borrow-staff-requester-name">${safeEscape(fullName)}</div>
         ${projectMeta ? `<div class="borrow-staff-requester-meta">${safeEscape(projectMeta)}</div>` : ""}
+        ${activityMeta ? `<div class="borrow-staff-requester-meta">${safeEscape(activityMeta)}</div>` : ""}
         ${contactMeta ? `<div class="borrow-staff-requester-contact">${safeEscape(contactMeta)}</div>` : ""}
       </div>
     `;
@@ -1023,17 +1329,21 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     const canManageStatus = ensureStaffPermission(true);
     const safeMessage = safeEscape(statusMessage || "");
-    const studentMeta = [item.faculty, item.year ? `ชั้นปี ${item.year}` : ""].filter(Boolean).join(" • ");
+    const studentMeta = [item.faculty, item.year ? `ชั้นปี ${item.year}` : "",item.studentId].filter(Boolean).join(" • ");
+    const requesterEmailMeta = (item.requesterEmail || "").toString().trim();
     const contactMeta = [item.phone, item.lineId ? `Line: ${item.lineId}` : ""].filter(Boolean).join(" • ");
     const projectMeta = [item.projectName, item.projectDept].filter(Boolean).join(" • ");
+    const activityMeta = (item.projectDetail || "").toString().trim();
     borrowDetailBodyEl.innerHTML = `
       <div class="borrow-request-detail-shell">
         <div class="borrow-request-detail-hero">
           <div class="borrow-request-detail-hero-main">
             <div class="borrow-request-detail-hero-label">ผู้ยื่นคำขอ</div>
             <div class="borrow-request-detail-hero-name">${safeEscape(fullName)}</div>
+            ${requesterEmailMeta ? `<div class="borrow-request-detail-hero-meta">อีเมล: ${safeEscape(requesterEmailMeta)}</div>` : ""}
             ${studentMeta ? `<div class="borrow-request-detail-hero-meta">${safeEscape(studentMeta)}</div>` : ""}
             ${projectMeta ? `<div class="borrow-request-detail-hero-meta">${safeEscape(projectMeta)}</div>` : ""}
+            ${activityMeta ? `<div class="borrow-request-detail-hero-meta">${safeEscape(activityMeta)}</div>` : ""}
             ${contactMeta ? `<div class="borrow-request-detail-hero-meta">${safeEscape(contactMeta)}</div>` : ""}
           </div>
           <div class="borrow-request-detail-hero-side">
@@ -1045,7 +1355,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="borrow-request-detail-summary">
           <div class="borrow-request-summary-card">
             <div class="borrow-request-summary-label">เลขที่คำขอ</div>
-            <div class="borrow-request-summary-value">#${safeEscape(item.id || "-")}</div>
+            <div class="borrow-request-summary-value borrow-request-code">${safeEscape(item.requestNo || item.id || "-")}</div>
           </div>
           <div class="borrow-request-summary-card">
             <div class="borrow-request-summary-label">ช่วงยืม</div>
@@ -1060,27 +1370,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="borrow-request-summary-value">${safeEscape(updatedDateText)}</div>
           </div>
         </div>
-
-        <div class="borrow-request-detail-section">
-          <div class="borrow-request-detail-section-title">ข้อมูลผู้ขอ</div>
           <div class="borrow-request-detail-grid">
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">ผู้ขอ</span><span class="borrow-request-detail-value">${safeEscape(fullName)}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">ชื่อเล่น</span><span class="borrow-request-detail-value">${safeEscape(item.nickname || "-")}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">อีเมล</span><span class="borrow-request-detail-value">${safeEscape(item.requesterEmail || "-")}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">เลขนิสิต</span><span class="borrow-request-detail-value">${safeEscape(item.studentId || "-")}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">คณะ/ชั้นปี</span><span class="borrow-request-detail-value">${safeEscape(item.faculty || "-")} / ${safeEscape(item.year || "-")}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">โทร</span><span class="borrow-request-detail-value">${safeEscape(item.phone || "-")}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">Line ID</span><span class="borrow-request-detail-value">${safeEscape(item.lineId || "-")}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">โครงการ/ฝ่าย</span><span class="borrow-request-detail-value">${safeEscape(item.projectName || "-")} / ${safeEscape(item.projectDept || "-")}</span></div>
-          </div>
-        </div>
-
-        <div class="borrow-request-detail-section">
-          <div class="borrow-request-detail-section-title">ข้อมูลคำขอ</div>
-          <div class="borrow-request-detail-grid">
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">วันที่ยื่นคำขอ</span><span class="borrow-request-detail-value">${safeEscape(requestDateText)}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">วันที่อัปเดตล่าสุด</span><span class="borrow-request-detail-value">${safeEscape(updatedDateText)}</span></div>
-            <div class="borrow-request-detail-item"><span class="borrow-request-detail-label">หมายเหตุ Staff</span><span class="borrow-request-detail-value">${safeEscape(item.staffNote || "-")}</span></div>
+            <div class="borrow-request-detail-item borrow-request-detail-item-full"><span class="borrow-request-detail-label">หมายเหตุ Staff</span><span class="borrow-request-detail-value">${safeEscape(item.staffNote || "ยังไม่มีหมายเหตุ")}</span></div>
           </div>
         </div>
 
@@ -1109,25 +1400,25 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="borrow-request-detail-section">
               <div class="borrow-request-detail-section-title">ปรับสถานะการอนุมัติ</div>
               <div class="borrow-request-detail-controls">
-                <select
-                  id="borrowRequestDetailStatusSelect"
+                  <select
+                    id="borrowRequestDetailStatusSelect"
                   class="staff-status-select"
-                  data-request-id="${safeEscape(item.id || "")}"
-                  data-request-source="${safeEscape(item.sourceCollection || "")}"
-                  aria-label="ปรับสถานะคำขอยืมพัสดุ"
-                >
-                  <option value="${STATUS_PENDING}" ${item.status === STATUS_PENDING ? "selected" : ""}>${borrowStatusLabel(STATUS_PENDING)}</option>
-                  <option value="${STATUS_APPROVED}" ${item.status === STATUS_APPROVED ? "selected" : ""}>${borrowStatusLabel(STATUS_APPROVED)}</option>
-                  <option value="${STATUS_REJECTED}" ${item.status === STATUS_REJECTED ? "selected" : ""}>${borrowStatusLabel(STATUS_REJECTED)}</option>
-                  <option value="${STATUS_CANCELLED}" ${item.status === STATUS_CANCELLED ? "selected" : ""}>${borrowStatusLabel(STATUS_CANCELLED)}</option>
-                  <option value="${STATUS_RETURNED}" ${item.status === STATUS_RETURNED ? "selected" : ""}>${borrowStatusLabel(STATUS_RETURNED)}</option>
-                </select>
-                <textarea
-                  id="borrowRequestDetailNoteInput"
-                  class="login-input borrow-request-detail-note"
-                  rows="3"
+                    data-request-id="${safeEscape(item.id || "")}"
+                    data-request-source="${safeEscape(item.sourceCollection || "")}"
+                    aria-label="ปรับสถานะคำขอยืมพัสดุ"
+                  >
+                    <option value="${STATUS_PENDING}" ${item.status === STATUS_PENDING ? "selected" : ""}>${borrowStatusLabel(STATUS_PENDING)}</option>
+                    <option value="${STATUS_APPROVED}" ${item.status === STATUS_APPROVED ? "selected" : ""}>${borrowStatusLabel(STATUS_APPROVED)}</option>
+                    <option value="${STATUS_REJECTED}" ${item.status === STATUS_REJECTED ? "selected" : ""}>${borrowStatusLabel(STATUS_REJECTED)}</option>
+                    <option value="${STATUS_CANCELLED}" ${item.status === STATUS_CANCELLED ? "selected" : ""}>${borrowStatusLabel(STATUS_CANCELLED)}</option>
+                    <option value="${STATUS_RETURNED}" ${item.status === STATUS_RETURNED ? "selected" : ""}>${borrowStatusLabel(STATUS_RETURNED)}</option>
+                  </select>
+                  <textarea
+                    id="borrowRequestDetailNoteInput"
+                    class="login-input borrow-request-detail-note"
+                    rows="3"
                   placeholder="หมายเหตุสำหรับผู้ขอ (ถ้ามี)"
-                >${safeEscape(item.staffNote || "")}</textarea>
+                  >${safeEscape(item.staffNote || "")}</textarea>
                 <div class="borrow-request-detail-actions">
                   <button
                     id="borrowRequestDetailApplyStatus"
@@ -1259,6 +1550,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter(Boolean);
     return {
       id,
+      requestNo: (safeData.requestNo || "").toString().trim().toUpperCase(),
       status: normalizeRequestStatus(safeData.status),
       sourceCollection: BORROW_REQUEST_COLLECTION,
       requesterEmail: (safeData.requesterEmail || "").toString().trim().toLowerCase(),
@@ -1272,6 +1564,7 @@ document.addEventListener("DOMContentLoaded", () => {
       lineId: (safeData.lineId || "").toString().trim(),
       projectName: (safeData.projectName || "").toString().trim(),
       projectDept: (safeData.projectDept || "").toString().trim(),
+      projectDetail: (safeData.projectDetail || "").toString().trim(),
       pickupDate: (safeData.pickupDate || "").toString().trim(),
       returnDate: (safeData.returnDate || "").toString().trim(),
       assets,
@@ -1334,7 +1627,7 @@ document.addEventListener("DOMContentLoaded", () => {
               normalized.push(item);
             } catch (err) {
               badDocIds.push(docSnap.id);
-              console.error("borrow request doc malformed - app.borrow-assets.js:1182", collectionName, docSnap.id, err);
+              console.error("borrow request doc malformed - app.borrow-assets.js:1630", collectionName, docSnap.id, err);
             }
           });
           collectionSnapshotRows.set(collectionName, normalized);
@@ -1376,7 +1669,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           setStaffQueueStatusMessage("ไม่สามารถโหลดคิวคำขอได้ในขณะนี้");
           setStaffQueueMessage("โหลดคิวคำขอไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
-          console.error("borrow assets subscribe failed - app.borrow-assets.js:1224", collectionName, error);
+          console.error("borrow assets subscribe failed - app.borrow-assets.js:1672", collectionName, error);
         }
       );
       unsubscribeBorrowRequests.push(unsubscribe);
@@ -1435,8 +1728,18 @@ document.addEventListener("DOMContentLoaded", () => {
       setBorrowMessage("ข้อมูลผู้ใช้งานยังไม่ครบ กรุณาอัปเดตที่หน้าเข้าสู่ระบบก่อน", "#b91c1c");
       return;
     }
+    await ensureBorrowOrgCodeData();
+    const nextRequestNo = generateBorrowRequestNo();
+    if (!nextRequestNo) {
+      setBorrowMessage(
+        "ไม่พบรหัสองค์กรจากข้อมูลกลาง (คอลัมน์ C) กรุณาตรวจสอบประเภทองค์กร/ฝ่ายหรือเลือก 'อื่น ๆ'",
+        "#b91c1c"
+      );
+      return;
+    }
 
     const payload = {
+      requestNo: nextRequestNo,
       firstName: requesterProfile.firstName,
       lastName: requesterProfile.lastName,
       nickname: requesterProfile.nickname,
@@ -1445,8 +1748,9 @@ document.addEventListener("DOMContentLoaded", () => {
       year: requesterProfile.year,
       phone: requesterProfile.phone,
       lineId: requesterProfile.lineId,
-      projectName: borrowProjectName?.value.trim() || "",
-      projectDept: borrowProjectDept?.value.trim() || "",
+      projectName: getBorrowProjectNameValueForSubmit(),
+      projectDept: getBorrowProjectDeptValueForSubmit(),
+      projectDetail: borrowProjectDetail?.value.trim() || "",
       pickupDate: borrowPickupDate?.value || "",
       returnDate: borrowReturnDate?.value || "",
       assets: assetsResult.items,
@@ -1467,6 +1771,8 @@ document.addEventListener("DOMContentLoaded", () => {
         payload
       );
       if (borrowRequestForm) borrowRequestForm.reset();
+      toggleBorrowProjectNameOther();
+      populateBorrowProjectDeptOptions();
       resetAssetRows();
       setBorrowMessage("ส่งคำขอเรียบร้อยแล้ว สามารถติดตามสถานะได้ด้านล่าง", "#15803d");
     } catch (error) {
@@ -1484,7 +1790,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         setBorrowMessage("ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
       }
-      console.error("borrow request submit failed - app.borrow-assets.js:1321", error);
+      console.error("borrow request submit failed - app.borrow-assets.js:1793", error);
     } finally {
       borrowSubmitBtn.disabled = false;
     }
@@ -1515,12 +1821,50 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!hasStaffPermission()) return;
     const requestItem = getBorrowRequestByKey(requestId, sourceCollection);
     const targetCollection = requestItem?.sourceCollection || sourceCollection || BORROW_REQUEST_COLLECTION;
-    await firestore.deleteDoc(
-      firestore.doc(firestore.db, targetCollection, requestId)
-    );
+    const docRef = firestore.doc(firestore.db, targetCollection, requestId);
+    try {
+      await firestore.deleteDoc(docRef);
+    } catch (error) {
+      const code = (error?.code || "").toString().trim().toLowerCase();
+      if (
+        code === "permission-denied" &&
+        firestore.updateDoc &&
+        firestore.serverTimestamp
+      ) {
+        await firestore.updateDoc(docRef, {
+          isDeleted: true,
+          status: STATUS_CANCELLED,
+          staffNote: "ลบคำขอโดยเจ้าหน้าที่",
+          deletedBy: readCurrentUserEmail(),
+          deletedAt: firestore.serverTimestamp(),
+          updatedAt: firestore.serverTimestamp()
+        });
+        return;
+      }
+      throw error;
+    }
   };
 
   if (hasBorrowFormSection) {
+    void ensureBorrowOrgCodeData().then(() => {
+      populateBorrowProjectTypeOptions();
+      populateBorrowProjectDeptOptions();
+    });
+    populateBorrowProjectTypeOptions();
+    populateBorrowProjectDeptOptions();
+    if (borrowProjectName) {
+      borrowProjectName.addEventListener("change", () => {
+        toggleBorrowProjectNameOther();
+        populateBorrowProjectDeptOptions();
+      });
+      borrowProjectName.addEventListener("focus", () => {
+        populateBorrowProjectTypeOptions();
+        populateBorrowProjectDeptOptions();
+      });
+    }
+    if (borrowProjectDept) {
+      borrowProjectDept.addEventListener("focus", populateBorrowProjectDeptOptions);
+    }
     const firstRow = borrowAssetList.querySelector("[data-asset-row]");
     if (firstRow) {
       updateRowIds(firstRow, 1);
@@ -1588,14 +1932,14 @@ document.addEventListener("DOMContentLoaded", () => {
           await updateBorrowRequestStatus(requestId, STATUS_RETURNED, "ส่งคืนพัสดุเรียบร้อย", sourceCollection);
           setStaffQueueMessage("บันทึกคืนพัสดุเรียบร้อย", "#047857");
         } else if (action === "delete") {
-          const confirmed = window.confirm("ยืนยันการลบคำขอนี้ออกจากระบบ?");
+          const confirmed = await confirmBorrowDelete();
           if (!confirmed) return;
           await deleteBorrowRequest(requestId, sourceCollection);
           setStaffQueueMessage("ลบคำขอเรียบร้อย", "#047857");
         }
       } catch (error) {
         setStaffQueueMessage("อัปเดตสถานะไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
-        console.error("borrow request status update failed - app.borrow-assets.js:1432", error);
+        console.error("borrow request status update failed - app.borrow-assets.js:1942", error);
       } finally {
         button.disabled = false;
         staffActionInFlight = false;
@@ -1619,7 +1963,7 @@ document.addEventListener("DOMContentLoaded", () => {
       target.classList.add(borrowStatusSelectClass(nextValue));
 
       if (nextValue === "delete") {
-        const confirmed = window.confirm("ยืนยันการลบคำขอนี้ออกจากระบบ?");
+        const confirmed = await confirmBorrowDelete();
         if (!confirmed) {
           target.value = prevValue;
           target.classList.remove("is-pending", "is-approved", "is-rejected", "is-cancel-requested", "is-delete");
@@ -1706,6 +2050,35 @@ document.addEventListener("DOMContentLoaded", () => {
       if (target.closest("button, select, option, input, textarea, [data-role]")) return;
       const row = target.closest("tr[data-request-id]");
       if (!row) return;
+      const requestId = row.getAttribute("data-request-id") || "";
+      const sourceCollection = row.getAttribute("data-request-source") || "";
+      if (!requestId) return;
+      const item = getBorrowRequestByKey(requestId, sourceCollection);
+      if (item) openBorrowDetailModal(item);
+    });
+  }
+
+  if (myRequestsTableBody) {
+    myRequestsTableBody.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("button, select, option, input, textarea, a")) return;
+      const row = target.closest("tr[data-request-id]");
+      if (!row) return;
+      const requestId = row.getAttribute("data-request-id") || "";
+      const sourceCollection = row.getAttribute("data-request-source") || "";
+      if (!requestId) return;
+      const item = getBorrowRequestByKey(requestId, sourceCollection);
+      if (item) openBorrowDetailModal(item);
+    });
+
+    myRequestsTableBody.addEventListener("keydown", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const row = target.closest("tr[data-request-id]");
+      if (!row) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
       const requestId = row.getAttribute("data-request-id") || "";
       const sourceCollection = row.getAttribute("data-request-source") || "";
       if (!requestId) return;

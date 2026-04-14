@@ -80,13 +80,18 @@ function hydrateProjectsCache(list) {
   });
 }
 
-// โหลดตัวเลือก filter จากชีตภายนอก: คอลัมน์ A = ประเภทองค์กร, คอลัมน์ B = ฝ่าย/ชมรม
+// โหลดตัวเลือก filter จากชีตภายนอก: คอลัมน์ A = ประเภทองค์กร, คอลัมน์ B = ฝ่าย/ชมรม, คอลัมน์ C = รหัสองค์กร
 async function loadOrgFilters() {
   try {
     const cached = getCache(CACHE_KEYS.ORG_FILTERS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
-      orgFilters = cached;
-      return;
+      const hasOrgCode = cached.some((item) =>
+        (item?.code || "").toString().trim() !== ""
+      );
+      if (hasOrgCode) {
+        orgFilters = cached;
+        return;
+      }
     }
 
     const csvText = await fetchTextWithProgress(ORG_FILTER_CSV_URL, (ratio) => {
@@ -106,7 +111,8 @@ async function loadOrgFilters() {
     orgFilters = dataRows
       .map((row) => ({
         group: (row[0] || "").toString().trim(),
-        name: (row[1] || "").toString().trim()
+        name: (row[1] || "").toString().trim(),
+        code: (row[2] || "").toString().trim().toUpperCase()
       }))
       .filter((r) => r.group !== "" && r.name !== "");
 

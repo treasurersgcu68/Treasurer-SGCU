@@ -630,6 +630,80 @@ function initMeetingRoomStaffApproval() {
     staffActionMessageEl.style.color = color;
   };
 
+  const confirmDeleteBooking = async () => {
+    const fallbackConfirm = () => {
+      if (typeof window.confirm !== "function") return false;
+      return window.confirm("ยืนยันการลบคำขอนี้ออกจากระบบ?");
+    };
+    if (typeof document === "undefined") return fallbackConfirm();
+    let modal = document.getElementById("meetingStaffDeleteConfirmModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "meetingStaffDeleteConfirmModal";
+      modal.className = "modal";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-hidden", "true");
+      modal.innerHTML = `
+        <div class="modal-dialog" style="max-width:460px;">
+          <div class="modal-header">
+            <div class="modal-title">ยืนยันการลบคำขอ</div>
+            <button id="meetingStaffDeleteConfirmClose" class="modal-close" type="button" aria-label="ปิด">×</button>
+          </div>
+          <div class="modal-body">
+            <p class="section-text-sm">ต้องการลบคำขอนี้ออกจากระบบใช่หรือไม่</p>
+            <div class="modal-actions" style="margin-top:14px;">
+              <button id="meetingStaffDeleteConfirmCancel" class="btn-ghost" type="button">ยกเลิก</button>
+              <button id="meetingStaffDeleteConfirmOk" class="btn-primary" type="button">ยืนยันการลบ</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    const closeBtn = modal.querySelector("#meetingStaffDeleteConfirmClose");
+    const cancelBtn = modal.querySelector("#meetingStaffDeleteConfirmCancel");
+    const okBtn = modal.querySelector("#meetingStaffDeleteConfirmOk");
+    if (!(closeBtn instanceof HTMLButtonElement) || !(cancelBtn instanceof HTMLButtonElement) || !(okBtn instanceof HTMLButtonElement)) {
+      return fallbackConfirm();
+    }
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = (value) => {
+        if (settled) return;
+        settled = true;
+        closeBtn.removeEventListener("click", onCancel);
+        cancelBtn.removeEventListener("click", onCancel);
+        okBtn.removeEventListener("click", onOk);
+        modal.removeEventListener("click", onBackdropClick);
+        if (typeof closeDialog === "function") {
+          closeDialog(modal);
+        } else {
+          modal.classList.remove("show");
+          modal.setAttribute("aria-hidden", "true");
+        }
+        resolve(!!value);
+      };
+      const onCancel = () => done(false);
+      const onOk = () => done(true);
+      const onBackdropClick = (event) => {
+        if (event.target === modal) onCancel();
+      };
+
+      closeBtn.addEventListener("click", onCancel);
+      cancelBtn.addEventListener("click", onCancel);
+      okBtn.addEventListener("click", onOk);
+      modal.addEventListener("click", onBackdropClick);
+      if (typeof openDialog === "function") {
+        openDialog(modal, { focusSelector: "#meetingStaffDeleteConfirmCancel" });
+      } else {
+        modal.classList.add("show");
+        modal.setAttribute("aria-hidden", "false");
+      }
+    });
+  };
+
   const askRejectionReason = async (initialValue = "") => {
     const fallbackPrompt = () => {
       if (typeof window.prompt !== "function") return null;
@@ -1680,6 +1754,8 @@ function initMeetingRoomStaffApproval() {
 
   const deleteById = async (id) => {
     if (!hasFirestore || !id) return;
+    const confirmed = await confirmDeleteBooking();
+    if (!confirmed) return;
     const booking = bookings.find((item) => item.id === id) || null;
     try {
       await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_NAME, id));

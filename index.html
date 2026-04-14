@@ -1449,50 +1449,6 @@
               <div class="panel panel-hover">
                 <div class="panel-header">
                   <div>
-                    <div class="panel-title">ข้อมูลผู้เบิกยืมพัสดุ</div>
-                    <div class="panel-caption">ชื่อ-นามสกุลที่แจ้งต้องเป็นบุคคลเดียวกับที่มารับพัสดุในวันจริง</div>
-                  </div>
-                </div>
-                <div class="panel-body">
-                  <div class="section-text-sm" style="margin-bottom: 8px;">
-                    ระบบจะดึงข้อมูลผู้เบิกยืมจากหน้าเข้าสู่ระบบโดยอัตโนมัติ
-                  </div>
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label">ชื่อ - นามสกุล</label>
-                      <div id="borrowProfileFullName" class="section-text-sm">-</div>
-                    </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label">ชื่อเล่น</label>
-                      <div id="borrowProfileNickname" class="section-text-sm">-</div>
-                    </div>
-                  </div>
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label">เลขประจำตัวนิสิต</label>
-                      <div id="borrowProfileStudentId" class="section-text-sm">-</div>
-                    </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label">คณะ / ชั้นปี</label>
-                      <div id="borrowProfileFacultyYear" class="section-text-sm">-</div>
-                    </div>
-                  </div>
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label">เบอร์โทรติดต่อกลับ</label>
-                      <div id="borrowProfilePhone" class="section-text-sm">-</div>
-                    </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label">Line ID</label>
-                      <div id="borrowProfileLineId" class="section-text-sm">-</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="panel panel-hover" style="margin-top: 18px;">
-                <div class="panel-header">
-                  <div>
                     <div class="panel-title">รายละเอียดการยืม - คืนพัสดุ</div>
                     <div class="panel-caption">ระบุโครงการ รายการพัสดุ และช่วงเวลาที่ต้องการยืม</div>
                   </div>
@@ -1500,12 +1456,45 @@
                 <div class="panel-body">
                   <div class="borrow-form-row">
                     <div class="borrow-form-field">
-                      <label class="login-label" for="borrowProjectName">ชื่อโครงการ ชมรม หรือ องค์กร</label>
-                      <input id="borrowProjectName" class="login-input" type="text" placeholder="ชื่อโครงการ/ชมรม" required />
+                      <label class="login-label" for="borrowProjectName">ประเภทองค์กร</label>
+                      <select id="borrowProjectName" class="login-input" required>
+                        <option value="" selected disabled>เลือกประเภทองค์กร</option>
+                        <!-- JS เติมตัวเลือกจากประเภทองค์กร -->
+                      </select>
+                      <input
+                        id="borrowProjectNameOther"
+                        class="login-input"
+                        type="text"
+                        placeholder="ระบุประเภทองค์กร"
+                        style="margin-top:8px; display:none;"
+                      />
                     </div>
                     <div class="borrow-form-field">
                       <label class="login-label" for="borrowProjectDept">ฝ่ายในโครงการ ชมรม หรือ องค์กร</label>
-                      <input id="borrowProjectDept" class="login-input" type="text" placeholder="เช่น ฝ่ายกิจกรรม" required />
+                      <select id="borrowProjectDept" class="login-input" required>
+                        <option value="" selected disabled>เลือกฝ่าย / ชมรม</option>
+                        <!-- JS เติมตัวเลือกจากฝ่าย / ชมรม -->
+                      </select>
+                      <input
+                        id="borrowProjectDeptOther"
+                        class="login-input"
+                        type="text"
+                        placeholder="ระบุฝ่าย / ชมรม"
+                        style="margin-top:8px; display:none;"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="borrowProjectDetail">ชื่อโครงการหรือรายละเอียดกิจกรรม</label>
+                      <textarea
+                        id="borrowProjectDetail"
+                        class="login-input"
+                        rows="3"
+                        placeholder="ระบุชื่อโครงการหรือรายละเอียดกิจกรรมที่ขอยืมพัสดุ"
+                        required
+                      ></textarea>
                     </div>
                   </div>
 
@@ -1668,13 +1657,12 @@
                       <th>รายการ</th>
                       <th>ที่เก็บ</th>
                       <th>คงเหลือ</th>
-                      <th>สถานะ</th>
                       <th>หมายเหตุ</th>
                     </tr>
                   </thead>
                   <tbody id="borrowAssetsTableBody">
                     <tr>
-                      <td colspan="7">กำลังโหลดรายการพัสดุ...</td>
+                      <td colspan="6">กำลังโหลดรายการพัสดุ...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1901,12 +1889,6 @@
                 </div>
 
                 <div class="borrow-form-row">
-                  <div class="borrow-form-field">
-                    <label class="login-label">ข้อมูลผู้ขอ (จากหน้าเข้าสู่ระบบ)</label>
-                    <div id="meetingProfileRequester" class="section-text-sm">ชื่อผู้ขอ: -</div>
-                    <div id="meetingProfilePhone" class="section-text-sm">เบอร์ติดต่อ: -</div>
-                    <div id="meetingProfileContact" class="section-text-sm">ช่องทางติดต่อ: -</div>
-                  </div>
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingProjectMode">ประเภทคำขอ</label>
                     <select id="meetingProjectMode" class="login-input">
@@ -3021,7 +3003,7 @@
                           </label>
                           <label class="tab-btn view-toggle-btn" style="cursor:pointer;">
                             <input id="loginProfileTypeAffairs" type="radio" name="loginProfileType" value="affairs" style="display:none;" />
-                            กิจการนิสิต
+                            เจ้าหน้าที่สำนักบริหารกิจการนิสิต
                           </label>
                         </div>
                       </div>
@@ -3080,7 +3062,7 @@
 
                     <div class="borrow-form-row">
                       <div class="borrow-form-field">
-                        <label class="login-label" for="loginProfilePhone">เบอร์โทรติดต่อกลับ</label>
+                        <label id="loginProfilePhoneLabel" class="login-label" for="loginProfilePhone">เบอร์โทรติดต่อกลับ</label>
                         <input
                           id="loginProfilePhone"
                           class="login-input"
@@ -3091,7 +3073,7 @@
                         />
                       </div>
                       <div class="borrow-form-field">
-                        <label class="login-label" for="loginProfileLineId">Line ID</label>
+                        <label id="loginProfileLineIdLabel" class="login-label" for="loginProfileLineId">Line ID</label>
                         <input id="loginProfileLineId" class="login-input" type="text" placeholder="Line ID" required />
                       </div>
                     </div>

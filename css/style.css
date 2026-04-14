@@ -286,6 +286,46 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 18px;
 }
 
+.borrow-profile-intro {
+  margin-bottom: 10px;
+  color: #6b7280;
+}
+
+.borrow-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.borrow-profile-item {
+  border: 1px solid #f3d7df;
+  background: linear-gradient(180deg, #ffffff, #fff8fa);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.borrow-profile-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9f1239;
+  margin-bottom: 4px;
+}
+
+.borrow-profile-value {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  overflow-wrap: anywhere;
+}
+
+.borrow-profile-value.is-empty {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
 .borrow-asset-remove {
   border-color: #fecaca;
   color: #b91c1c;
@@ -872,6 +912,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
   .borrow-asset-row-actions {
     justify-content: flex-start;
+  }
+  .borrow-profile-grid {
+    grid-template-columns: 1fr;
   }
 
   .meeting-room-stats {
@@ -5678,7 +5721,7 @@ th.sortable.sort-desc::after {
 }
 
 .borrow-request-summary-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #f3e3ea;
   border-radius: 12px;
   background: #ffffff;
   padding: 10px;
@@ -5712,6 +5755,24 @@ th.sortable.sort-desc::after {
   margin-bottom: 8px;
 }
 
+.borrow-request-meta-section {
+  border-color: #f1d7e2;
+  background: linear-gradient(180deg, #ffffff, #fffbfd);
+}
+
+.borrow-request-subtitle {
+  margin: 10px 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9f1239;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.borrow-request-subtitle:first-of-type {
+  margin-top: 0;
+}
+
 .borrow-request-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5725,6 +5786,10 @@ th.sortable.sort-desc::after {
   padding: 8px 10px;
   display: grid;
   gap: 4px;
+}
+
+.borrow-request-detail-item-full {
+  grid-column: 1 / -1;
 }
 
 .borrow-request-detail-label {
@@ -5789,6 +5854,18 @@ th.sortable.sort-desc::after {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.borrow-my-request-row {
+  cursor: pointer;
+}
+
+.borrow-my-request-row:hover td {
+  background: rgba(252, 231, 243, 0.45);
+}
+
+.borrow-my-request-row:focus-visible td {
+  background: rgba(252, 231, 243, 0.62);
 }
 
 .borrow-staff-row td {

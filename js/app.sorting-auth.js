@@ -485,7 +485,9 @@ function initAuthUI() {
   const loginProfileYearEl = document.getElementById("loginProfileYear");
   const loginProfileYearWarningEl = document.getElementById("loginProfileYearWarning");
   const loginProfilePhoneEl = document.getElementById("loginProfilePhone");
+  const loginProfilePhoneLabelEl = document.getElementById("loginProfilePhoneLabel");
   const loginProfileLineIdEl = document.getElementById("loginProfileLineId");
+  const loginProfileLineIdLabelEl = document.getElementById("loginProfileLineIdLabel");
   const loginProfileSaveBtnEl = document.getElementById("loginProfileSaveBtn");
   const loginProfileStatusEl = document.getElementById("loginProfileStatus");
   let loginProfileLoadedForEmail = "";
@@ -633,6 +635,33 @@ function initAuthUI() {
     }
     if (loginProfileNicknameEl) loginProfileNicknameEl.required = isStudent;
     if (loginProfileStudentIdEl) loginProfileStudentIdEl.required = isStudent;
+    if (loginProfilePhoneEl) {
+      if (isStudent) {
+        loginProfilePhoneEl.required = true;
+        loginProfilePhoneEl.type = "tel";
+        loginProfilePhoneEl.pattern = "^0\\d{9}$";
+        loginProfilePhoneEl.placeholder = "รูปแบบ: 0xxXXXxxxx";
+      } else {
+        loginProfilePhoneEl.required = false;
+        loginProfilePhoneEl.type = "text";
+        loginProfilePhoneEl.removeAttribute("pattern");
+        loginProfilePhoneEl.placeholder = "เช่น เบอร์โทร / LINE / Email";
+      }
+    }
+    if (loginProfilePhoneLabelEl) {
+      loginProfilePhoneLabelEl.textContent = isStudent
+        ? "เบอร์โทรติดต่อกลับ"
+        : "ข้อมูลติดต่อกลับ";
+    }
+    if (loginProfileLineIdEl) {
+      loginProfileLineIdEl.required = isStudent;
+      loginProfileLineIdEl.placeholder = isStudent ? "Line ID" : "ช่องทางอื่น (ถ้ามี)";
+    }
+    if (loginProfileLineIdLabelEl) {
+      loginProfileLineIdLabelEl.textContent = isStudent
+        ? "Line ID"
+        : "ข้อมูลติดต่อกลับ (อื่น ๆ)";
+    }
     if (!isStudent) {
       if (loginProfileStudentIdWarningEl) loginProfileStudentIdWarningEl.hidden = true;
       if (loginProfileFacultyWarningEl) loginProfileFacultyWarningEl.hidden = true;
@@ -809,14 +838,16 @@ function initAuthUI() {
         !loginProfileStudentIdEl.reportValidity()
       ) return false;
     }
-    if (
-      loginProfilePhoneEl &&
-      !loginProfilePhoneEl.reportValidity()
-    ) return false;
-    if (
-      loginProfileLineIdEl &&
-      !loginProfileLineIdEl.reportValidity()
-    ) return false;
+    if (isStudent) {
+      if (
+        loginProfilePhoneEl &&
+        !loginProfilePhoneEl.reportValidity()
+      ) return false;
+      if (
+        loginProfileLineIdEl &&
+        !loginProfileLineIdEl.reportValidity()
+      ) return false;
+    }
 
     updateLoginProfileStudentMeta();
     if (isStudent && (!loginProfileFacultyEl?.value || !loginProfileYearEl?.value)) {

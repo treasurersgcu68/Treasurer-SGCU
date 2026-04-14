@@ -5,9 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const dateInput = document.getElementById("meetingDate");
   const startTimeInput = document.getElementById("meetingStartTime");
   const endTimeInput = document.getElementById("meetingEndTime");
-  const requesterInput = document.getElementById("meetingRequester");
-  const phoneInput = document.getElementById("meetingRequesterPhone");
-  const contactInput = document.getElementById("meetingRequesterContact");
+  const meetingProfileRequesterEl = document.getElementById("meetingProfileRequester");
+  const meetingProfilePhoneEl = document.getElementById("meetingProfilePhone");
+  const meetingProfileContactEl = document.getElementById("meetingProfileContact");
   const purposeInput = document.getElementById("meetingPurpose");
   const cancelForm = document.getElementById("meetingCancelForm");
   const cancelBookingSelect = document.getElementById("meetingCancelBookingSelect");
@@ -53,12 +53,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const rejectReasonCloseEl = document.getElementById("meetingRejectReasonClose");
 
   if (!form || !roomSelect || !dateInput || !startTimeInput || !endTimeInput ||
-      !requesterInput || !purposeInput || !messageEl) {
+      !purposeInput || !messageEl) {
     return;
   }
 
   const STORAGE_KEY = "meetingRoomBookings-v1";
   const LOCAL_MIGRATED_KEY = "meetingRoomBookingsMigratedToFirestore-v1";
+  const PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
+  const USER_PROFILE_COLLECTION = "userProfiles";
   const BOOKING_COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
   const HOLIDAY_COLLECTION_NAME = "meetingRoomHolidays";
@@ -297,6 +299,97 @@ document.addEventListener("DOMContentLoaded", () => {
           showProjectError("ไม่พบรหัสโครงการนี้ กรุณากรอกรหัสใหม่");
         }
       });
+    }
+  };
+
+  const readSharedProfiles = () => {
+    try {
+      const raw = window.localStorage?.getItem(PROFILE_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  };
+
+  const applySharedProfileToMeetingForm = (profile) => {
+    if (!profile || typeof profile !== "object") return;
+    activeMeetingProfile = {
+      firstName: (profile.firstName || "").toString().trim(),
+      lastName: (profile.lastName || "").toString().trim(),
+      phone: (profile.phone || "").toString().trim(),
+      lineId: (profile.lineId || "").toString().trim()
+    };
+    const fullName = [activeMeetingProfile.firstName, activeMeetingProfile.lastName]
+      .map((part) => (part || "").toString().trim())
+      .filter(Boolean)
+      .join(" ");
+    if (meetingProfileRequesterEl) meetingProfileRequesterEl.textContent = `ชื่อผู้ขอ: ${fullName || "-"}`;
+    if (meetingProfilePhoneEl) meetingProfilePhoneEl.textContent = `เบอร์ติดต่อ: ${activeMeetingProfile.phone || "-"}`;
+    if (meetingProfileContactEl) meetingProfileContactEl.textContent = `ช่องทางติดต่อ: ${activeMeetingProfile.lineId || "-"}`;
+  };
+
+  const restoreMeetingProfileForCurrentUser = () => {
+    const email = (currentUserEmail || "").toString().trim().toLowerCase();
+    if (!email) {
+      activeMeetingProfile = null;
+      if (meetingProfileRequesterEl) meetingProfileRequesterEl.textContent = "ชื่อผู้ขอ: -";
+      if (meetingProfilePhoneEl) meetingProfilePhoneEl.textContent = "เบอร์ติดต่อ: -";
+      if (meetingProfileContactEl) meetingProfileContactEl.textContent = "ช่องทางติดต่อ: -";
+      return;
+    }
+    const profile = readSharedProfiles()[email];
+    if (!profile) return;
+    applySharedProfileToMeetingForm(profile);
+  };
+
+  const getMeetingProfileForSubmit = async () => {
+    const email = (currentUserEmail || "").toString().trim().toLowerCase();
+    if (!email) return null;
+    if (activeMeetingProfile && activeMeetingProfile.firstName && activeMeetingProfile.lastName) {
+      return activeMeetingProfile;
+    }
+    const local = readSharedProfiles()[email];
+    if (local) {
+      applySharedProfileToMeetingForm(local);
+      return activeMeetingProfile;
+    }
+    const remote = await readMeetingProfileFromFirestore();
+    if (remote) {
+      applySharedProfileToMeetingForm(remote);
+      return activeMeetingProfile;
+    }
+    return null;
+  };
+
+  const readMeetingProfileFromFirestore = async () => {
+    const firestoreBridge = window.sgcuFirestore || {};
+    const authUser = window.sgcuAuth?.auth?.currentUser || null;
+    const email = (authUser?.email || "").toString().trim().toLowerCase();
+    const uid = (authUser?.uid || "").toString().trim();
+    if (!email || !uid) return null;
+    if (!firestoreBridge.db || !firestoreBridge.doc || !firestoreBridge.getDoc) return null;
+    try {
+      const ref = firestoreBridge.doc(firestoreBridge.db, USER_PROFILE_COLLECTION, uid);
+      const snap = await firestoreBridge.getDoc(ref);
+      if (!snap?.exists()) return null;
+      const data = snap.data() || {};
+      if (!data || typeof data !== "object") return null;
+      const profiles = readSharedProfiles();
+      profiles[email] = {
+        ...(profiles[email] || {}),
+        ...data,
+        updatedAt: Date.now()
+      };
+      try {
+        window.localStorage?.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+      } catch (_) {
+        // ignore local cache write errors
+      }
+      return profiles[email];
+    } catch (_) {
+      return null;
     }
   };
 
@@ -560,6 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeDayModalDate = "";
   let autoRetryTimer = null;
   let autoRetryAttempt = 0;
+  let activeMeetingProfile = null;
 
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
@@ -1895,10 +1989,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const date = dateInput.value;
     const startTime = startTimeInput.value;
     const endTime = endTimeInput.value;
-    const requester = requesterInput.value.trim();
     const purpose = purposeInput.value.trim();
-    const contactPhone = (document.getElementById("meetingRequesterPhone")?.value || "").trim();
-    const contactInfo = (document.getElementById("meetingRequesterContact")?.value || "").trim();
+    const meetingProfile = await getMeetingProfileForSubmit();
+    const requester = meetingProfile
+      ? [meetingProfile.firstName, meetingProfile.lastName].filter(Boolean).join(" ")
+      : "";
+    const contactPhone = (meetingProfile?.phone || "").toString().trim();
+    const contactInfo = (meetingProfile?.lineId || "").toString().trim();
     const projectMode = (document.getElementById("meetingProjectMode")?.value || DEFAULT_PROJECT_MODE).toString();
     const projectCode = projectMode === "project"
       ? (document.getElementById("meetingProjectCode")?.value || "").trim()
@@ -1911,6 +2008,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (!meetingProfile) {
+      setMessage("ไม่พบข้อมูลผู้ขอ กรุณาบันทึกข้อมูลที่หน้าเข้าสู่ระบบก่อน", "#b91c1c");
+      return;
+    }
     if (!roomId || !date || !startTime || !endTime || !requester || !purpose) {
       setMessage("กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำรายการจอง", "#b91c1c");
       return;
@@ -2312,6 +2413,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.sgcuAuth?.auth && typeof window.sgcuAuth.onAuthStateChanged === "function") {
     window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {
       currentUserEmail = readCurrentUserEmail();
+      restoreMeetingProfileForCurrentUser();
+      void readMeetingProfileFromFirestore().then((profile) => {
+        if (profile) applySharedProfileToMeetingForm(profile);
+      });
       setupRoomOptions();
       renderOwnBookingOptions();
       if (resolveFirestoreBridge() && (roomsLoadFailed || bookingsLoadFailed || !roomsLoaded || !bookingsLoaded)) {
@@ -2322,6 +2427,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setupRoomOptions();
   currentUserEmail = readCurrentUserEmail();
+  restoreMeetingProfileForCurrentUser();
+  void readMeetingProfileFromFirestore().then((profile) => {
+    if (profile) applySharedProfileToMeetingForm(profile);
+  });
   setMinDate();
   ensureFormContactFields();
   ensureBookingListUI();
@@ -2353,6 +2462,13 @@ document.addEventListener("DOMContentLoaded", () => {
       renderCalendarOverview();
     });
   }
+
+  window.addEventListener("sgcu:user-profile-updated", (event) => {
+    const detail = event?.detail || {};
+    const email = (detail.email || "").toString().trim().toLowerCase();
+    if (!email || email !== currentUserEmail) return;
+    applySharedProfileToMeetingForm(detail.profile || {});
+  });
 
   if (calendarPanel && dateInput) {
     calendarPanel.addEventListener("click", (event) => {

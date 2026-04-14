@@ -199,6 +199,7 @@ function normalizeStaffRoleCode(role) {
 
 function getAllowedPagesForCurrentState() {
   const publicAllowed = new Set(["home", "about", "project-status", "news", "financial-docs", "login"]);
+  const isAffairsProfile = currentUserProfileType === "affairs";
   if (!isUserAuthenticated) {
     return publicAllowed;
   }
@@ -213,6 +214,10 @@ function getAllowedPagesForCurrentState() {
     "meeting-room-staff"
   ];
   protectedAllowed.forEach((page) => allowed.add(page));
+  if (isAffairsProfile) {
+    allowed.delete("borrow-assets");
+    allowed.delete("borrow-assets-staff");
+  }
 
   if (staffAuthUser && staffViewMode === "staff") {
     const roleAllowedMap = {
@@ -223,7 +228,10 @@ function getAllowedPagesForCurrentState() {
     };
     const roleAllowed = roleAllowedMap[normalizeStaffRoleCode(staffAuthUser.role)] ||
       ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"];
-    return new Set(roleAllowed);
+    const filteredRoleAllowed = isAffairsProfile
+      ? roleAllowed.filter((page) => page !== "borrow-assets" && page !== "borrow-assets-staff")
+      : roleAllowed;
+    return new Set(filteredRoleAllowed);
   }
 
   if (staffViewMode !== "staff") {
@@ -419,6 +427,8 @@ function initAuthUI() {
 
   if (!auth) return;
   const AUTH_SESSION_KEY = "sgcu_auth_session_started_at";
+  const LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
+  const USER_PROFILE_COLLECTION = "userProfiles";
   const sessionMaxAgeMs =
     typeof AUTH_SESSION_MAX_AGE_MS === "number" &&
     Number.isFinite(AUTH_SESSION_MAX_AGE_MS) &&
@@ -458,6 +468,407 @@ function initAuthUI() {
     } catch (err) {
       // ignore remove errors
     }
+  }
+
+  const loginProfileFormEl = document.getElementById("loginProfileForm");
+  const loginProfileTypeGroupEl = document.getElementById("loginProfileTypeGroup");
+  const loginProfileTypeStudentEl = document.getElementById("loginProfileTypeStudent");
+  const loginProfileTypeAffairsEl = document.getElementById("loginProfileTypeAffairs");
+  const loginProfileStudentFieldsEl = document.getElementById("loginProfileStudentFields");
+  const loginProfileFirstNameEl = document.getElementById("loginProfileFirstName");
+  const loginProfileLastNameEl = document.getElementById("loginProfileLastName");
+  const loginProfileNicknameEl = document.getElementById("loginProfileNickname");
+  const loginProfileStudentIdEl = document.getElementById("loginProfileStudentId");
+  const loginProfileStudentIdWarningEl = document.getElementById("loginProfileStudentIdWarning");
+  const loginProfileFacultyEl = document.getElementById("loginProfileFaculty");
+  const loginProfileFacultyWarningEl = document.getElementById("loginProfileFacultyWarning");
+  const loginProfileYearEl = document.getElementById("loginProfileYear");
+  const loginProfileYearWarningEl = document.getElementById("loginProfileYearWarning");
+  const loginProfilePhoneEl = document.getElementById("loginProfilePhone");
+  const loginProfileLineIdEl = document.getElementById("loginProfileLineId");
+  const loginProfileSaveBtnEl = document.getElementById("loginProfileSaveBtn");
+  const loginProfileStatusEl = document.getElementById("loginProfileStatus");
+  let loginProfileLoadedForEmail = "";
+  let loginProfileLoadSeq = 0;
+  const loginProfileFacultyMap = {
+    "21": "วิศวกรรมศาสตร์",
+    "22": "อักษรศาสตร์",
+    "23": "วิทยาศาสตร์",
+    "24": "รัฐศาสตร์",
+    "25": "สถาปัตยกรรมศาสตร์",
+    "26": "พาณิชยศาสตร์และการบัญชี",
+    "27": "ครุศาสตร์",
+    "28": "นิเทศศาสตร์",
+    "29": "เศรษฐศาสตร์",
+    "30": "แพทยศาสตร์",
+    "31": "สัตวแพทย์ศาสตร์",
+    "32": "ทันตแพทย์ศาสตร์",
+    "33": "เภสัชศาสตร์",
+    "34": "นิติศาสตร์",
+    "35": "ศิลปกรรมศาสตร์",
+    "37": "สหเวชศาสตร์",
+    "38": "จิตวิทยา",
+    "39": "วิทยาศาสตร์การกีฬา",
+    "40": "สำนักทรัพยากรทางการเกษตร",
+    "56": "สถาบันนวัตกรรมบูรณาการฯ"
+  };
+
+  const profileStore = window.sgcuFirestore || {};
+
+  function canUseRemoteProfileStore() {
+    return !!(
+      profileStore.db &&
+      profileStore.doc &&
+      profileStore.getDoc &&
+      profileStore.setDoc &&
+      profileStore.serverTimestamp
+    );
+  }
+
+  function buildRemoteProfileRef(firebaseUser) {
+    if (!canUseRemoteProfileStore()) return null;
+    const uid = (firebaseUser?.uid || "").toString().trim();
+    if (!uid) return null;
+    return profileStore.doc(profileStore.db, USER_PROFILE_COLLECTION, uid);
+  }
+
+  async function readRemoteLoginProfile(firebaseUser) {
+    try {
+      const ref = buildRemoteProfileRef(firebaseUser);
+      if (!ref) return null;
+      const snap = await profileStore.getDoc(ref);
+      if (!snap?.exists()) return null;
+      const data = snap.data() || {};
+      return data && typeof data === "object" ? data : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function writeRemoteLoginProfile(firebaseUser, profileData) {
+    const ref = buildRemoteProfileRef(firebaseUser);
+    if (!ref) return { ok: false, code: "store-not-ready" };
+    try {
+      await profileStore.setDoc(
+        ref,
+        {
+          ...(profileData || {}),
+          uid: (firebaseUser?.uid || "").toString(),
+          email: (firebaseUser?.email || "").toString().trim().toLowerCase(),
+          updatedAt: profileStore.serverTimestamp()
+        },
+        { merge: true }
+      );
+      return { ok: true, code: "" };
+    } catch (err) {
+      const code = (err?.code || "unknown").toString();
+      console.error("save user profile to firestore failed - app.sorting-auth.js:557", err);
+      return { ok: false, code };
+    }
+  }
+
+  function readLoginProfiles() {
+    try {
+      const raw = window.localStorage?.getItem(LOGIN_PROFILE_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function writeLoginProfiles(profiles) {
+    try {
+      window.localStorage?.setItem(
+        LOGIN_PROFILE_STORAGE_KEY,
+        JSON.stringify(profiles || {})
+      );
+    } catch (err) {
+      // ignore localStorage errors
+    }
+  }
+
+  function setLoginProfileStatus(text, color = "#6b7280") {
+    if (!loginProfileStatusEl) return;
+    loginProfileStatusEl.textContent = text || "";
+    loginProfileStatusEl.style.color = color;
+  }
+
+  function setLoginProfileEnabled(enabled) {
+    const disabled = !enabled;
+    if (loginProfileFormEl) {
+      loginProfileFormEl.style.opacity = disabled ? "0.7" : "1";
+    }
+    if (loginProfileFirstNameEl) loginProfileFirstNameEl.disabled = disabled;
+    if (loginProfileLastNameEl) loginProfileLastNameEl.disabled = disabled;
+    if (loginProfileNicknameEl) loginProfileNicknameEl.disabled = disabled;
+    if (loginProfileStudentIdEl) loginProfileStudentIdEl.disabled = disabled;
+    if (loginProfilePhoneEl) loginProfilePhoneEl.disabled = disabled;
+    if (loginProfileLineIdEl) loginProfileLineIdEl.disabled = disabled;
+    if (loginProfileTypeStudentEl) loginProfileTypeStudentEl.disabled = disabled;
+    if (loginProfileTypeAffairsEl) loginProfileTypeAffairsEl.disabled = disabled;
+    if (loginProfileSaveBtnEl) loginProfileSaveBtnEl.disabled = disabled;
+  }
+
+  function getLoginProfileType() {
+    return loginProfileTypeAffairsEl?.checked ? "affairs" : "student";
+  }
+
+  function renderLoginProfileTypeTabs() {
+    if (!loginProfileTypeGroupEl) return;
+    const labels = Array.from(loginProfileTypeGroupEl.querySelectorAll("label.tab-btn"));
+    labels.forEach((label) => label.classList.remove("is-active"));
+    const activeInput = loginProfileTypeAffairsEl?.checked
+      ? loginProfileTypeAffairsEl
+      : loginProfileTypeStudentEl;
+    const activeLabel = activeInput ? activeInput.closest("label.tab-btn") : null;
+    if (activeLabel) activeLabel.classList.add("is-active");
+  }
+
+  function applyLoginProfileTypeUI() {
+    const isStudent = getLoginProfileType() === "student";
+    if (loginProfileStudentFieldsEl) {
+      loginProfileStudentFieldsEl.style.display = isStudent ? "" : "none";
+    }
+    if (loginProfileNicknameEl) loginProfileNicknameEl.required = isStudent;
+    if (loginProfileStudentIdEl) loginProfileStudentIdEl.required = isStudent;
+    if (!isStudent) {
+      if (loginProfileStudentIdWarningEl) loginProfileStudentIdWarningEl.hidden = true;
+      if (loginProfileFacultyWarningEl) loginProfileFacultyWarningEl.hidden = true;
+      if (loginProfileYearWarningEl) loginProfileYearWarningEl.hidden = true;
+    } else {
+      updateLoginProfileStudentMeta();
+    }
+    renderLoginProfileTypeTabs();
+  }
+
+  function updateLoginProfileStudentMeta() {
+    if (!loginProfileStudentIdEl || !loginProfileFacultyEl || !loginProfileYearEl) return;
+    const rawValue = loginProfileStudentIdEl.value || "";
+    const digits = rawValue.replace(/\D/g, "");
+    const hasNonDigits = rawValue.trim() !== "" && digits.length !== rawValue.replace(/\s/g, "").length;
+    if (loginProfileStudentIdWarningEl) {
+      if (hasNonDigits) {
+        loginProfileStudentIdWarningEl.textContent = "กรุณากรอกตัวเลขเท่านั้น";
+        loginProfileStudentIdWarningEl.hidden = false;
+      } else {
+        loginProfileStudentIdWarningEl.hidden = true;
+      }
+    }
+    if (digits.length < 10) {
+      loginProfileFacultyEl.value = "";
+      loginProfileYearEl.value = "";
+      if (loginProfileFacultyWarningEl) loginProfileFacultyWarningEl.hidden = true;
+      if (loginProfileYearWarningEl) loginProfileYearWarningEl.hidden = true;
+      return;
+    }
+
+    const code = digits.slice(-2);
+    const label = loginProfileFacultyMap[code];
+    loginProfileFacultyEl.value = label ? label : "";
+    if (loginProfileFacultyWarningEl) loginProfileFacultyWarningEl.hidden = !!label;
+
+    const entryYearSuffix = digits.slice(0, 2);
+    const entryYear = 2500 + Number(entryYearSuffix);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const academicYear = (now.getMonth() + 1 >= 8) ? currentYear : currentYear - 1;
+    const academicYearBE = academicYear + 543;
+    const yearLevel = Number.isFinite(entryYear)
+      ? academicYearBE - entryYear + 1
+      : NaN;
+    const isValidYearLevel = yearLevel >= 1 && yearLevel <= 8;
+    loginProfileYearEl.value = isValidYearLevel ? String(yearLevel) : "";
+    if (loginProfileYearWarningEl) loginProfileYearWarningEl.hidden = isValidYearLevel;
+  }
+
+  function clearLoginProfileFields() {
+    currentUserProfileType = "student";
+    if (loginProfileTypeStudentEl) loginProfileTypeStudentEl.checked = true;
+    if (loginProfileTypeAffairsEl) loginProfileTypeAffairsEl.checked = false;
+    if (loginProfileFirstNameEl) loginProfileFirstNameEl.value = "";
+    if (loginProfileLastNameEl) loginProfileLastNameEl.value = "";
+    if (loginProfileNicknameEl) loginProfileNicknameEl.value = "";
+    if (loginProfileStudentIdEl) loginProfileStudentIdEl.value = "";
+    if (loginProfilePhoneEl) loginProfilePhoneEl.value = "";
+    if (loginProfileLineIdEl) loginProfileLineIdEl.value = "";
+    if (loginProfileFacultyEl) loginProfileFacultyEl.value = "";
+    if (loginProfileYearEl) loginProfileYearEl.value = "";
+    if (loginProfileStudentIdWarningEl) loginProfileStudentIdWarningEl.hidden = true;
+    if (loginProfileFacultyWarningEl) loginProfileFacultyWarningEl.hidden = true;
+    if (loginProfileYearWarningEl) loginProfileYearWarningEl.hidden = true;
+    applyLoginProfileTypeUI();
+  }
+
+  function applyLoginProfileToFields(profile, firebaseUser) {
+    const safeProfile = profile && typeof profile === "object" ? profile : {};
+    const storedType = (safeProfile.profileType || "").toString().trim().toLowerCase();
+    const resolvedType = storedType === "affairs" || storedType === "student"
+      ? storedType
+      : ((safeProfile.studentId || "").toString().trim() ? "student" : "affairs");
+    currentUserProfileType = resolvedType;
+    if (loginProfileTypeStudentEl) loginProfileTypeStudentEl.checked = resolvedType !== "affairs";
+    if (loginProfileTypeAffairsEl) loginProfileTypeAffairsEl.checked = resolvedType === "affairs";
+
+    const displayName = (firebaseUser?.displayName || "").toString().trim();
+    const parts = displayName ? displayName.split(/\s+/) : [];
+    const fallbackFirstName = parts[0] || "";
+    const fallbackLastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
+
+    if (loginProfileFirstNameEl) {
+      loginProfileFirstNameEl.value = (safeProfile.firstName || fallbackFirstName || "").toString();
+    }
+    if (loginProfileLastNameEl) {
+      loginProfileLastNameEl.value = (safeProfile.lastName || fallbackLastName || "").toString();
+    }
+    if (loginProfileNicknameEl) {
+      loginProfileNicknameEl.value = (safeProfile.nickname || "").toString();
+    }
+    if (loginProfileStudentIdEl) {
+      loginProfileStudentIdEl.value = (safeProfile.studentId || "").toString();
+    }
+    if (loginProfilePhoneEl) {
+      loginProfilePhoneEl.value = (safeProfile.phone || "").toString();
+    }
+    if (loginProfileLineIdEl) {
+      loginProfileLineIdEl.value = (safeProfile.lineId || "").toString();
+    }
+    applyLoginProfileTypeUI();
+    updateLoginProfileStudentMeta();
+    if (isUserAuthenticated) {
+      applyStaffViewMode();
+    }
+  }
+
+  function loadLoginProfileByUser(firebaseUser) {
+    const email = (firebaseUser?.email || "").toString().trim().toLowerCase();
+    if (!email) {
+      loginProfileLoadedForEmail = "";
+      clearLoginProfileFields();
+      return;
+    }
+    if (loginProfileLoadedForEmail === email) {
+      return;
+    }
+
+    const profile = readLoginProfiles()[email] || {};
+    applyLoginProfileToFields(profile, firebaseUser);
+    if (profile.firstName || profile.lastName || profile.nickname || profile.studentId || profile.phone || profile.lineId) {
+      setLoginProfileStatus("โหลดข้อมูลผู้ใช้เดิมแล้ว", "#047857");
+    } else {
+      setLoginProfileStatus("กรอกข้อมูลผู้ใช้และกดบันทึกได้เลย", "#6b7280");
+    }
+    loginProfileLoadedForEmail = email;
+
+    const currentSeq = ++loginProfileLoadSeq;
+    void readRemoteLoginProfile(firebaseUser).then((remoteProfile) => {
+      const currentEmail = (auth.currentUser?.email || "").toString().trim().toLowerCase();
+      if (!remoteProfile || currentSeq !== loginProfileLoadSeq || currentEmail !== email) return;
+      applyLoginProfileToFields(remoteProfile, firebaseUser);
+      const cached = readLoginProfiles();
+      cached[email] = {
+        ...(cached[email] || {}),
+        ...remoteProfile,
+        updatedAt: Date.now()
+      };
+      writeLoginProfiles(cached);
+      setLoginProfileStatus("โหลดข้อมูลผู้ใช้จาก Firebase แล้ว", "#047857");
+      window.dispatchEvent(new CustomEvent("sgcu:user-profile-updated", {
+        detail: { email, profile: cached[email] }
+      }));
+    });
+  }
+
+  async function saveLoginProfile(firebaseUser) {
+    const email = (firebaseUser?.email || "").toString().trim().toLowerCase();
+    if (!email) {
+      setLoginProfileStatus("กรุณาเข้าสู่ระบบก่อนบันทึกข้อมูลผู้ใช้", "#b91c1c");
+      return false;
+    }
+
+    const profileType = getLoginProfileType();
+    currentUserProfileType = profileType;
+    const isStudent = profileType === "student";
+
+    if (
+      loginProfileFirstNameEl &&
+      !loginProfileFirstNameEl.reportValidity()
+    ) return false;
+    if (
+      loginProfileLastNameEl &&
+      !loginProfileLastNameEl.reportValidity()
+    ) return false;
+    if (isStudent) {
+      if (
+        loginProfileNicknameEl &&
+        !loginProfileNicknameEl.reportValidity()
+      ) return false;
+      if (
+        loginProfileStudentIdEl &&
+        !loginProfileStudentIdEl.reportValidity()
+      ) return false;
+    }
+    if (
+      loginProfilePhoneEl &&
+      !loginProfilePhoneEl.reportValidity()
+    ) return false;
+    if (
+      loginProfileLineIdEl &&
+      !loginProfileLineIdEl.reportValidity()
+    ) return false;
+
+    updateLoginProfileStudentMeta();
+    if (isStudent && (!loginProfileFacultyEl?.value || !loginProfileYearEl?.value)) {
+      setLoginProfileStatus("กรุณาตรวจสอบเลขประจำตัวนิสิตเพื่อให้ระบบระบุคณะและชั้นปี", "#b91c1c");
+      return false;
+    }
+
+    const firstName = (loginProfileFirstNameEl?.value || "").toString().trim();
+    const lastName = (loginProfileLastNameEl?.value || "").toString().trim();
+    const nickname = isStudent ? (loginProfileNicknameEl?.value || "").toString().trim() : "";
+    const studentId = isStudent ? (loginProfileStudentIdEl?.value || "").toString().trim() : "";
+    const faculty = isStudent ? (loginProfileFacultyEl?.value || "").toString().trim() : "";
+    const year = isStudent ? (loginProfileYearEl?.value || "").toString().trim() : "";
+    const phone = (loginProfilePhoneEl?.value || "").toString().trim();
+    const lineId = (loginProfileLineIdEl?.value || "").toString().trim();
+
+    const profiles = readLoginProfiles();
+    const existing = profiles[email] && typeof profiles[email] === "object" ? profiles[email] : {};
+    profiles[email] = {
+      ...existing,
+      profileType,
+      firstName,
+      lastName,
+      nickname,
+      studentId,
+      faculty,
+      year,
+      phone,
+      lineId,
+      updatedAt: Date.now()
+    };
+    writeLoginProfiles(profiles);
+    applyStaffViewMode();
+    window.dispatchEvent(new CustomEvent("sgcu:user-profile-updated", {
+      detail: { email, profile: profiles[email] }
+    }));
+    if (loginProfileSaveBtnEl) loginProfileSaveBtnEl.disabled = true;
+    const remoteResult = await writeRemoteLoginProfile(firebaseUser, profiles[email]);
+    if (loginProfileSaveBtnEl) loginProfileSaveBtnEl.disabled = false;
+    if (remoteResult.ok) {
+      setLoginProfileStatus("บันทึกข้อมูลผู้ใช้เรียบร้อยแล้ว", "#047857");
+    } else {
+      const code = remoteResult.code || "unknown";
+      if (code === "permission-denied") {
+        setLoginProfileStatus("บันทึกในเครื่องแล้ว แต่ Firebase ไม่มีสิทธิ์เขียน (permission-denied)", "#b45309");
+      } else if (code === "unauthenticated") {
+        setLoginProfileStatus("บันทึกในเครื่องแล้ว แต่ Firebase ต้องล็อกอินใหม่ก่อนบันทึก (unauthenticated)", "#b45309");
+      } else {
+        setLoginProfileStatus(`บันทึกในเครื่องแล้ว แต่บันทึก Firebase ไม่สำเร็จ (${code})`, "#b45309");
+      }
+    }
+    return true;
   }
 
   function resolveSessionStart(user) {
@@ -503,6 +914,11 @@ function initAuthUI() {
     if (loginPageLogoutBtnEl) {
       loginPageLogoutBtnEl.style.display = isAuth ? "inline-block" : "none";
     }
+    setLoginProfileEnabled(isAuth);
+    loadLoginProfileByUser(firebaseUser);
+    if (!isAuth) {
+      setLoginProfileStatus("เข้าสู่ระบบก่อนจึงจะบันทึกข้อมูลผู้ใช้ได้", "#6b7280");
+    }
     applyStaffViewMode();
     toggleProjectStatusAccess(isAuth, "public");
     toggleProjectStatusAccess(isAuth, "staff");
@@ -521,7 +937,7 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:512", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:925", err);
         });
         refreshAuthDisplay(null);
         return;
@@ -569,14 +985,49 @@ function initAuthUI() {
   if (loginPageGoogleBtnEl) {
     loginPageGoogleBtnEl.addEventListener("click", handleGoogleLogin);
   }
+  if (loginProfileSaveBtnEl) {
+    loginProfileSaveBtnEl.addEventListener("click", () => {
+      void saveLoginProfile(auth.currentUser);
+    });
+  }
+  [loginProfileFirstNameEl, loginProfileLastNameEl, loginProfileNicknameEl, loginProfilePhoneEl, loginProfileLineIdEl].forEach((input) => {
+    if (!input) return;
+    input.addEventListener("input", () => {
+      if (auth.currentUser) {
+        setLoginProfileStatus("มีการเปลี่ยนแปลงข้อมูล กดบันทึกเพื่ออัปเดต", "#6b7280");
+      }
+    });
+  });
+  if (loginProfileStudentIdEl) {
+    loginProfileStudentIdEl.addEventListener("input", () => {
+      updateLoginProfileStudentMeta();
+      if (auth.currentUser) {
+        setLoginProfileStatus("มีการเปลี่ยนแปลงข้อมูล กดบันทึกเพื่ออัปเดต", "#6b7280");
+      }
+    });
+    loginProfileStudentIdEl.addEventListener("blur", updateLoginProfileStudentMeta);
+    updateLoginProfileStudentMeta();
+  }
+  [loginProfileTypeStudentEl, loginProfileTypeAffairsEl].forEach((input) => {
+    if (!input) return;
+    input.addEventListener("change", () => {
+      applyLoginProfileTypeUI();
+      if (auth.currentUser) {
+        setLoginProfileStatus("มีการเปลี่ยนแปลงข้อมูล กดบันทึกเพื่ออัปเดต", "#6b7280");
+      }
+    });
+  });
+  applyLoginProfileTypeUI();
   function handleLogout() {
     staffAuthUser = null;
     staffViewMode = "normal";
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:566", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:1012", err);
     });
+    loginProfileLoadedForEmail = "";
+    setLoginProfileStatus("ออกจากระบบแล้ว", "#6b7280");
 
     const hamburger = document.getElementById("hamburgerBtn");
     const mobileMenu = document.getElementById("mobileMenu");

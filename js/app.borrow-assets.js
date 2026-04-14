@@ -7,18 +7,16 @@ document.addEventListener("DOMContentLoaded", () => {
     ? borrowRequestForm.querySelector('button.btn-primary[type="button"]')
     : null;
 
-  const borrowFirstName = document.getElementById("borrowFirstName");
-  const borrowLastName = document.getElementById("borrowLastName");
-  const borrowNickname = document.getElementById("borrowNickname");
-  const borrowStudentId = document.getElementById("borrowStudentId");
-  const borrowFaculty = document.getElementById("borrowFaculty");
-  const borrowYear = document.getElementById("borrowYear");
-  const borrowPhone = document.getElementById("borrowPhone");
-  const borrowLineId = document.getElementById("borrowLineId");
   const borrowProjectName = document.getElementById("borrowProjectName");
   const borrowProjectDept = document.getElementById("borrowProjectDept");
   const borrowPickupDate = document.getElementById("borrowPickupDate");
   const borrowReturnDate = document.getElementById("borrowReturnDate");
+  const borrowProfileFullNameEl = document.getElementById("borrowProfileFullName");
+  const borrowProfileNicknameEl = document.getElementById("borrowProfileNickname");
+  const borrowProfileStudentIdEl = document.getElementById("borrowProfileStudentId");
+  const borrowProfileFacultyYearEl = document.getElementById("borrowProfileFacultyYear");
+  const borrowProfilePhoneEl = document.getElementById("borrowProfilePhone");
+  const borrowProfileLineIdEl = document.getElementById("borrowProfileLineId");
 
   const borrowAssetsTableBody = document.getElementById("borrowAssetsTableBody");
   const borrowAssetsTableBodyStaff = document.getElementById("borrowAssetsTableBodyStaff");
@@ -41,6 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   const hasBorrowFormSection = !!(borrowAssetList && addBorrowAssetRow);
+  const BORROW_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
+  const USER_PROFILE_COLLECTION = "userProfiles";
 
   const USE_CSV_ASSET_CATALOG = false;
   const BORROW_ASSETS_CSV_URL =
@@ -74,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const assetMap = new Map();
   const assetRowMap = new Map();
   let borrowAssetsRows = [];
+  let activeBorrowProfile = null;
   const collectionSnapshotRows = new Map();
   const collectionSnapshotCounts = new Map();
   const collectionSnapshotErrors = new Map();
@@ -145,6 +146,109 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const readCurrentUserEmail = () =>
     (window.sgcuAuth?.auth?.currentUser?.email || "").toString().trim().toLowerCase();
+
+  const readBorrowProfiles = () => {
+    try {
+      const raw = window.localStorage?.getItem(BORROW_PROFILE_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  };
+
+  const applyBorrowProfileToForm = (profile) => {
+    if (!profile || typeof profile !== "object") return;
+    activeBorrowProfile = {
+      firstName: (profile.firstName || "").toString().trim(),
+      lastName: (profile.lastName || "").toString().trim(),
+      nickname: (profile.nickname || "").toString().trim(),
+      studentId: (profile.studentId || "").toString().trim(),
+      faculty: (profile.faculty || "").toString().trim(),
+      year: (profile.year || "").toString().trim(),
+      phone: (profile.phone || "").toString().trim(),
+      lineId: (profile.lineId || "").toString().trim()
+    };
+    const fullName = [activeBorrowProfile.firstName, activeBorrowProfile.lastName].filter(Boolean).join(" ");
+    if (borrowProfileFullNameEl) borrowProfileFullNameEl.textContent = fullName || "-";
+    if (borrowProfileNicknameEl) borrowProfileNicknameEl.textContent = activeBorrowProfile.nickname || "-";
+    if (borrowProfileStudentIdEl) borrowProfileStudentIdEl.textContent = activeBorrowProfile.studentId || "-";
+    if (borrowProfileFacultyYearEl) {
+      const facultyYear = [activeBorrowProfile.faculty, activeBorrowProfile.year ? `ชั้นปี ${activeBorrowProfile.year}` : ""]
+        .filter(Boolean)
+        .join(" / ");
+      borrowProfileFacultyYearEl.textContent = facultyYear || "-";
+    }
+    if (borrowProfilePhoneEl) borrowProfilePhoneEl.textContent = activeBorrowProfile.phone || "-";
+    if (borrowProfileLineIdEl) borrowProfileLineIdEl.textContent = activeBorrowProfile.lineId || "-";
+  };
+
+  const restoreBorrowProfileForCurrentUser = () => {
+    const email = (currentUserEmail || "").toString().trim().toLowerCase();
+    if (!email) {
+      activeBorrowProfile = null;
+      if (borrowProfileFullNameEl) borrowProfileFullNameEl.textContent = "-";
+      if (borrowProfileNicknameEl) borrowProfileNicknameEl.textContent = "-";
+      if (borrowProfileStudentIdEl) borrowProfileStudentIdEl.textContent = "-";
+      if (borrowProfileFacultyYearEl) borrowProfileFacultyYearEl.textContent = "-";
+      if (borrowProfilePhoneEl) borrowProfilePhoneEl.textContent = "-";
+      if (borrowProfileLineIdEl) borrowProfileLineIdEl.textContent = "-";
+      return;
+    }
+    const profile = readBorrowProfiles()[email];
+    if (!profile) return;
+    applyBorrowProfileToForm(profile);
+  };
+
+  const getBorrowProfileForSubmit = async () => {
+    const email = (currentUserEmail || "").toString().trim().toLowerCase();
+    if (!email) return null;
+    if (activeBorrowProfile && activeBorrowProfile.firstName && activeBorrowProfile.lastName) {
+      return activeBorrowProfile;
+    }
+    const local = readBorrowProfiles()[email];
+    if (local) {
+      applyBorrowProfileToForm(local);
+      return activeBorrowProfile;
+    }
+    const remote = await readBorrowProfileFromFirestore();
+    if (remote) {
+      applyBorrowProfileToForm(remote);
+      return activeBorrowProfile;
+    }
+    return null;
+  };
+
+  const readBorrowProfileFromFirestore = async () => {
+    const firestoreBridge = window.sgcuFirestore || {};
+    const authUser = window.sgcuAuth?.auth?.currentUser || null;
+    const email = (authUser?.email || "").toString().trim().toLowerCase();
+    const uid = (authUser?.uid || "").toString().trim();
+    if (!email || !uid) return null;
+    if (!firestoreBridge.db || !firestoreBridge.doc || !firestoreBridge.getDoc) return null;
+    try {
+      const ref = firestoreBridge.doc(firestoreBridge.db, USER_PROFILE_COLLECTION, uid);
+      const snap = await firestoreBridge.getDoc(ref);
+      if (!snap?.exists()) return null;
+      const data = snap.data() || {};
+      if (!data || typeof data !== "object") return null;
+      const profiles = readBorrowProfiles();
+      profiles[email] = {
+        ...(profiles[email] || {}),
+        ...data,
+        updatedAt: Date.now()
+      };
+      try {
+        window.localStorage?.setItem(BORROW_PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+      } catch (_) {
+        // ignore local cache write errors
+      }
+      return profiles[email];
+    } catch (_) {
+      return null;
+    }
+  };
 
   const hasStaffPermission = () =>
     typeof staffAuthUser !== "undefined" && !!staffAuthUser;
@@ -1313,20 +1417,34 @@ document.addEventListener("DOMContentLoaded", () => {
       setBorrowMessage(assetsResult.message || "ข้อมูลรายการพัสดุไม่ถูกต้อง", "#b91c1c");
       return;
     }
-    if (!borrowFaculty?.value || !borrowYear?.value) {
-      setBorrowMessage("กรุณาตรวจสอบเลขประจำตัวนิสิตเพื่อให้ระบบระบุคณะและชั้นปี", "#b91c1c");
+    const requesterProfile = await getBorrowProfileForSubmit();
+    if (!requesterProfile) {
+      setBorrowMessage("ไม่พบข้อมูลผู้ใช้งาน กรุณากรอกและบันทึกที่หน้าเข้าสู่ระบบก่อน", "#b91c1c");
+      return;
+    }
+    if (
+      !requesterProfile.firstName ||
+      !requesterProfile.lastName ||
+      !requesterProfile.nickname ||
+      !requesterProfile.studentId ||
+      !requesterProfile.faculty ||
+      !requesterProfile.year ||
+      !requesterProfile.phone ||
+      !requesterProfile.lineId
+    ) {
+      setBorrowMessage("ข้อมูลผู้ใช้งานยังไม่ครบ กรุณาอัปเดตที่หน้าเข้าสู่ระบบก่อน", "#b91c1c");
       return;
     }
 
     const payload = {
-      firstName: borrowFirstName?.value.trim() || "",
-      lastName: borrowLastName?.value.trim() || "",
-      nickname: borrowNickname?.value.trim() || "",
-      studentId: borrowStudentId?.value.trim() || "",
-      faculty: borrowFaculty?.value.trim() || "",
-      year: borrowYear?.value.trim() || "",
-      phone: borrowPhone?.value.trim() || "",
-      lineId: borrowLineId?.value.trim() || "",
+      firstName: requesterProfile.firstName,
+      lastName: requesterProfile.lastName,
+      nickname: requesterProfile.nickname,
+      studentId: requesterProfile.studentId,
+      faculty: requesterProfile.faculty,
+      year: requesterProfile.year,
+      phone: requesterProfile.phone,
+      lineId: requesterProfile.lineId,
       projectName: borrowProjectName?.value.trim() || "",
       projectDept: borrowProjectDept?.value.trim() || "",
       pickupDate: borrowPickupDate?.value || "",
@@ -1349,9 +1467,6 @@ document.addEventListener("DOMContentLoaded", () => {
         payload
       );
       if (borrowRequestForm) borrowRequestForm.reset();
-      if (borrowStudentId) {
-        borrowStudentId.dispatchEvent(new Event("input"));
-      }
       resetAssetRows();
       setBorrowMessage("ส่งคำขอเรียบร้อยแล้ว สามารถติดตามสถานะได้ด้านล่าง", "#15803d");
     } catch (error) {
@@ -1651,6 +1766,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   currentUserEmail = readCurrentUserEmail();
+  restoreBorrowProfileForCurrentUser();
+  void readBorrowProfileFromFirestore().then((profile) => {
+    if (profile) applyBorrowProfileToForm(profile);
+  });
   renderBorrowRequests();
   setStaffQueueStatusMessage("กำลังโหลดคิวคำขอ...");
   subscribeBorrowRequests();
@@ -1672,12 +1791,23 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.sgcuAuth?.auth && typeof window.sgcuAuth.onAuthStateChanged === "function") {
     window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {
       currentUserEmail = readCurrentUserEmail();
+      restoreBorrowProfileForCurrentUser();
+      void readBorrowProfileFromFirestore().then((profile) => {
+        if (profile) applyBorrowProfileToForm(profile);
+      });
       renderBorrowRequests();
       if (!currentUserEmail) setStaffQueueStatusMessage("กรุณาเข้าสู่ระบบก่อนดูคิวคำขอ");
       subscribeBorrowRequests();
       scheduleFirestoreRetry();
     });
   }
+
+  window.addEventListener("sgcu:user-profile-updated", (event) => {
+    const detail = event?.detail || {};
+    const email = (detail.email || "").toString().trim().toLowerCase();
+    if (!email || email !== currentUserEmail) return;
+    applyBorrowProfileToForm(detail.profile || {});
+  });
 
   window.addEventListener("beforeunload", () => {
     if (Array.isArray(unsubscribeBorrowRequests) && unsubscribeBorrowRequests.length) {

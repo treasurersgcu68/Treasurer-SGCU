@@ -1816,6 +1816,27 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   cursor: not-allowed;
 }
 
+/* Login profile type selector */
+#loginProfileTypeGroup {
+  display: flex;
+  width: 100%;
+}
+
+.login-profile-type-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#loginProfileTypeGroup .tab-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
 /* =========================================
    6) Cards, Panels, Filters, Table
 ========================================= */

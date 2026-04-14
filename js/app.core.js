@@ -179,6 +179,7 @@ let calendarContainerEl;
 let prevMonthBtnEl;
 let nextMonthBtnEl;
 let isUserAuthenticated = false;
+let currentUserProfileType = "student";
 let markLoaderStep = null;
 let updateLoaderProgress = null;
 let projectsLoadPromise = null;

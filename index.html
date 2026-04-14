@@ -66,6 +66,8 @@
         doc,
         collection,
         addDoc,
+        getDoc,
+        setDoc,
         onSnapshot,
         query,
         orderBy,
@@ -93,6 +95,8 @@
         doc,
         collection,
         addDoc,
+        getDoc,
+        setDoc,
         onSnapshot,
         query,
         orderBy,
@@ -1450,70 +1454,37 @@
                   </div>
                 </div>
                 <div class="panel-body">
+                  <div class="section-text-sm" style="margin-bottom: 8px;">
+                    ระบบจะดึงข้อมูลผู้เบิกยืมจากหน้าเข้าสู่ระบบโดยอัตโนมัติ
+                  </div>
                   <div class="borrow-form-row">
                     <div class="borrow-form-field">
-                      <label class="login-label" for="borrowFirstName">ชื่อ</label>
-                      <input id="borrowFirstName" class="login-input" type="text" placeholder="ชื่อจริง" required />
+                      <label class="login-label">ชื่อ - นามสกุล</label>
+                      <div id="borrowProfileFullName" class="section-text-sm">-</div>
                     </div>
                     <div class="borrow-form-field">
-                      <label class="login-label" for="borrowLastName">นามสกุล</label>
-                      <input id="borrowLastName" class="login-input" type="text" placeholder="นามสกุล" required />
+                      <label class="login-label">ชื่อเล่น</label>
+                      <div id="borrowProfileNickname" class="section-text-sm">-</div>
                     </div>
                   </div>
-
                   <div class="borrow-form-row">
                     <div class="borrow-form-field">
-                      <label class="login-label" for="borrowNickname">ชื่อเล่น</label>
-                      <input id="borrowNickname" class="login-input" type="text" placeholder="ชื่อเล่น" required />
+                      <label class="login-label">เลขประจำตัวนิสิต</label>
+                      <div id="borrowProfileStudentId" class="section-text-sm">-</div>
                     </div>
                     <div class="borrow-form-field">
-                      <label class="login-label" for="borrowStudentId">เลขประจำตัวนิสิต</label>
-                      <input
-                        id="borrowStudentId"
-                        class="login-input"
-                        type="text"
-                        placeholder="รูปแบบ: xxxXXXXXxx"
-                        pattern="^(?:5[6-9]|6[0-9])[3478]\d{5}(?:(?:0[1-2])|(?:2[0-9]|3[0-9]|40)|51|53|55|56|58)$"
-                        required
-                      />
-                      <div id="borrowStudentIdWarning" class="section-text-sm" style="color: #b91c1c;" hidden>
-                        เลขประจำตัวนิสิตไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง
-                      </div>
+                      <label class="login-label">คณะ / ชั้นปี</label>
+                      <div id="borrowProfileFacultyYear" class="section-text-sm">-</div>
                     </div>
                   </div>
-
                   <div class="borrow-form-row">
                     <div class="borrow-form-field">
-                      <label class="login-label" for="borrowFaculty">คณะ</label>
-                      <input id="borrowFaculty" class="login-input" type="text" placeholder="ระบบจะแสดงคณะจากเลขประจำตัวนิสิต" readonly />
-                      <div id="borrowFacultyWarning" class="section-text-sm" style="color: #b91c1c;" hidden>
-                        ไม่พบคณะจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
-                      </div>
+                      <label class="login-label">เบอร์โทรติดต่อกลับ</label>
+                      <div id="borrowProfilePhone" class="section-text-sm">-</div>
                     </div>
                     <div class="borrow-form-field">
-                      <label class="login-label" for="borrowYear">ชั้นปี</label>
-                      <input id="borrowYear" class="login-input" type="text" placeholder="ระบบจะแสดงชั้นปีจากเลขประจำตัวนิสิต" readonly />
-                      <div id="borrowYearWarning" class="section-text-sm" style="color: #b91c1c;" hidden>
-                        ไม่พบชั้นปีจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="borrowPhone">เบอร์โทรติดต่อกลับ</label>
-                      <input
-                        id="borrowPhone"
-                        class="login-input"
-                        type="tel"
-                        placeholder="รูปแบบ: 0xxXXXxxxx"
-                        pattern="^0\d{9}$"
-                        required
-                      />
-                    </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="borrowLineId">Line ID</label>
-                      <input id="borrowLineId" class="login-input" type="text" placeholder="Line ID" required />
+                      <label class="login-label">Line ID</label>
+                      <div id="borrowProfileLineId" class="section-text-sm">-</div>
                     </div>
                   </div>
                 </div>
@@ -1931,19 +1902,10 @@
 
                 <div class="borrow-form-row">
                   <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRequester">ชื่อผู้ขอ</label>
-                    <input id="meetingRequester" class="login-input" type="text" placeholder="ชื่อผู้รับผิดชอบการประชุม" required />
-                  </div>
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRequesterPhone">เบอร์ติดต่อ</label>
-                    <input id="meetingRequesterPhone" class="login-input" type="tel" placeholder="0xxxxxxxxx" />
-                  </div>
-                </div>
-
-                <div class="borrow-form-row">
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="meetingRequesterContact">ช่องทางติดต่อเพิ่มเติม</label>
-                    <input id="meetingRequesterContact" class="login-input" type="text" placeholder="เช่น LINE ID / Email" />
+                    <label class="login-label">ข้อมูลผู้ขอ (จากหน้าเข้าสู่ระบบ)</label>
+                    <div id="meetingProfileRequester" class="section-text-sm">ชื่อผู้ขอ: -</div>
+                    <div id="meetingProfilePhone" class="section-text-sm">เบอร์ติดต่อ: -</div>
+                    <div id="meetingProfileContact" class="section-text-sm">ช่องทางติดต่อ: -</div>
                   </div>
                   <div class="borrow-form-field">
                     <label class="login-label" for="meetingProjectMode">ประเภทคำขอ</label>
@@ -3048,6 +3010,94 @@
                   <p class="login-caption">ใช้บัญชีที่ได้รับสิทธิ์เพื่อเข้าใช้งานระบบ</p>
                   <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Sign in with Google</button>
                   <div class="login-status" id="loginPageStatus"></div>
+                  <div id="loginProfileForm" style="margin-top:12px;">
+                    <div class="borrow-form-row login-profile-type-row">
+                      <div class="borrow-form-field">
+                        <label class="login-label">ประเภทผู้ใช้งาน</label>
+                        <div class="tabs" id="loginProfileTypeGroup">
+                          <label class="tab-btn view-toggle-btn is-active" style="cursor:pointer;">
+                            <input id="loginProfileTypeStudent" type="radio" name="loginProfileType" value="student" checked style="display:none;" />
+                            นิสิต
+                          </label>
+                          <label class="tab-btn view-toggle-btn" style="cursor:pointer;">
+                            <input id="loginProfileTypeAffairs" type="radio" name="loginProfileType" value="affairs" style="display:none;" />
+                            กิจการนิสิต
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="borrow-form-row">
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="loginProfileFirstName">ชื่อ</label>
+                        <input id="loginProfileFirstName" class="login-input" type="text" placeholder="ชื่อจริง" required />
+                      </div>
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="loginProfileLastName">นามสกุล</label>
+                        <input id="loginProfileLastName" class="login-input" type="text" placeholder="นามสกุล" required />
+                      </div>
+                    </div>
+
+                    <div id="loginProfileStudentFields">
+                      <div class="borrow-form-row">
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="loginProfileNickname">ชื่อเล่น</label>
+                          <input id="loginProfileNickname" class="login-input" type="text" placeholder="ชื่อเล่น" required />
+                        </div>
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="loginProfileStudentId">เลขประจำตัวนิสิต</label>
+                          <input
+                            id="loginProfileStudentId"
+                            class="login-input"
+                            type="text"
+                            placeholder="รูปแบบ: xxxXXXXXxx"
+                            pattern="^(?:5[6-9]|6[0-9])[3478]\d{5}(?:(?:0[1-2])|(?:2[0-9]|3[0-9]|40)|51|53|55|56|58)$"
+                            required
+                          />
+                          <div id="loginProfileStudentIdWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                            เลขประจำตัวนิสิตไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="borrow-form-row">
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="loginProfileFaculty">คณะ</label>
+                          <input id="loginProfileFaculty" class="login-input" type="text" placeholder="ระบบจะแสดงคณะจากเลขประจำตัวนิสิต" readonly />
+                          <div id="loginProfileFacultyWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                            ไม่พบคณะจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
+                          </div>
+                        </div>
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="loginProfileYear">ชั้นปี</label>
+                          <input id="loginProfileYear" class="login-input" type="text" placeholder="ระบบจะแสดงชั้นปีจากเลขประจำตัวนิสิต" readonly />
+                          <div id="loginProfileYearWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                            ไม่พบชั้นปีจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="borrow-form-row">
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="loginProfilePhone">เบอร์โทรติดต่อกลับ</label>
+                        <input
+                          id="loginProfilePhone"
+                          class="login-input"
+                          type="tel"
+                          placeholder="รูปแบบ: 0xxXXXxxxx"
+                          pattern="^0\d{9}$"
+                          required
+                        />
+                      </div>
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="loginProfileLineId">Line ID</label>
+                        <input id="loginProfileLineId" class="login-input" type="text" placeholder="Line ID" required />
+                      </div>
+                    </div>
+                    <button id="loginProfileSaveBtn" type="button" class="btn-secondary w-full" style="margin-top:10px;">บันทึกข้อมูลผู้ใช้</button>
+                    <div id="loginProfileStatus" class="login-status"></div>
+                  </div>
                   <button id="loginPageLogoutBtn" type="button" class="btn-secondary w-full" style="display:none;">Sign Out</button>
                 </div>
               </div>

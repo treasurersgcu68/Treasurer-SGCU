@@ -44,7 +44,8 @@ function initBorrowAssetsApp() {
   );
 
   const hasBorrowFormSection = !!(borrowAssetList && addBorrowAssetRow);
-  const BORROW_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
+  const BORROW_PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
+  const LEGACY_BORROW_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
   const USER_PROFILE_COLLECTION = "userProfiles";
 
   const USE_CSV_ASSET_CATALOG = true;
@@ -401,9 +402,18 @@ function initBorrowAssetsApp() {
 
   const readBorrowProfiles = () => {
     try {
-      const raw = window.localStorage?.getItem(BORROW_PROFILE_STORAGE_KEY);
+      const rawPrimary = window.localStorage?.getItem(BORROW_PROFILE_STORAGE_KEY);
+      const rawLegacy = window.localStorage?.getItem(LEGACY_BORROW_PROFILE_STORAGE_KEY);
+      const raw = rawPrimary || rawLegacy;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
+      if (!rawPrimary && rawLegacy) {
+        try {
+          window.localStorage?.setItem(BORROW_PROFILE_STORAGE_KEY, JSON.stringify(parsed || {}));
+        } catch (_) {
+          // ignore local cache write errors
+        }
+      }
       return parsed && typeof parsed === "object" ? parsed : {};
     } catch (_) {
       return {};
@@ -509,6 +519,7 @@ function initBorrowAssetsApp() {
       };
       try {
         window.localStorage?.setItem(BORROW_PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+        window.localStorage?.setItem(LEGACY_BORROW_PROFILE_STORAGE_KEY, JSON.stringify(profiles));
       } catch (_) {
         // ignore local cache write errors
       }

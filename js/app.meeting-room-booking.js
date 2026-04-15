@@ -32,9 +32,6 @@ function initMeetingRoomBookingApp() {
   const projectNamePreview = document.getElementById("meetingProjectNamePreview");
   const messageEl = document.getElementById("meetingBookingMessage");
   const reminderBannerEl = document.getElementById("meetingReminderBanner");
-  const notificationEnableBtn = document.getElementById("meetingNotificationEnableBtn");
-  const pushSubscribeBtn = document.getElementById("meetingPushSubscribeBtn");
-  const notificationStatusEl = document.getElementById("meetingNotificationStatus");
   let tableBody = document.getElementById("meetingRoomTableBody");
   const calendarPanel = document.getElementById("meetingRoomCalendar");
   const calendarTitle = document.getElementById("meetingCalendarTitle");
@@ -69,7 +66,8 @@ function initMeetingRoomBookingApp() {
 
   const STORAGE_KEY = "meetingRoomBookings-v1";
   const LOCAL_MIGRATED_KEY = "meetingRoomBookingsMigratedToFirestore-v1";
-  const PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
+  const PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
+  const LEGACY_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
   const USER_PROFILE_COLLECTION = "userProfiles";
   const BOOKING_COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
@@ -320,9 +318,18 @@ function initMeetingRoomBookingApp() {
 
   const readSharedProfiles = () => {
     try {
-      const raw = window.localStorage?.getItem(PROFILE_STORAGE_KEY);
+      const rawPrimary = window.localStorage?.getItem(PROFILE_STORAGE_KEY);
+      const rawLegacy = window.localStorage?.getItem(LEGACY_PROFILE_STORAGE_KEY);
+      const raw = rawPrimary || rawLegacy;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
+      if (!rawPrimary && rawLegacy) {
+        try {
+          window.localStorage?.setItem(PROFILE_STORAGE_KEY, JSON.stringify(parsed || {}));
+        } catch (_) {
+          // ignore local cache write errors
+        }
+      }
       return parsed && typeof parsed === "object" ? parsed : {};
     } catch (_) {
       return {};
@@ -400,6 +407,7 @@ function initMeetingRoomBookingApp() {
       };
       try {
         window.localStorage?.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+        window.localStorage?.setItem(LEGACY_PROFILE_STORAGE_KEY, JSON.stringify(profiles));
       } catch (_) {
         // ignore local cache write errors
       }
@@ -1286,116 +1294,6 @@ function initMeetingRoomBookingApp() {
   const readCurrentUserEmail = () => {
     const email = window.sgcuAuth?.auth?.currentUser?.email || "";
     return email.toString().trim().toLowerCase();
-  };
-
-  const setNotificationStatus = (text = "", color = "#6b7280") => {
-    if (!notificationStatusEl) return;
-    notificationStatusEl.textContent = text || "";
-    notificationStatusEl.style.color = color;
-  };
-
-  const refreshNotificationControls = async () => {
-    if (!notificationEnableBtn && !pushSubscribeBtn && !notificationStatusEl) return;
-    const webPush = window.sgcuWebPush;
-    if (!webPush || typeof webPush.getClientState !== "function") {
-      if (notificationEnableBtn) notificationEnableBtn.disabled = true;
-      if (pushSubscribeBtn) {
-        pushSubscribeBtn.disabled = true;
-        pushSubscribeBtn.hidden = true;
-      }
-      setNotificationStatus("อุปกรณ์นี้ไม่รองรับการแจ้งเตือนผ่านเว็บ", "#b91c1c");
-      return;
-    }
-
-    const state = await webPush.getClientState();
-    const permissionText = state.permission === "granted"
-      ? "อนุญาตแล้ว"
-      : state.permission === "denied"
-        ? "ถูกบล็อก"
-        : "ยังไม่อนุญาต";
-    const pushText = state.pushSupported
-      ? state.subscribed ? "Push: เชื่อมต่อแล้ว" : "Push: ยังไม่เชื่อมต่อ"
-      : "Push: ไม่รองรับ";
-    const iosHint = state.isIOS && !state.standalone
-      ? " • iPhone ต้องเปิดจากแอปที่ติดตั้งบน Home Screen"
-      : "";
-    setNotificationStatus(`การแจ้งเตือน: ${permissionText} • ${pushText}${iosHint}`, state.permission === "denied" ? "#b91c1c" : "#6b7280");
-
-    if (notificationEnableBtn) {
-      notificationEnableBtn.disabled = !state.supported || state.permission === "granted";
-      notificationEnableBtn.textContent = state.permission === "granted"
-        ? "อนุญาตแจ้งเตือนแล้ว"
-        : "เปิดสิทธิ์แจ้งเตือน";
-    }
-    if (pushSubscribeBtn) {
-      pushSubscribeBtn.hidden = !state.pushSupported || state.permission !== "granted";
-      pushSubscribeBtn.disabled = !state.pushSupported || state.permission !== "granted";
-      pushSubscribeBtn.textContent = state.subscribed ? "ยกเลิก Push" : "เชื่อมต่อ Push";
-    }
-  };
-
-  const initNotificationControls = () => {
-    const webPush = window.sgcuWebPush;
-    if (!webPush) {
-      setNotificationStatus("กำลังโหลดระบบแจ้งเตือน...", "#6b7280");
-      return;
-    }
-
-    if (notificationEnableBtn) {
-      notificationEnableBtn.addEventListener("click", () => {
-        notificationEnableBtn.disabled = true;
-        setNotificationStatus("กำลังขอสิทธิ์แจ้งเตือน...", "#6b7280");
-        void webPush.requestPermission()
-          .then((permission) => {
-            if (permission === "granted") {
-              setNotificationStatus("เปิดสิทธิ์แจ้งเตือนแล้ว", "#047857");
-            } else if (permission === "denied") {
-              setNotificationStatus("ถูกบล็อกแจ้งเตือนจากเบราว์เซอร์", "#b91c1c");
-            } else {
-              setNotificationStatus("ยังไม่ได้อนุญาตแจ้งเตือน", "#92400e");
-            }
-          })
-          .catch(() => {
-            setNotificationStatus("เกิดปัญหาในการขอสิทธิ์แจ้งเตือน", "#b91c1c");
-          })
-          .finally(() => {
-            void refreshNotificationControls();
-          });
-      });
-    }
-
-    if (pushSubscribeBtn) {
-      pushSubscribeBtn.addEventListener("click", async () => {
-        const nextEmail = readCurrentUserEmail();
-        pushSubscribeBtn.disabled = true;
-        try {
-          const state = await webPush.getClientState();
-          if (state.subscribed) {
-            await webPush.unsubscribePush({ page: "meeting-room-booking", email: nextEmail });
-            setNotificationStatus("ยกเลิกการเชื่อมต่อ Push แล้ว", "#92400e");
-          } else {
-            await webPush.subscribePush({ page: "meeting-room-booking", email: nextEmail });
-            setNotificationStatus("เชื่อมต่อ Push แล้ว", "#047857");
-          }
-        } catch (error) {
-          const code = (error?.message || "").toString().trim();
-          if (code === "missing-vapid-public-key") {
-            setNotificationStatus("ยังไม่ได้ตั้งค่า VAPID public key สำหรับ Web Push", "#b91c1c");
-          } else if (code === "notification-permission-not-granted") {
-            setNotificationStatus("กรุณาอนุญาตแจ้งเตือนก่อนเชื่อมต่อ Push", "#b91c1c");
-          } else {
-            setNotificationStatus("เชื่อมต่อ Push ไม่สำเร็จ", "#b91c1c");
-          }
-        } finally {
-          void refreshNotificationControls();
-        }
-      });
-    }
-
-    window.addEventListener("sgcu:webpush-state-changed", () => {
-      void refreshNotificationControls();
-    });
-    void refreshNotificationControls();
   };
 
   const parseBookingStartDateTime = (booking) => {
@@ -2908,7 +2806,6 @@ function initMeetingRoomBookingApp() {
     window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {
       currentUserEmail = readCurrentUserEmail();
       if (!currentUserEmail) setReminderBanner("");
-      void refreshNotificationControls();
       flushApprovalEventsForCurrentUser();
       restoreMeetingProfileForCurrentUser();
       void readMeetingProfileFromFirestore().then((profile) => {
@@ -2926,7 +2823,6 @@ function initMeetingRoomBookingApp() {
   setupRoomOptions();
   currentUserEmail = readCurrentUserEmail();
   if (!currentUserEmail) setReminderBanner("");
-  initNotificationControls();
   flushApprovalEventsForCurrentUser();
   restoreMeetingProfileForCurrentUser();
   void readMeetingProfileFromFirestore().then((profile) => {

@@ -1626,119 +1626,135 @@
                     <div class="panel-caption">ระบุโครงการ รายการพัสดุ และช่วงเวลาที่ต้องการยืม</div>
                   </div>
                 </div>
-                <div class="panel-body">
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="borrowProjectName">ประเภทองค์กร</label>
-                      <select id="borrowProjectName" class="login-input" required>
-                        <option value="" selected disabled>เลือกประเภทองค์กร</option>
-                        <!-- JS เติมตัวเลือกจากประเภทองค์กร -->
-                      </select>
-                      <input
-                        id="borrowProjectNameOther"
-                        class="login-input"
-                        type="text"
-                        placeholder="ระบุประเภทองค์กร"
-                        style="margin-top:8px; display:none;"
-                      />
+                <div class="panel-body borrow-detail-layout">
+                  <section class="borrow-detail-section">
+                    <div class="borrow-detail-section-head">
+                      <div class="borrow-detail-section-title">1) ข้อมูลโครงการ</div>
+                      <div class="borrow-detail-section-caption">ระบุหน่วยงานและกิจกรรมที่ต้องใช้พัสดุ</div>
                     </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="borrowProjectDept">ฝ่าย / ชมรม</label>
-                      <select id="borrowProjectDept" class="login-input" required>
-                        <option value="" selected disabled>เลือกฝ่าย / ชมรม</option>
-                        <!-- JS เติมตัวเลือกจากฝ่าย / ชมรม -->
-                      </select>
-                      <input
-                        id="borrowProjectDeptOther"
-                        class="login-input"
-                        type="text"
-                        placeholder="ระบุฝ่าย / ชมรม"
-                        style="margin-top:8px; display:none;"
-                      />
+                    <div class="borrow-form-row">
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="borrowProjectName">ประเภทองค์กร</label>
+                        <select id="borrowProjectName" class="login-input" required>
+                          <option value="" selected disabled>เลือกประเภทองค์กร</option>
+                          <!-- JS เติมตัวเลือกจากประเภทองค์กร -->
+                        </select>
+                        <input
+                          id="borrowProjectNameOther"
+                          class="login-input"
+                          type="text"
+                          placeholder="ระบุประเภทองค์กร"
+                          style="margin-top:8px; display:none;"
+                        />
+                      </div>
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="borrowProjectDept">ฝ่าย / ชมรม</label>
+                        <select id="borrowProjectDept" class="login-input" required>
+                          <option value="" selected disabled>เลือกฝ่าย / ชมรม</option>
+                          <!-- JS เติมตัวเลือกจากฝ่าย / ชมรม -->
+                        </select>
+                        <input
+                          id="borrowProjectDeptOther"
+                          class="login-input"
+                          type="text"
+                          placeholder="ระบุฝ่าย / ชมรม"
+                          style="margin-top:8px; display:none;"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="borrowProjectDetail">ชื่อโครงการหรือรายละเอียดกิจกรรม</label>
-                      <textarea
-                        id="borrowProjectDetail"
-                        class="login-input"
-                        rows="3"
-                        placeholder="ระบุชื่อโครงการหรือรายละเอียดกิจกรรมที่ขอยืมพัสดุ"
-                        required
-                      ></textarea>
+                    <div class="borrow-form-row">
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="borrowProjectDetail">ชื่อโครงการหรือรายละเอียดกิจกรรม</label>
+                        <textarea
+                          id="borrowProjectDetail"
+                          class="login-input"
+                          rows="3"
+                          placeholder="ระบุชื่อโครงการหรือรายละเอียดกิจกรรมที่ขอยืมพัสดุ"
+                          required
+                        ></textarea>
+                      </div>
                     </div>
-                  </div>
+                  </section>
 
-                  <div id="borrowAssetList" class="borrow-asset-list">
-                    <div class="borrow-asset-row" data-asset-row>
-                      <div class="borrow-form-row is-3">
-                        <div class="borrow-form-field">
-                          <label class="login-label" data-asset-label="code" for="borrowAssetCode-1">รหัสพัสดุ</label>
-                          <input
-                            id="borrowAssetCode-1"
-                            class="login-input"
-                            type="text"
-                            placeholder="เช่น MIC-A01"
-                            data-asset-field="code"
-                            required
-                          />
-                        </div>
-                        <div class="borrow-form-field">
-                          <label class="login-label" data-asset-label="name" for="borrowAssetName-1">ชื่อพัสดุ</label>
-                          <input
-                            id="borrowAssetName-1"
-                            class="login-input"
-                            type="text"
-                            placeholder="ระบบจะแสดงชื่อพัสดุอัตโนมัติ"
-                            data-asset-field="name"
-                            readonly
-                          />
-                          <div class="section-text-sm asset-code-warning" data-asset-warning style="color: #b91c1c;" hidden>
-                            ไม่พบรหัสพัสดุในรายการ กรุณาตรวจสอบอีกครั้ง
+                  <section class="borrow-detail-section">
+                    <div class="borrow-detail-section-head">
+                      <div class="borrow-detail-section-title">2) รายการพัสดุที่ต้องการยืม</div>
+                      <div class="borrow-detail-section-caption">กรอกรหัสพัสดุหรือชื่อพัสดุ พร้อมจำนวนที่ต้องการ</div>
+                    </div>
+                    <div id="borrowAssetList" class="borrow-asset-list">
+                      <div class="borrow-asset-row" data-asset-row>
+                        <div class="borrow-form-row is-3">
+                          <div class="borrow-form-field">
+                            <label class="login-label" data-asset-label="code" for="borrowAssetCode-1">รหัสพัสดุ</label>
+                            <input
+                              id="borrowAssetCode-1"
+                              class="login-input"
+                              type="text"
+                              placeholder="เช่น MIC-A01"
+                              data-asset-field="code"
+                              required
+                            />
+                          </div>
+                          <div class="borrow-form-field">
+                            <label class="login-label" data-asset-label="name" for="borrowAssetName-1">ชื่อพัสดุ</label>
+                            <input
+                              id="borrowAssetName-1"
+                              class="login-input"
+                              type="text"
+                              placeholder="ระบบจะแสดงชื่อพัสดุอัตโนมัติ"
+                              data-asset-field="name"
+                              readonly
+                            />
+                            <div class="section-text-sm asset-code-warning" data-asset-warning hidden>
+                              ไม่พบรหัสพัสดุในรายการ กรุณาตรวจสอบอีกครั้ง
+                            </div>
+                          </div>
+                          <div class="borrow-form-field">
+                            <label class="login-label" data-asset-label="qty" for="borrowAssetQty-1">จำนวน</label>
+                            <input
+                              id="borrowAssetQty-1"
+                              class="login-input"
+                              type="number"
+                              min="1"
+                              placeholder="จำนวนที่ต้องการยืม"
+                              data-asset-field="qty"
+                              required
+                            />
                           </div>
                         </div>
-                        <div class="borrow-form-field">
-                          <label class="login-label" data-asset-label="qty" for="borrowAssetQty-1">จำนวน</label>
-                          <input
-                            id="borrowAssetQty-1"
-                            class="login-input"
-                            type="number"
-                            min="1"
-                            placeholder="จำนวนที่ต้องการยืม"
-                            data-asset-field="qty"
-                            required
-                          />
+                        <div class="borrow-asset-row-actions">
+                          <button class="btn-ghost borrow-asset-remove" type="button" data-asset-remove hidden>ลบรายการ</button>
                         </div>
                       </div>
-                      <div class="borrow-asset-row-actions">
-                        <button class="btn-ghost borrow-asset-remove" type="button" data-asset-remove hidden>ลบรายการ</button>
-                      </div>
                     </div>
-                  </div>
-                  <div class="borrow-asset-actions">
-                    <button id="addBorrowAssetRow" class="btn-ghost" type="button">เพิ่มรายการ</button>
-                  </div>
+                    <div class="borrow-asset-actions">
+                      <div class="borrow-asset-actions-hint">เพิ่มได้หลายรายการในคำขอเดียว</div>
+                      <button id="addBorrowAssetRow" class="btn-ghost borrow-asset-add" type="button">+ เพิ่มรายการพัสดุ</button>
+                    </div>
+                  </section>
 
-                  <div class="borrow-form-row" style="margin-top: 8px;">
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="borrowPickupDate">วันที่รับพัสดุ</label>
-                      <input id="borrowPickupDate" class="login-input" type="date" required />
-                      <div class="section-text-sm" style="margin-top: 2px;">
-                        รับพัสดุได้เฉพาะวันจันทร์และพฤหัส เวลา 16.00 น.
+                  <section class="borrow-detail-section borrow-detail-section-dates">
+                    <div class="borrow-detail-section-head">
+                      <div class="borrow-detail-section-title">3) กำหนดวันรับ-คืนพัสดุ</div>
+                      <div class="borrow-detail-section-caption">เลือกช่วงวันที่ให้ครบถ้วนก่อนส่งคำขอ</div>
+                    </div>
+                    <div class="borrow-form-row">
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="borrowPickupDate">วันที่รับพัสดุ</label>
+                        <input id="borrowPickupDate" class="login-input" type="date" required />
+                        <div class="section-text-sm borrow-date-rule">
+                          รับพัสดุได้เฉพาะวันจันทร์และพฤหัส เวลา 16.00 น.
+                        </div>
+                      </div>
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="borrowReturnDate">วันที่คืนพัสดุ</label>
+                        <input id="borrowReturnDate" class="login-input" type="date" required />
                       </div>
                     </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="borrowReturnDate">วันที่คืนพัสดุ</label>
-                      <input id="borrowReturnDate" class="login-input" type="date" required />
-                    </div>
-                  </div>
+                  </section>
 
                   <button class="btn-primary" type="button" style="margin-top: 10px;">ส่งคำขอ</button>
-                  <p class="section-text-sm" style="margin-top: 12px;">
-                    หลังส่งคำขอ กรุณาแจ้งข้อมูลผ่าน LINE Official Account เพื่อยืนยัน
-                  </p>
                 </div>
               </div>
             </form>
@@ -2022,11 +2038,6 @@
             <div>
               <h2 class="page-title">Meeting Room Booking</h2>
               <p class="page-subtitle">กรอกคำขอเพื่อจองห้องประชุม และติดตามสถานะอนุมัติจากทีม Staff</p>
-              <div class="meeting-notification-controls">
-                <button id="meetingNotificationEnableBtn" class="btn-ghost" type="button">เปิดสิทธิ์แจ้งเตือน</button>
-                <button id="meetingPushSubscribeBtn" class="btn-ghost" type="button">เชื่อมต่อ Push</button>
-              </div>
-              <div id="meetingNotificationStatus" class="section-text-sm meeting-notification-status" aria-live="polite"></div>
               <div id="meetingReminderBanner" class="section-text-sm" aria-live="polite" hidden></div>
             </div>
           </div>
@@ -2246,11 +2257,6 @@
             <div>
               <h2 class="page-title">Meeting Room Approval For Staff</h2>
               <p class="page-subtitle">อนุมัติหรือปฏิเสธคำขอจองห้องประชุม พร้อมจัดการรายการทั้งหมด</p>
-              <div class="meeting-notification-controls">
-                <button id="meetingStaffNotificationEnableBtn" class="btn-ghost" type="button">เปิดสิทธิ์แจ้งเตือน</button>
-                <button id="meetingStaffPushSubscribeBtn" class="btn-ghost" type="button">เชื่อมต่อ Push</button>
-              </div>
-              <div id="meetingStaffNotificationStatus" class="section-text-sm meeting-notification-status" aria-live="polite"></div>
               <div id="meetingStaffRequestReminder" class="section-text-sm" aria-live="polite" hidden></div>
             </div>
             <div class="tabs">
@@ -2654,179 +2660,6 @@
           <div class="modal-actions">
             <button id="globalConsentCancel" class="btn-ghost" type="button">ยกเลิก</button>
             <button id="globalConsentConfirm" class="btn-primary" type="button" disabled>ยอมรับและดำเนินการต่อ</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Borrow Assets Consent Modal -->
-    <div
-      id="borrowConsentModal"
-      class="modal"
-      aria-hidden="true"
-      aria-modal="true"
-      role="dialog"
-      aria-labelledby="borrowConsentTitle"
-    >
-      <div class="modal-dialog borrow-consent-dialog">
-        <div class="modal-header">
-          <div>
-            <div id="borrowConsentTitle" class="modal-title">ยืนยันกฎระเบียบและความยินยอม</div>
-            <div class="modal-subtitle">
-              กรุณาอ่านกฎระเบียบการยืมพัสดุ และเงื่อนไข PDPA ก่อนเข้าสู่หน้าขอยืมพัสดุ
-            </div>
-          </div>
-          <button id="borrowConsentClose" class="modal-close" type="button" aria-label="ปิด">×</button>
-        </div>
-        <div class="modal-body borrow-consent-body">
-          <section class="modal-section">
-            <div class="modal-section-header">
-              <div class="modal-section-icon icon-approve">
-                <span>📦</span>
-              </div>
-              <div class="modal-section-header-text">
-                <div class="modal-section-title">กฎระเบียบการยืมพัสดุ อบจ.</div>
-                <div class="modal-section-caption">สรุปข้อกำหนดสำคัญก่อนยื่นคำขอ</div>
-              </div>
-            </div>
-            <ol class="consent-list">
-              <li>ผู้ขอยืมต้องแจ้งล่วงหน้าอย่างน้อย 3 วันทำการ (ไม่รวมวันหยุดราชการ) ก่อนวันที่ต้องการรับพัสดุ</li>
-              <li>รับพัสดุได้เฉพาะวันจันทร์และพฤหัสบดี เวลา 16.00 น. ที่โต๊ะฝ่ายกายภาพ ห้อง อบจ. ชั้น 2 อาคารจุลจักรพงษ์</li>
-              <li>ผู้รับพัสดุต้องเป็นบุคคลเดียวกับที่ระบุในแบบฟอร์ม “ยืม – คืนพัสดุ” เท่านั้น</li>
-              <li>พัสดุบางรายการอาจต้องมีเงินมัดจำ โดยจะคืนเมื่อพัสดุถูกส่งคืนเรียบร้อยแล้ว</li>
-              <li>หากพัสดุสูญหาย ผู้ขอยืมต้องรับผิดชอบชำระค่าพัสดุเต็มจำนวน</li>
-              <li>กรณีอุปกรณ์เสียหายหรือชำรุด ต้องแจ้งให้ฝ่ายกายภาพทราบทันที</li>
-              <li>พัสดุที่ยืมต้องส่งคืนในสภาพสมบูรณ์ หากเสียหายจะพิจารณาความรับผิดชอบเป็นกรณีไป</li>
-              <li>หากพัสดุสูญหายจากการใช้งาน ผู้ยืมต้องชดใช้เต็มจำนวนหรือจัดหาทดแทนภายใน 7 วันนับจากกำหนดคืน</li>
-              <li>การส่งคืนพัสดุต้องดำเนินการที่โต๊ะฝ่ายกายภาพ พร้อมถ่ายรูปยืนยันและส่งผ่าน LINE Official Account เท่านั้น</li>
-            </ol>
-          </section>
-
-          <section class="modal-section">
-            <div class="modal-section-header">
-              <div class="modal-section-icon icon-info">
-                <span>🔒</span>
-              </div>
-              <div class="modal-section-header-text">
-                <div class="modal-section-title">พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)</div>
-                <div class="modal-section-caption">ข้อมูลส่วนบุคคลจะถูกใช้เพื่อยืนยันตัวตนและติดต่อเกี่ยวกับคำร้องเท่านั้น</div>
-              </div>
-            </div>
-            <div class="section-text-sm">
-              ข้อมูลส่วนบุคคลที่ท่านระบุจะถูกจัดเก็บโดยฝ่ายกายภาพและพัสดุ เพื่อยืนยันตัวตน
-              และติดต่อเกี่ยวกับคำร้องขอยืมพัสดุเท่านั้น โดยจะไม่ถูกนำไปใช้ในวัตถุประสงค์อื่นโดยไม่ได้รับอนุญาต
-            </div>
-            <ul class="consent-list">
-              <li>ชื่อ-นามสกุล, ชื่อเล่น</li>
-              <li>เลขประจำตัวนิสิต, คณะ, ชั้นปี</li>
-              <li>เบอร์โทรศัพท์, LINE ID, ที่อยู่อีเมล</li>
-            </ul>
-            <div class="section-text-sm">
-              อ่านรายละเอียด PDPA: <a href="https://www.ratchakitcha.soc.go.th/DATA/PDF/2562/A/069/T_0052.PDF" target="_blank" rel="noopener noreferrer">ประกาศราชกิจจานุเบกษา</a>
-            </div>
-          </section>
-
-          <div class="consent-checklist">
-            <label class="consent-check">
-              <input id="borrowConsentRules" type="checkbox" />
-              ข้าพเจ้าได้อ่านและยอมรับกฎระเบียบการยืมพัสดุ อบจ. ครบถ้วนแล้ว
-            </label>
-            <label class="consent-check">
-              <input id="borrowConsentPdpa" type="checkbox" />
-              ข้าพเจ้ายินยอมให้มีการเก็บข้อมูลส่วนบุคคลตาม PDPA เพื่อการยืม-คืนพัสดุ
-            </label>
-          </div>
-
-          <div class="modal-actions">
-            <button id="borrowConsentCancel" class="btn-ghost" type="button">ยกเลิก</button>
-            <button id="borrowConsentConfirm" class="btn-primary" type="button" disabled>ยอมรับและดำเนินการต่อ</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Meeting Room Consent Modal -->
-    <div
-      id="meetingConsentModal"
-      class="modal"
-      aria-hidden="true"
-      aria-modal="true"
-      role="dialog"
-      aria-labelledby="meetingConsentTitle"
-    >
-      <div class="modal-dialog borrow-consent-dialog">
-        <div class="modal-header">
-          <div>
-            <div id="meetingConsentTitle" class="modal-title">ยืนยันกฎระเบียบและความยินยอม</div>
-            <div class="modal-subtitle">
-              กรุณาอ่านกฎระเบียบการจองห้องประชุม และเงื่อนไข PDPA ก่อนเข้าสู่หน้าจองห้องประชุม
-            </div>
-          </div>
-          <button id="meetingConsentClose" class="modal-close" type="button" aria-label="ปิด">×</button>
-        </div>
-        <div class="modal-body borrow-consent-body">
-          <section class="modal-section">
-            <div class="modal-section-header">
-              <div class="modal-section-icon icon-approve">
-                <span>🏢</span>
-              </div>
-              <div class="modal-section-header-text">
-                <div class="modal-section-title">กฎระเบียบการจองห้องประชุม</div>
-                <div class="modal-section-caption">สรุปข้อกำหนดสำคัญก่อนยื่นคำขอ</div>
-              </div>
-            </div>
-            <ol class="consent-list">
-              <li>ผู้ขอใช้ต้องจองล่วงหน้าไม่น้อยกว่า 24 ชั่วโมง ก่อนเวลาใช้งาน</li>
-              <li>การจองจะสมบูรณ์ต่อเมื่อได้รับ “อนุมัติ” จากเจ้าหน้าที่แล้วเท่านั้น</li>
-              <li>ห้ามจองเวลาซ้อนกับผู้อื่น หากเกิดการซ้อน ระบบอาจปฏิเสธหรือปรับเวลาอัตโนมัติ</li>
-              <li>ผู้ใช้ต้องเข้าใช้ห้องตรงเวลา หากเกิน 15 นาที จะถือว่าสละสิทธิ์</li>
-              <li>ห้ามใช้ห้องเกินเวลาที่ได้รับอนุมัติ</li>
-              <li>ผู้ใช้ต้องดูแลความสะอาดและทรัพย์สินของห้องประชุม</li>
-              <li>หากเกิดความเสียหาย ต้องรับผิดชอบค่าเสียหายตามความเหมาะสม</li>
-              <li>ต้องยกเลิกการจองล่วงหน้าไม่น้อยกว่า 12 ชั่วโมง หากไม่ใช้งาน</li>
-              <li>กรณีไม่มาใช้ห้องโดยไม่แจ้ง (No-show) ระบบจะบันทึกและอาจจำกัดสิทธิ์ในอนาคต</li>
-              <li>เจ้าหน้าที่ผู้ดูแลระบบมีสิทธิ์ยกเลิกหรือปรับเปลี่ยนการจองห้องประชุมได้ตามความเหมาะสม โดยจะแจ้งให้ผู้ใช้งานทราบล่วงหน้า</li>
-            </ol>
-          </section>
-
-          <section class="modal-section">
-            <div class="modal-section-header">
-              <div class="modal-section-icon icon-info">
-                <span>🔒</span>
-              </div>
-              <div class="modal-section-header-text">
-                <div class="modal-section-title">พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)</div>
-                <div class="modal-section-caption">ข้อมูลส่วนบุคคลจะถูกใช้เพื่อยืนยันตัวตนและติดต่อเกี่ยวกับคำขอเท่านั้น</div>
-              </div>
-            </div>
-            <div class="section-text-sm">
-              ข้อมูลส่วนบุคคลที่ท่านระบุจะถูกจัดเก็บเพื่อยืนยันตัวตนและติดต่อเกี่ยวกับคำขอจองห้องประชุมเท่านั้น
-              โดยจะไม่ถูกนำไปใช้ในวัตถุประสงค์อื่นโดยไม่ได้รับอนุญาต
-            </div>
-            <ul class="consent-list">
-              <li>ชื่อ-นามสกุล และอีเมลผู้ขอ</li>
-              <li>เบอร์โทรศัพท์ หรือช่องทางติดต่อ</li>
-              <li>ข้อมูลห้อง วันเวลา และวัตถุประสงค์การจอง</li>
-            </ul>
-            <div class="section-text-sm">
-              อ่านรายละเอียด PDPA: <a href="https://www.ratchakitcha.soc.go.th/DATA/PDF/2562/A/069/T_0052.PDF" target="_blank" rel="noopener noreferrer">ประกาศราชกิจจานุเบกษา</a>
-            </div>
-          </section>
-
-          <div class="consent-checklist">
-            <label class="consent-check">
-              <input id="meetingConsentRules" type="checkbox" />
-              ข้าพเจ้าได้อ่านและยอมรับกฎระเบียบการจองห้องประชุมครบถ้วนแล้ว
-            </label>
-            <label class="consent-check">
-              <input id="meetingConsentPdpa" type="checkbox" />
-              ข้าพเจ้ายินยอมให้มีการเก็บข้อมูลส่วนบุคคลตาม PDPA เพื่อการจองห้องประชุม
-            </label>
-          </div>
-
-          <div class="modal-actions">
-            <button id="meetingConsentCancel" class="btn-ghost" type="button">ยกเลิก</button>
-            <button id="meetingConsentConfirm" class="btn-primary" type="button" disabled>ยอมรับและดำเนินการต่อ</button>
           </div>
         </div>
       </div>
@@ -3313,7 +3146,7 @@
         <div class="page-header-flex">
           <div>
             <h1 class="page-title">เข้าสู่ระบบ</h1>
-            <p class="page-subtitle">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต</p>
+            <p class="page-subtitle">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต และจัดการข้อมูลผู้ใช้ร่วมทุกระบบ</p>
           </div>
           <div id="staffModeToggle" class="staff-mode-toggle login-staff-mode-toggle tabs">
             <button class="staff-mode-btn tab-btn view-toggle-btn is-active" data-staff-mode="normal" type="button">ทั่วไป</button>
@@ -3358,11 +3191,17 @@
                   <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Sign in with Google</button>
                   <button id="loginPageLogoutBtn" type="button" class="login-logout-btn" style="display:none;">Sign Out</button>
                   <div class="login-status login-greeting" id="loginPageStatus"></div>
+                  <div class="login-notification-controls">
+                    <button id="loginNotificationEnableBtn" class="btn-ghost" type="button">อนุญาตแจ้งเตือนแล้ว</button>
+                  </div>
+                  <div id="loginNotificationSummary" class="section-text-sm login-notification-summary" aria-live="polite">
+                    การแจ้งเตือน: อนุญาตแล้ว
+                  </div>
                 </div>
 
                 <div class="panel panel-hover login-card login-profile-card">
-                  <h3 class="login-title">ข้อมูลผู้ใช้</h3>
-                  <p class="login-caption">ตรวจสอบข้อมูลให้ถูกต้องก่อนบันทึกเพื่อใช้ในระบบงานต่าง ๆ</p>
+                  <h3 class="login-title">ข้อมูลบัญชีผู้ใช้</h3>
+                  <p class="login-caption">ข้อมูลที่บันทึกที่นี่จะถูกใช้ร่วมในระบบยืมพัสดุ จองห้องประชุม และคำของบประมาณ</p>
                   <div id="loginProfileForm" class="login-profile-form">
                     <section class="login-profile-block">
                       <div class="borrow-form-row login-profile-type-row">
@@ -3487,7 +3326,7 @@
     <script src="js/app.project-modal.js" defer></script>
     <script src="js/app.charts.js" defer></script>
     <script src="js/app.pie.js" defer></script>
-    <script src="js/app.sorting-auth.js" defer></script>
+    <script src="js/app.sorting-auth.js?v=20260415-2" defer></script>
     <script src="js/app.org.js" defer></script>
     <script src="js/app.news.js" defer></script>
     <script src="js/app.downloads.js" defer></script>
@@ -3495,7 +3334,7 @@
     <script src="js/app.motion.js" defer></script>
     <script src="js/app.web-push.js" defer></script>
     <script src="js/app.feature-loader.js?v=20260415-16" defer></script>
-    <script src="js/app.init.js" defer></script>
+    <script src="js/app.init.js?v=20260415-2" defer></script>
     <script src="js/app.calendar.js" defer></script>
     <script>
       window.sgcuPushConfig = window.sgcuPushConfig || {
@@ -3507,7 +3346,7 @@
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js").catch(() => {});
+          navigator.serviceWorker.register("./sw.js?v=20260415-2").catch(() => {});
         });
       }
     </script>

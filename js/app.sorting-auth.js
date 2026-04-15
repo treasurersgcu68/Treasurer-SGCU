@@ -998,7 +998,7 @@ function initAuthUI() {
     refreshAuthDisplay(user);
     window.dispatchEvent(
       new CustomEvent("sgcu:auth-state", {
-        detail: { isAuthenticated: !!user }
+        detail: { isAuthenticated: !!user, uid: (user?.uid || "").toString(), email: (user?.email || "").toString().trim().toLowerCase() }
       })
     );
   });

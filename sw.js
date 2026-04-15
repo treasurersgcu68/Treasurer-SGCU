@@ -1,4 +1,4 @@
-const CACHE_NAME = "treasurer-sgcu-shell-v5";
+const CACHE_NAME = "treasurer-sgcu-shell-v6";
 const APP_SHELL_URLS = [
   "./",
   "./index.html",

@@ -52,7 +52,7 @@ function initBorrowAssetsApp() {
   const ENABLE_ASSET_AVAILABILITY_CHECK =
     typeof globalThis.ENABLE_ASSET_AVAILABILITY_CHECK === "boolean"
       ? globalThis.ENABLE_ASSET_AVAILABILITY_CHECK
-      : true;
+      : false;
   const BORROW_ASSETS_CSV_URL =
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcx0zotyWntFscUtgXHg4dkJQ6xI16Xrasy58sQfr-29iwgdpujpuvLC7poHH3TG4KR6P36A-bLyZR/pub?gid=0&single=true&output=csv";
   const BORROW_REQUEST_COLLECTION = "borrowAssetRequests";
@@ -643,7 +643,7 @@ function initBorrowAssetsApp() {
       const currentReserved = toSafeInt(stockSnap.data()?.reserved);
       let nextReserved = currentReserved + delta;
 
-      if (delta > 0 && nextReserved > maxRemaining) {
+      if (ENABLE_ASSET_AVAILABILITY_CHECK && delta > 0 && nextReserved > maxRemaining) {
         const err = new Error(`พัสดุ ${code} คงเหลือไม่พอ`);
         err.code = "resource-exhausted";
         err.assetCode = code;

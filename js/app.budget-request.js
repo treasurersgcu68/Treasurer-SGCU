@@ -39,7 +39,8 @@ function initBudgetApprovalRequestPage() {
     return;
   }
 
-  const LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
+  const LOGIN_PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
+  const LEGACY_LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
   const REQUEST_COLLECTION = "budgetApprovalRequests";
   let unsubscribeMyRequests = null;
 
@@ -332,10 +333,19 @@ function initBudgetApprovalRequestPage() {
     if (!normalized) return {};
 
     try {
-      const raw = window.localStorage?.getItem(LOGIN_PROFILE_STORAGE_KEY);
+      const rawPrimary = window.localStorage?.getItem(LOGIN_PROFILE_STORAGE_KEY);
+      const rawLegacy = window.localStorage?.getItem(LEGACY_LOGIN_PROFILE_STORAGE_KEY);
+      const raw = rawPrimary || rawLegacy;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
       const byEmail = parsed && typeof parsed === "object" ? parsed : {};
+      if (!rawPrimary && rawLegacy) {
+        try {
+          window.localStorage?.setItem(LOGIN_PROFILE_STORAGE_KEY, JSON.stringify(byEmail));
+        } catch (_) {
+          // ignore localStorage write errors
+        }
+      }
       const profile = byEmail[normalized];
       return profile && typeof profile === "object" ? profile : {};
     } catch (_) {

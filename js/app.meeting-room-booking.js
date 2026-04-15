@@ -69,7 +69,8 @@ function initMeetingRoomBookingApp() {
 
   const STORAGE_KEY = "meetingRoomBookings-v1";
   const LOCAL_MIGRATED_KEY = "meetingRoomBookingsMigratedToFirestore-v1";
-  const PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
+  const PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
+  const LEGACY_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
   const USER_PROFILE_COLLECTION = "userProfiles";
   const BOOKING_COLLECTION_NAME = "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = "meetingRooms";
@@ -320,9 +321,18 @@ function initMeetingRoomBookingApp() {
 
   const readSharedProfiles = () => {
     try {
-      const raw = window.localStorage?.getItem(PROFILE_STORAGE_KEY);
+      const rawPrimary = window.localStorage?.getItem(PROFILE_STORAGE_KEY);
+      const rawLegacy = window.localStorage?.getItem(LEGACY_PROFILE_STORAGE_KEY);
+      const raw = rawPrimary || rawLegacy;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
+      if (!rawPrimary && rawLegacy) {
+        try {
+          window.localStorage?.setItem(PROFILE_STORAGE_KEY, JSON.stringify(parsed || {}));
+        } catch (_) {
+          // ignore local cache write errors
+        }
+      }
       return parsed && typeof parsed === "object" ? parsed : {};
     } catch (_) {
       return {};
@@ -400,6 +410,7 @@ function initMeetingRoomBookingApp() {
       };
       try {
         window.localStorage?.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+        window.localStorage?.setItem(LEGACY_PROFILE_STORAGE_KEY, JSON.stringify(profiles));
       } catch (_) {
         // ignore local cache write errors
       }

@@ -422,7 +422,8 @@ function initAuthUI() {
 
   if (!auth) return;
   const AUTH_SESSION_KEY = "sgcu_auth_session_started_at";
-  const LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
+  const LOGIN_PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
+  const LEGACY_LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
   const USER_PROFILE_COLLECTION = "userProfiles";
   const sessionMaxAgeMs =
     typeof AUTH_SESSION_MAX_AGE_MS === "number" &&
@@ -566,9 +567,14 @@ function initAuthUI() {
 
   function readLoginProfiles() {
     try {
-      const raw = window.localStorage?.getItem(LOGIN_PROFILE_STORAGE_KEY);
+      const rawPrimary = window.localStorage?.getItem(LOGIN_PROFILE_STORAGE_KEY);
+      const rawLegacy = window.localStorage?.getItem(LEGACY_LOGIN_PROFILE_STORAGE_KEY);
+      const raw = rawPrimary || rawLegacy;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
+      if (!rawPrimary && rawLegacy) {
+        writeLoginProfiles(parsed);
+      }
       return parsed && typeof parsed === "object" ? parsed : {};
     } catch (err) {
       return {};
@@ -576,10 +582,19 @@ function initAuthUI() {
   }
 
   function writeLoginProfiles(profiles) {
+    const safeProfiles = profiles || {};
     try {
       window.localStorage?.setItem(
         LOGIN_PROFILE_STORAGE_KEY,
-        JSON.stringify(profiles || {})
+        JSON.stringify(safeProfiles)
+      );
+    } catch (err) {
+      // ignore localStorage errors
+    }
+    try {
+      window.localStorage?.setItem(
+        LEGACY_LOGIN_PROFILE_STORAGE_KEY,
+        JSON.stringify(safeProfiles)
       );
     } catch (err) {
       // ignore localStorage errors
@@ -1091,5 +1106,55 @@ function initAuthUI() {
   if (mobileLogoutBtnEl) {
     mobileLogoutBtnEl.addEventListener("click", handleLogout);
   }
+
+  function initLoginNotificationControls() {
+    const enableBtn = document.getElementById("loginNotificationEnableBtn");
+    const summaryEl = document.getElementById("loginNotificationSummary");
+    if (!enableBtn || !summaryEl) return;
+
+    const renderNotificationState = () => {
+      const isSupported = typeof window !== "undefined" && typeof window.Notification !== "undefined";
+      const permission = isSupported ? Notification.permission : "unsupported";
+      const permissionText = permission === "granted"
+        ? "อนุญาตแล้ว"
+        : permission === "denied"
+          ? "ถูกบล็อก"
+          : isSupported ? "ยังไม่อนุญาต" : "ไม่รองรับ";
+      summaryEl.textContent = `การแจ้งเตือน: ${permissionText}`;
+      summaryEl.style.color = permission === "denied" ? "#b91c1c" : "#6b7280";
+
+      if (!isSupported) {
+        enableBtn.disabled = true;
+        enableBtn.textContent = "อุปกรณ์ไม่รองรับแจ้งเตือน";
+      } else if (permission === "granted") {
+        enableBtn.disabled = true;
+        enableBtn.textContent = "อนุญาตแจ้งเตือนแล้ว";
+      } else {
+        enableBtn.disabled = false;
+        enableBtn.textContent = "อนุญาตแจ้งเตือน";
+      }
+    };
+
+    enableBtn.addEventListener("click", () => {
+      if (typeof window === "undefined" || typeof window.Notification === "undefined") {
+        renderNotificationState();
+        return;
+      }
+      enableBtn.disabled = true;
+      Notification.requestPermission()
+        .catch(() => {})
+        .finally(() => {
+          renderNotificationState();
+        });
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      renderNotificationState();
+    });
+    renderNotificationState();
+  }
+
+  initLoginNotificationControls();
   refreshAuthDisplayFn = refreshAuthDisplay;
 }

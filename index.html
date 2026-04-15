@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Treasurer SGCU68" />
-    <title>Treasurer SGCU68 | ระบบติดตามโครงการและงบประมาณ</title>
-    <meta name="description" content="ระบบติดตามโครงการและงบประมาณของเหรัญญิก SGCU68 เพื่อดูสถานะโครงการ การใช้จ่าย และข้อมูลการบริหารงบอย่างโปร่งใส">
+    <title>Treasurer SGCU68 | ฝ่ายเหรัญญิก อบจ.</title>
+    <meta name="description" content="ระบบติดตามโครงการและงบประมาณของฝ่ายเหรัญญิก SGCU สำหรับดูสถานะโครงการ การใช้จ่าย และข้อมูลการบริหารงบประมาณอย่างโปร่งใส">
     <meta name="keywords" content="เหรัญญิก SGCU68, เหรัญญิก อบจ68, เหรัญญิก อบจ, SGCU, อบจ, งบประมาณ SGCU, Project Status SGCU, Treasurer SGCU, SGCU68">
     <meta name="author" content="Treasurer SGCU68">
     <link rel="canonical" href="https://treasurersgcu68.github.io/Treasurer-SGCU/">
@@ -23,7 +23,7 @@
     <meta property="og:site_name" content="Treasurer SGCU68">
     <meta property="og:locale" content="th_TH">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Treasurer SGCU68 | ระบบติดตามโครงการและงบประมาณ">
+    <meta name="twitter:title" content="Treasurer SGCU68 | ฝ่ายเหรัญญิก อบจ.">
     <meta name="twitter:description" content="ดูสถานะโครงการและงบประมาณแบบอัปเดตโดยเหรัญญิก อบจ68">
     <meta name="twitter:image" content="https://treasurersgcu68.github.io/Treasurer-SGCU/img/banner%20SGCU.jpg">
     <meta name="twitter:image:alt" content="Treasurer SGCU68 - ระบบติดตามโครงการและงบประมาณ">
@@ -3152,7 +3152,7 @@
         <div class="page-header-flex">
           <div>
             <h1 class="page-title">เข้าสู่ระบบ</h1>
-            <p class="page-subtitle">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต และจัดการข้อมูลผู้ใช้ร่วมทุกระบบ</p>
+            <p class="page-subtitle">เข้าสู่ระบบด้วยบัญชี Mail CHULA ที่ได้รับอนุญาต และจัดการข้อมูลผู้ใช้ร่วมทุกระบบ</p>
           </div>
           <div id="staffModeToggle" class="staff-mode-toggle login-staff-mode-toggle tabs">
             <button class="staff-mode-btn tab-btn view-toggle-btn is-active" data-staff-mode="normal" type="button">ทั่วไป</button>
@@ -3194,7 +3194,7 @@
               <div class="login-grid">
                 <div id="loginGooglePanel" class="panel panel-hover login-card login-intro-card">
                   <h3 class="login-title">เข้าสู่ระบบด้วย Mail CHULA</h3>
-                  <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Sign in with Google</button>
+                  <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Sign in with Mail CHULA</button>
                   <button id="loginPageLogoutBtn" type="button" class="login-logout-btn" style="display:none;">Sign Out</button>
                   <div class="login-status login-greeting" id="loginPageStatus"></div>
                   <div class="login-notification-controls">
@@ -3351,7 +3351,13 @@
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js?v=20260415-2").catch(() => {});
+          let didRefreshForNewWorker = false;
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+            if (didRefreshForNewWorker) return;
+            didRefreshForNewWorker = true;
+            window.location.reload();
+          });
+          navigator.serviceWorker.register("./sw.js?v=20260415-4").catch(() => {});
         });
       }
     </script>

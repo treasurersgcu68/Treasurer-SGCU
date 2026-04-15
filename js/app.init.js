@@ -241,8 +241,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pageViews = document.querySelectorAll(".page-view");
   let currentPage = null;
   let pendingConsentPage = null;
-  const globalConsentKey = "globalServiceConsent-v1";
-  const legacyConsentKeys = ["borrowAssetsConsent-v1", "meetingRoomConsent-v1"];
+  let consentAuthIdentity = { uid: "", email: "" };
+  const globalConsentKeyPrefix = "globalServiceConsent-v2";
+  const globalConsentPersistentKeyPrefix = "globalServiceConsent-persistent-v2";
   const consentRequiredPages = new Set(["borrow-assets", "meeting-room-booking"]);
   const globalConsentModal = document.getElementById("globalConsentModal");
   const globalConsentConfirm = document.getElementById("globalConsentConfirm");
@@ -301,13 +302,61 @@ document.addEventListener("DOMContentLoaded", async () => {
     }, 2500);
   };
 
-  const hasGlobalConsent = () =>
-    window.sessionStorage && sessionStorage.getItem(globalConsentKey) === "accepted";
+  const getConsentSubjects = () => {
+    const user = window.sgcuAuth?.auth?.currentUser || null;
+    const uidFromEvent = (consentAuthIdentity?.uid || "").toString().trim();
+    const emailFromEvent = (consentAuthIdentity?.email || "").toString().trim().toLowerCase();
+    const uidFromAuth = (user?.uid || "").toString().trim();
+    const emailFromAuth = (user?.email || "").toString().trim().toLowerCase();
+    const subjects = [];
+    if (uidFromEvent) subjects.push(`uid:${uidFromEvent}`);
+    if (uidFromAuth && uidFromAuth !== uidFromEvent) subjects.push(`uid:${uidFromAuth}`);
+    if (emailFromEvent) subjects.push(`email:${emailFromEvent}`);
+    if (emailFromAuth && emailFromAuth !== emailFromEvent) subjects.push(`email:${emailFromAuth}`);
+    if (!subjects.length) subjects.push("anonymous");
+    return subjects;
+  };
+
+  const hasGlobalConsent = () => {
+    const subjects = getConsentSubjects();
+    const sessionKeys = subjects.map((subject) => `${globalConsentKeyPrefix}:${subject}`);
+    const persistentKeys = subjects.map((subject) => `${globalConsentPersistentKeyPrefix}:${subject}`);
+    const acceptedInSession =
+      Boolean(window.sessionStorage) &&
+      sessionKeys.some((key) => sessionStorage.getItem(key) === "accepted");
+    const acceptedPersisted =
+      Boolean(window.localStorage) &&
+      persistentKeys.some((key) => localStorage.getItem(key) === "accepted");
+
+    // If consent is already present in any key, sync it across current user keys.
+    if (!acceptedInSession && acceptedPersisted && window.sessionStorage) {
+      sessionKeys.forEach((key) => sessionStorage.setItem(key, "accepted"));
+    }
+    if (!acceptedPersisted && acceptedInSession && window.localStorage) {
+      persistentKeys.forEach((key) => localStorage.setItem(key, "accepted"));
+    }
+
+    return Boolean(acceptedInSession || acceptedPersisted);
+  };
+
+  const isConsentCheckReady = () => {
+    const user = window.sgcuAuth?.auth?.currentUser || null;
+    const hasEventIdentity =
+      Boolean((consentAuthIdentity?.uid || "").toString().trim()) ||
+      Boolean((consentAuthIdentity?.email || "").toString().trim());
+    return Boolean(user || hasEventIdentity);
+  };
 
   const writeGlobalConsentAccepted = () => {
-    if (!window.sessionStorage) return;
-    sessionStorage.setItem(globalConsentKey, "accepted");
-    legacyConsentKeys.forEach((key) => sessionStorage.setItem(key, "accepted"));
+    const subjects = getConsentSubjects();
+    const sessionKeys = subjects.map((subject) => `${globalConsentKeyPrefix}:${subject}`);
+    const persistentKeys = subjects.map((subject) => `${globalConsentPersistentKeyPrefix}:${subject}`);
+    if (window.sessionStorage) {
+      sessionKeys.forEach((key) => sessionStorage.setItem(key, "accepted"));
+    }
+    if (window.localStorage) {
+      persistentKeys.forEach((key) => localStorage.setItem(key, "accepted"));
+    }
   };
 
   const updateGlobalConsentState = () => {
@@ -376,6 +425,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   window.addEventListener("sgcu:auth-state", (event) => {
     const isAuthenticated = Boolean(event?.detail?.isAuthenticated);
+    const uid = (event?.detail?.uid || "").toString().trim();
+    const email = (event?.detail?.email || "").toString().trim().toLowerCase();
+    consentAuthIdentity = { uid, email };
     if (!isAuthenticated) {
       pendingConsentPage = null;
       hideGlobalConsentModal();
@@ -383,7 +435,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     if (!hasGlobalConsent()) {
       showGlobalConsentModal();
+      return;
     }
+    hideGlobalConsentModal();
   });
   if (window.sgcuAuth?.auth?.currentUser && !hasGlobalConsent()) {
     showGlobalConsentModal();
@@ -428,7 +482,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (!bypassConsent && consentRequiredPages.has(targetPage) && !hasGlobalConsent()) {
+    if (
+      !bypassConsent &&
+      consentRequiredPages.has(targetPage) &&
+      isConsentCheckReady() &&
+      !hasGlobalConsent()
+    ) {
       pendingConsentPage = targetPage;
       showGlobalConsentModal();
       if (currentPage) {

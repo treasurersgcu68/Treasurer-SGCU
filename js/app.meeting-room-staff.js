@@ -595,8 +595,9 @@ function initMeetingRoomStaffApproval() {
     if (typeof window === "undefined" || typeof Notification === "undefined") return;
     if (Notification.permission !== "granted") return;
     try {
+      const notificationIcon = "img/icons/icon-192.png";
       // eslint-disable-next-line no-new
-      new Notification(title, { body });
+      new Notification(title, { body, icon: notificationIcon, badge: notificationIcon });
     } catch (_) {
       // ignore browser notification errors
     }
@@ -628,15 +629,7 @@ function initMeetingRoomStaffApproval() {
         return aDate.localeCompare(bDate);
       });
 
-    if (!queueRows.length) {
-      setStaffRequestReminder("");
-    } else {
-      const latest = queueRows[0];
-      const latestRoom = normalizeRoomDisplay(latest.roomId, latest.roomName);
-      setStaffRequestReminder(
-        `มีคำขอรอดำเนินการ ${queueRows.length} รายการ • ล่าสุด: ${queueTypeText(latest.status)} (${latestRoom} ${queueScheduleText(latest)})`
-      );
-    }
+    setStaffRequestReminder("");
 
     const nextQueueState = new Map(
       queueRows.map((booking) => [booking.id, normalizeStatus(booking.status)])

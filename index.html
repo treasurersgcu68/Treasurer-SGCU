@@ -2022,6 +2022,11 @@
             <div>
               <h2 class="page-title">Meeting Room Booking</h2>
               <p class="page-subtitle">กรอกคำขอเพื่อจองห้องประชุม และติดตามสถานะอนุมัติจากทีม Staff</p>
+              <div class="meeting-notification-controls">
+                <button id="meetingNotificationEnableBtn" class="btn-ghost" type="button">เปิดสิทธิ์แจ้งเตือน</button>
+                <button id="meetingPushSubscribeBtn" class="btn-ghost" type="button">เชื่อมต่อ Push</button>
+              </div>
+              <div id="meetingNotificationStatus" class="section-text-sm meeting-notification-status" aria-live="polite"></div>
               <div id="meetingReminderBanner" class="section-text-sm" aria-live="polite" hidden></div>
             </div>
           </div>
@@ -2241,6 +2246,11 @@
             <div>
               <h2 class="page-title">Meeting Room Approval For Staff</h2>
               <p class="page-subtitle">อนุมัติหรือปฏิเสธคำขอจองห้องประชุม พร้อมจัดการรายการทั้งหมด</p>
+              <div class="meeting-notification-controls">
+                <button id="meetingStaffNotificationEnableBtn" class="btn-ghost" type="button">เปิดสิทธิ์แจ้งเตือน</button>
+                <button id="meetingStaffPushSubscribeBtn" class="btn-ghost" type="button">เชื่อมต่อ Push</button>
+              </div>
+              <div id="meetingStaffNotificationStatus" class="section-text-sm meeting-notification-status" aria-live="polite"></div>
               <div id="meetingStaffRequestReminder" class="section-text-sm" aria-live="polite" hidden></div>
             </div>
             <div class="tabs">
@@ -2495,6 +2505,159 @@
         </div>
       </section>
     </main>
+
+    <!-- Global Consent Modal (Login) -->
+    <div
+      id="globalConsentModal"
+      class="modal"
+      aria-hidden="true"
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby="globalConsentTitle"
+    >
+      <div class="modal-dialog borrow-consent-dialog">
+        <div class="modal-header">
+          <div>
+            <div id="globalConsentTitle" class="modal-title">ยืนยันกฎระเบียบและความยินยอม</div>
+            <div class="modal-subtitle">
+              ยินยอมเพียงครั้งเดียวหลังเข้าสู่ระบบ เพื่อใช้งานระบบยืมพัสดุ จองห้องประชุม และบริการที่เกี่ยวข้อง
+            </div>
+          </div>
+          <button id="globalConsentClose" class="modal-close" type="button" aria-label="ปิด">×</button>
+        </div>
+        <div class="modal-body borrow-consent-body">
+          <section class="modal-section">
+            <div class="modal-section-header">
+              <div class="modal-section-icon icon-info">
+                <span>🔐</span>
+              </div>
+              <div class="modal-section-header-text">
+                <div class="modal-section-title">ข้อกำหนดการใช้งานระบบ และความยินยอม</div>
+              </div>
+            </div>
+            <div class="section-text-sm">
+              ผู้ใช้งานยินยอมปฏิบัติตามข้อกำหนดของระบบยืมพัสดุ จองห้องประชุม และบริการที่เกี่ยวข้อง โดยการเข้าสู่ระบบและใช้งานระบบถือว่าท่านได้อ่านและยอมรับเงื่อนไขทั้งหมดแล้ว
+              ทั้งนี้ ระบบจะบันทึกข้อมูลการยินยอมเพื่อใช้เป็นหลักฐาน และผู้ใช้งานต้องรับผิดชอบการใช้งานทั้งหมดภายใต้บัญชีของตน ห้ามใช้บัญชีผู้อื่นหรืออนุญาตให้ผู้อื่นใช้งานแทน
+              รวมถึงห้ามกรอกข้อมูลอันเป็นเท็จ แอบอ้าง หรือพยายามเข้าถึงข้อมูลของผู้อื่นโดยไม่ได้รับอนุญาต
+            </div>
+          </section>
+
+          <section class="modal-section">
+            <div class="modal-section-header">
+              <div class="modal-section-icon icon-approve">
+                <span>📦</span>
+              </div>
+              <div class="modal-section-header-text">
+                <div class="modal-section-title">กฎระเบียบการยืมพัสดุ อบจ.</div>
+                <div class="modal-section-caption">สรุปข้อกำหนดสำคัญก่อนยื่นคำขอ</div>
+              </div>
+            </div>
+            <div class="section-text-sm">
+              ผู้ขอยืมต้องแจ้งล่วงหน้าอย่างน้อย 3 วันทำการ (ไม่รวมวันหยุดราชการ) ก่อนวันที่ต้องการรับพัสดุ โดยคำขอจะสมบูรณ์ต่อเมื่อได้รับการอนุมัติจากเจ้าหน้าที่แล้วเท่านั้น
+              และเจ้าหน้าที่จะพิจารณาคำขอภายใน 1 วันทำการ ผู้ขอยืมสามารถรับพัสดุได้เฉพาะวันจันทร์และพฤหัสบดี เวลา 16.00 น. ที่โต๊ะฝ่ายกายภาพ ห้อง อบจ. ชั้น 2 อาคารจุลจักรพงษ์
+              โดยผู้รับพัสดุต้องเป็นบุคคลเดียวกับที่ระบุในระบบ หากมีความจำเป็นต้องมอบหมายผู้อื่นรับแทน ต้องแจ้งล่วงหน้าและได้รับอนุญาต
+            </div>
+            <div class="section-text-sm">
+              ผู้ยืมต้องดูแลพัสดุให้อยู่ในสภาพสมบูรณ์ ห้ามนำไปใช้ผิดวัตถุประสงค์ และต้องแจ้งเจ้าหน้าที่ทันทีหากเกิดความเสียหายหรือชำรุด พัสดุบางรายการอาจต้องมีเงินมัดจำ
+              ซึ่งจะคืนเมื่อพัสดุถูกส่งคืนเรียบร้อยแล้ว การคืนพัสดุต้องดำเนินการที่โต๊ะฝ่ายกายภาพ พร้อมถ่ายรูปยืนยันและส่งผ่าน LINE Official Account โดยเจ้าหน้าที่จะตรวจสอบสภาพพัสดุ ณ จุดคืน และถือเป็นข้อยุติ
+            </div>
+            <div class="section-text-sm">
+              หากพัสดุเสียหายหรือสูญหาย ผู้ขอยืมต้องรับผิดชอบชำระค่าพัสดุเต็มจำนวน หรือจัดหาทดแทนภายใน 7 วันนับจากกำหนดคืน กรณีคืนพัสดุล่าช้า ระบบจะบันทึกประวัติการใช้งาน และอาจระงับสิทธิ์การยืมในอนาคต
+            </div>
+          </section>
+
+          <section class="modal-section">
+            <div class="modal-section-header">
+              <div class="modal-section-icon icon-approve">
+                <span>🏢</span>
+              </div>
+              <div class="modal-section-header-text">
+                <div class="modal-section-title">กฎระเบียบการจองห้องประชุม</div>
+                <div class="modal-section-caption">สรุปข้อกำหนดสำคัญก่อนยื่นคำขอ</div>
+              </div>
+            </div>
+            <div class="section-text-sm">
+              ผู้ขอใช้ต้องจองล่วงหน้าไม่น้อยกว่า 24 ชั่วโมง ก่อนเวลาใช้งาน และการจองจะสมบูรณ์ต่อเมื่อได้รับการอนุมัติจากเจ้าหน้าที่แล้วเท่านั้น ระบบอาจปฏิเสธคำขอที่มีเวลาซ้อนกับผู้อื่น
+              ผู้ใช้ต้องเข้าใช้ห้องตรงเวลา หากเกิน 15 นาที จะถือว่าสละสิทธิ์ และห้ามใช้ห้องเกินเวลาที่ได้รับอนุมัติ
+            </div>
+            <div class="section-text-sm">
+              ผู้ใช้ต้องดูแลความสะอาดและทรัพย์สินของห้องประชุม หากเกิดความเสียหายต้องรับผิดชอบตามความเหมาะสม และต้องยกเลิกการจองล่วงหน้าไม่น้อยกว่า 12 ชั่วโมง หากไม่สามารถใช้งานได้
+              กรณีไม่มาใช้ห้องโดยไม่แจ้ง (No-show) ระบบจะบันทึกและอาจจำกัดสิทธิ์ในอนาคต
+            </div>
+            <div class="section-text-sm">
+              เจ้าหน้าที่ผู้ดูแลระบบมีสิทธิ์ยกเลิกหรือปรับเปลี่ยนการจองห้องประชุมได้ตามความเหมาะสม เช่น กรณีห้องไม่พร้อมใช้งาน ระบบขัดข้อง หรือเหตุจำเป็นอื่น โดยจะแจ้งให้ผู้ใช้งานทราบล่วงหน้า (หากเป็นไปได้)
+            </div>
+          </section>
+
+          <section class="modal-section">
+            <div class="modal-section-header">
+              <div class="modal-section-icon icon-info">
+                <span>⚖️</span>
+              </div>
+              <div class="modal-section-header-text">
+                <div class="modal-section-title">มาตรการควบคุมและบทลงโทษ</div>
+              </div>
+            </div>
+            <div class="section-text-sm">
+              ระบบจะบันทึกพฤติกรรมการใช้งาน เช่น การคืนพัสดุล่าช้า การไม่มาใช้ห้องประชุม และการทำพัสดุเสียหาย เพื่อใช้ในการพิจารณามาตรการควบคุม โดยอาจมีการดำเนินการเป็นลำดับ ได้แก่ การแจ้งเตือน การระงับสิทธิ์ชั่วคราว และการระงับสิทธิ์ใช้งานระบบ ทั้งนี้ขึ้นอยู่กับดุลยพินิจของเจ้าหน้าที่
+            </div>
+          </section>
+
+          <section class="modal-section">
+            <div class="modal-section-header">
+              <div class="modal-section-icon icon-info">
+                <span>🔒</span>
+              </div>
+              <div class="modal-section-header-text">
+                <div class="modal-section-title">พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)</div>
+                <div class="modal-section-caption">ข้อมูลส่วนบุคคลจะถูกใช้เพื่อยืนยันตัวตนและติดต่อเกี่ยวกับคำขอเท่านั้น</div>
+              </div>
+            </div>
+            <div class="section-text-sm">
+              ข้อมูลส่วนบุคคลที่ผู้ใช้งานระบุ เช่น ชื่อ-นามสกุล อีเมล เบอร์โทรศัพท์ และข้อมูลการจองหรือการยืม จะถูกจัดเก็บและใช้เพื่อยืนยันตัวตน ดำเนินการตามคำขอ และติดต่อประสานงานเท่านั้น
+              โดยอาศัยฐานทางกฎหมายในการปฏิบัติตามสัญญาและประโยชน์โดยชอบด้วยกฎหมายของหน่วยงาน ข้อมูลดังกล่าวจะถูกเก็บรักษาไม่เกิน 1 ปีหลังสิ้นสุดการใช้งาน เว้นแต่มีความจำเป็นตามกฎหมายหรือเพื่อการตรวจสอบ
+            </div>
+            <div class="section-text-sm">
+              ผู้ใช้งานมีสิทธิ์ขอเข้าถึง แก้ไข หรือขอลบข้อมูลส่วนบุคคลภายใต้เงื่อนไขที่กำหนด โดยองค์การบริหารสโมสรนิสิต จุฬาลงกรณ์มหาวิทยาลัย เป็นผู้ควบคุมข้อมูลส่วนบุคคล และสามารถติดต่อได้ผ่านช่องทางที่หน่วยงานกำหนด
+            </div>
+            <div class="section-text-sm">
+              อ่านรายละเอียด PDPA:
+              <a href="https://www.ratchakitcha.soc.go.th/DATA/PDF/2562/A/069/T_0052.PDF" target="_blank" rel="noopener noreferrer">ประกาศราชกิจจานุเบกษา</a>
+            </div>
+          </section>
+
+          <section class="modal-section">
+            <div class="modal-section-header">
+              <div class="modal-section-icon icon-info">
+                <span>📌</span>
+              </div>
+              <div class="modal-section-header-text">
+                <div class="modal-section-title">หมายเหตุ</div>
+              </div>
+            </div>
+            <div class="section-text-sm">
+              ระบบอาจมีการปรับปรุงหรือเปลี่ยนแปลงข้อกำหนดโดยไม่ต้องแจ้งให้ทราบล่วงหน้า และการใช้งานระบบต่อเนื่องถือเป็นการยอมรับข้อกำหนดฉบับล่าสุด ทั้งนี้ให้เหรัญญิก หรือผู้ที่ได้รับมอบหมาย เป็นผู้วินิจฉัยชี้ขาดในกรณีเกิดข้อพิพาท และคำวินิจฉัยถือเป็นที่สุด
+            </div>
+          </section>
+
+          <div class="consent-checklist">
+            <label class="consent-check">
+              <input id="globalConsentRules" type="checkbox" />
+              ข้าพเจ้าได้อ่านและยอมรับข้อกำหนดการใช้งานระบบ รวมถึงกฎระเบียบการยืมพัสดุและการจองห้องประชุมครบถ้วนแล้ว
+            </label>
+            <label class="consent-check">
+              <input id="globalConsentPdpa" type="checkbox" />
+              ข้าพเจ้ายินยอมให้มีการเก็บ ใช้ และประมวลผลข้อมูลส่วนบุคคลตาม PDPA เพื่อการให้บริการของระบบ
+            </label>
+          </div>
+
+          <div class="modal-actions">
+            <button id="globalConsentCancel" class="btn-ghost" type="button">ยกเลิก</button>
+            <button id="globalConsentConfirm" class="btn-primary" type="button" disabled>ยอมรับและดำเนินการต่อ</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Borrow Assets Consent Modal -->
     <div
@@ -3190,100 +3353,114 @@
 
             <div class="login-hero-panel">
               <div class="login-grid">
-                <div id="loginGooglePanel" class="panel panel-hover login-card">
-                  <h3 class="login-title">ล็อกอินด้วย Mail CHULA</h3>
-                  <p class="login-caption">ใช้บัญชีที่ได้รับสิทธิ์เพื่อเข้าใช้งานระบบ</p>
+                <div id="loginGooglePanel" class="panel panel-hover login-card login-intro-card">
+                  <h3 class="login-title">เข้าสู่ระบบด้วย Mail CHULA</h3>
                   <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Sign in with Google</button>
-                  <div class="login-status" id="loginPageStatus"></div>
-                  <div id="loginProfileForm" style="margin-top:12px;">
-                    <div class="borrow-form-row login-profile-type-row">
-                      <div class="borrow-form-field">
-                        <label class="login-label">ประเภทผู้ใช้งาน</label>
-                        <div class="tabs" id="loginProfileTypeGroup">
-                          <label class="tab-btn view-toggle-btn is-active" style="cursor:pointer;">
-                            <input id="loginProfileTypeStudent" type="radio" name="loginProfileType" value="student" checked style="display:none;" />
-                            นิสิต
-                          </label>
-                          <label class="tab-btn view-toggle-btn" style="cursor:pointer;">
-                            <input id="loginProfileTypeAffairs" type="radio" name="loginProfileType" value="affairs" style="display:none;" />
-                            เจ้าหน้าที่สำนักบริหารกิจการนิสิต
-                          </label>
+                  <button id="loginPageLogoutBtn" type="button" class="login-logout-btn" style="display:none;">Sign Out</button>
+                  <div class="login-status login-greeting" id="loginPageStatus"></div>
+                </div>
+
+                <div class="panel panel-hover login-card login-profile-card">
+                  <h3 class="login-title">ข้อมูลผู้ใช้</h3>
+                  <p class="login-caption">ตรวจสอบข้อมูลให้ถูกต้องก่อนบันทึกเพื่อใช้ในระบบงานต่าง ๆ</p>
+                  <div id="loginProfileForm" class="login-profile-form">
+                    <section class="login-profile-block">
+                      <div class="borrow-form-row login-profile-type-row">
+                        <div class="borrow-form-field">
+                          <label class="login-label">ประเภทผู้ใช้งาน</label>
+                          <div class="tabs" id="loginProfileTypeGroup">
+                            <label class="tab-btn view-toggle-btn is-active" style="cursor:pointer;">
+                              <input id="loginProfileTypeStudent" type="radio" name="loginProfileType" value="student" checked style="display:none;" />
+                              นิสิต
+                            </label>
+                            <label class="tab-btn view-toggle-btn" style="cursor:pointer;">
+                              <input id="loginProfileTypeAffairs" type="radio" name="loginProfileType" value="affairs" style="display:none;" />
+                              เจ้าหน้าที่สำนักบริหารกิจการนิสิต
+                            </label>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </section>
 
-                    <div class="borrow-form-row">
-                      <div class="borrow-form-field">
-                        <label class="login-label" for="loginProfileFirstName">ชื่อ</label>
-                        <input id="loginProfileFirstName" class="login-input" type="text" placeholder="ชื่อจริง" required />
-                      </div>
-                      <div class="borrow-form-field">
-                        <label class="login-label" for="loginProfileLastName">นามสกุล</label>
-                        <input id="loginProfileLastName" class="login-input" type="text" placeholder="นามสกุล" required />
-                      </div>
-                    </div>
-
-                    <div id="loginProfileStudentFields">
+                    <section class="login-profile-block">
                       <div class="borrow-form-row">
                         <div class="borrow-form-field">
-                          <label class="login-label" for="loginProfileNickname">ชื่อเล่น</label>
-                          <input id="loginProfileNickname" class="login-input" type="text" placeholder="ชื่อเล่น" required />
+                          <label class="login-label" for="loginProfileFirstName">ชื่อ</label>
+                          <input id="loginProfileFirstName" class="login-input" type="text" placeholder="ชื่อจริง" required />
                         </div>
                         <div class="borrow-form-field">
-                          <label class="login-label" for="loginProfileStudentId">เลขประจำตัวนิสิต</label>
+                          <label class="login-label" for="loginProfileLastName">นามสกุล</label>
+                          <input id="loginProfileLastName" class="login-input" type="text" placeholder="นามสกุล" required />
+                        </div>
+                      </div>
+
+                      <div id="loginProfileStudentFields">
+                        <div class="borrow-form-row">
+                          <div class="borrow-form-field">
+                            <label class="login-label" for="loginProfileNickname">ชื่อเล่น</label>
+                            <input id="loginProfileNickname" class="login-input" type="text" placeholder="ชื่อเล่น" required />
+                          </div>
+                          <div class="borrow-form-field">
+                            <label class="login-label" for="loginProfileStudentId">เลขประจำตัวนิสิต</label>
+                            <input
+                              id="loginProfileStudentId"
+                              class="login-input"
+                              type="text"
+                              placeholder="รูปแบบ: xxxXXXXXxx"
+                              pattern="^(?:5[6-9]|6[0-9])[3478]\d{5}(?:(?:0[1-2])|(?:2[0-9]|3[0-9]|40)|51|53|55|56|58)$"
+                              required
+                            />
+                            <div id="loginProfileStudentIdWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                              เลขประจำตัวนิสิตไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="borrow-form-row">
+                          <div class="borrow-form-field">
+                            <label class="login-label" for="loginProfileFaculty">คณะ</label>
+                            <input id="loginProfileFaculty" class="login-input" type="text" placeholder="ระบบจะแสดงคณะจากเลขประจำตัวนิสิต" readonly />
+                            <div id="loginProfileFacultyWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                              ไม่พบคณะจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
+                            </div>
+                          </div>
+                          <div class="borrow-form-field">
+                            <label class="login-label" for="loginProfileYear">ชั้นปี</label>
+                            <input id="loginProfileYear" class="login-input" type="text" placeholder="ระบบจะแสดงชั้นปีจากเลขประจำตัวนิสิต" readonly />
+                            <div id="loginProfileYearWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                              ไม่พบชั้นปีจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="borrow-form-row">
+                        <div class="borrow-form-field">
+                          <label id="loginProfilePhoneLabel" class="login-label" for="loginProfilePhone">เบอร์โทรติดต่อกลับ</label>
                           <input
-                            id="loginProfileStudentId"
+                            id="loginProfilePhone"
                             class="login-input"
-                            type="text"
-                            placeholder="รูปแบบ: xxxXXXXXxx"
-                            pattern="^(?:5[6-9]|6[0-9])[3478]\d{5}(?:(?:0[1-2])|(?:2[0-9]|3[0-9]|40)|51|53|55|56|58)$"
+                            type="tel"
+                            placeholder="รูปแบบ: 0xxXXXxxxx"
+                            pattern="^0\d{9}$"
                             required
                           />
-                          <div id="loginProfileStudentIdWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
-                            เลขประจำตัวนิสิตไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="borrow-form-row">
-                        <div class="borrow-form-field">
-                          <label class="login-label" for="loginProfileFaculty">คณะ</label>
-                          <input id="loginProfileFaculty" class="login-input" type="text" placeholder="ระบบจะแสดงคณะจากเลขประจำตัวนิสิต" readonly />
-                          <div id="loginProfileFacultyWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
-                            ไม่พบคณะจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
-                          </div>
                         </div>
                         <div class="borrow-form-field">
-                          <label class="login-label" for="loginProfileYear">ชั้นปี</label>
-                          <input id="loginProfileYear" class="login-input" type="text" placeholder="ระบบจะแสดงชั้นปีจากเลขประจำตัวนิสิต" readonly />
-                          <div id="loginProfileYearWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
-                            ไม่พบชั้นปีจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
-                          </div>
+                          <label id="loginProfileLineIdLabel" class="login-label" for="loginProfileLineId">Line ID</label>
+                          <input id="loginProfileLineId" class="login-input" type="text" placeholder="Line ID" required />
                         </div>
                       </div>
-                    </div>
+                    </section>
 
-                    <div class="borrow-form-row">
-                      <div class="borrow-form-field">
-                        <label id="loginProfilePhoneLabel" class="login-label" for="loginProfilePhone">เบอร์โทรติดต่อกลับ</label>
-                        <input
-                          id="loginProfilePhone"
-                          class="login-input"
-                          type="tel"
-                          placeholder="รูปแบบ: 0xxXXXxxxx"
-                          pattern="^0\d{9}$"
-                          required
-                        />
+                    <section class="login-profile-block">
+                      <div class="login-profile-actions">
+                        <button id="loginProfileSaveBtn" type="button" class="btn-primary w-full">บันทึกข้อมูลผู้ใช้</button>
+                        <div id="loginProfileStatus" class="login-status login-profile-status"></div>
                       </div>
-                      <div class="borrow-form-field">
-                        <label id="loginProfileLineIdLabel" class="login-label" for="loginProfileLineId">Line ID</label>
-                        <input id="loginProfileLineId" class="login-input" type="text" placeholder="Line ID" required />
-                      </div>
-                    </div>
-                    <button id="loginProfileSaveBtn" type="button" class="btn-secondary w-full" style="margin-top:10px;">บันทึกข้อมูลผู้ใช้</button>
-                    <div id="loginProfileStatus" class="login-status"></div>
+                      <button id="loginViewConsentBtn" type="button" class="login-consent-link">อ่านข้อกำหนดและความยินยอม</button>
+                    </section>
                   </div>
-                  <button id="loginPageLogoutBtn" type="button" class="btn-secondary w-full" style="display:none;">Sign Out</button>
                 </div>
               </div>
               <div class="login-help">
@@ -3316,9 +3493,17 @@
     <script src="js/app.downloads.js" defer></script>
     <script src="js/app.scoreboard.js" defer></script>
     <script src="js/app.motion.js" defer></script>
-    <script src="js/app.feature-loader.js?v=20260415-15" defer></script>
+    <script src="js/app.web-push.js" defer></script>
+    <script src="js/app.feature-loader.js?v=20260415-16" defer></script>
     <script src="js/app.init.js" defer></script>
     <script src="js/app.calendar.js" defer></script>
+    <script>
+      window.sgcuPushConfig = window.sgcuPushConfig || {
+        applicationServerKey: "",
+        subscribeEndpoint: "",
+        unsubscribeEndpoint: ""
+      };
+    </script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

@@ -765,14 +765,16 @@ function initAuthUI() {
     }
   }
 
-  function loadLoginProfileByUser(firebaseUser) {
+  function loadLoginProfileByUser(firebaseUser, options = {}) {
+    const forceReload = !!options.forceReload;
+    const forceRemote = !!options.forceRemote;
     const email = (firebaseUser?.email || "").toString().trim().toLowerCase();
     if (!email) {
       loginProfileLoadedForEmail = "";
       clearLoginProfileFields();
       return;
     }
-    if (loginProfileLoadedForEmail === email) {
+    if (!forceReload && !forceRemote && loginProfileLoadedForEmail === email) {
       return;
     }
 
@@ -784,6 +786,9 @@ function initAuthUI() {
       setLoginProfileStatus("กรอกข้อมูลผู้ใช้และกดบันทึกได้เลย", "#6b7280");
     }
     loginProfileLoadedForEmail = email;
+    if (forceReload) {
+      setLoginProfileStatus("กำลังโหลดข้อมูลผู้ใช้ล่าสุดจาก Firebase...", "#0f766e");
+    }
 
     const currentSeq = ++loginProfileLoadSeq;
     void readRemoteLoginProfile(firebaseUser).then((remoteProfile) => {
@@ -797,7 +802,6 @@ function initAuthUI() {
         updatedAt: Date.now()
       };
       writeLoginProfiles(cached);
-      setLoginProfileStatus("โหลดข้อมูลผู้ใช้จาก Firebase แล้ว", "#047857");
       window.dispatchEvent(new CustomEvent("sgcu:user-profile-updated", {
         detail: { email, profile: cached[email] }
       }));
@@ -925,7 +929,7 @@ function initAuthUI() {
       ? [staffAuthUser.email, staffAuthUser.position].filter(Boolean).join(" ")
       : "";
     const nameText = hasFirebase
-      ? `สวัสดี ${firebaseUser.displayName || firebaseUser.email || ""}`
+      ? `สวัสดี, ${firebaseUser.displayName || firebaseUser.email || ""}`
       : hasStaff
         ? `Staff : ${staffLabel}${staffAuthUser.nick ? ` (${staffAuthUser.nick})` : ""}`
         : "";
@@ -963,15 +967,25 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:966", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:970", err);
         });
         refreshAuthDisplay(null);
+        window.dispatchEvent(
+          new CustomEvent("sgcu:auth-state", {
+            detail: { isAuthenticated: false }
+          })
+        );
         return;
       }
     } else {
       clearAuthSession();
     }
     refreshAuthDisplay(user);
+    window.dispatchEvent(
+      new CustomEvent("sgcu:auth-state", {
+        detail: { isAuthenticated: !!user }
+      })
+    );
   });
 
   function handleGoogleLogin() {
@@ -1050,7 +1064,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:1053", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:1067", err);
     });
     loginProfileLoadedForEmail = "";
     setLoginProfileStatus("ออกจากระบบแล้ว", "#6b7280");

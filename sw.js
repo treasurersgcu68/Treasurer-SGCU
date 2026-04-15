@@ -1,8 +1,9 @@
-const CACHE_NAME = "treasurer-sgcu-shell-v1";
+const CACHE_NAME = "treasurer-sgcu-shell-v2";
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
   "./css/style.css?v=20260415-7",
+  "./js/app.web-push.js",
   "./manifest.webmanifest",
   "./img/icons/icon-192.png",
   "./img/icons/icon-512.png",
@@ -52,6 +53,58 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
         return networkResponse;
       });
+    })
+  );
+});
+
+self.addEventListener("push", (event) => {
+  const fallbackUrl = "./";
+  const fallbackTitle = "Treasurer SGCU68";
+  const fallbackBody = "มีการอัปเดตใหม่";
+  const fallbackIcon = "img/icons/icon-192.png";
+  const fallbackBadge = "img/icons/icon-192.png";
+
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (_) {
+    payload = { body: event.data ? event.data.text() : fallbackBody };
+  }
+
+  const title = (payload.title || fallbackTitle).toString();
+  const body = (payload.body || fallbackBody).toString();
+  const url = (payload.url || fallbackUrl).toString();
+  const icon = (payload.icon || fallbackIcon).toString();
+  const badge = (payload.badge || fallbackBadge).toString();
+  const data = {
+    ...(payload.data || {}),
+    url
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon,
+      badge,
+      data
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification?.data?.url || "./").toString();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          if (client.url === targetUrl) return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+      return undefined;
     })
   );
 });

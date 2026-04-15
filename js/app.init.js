@@ -240,22 +240,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   const navLinks = document.querySelectorAll("header nav a[data-page]");
   const pageViews = document.querySelectorAll(".page-view");
   let currentPage = null;
-  let pendingBorrowPage = null;
-  let pendingMeetingPage = null;
-  const borrowConsentKey = "borrowAssetsConsent-v1";
-  const meetingConsentKey = "meetingRoomConsent-v1";
-  const borrowConsentModal = document.getElementById("borrowConsentModal");
-  const borrowConsentConfirm = document.getElementById("borrowConsentConfirm");
-  const borrowConsentCancel = document.getElementById("borrowConsentCancel");
-  const borrowConsentClose = document.getElementById("borrowConsentClose");
-  const borrowConsentRules = document.getElementById("borrowConsentRules");
-  const borrowConsentPdpa = document.getElementById("borrowConsentPdpa");
-  const meetingConsentModal = document.getElementById("meetingConsentModal");
-  const meetingConsentConfirm = document.getElementById("meetingConsentConfirm");
-  const meetingConsentCancel = document.getElementById("meetingConsentCancel");
-  const meetingConsentClose = document.getElementById("meetingConsentClose");
-  const meetingConsentRules = document.getElementById("meetingConsentRules");
-  const meetingConsentPdpa = document.getElementById("meetingConsentPdpa");
+  let pendingConsentPage = null;
+  const globalConsentKey = "globalServiceConsent-v1";
+  const legacyConsentKeys = ["borrowAssetsConsent-v1", "meetingRoomConsent-v1"];
+  const consentRequiredPages = new Set(["borrow-assets", "meeting-room-booking"]);
+  const globalConsentModal = document.getElementById("globalConsentModal");
+  const globalConsentConfirm = document.getElementById("globalConsentConfirm");
+  const globalConsentCancel = document.getElementById("globalConsentCancel");
+  const globalConsentClose = document.getElementById("globalConsentClose");
+  const globalConsentRules = document.getElementById("globalConsentRules");
+  const globalConsentPdpa = document.getElementById("globalConsentPdpa");
+  const loginViewConsentBtn = document.getElementById("loginViewConsentBtn");
   const featureLoaderConfig = window.sgcuFeatureLoaderConfig || {};
   const pageFeatureScriptMap = featureLoaderConfig.pageScripts || {};
   const idlePrefetchPages = Array.isArray(featureLoaderConfig.idlePrefetchPages)
@@ -306,125 +301,92 @@ document.addEventListener("DOMContentLoaded", async () => {
     }, 2500);
   };
 
-  const hasBorrowConsent = () =>
-    window.sessionStorage && sessionStorage.getItem(borrowConsentKey) === "accepted";
-  const hasMeetingConsent = () =>
-    window.sessionStorage && sessionStorage.getItem(meetingConsentKey) === "accepted";
+  const hasGlobalConsent = () =>
+    window.sessionStorage && sessionStorage.getItem(globalConsentKey) === "accepted";
 
-  const updateBorrowConsentState = () => {
-    if (!borrowConsentConfirm || !borrowConsentRules || !borrowConsentPdpa) return;
-    borrowConsentConfirm.disabled = !(borrowConsentRules.checked && borrowConsentPdpa.checked);
-  };
-  const updateMeetingConsentState = () => {
-    if (!meetingConsentConfirm || !meetingConsentRules || !meetingConsentPdpa) return;
-    meetingConsentConfirm.disabled = !(meetingConsentRules.checked && meetingConsentPdpa.checked);
+  const writeGlobalConsentAccepted = () => {
+    if (!window.sessionStorage) return;
+    sessionStorage.setItem(globalConsentKey, "accepted");
+    legacyConsentKeys.forEach((key) => sessionStorage.setItem(key, "accepted"));
   };
 
-  const showBorrowConsentModal = () => {
-    if (!borrowConsentModal) return;
-    if (borrowConsentRules) borrowConsentRules.checked = false;
-    if (borrowConsentPdpa) borrowConsentPdpa.checked = false;
-    updateBorrowConsentState();
-    borrowConsentModal.classList.add("show");
-    borrowConsentModal.setAttribute("aria-hidden", "false");
+  const updateGlobalConsentState = () => {
+    if (!globalConsentConfirm || !globalConsentRules || !globalConsentPdpa) return;
+    globalConsentConfirm.disabled = !(globalConsentRules.checked && globalConsentPdpa.checked);
+  };
+
+  const showGlobalConsentModal = () => {
+    if (!globalConsentModal) return;
+    if (globalConsentRules) globalConsentRules.checked = false;
+    if (globalConsentPdpa) globalConsentPdpa.checked = false;
+    updateGlobalConsentState();
+    globalConsentModal.classList.add("show");
+    globalConsentModal.setAttribute("aria-hidden", "false");
     document.body.classList.add("has-modal");
   };
 
-  const hideBorrowConsentModal = () => {
-    if (!borrowConsentModal) return;
-    borrowConsentModal.classList.remove("show");
-    borrowConsentModal.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("has-modal");
-  };
-  const showMeetingConsentModal = () => {
-    if (!meetingConsentModal) return;
-    if (meetingConsentRules) meetingConsentRules.checked = false;
-    if (meetingConsentPdpa) meetingConsentPdpa.checked = false;
-    updateMeetingConsentState();
-    meetingConsentModal.classList.add("show");
-    meetingConsentModal.setAttribute("aria-hidden", "false");
-    document.body.classList.add("has-modal");
-  };
-  const hideMeetingConsentModal = () => {
-    if (!meetingConsentModal) return;
-    meetingConsentModal.classList.remove("show");
-    meetingConsentModal.setAttribute("aria-hidden", "true");
+  const hideGlobalConsentModal = () => {
+    if (!globalConsentModal) return;
+    globalConsentModal.classList.remove("show");
+    globalConsentModal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("has-modal");
   };
 
-  if (borrowConsentRules) {
-    borrowConsentRules.addEventListener("change", updateBorrowConsentState);
+  if (globalConsentRules) {
+    globalConsentRules.addEventListener("change", updateGlobalConsentState);
   }
-  if (borrowConsentPdpa) {
-    borrowConsentPdpa.addEventListener("change", updateBorrowConsentState);
+  if (globalConsentPdpa) {
+    globalConsentPdpa.addEventListener("change", updateGlobalConsentState);
   }
-  if (borrowConsentConfirm) {
-    borrowConsentConfirm.addEventListener("click", () => {
-      if (window.sessionStorage) {
-        sessionStorage.setItem(borrowConsentKey, "accepted");
-      }
-      hideBorrowConsentModal();
-      if (pendingBorrowPage) {
-        const target = pendingBorrowPage;
-        pendingBorrowPage = null;
+  if (globalConsentConfirm) {
+    globalConsentConfirm.addEventListener("click", () => {
+      writeGlobalConsentAccepted();
+      hideGlobalConsentModal();
+      if (pendingConsentPage) {
+        const target = pendingConsentPage;
+        pendingConsentPage = null;
         void switchPage(target, { fromHash: true, bypassConsent: true });
       }
     });
   }
-  if (meetingConsentRules) {
-    meetingConsentRules.addEventListener("change", updateMeetingConsentState);
-  }
-  if (meetingConsentPdpa) {
-    meetingConsentPdpa.addEventListener("change", updateMeetingConsentState);
-  }
-  if (meetingConsentConfirm) {
-    meetingConsentConfirm.addEventListener("click", () => {
-      if (window.sessionStorage) {
-        sessionStorage.setItem(meetingConsentKey, "accepted");
-      }
-      hideMeetingConsentModal();
-      if (pendingMeetingPage) {
-        const target = pendingMeetingPage;
-        pendingMeetingPage = null;
-        void switchPage(target, { fromHash: true, bypassConsent: true });
-      }
-    });
-  }
-  if (meetingConsentCancel) {
-    meetingConsentCancel.addEventListener("click", () => {
-      hideMeetingConsentModal();
-      pendingMeetingPage = null;
+  if (globalConsentCancel) {
+    globalConsentCancel.addEventListener("click", () => {
+      hideGlobalConsentModal();
+      pendingConsentPage = null;
       if (!currentPage) {
         void switchPage("home", { fromHash: true, bypassConsent: true });
       }
     });
   }
-  if (meetingConsentClose) {
-    meetingConsentClose.addEventListener("click", () => {
-      hideMeetingConsentModal();
-      pendingMeetingPage = null;
+  if (globalConsentClose) {
+    globalConsentClose.addEventListener("click", () => {
+      hideGlobalConsentModal();
+      pendingConsentPage = null;
       if (!currentPage) {
         void switchPage("home", { fromHash: true, bypassConsent: true });
       }
     });
   }
-  if (borrowConsentCancel) {
-    borrowConsentCancel.addEventListener("click", () => {
-      hideBorrowConsentModal();
-      pendingBorrowPage = null;
-      if (!currentPage) {
-        void switchPage("home", { fromHash: true, bypassConsent: true });
-      }
+  if (loginViewConsentBtn) {
+    loginViewConsentBtn.addEventListener("click", () => {
+      pendingConsentPage = null;
+      showGlobalConsentModal();
     });
   }
-  if (borrowConsentClose) {
-    borrowConsentClose.addEventListener("click", () => {
-      hideBorrowConsentModal();
-      pendingBorrowPage = null;
-      if (!currentPage) {
-        void switchPage("home", { fromHash: true, bypassConsent: true });
-      }
-    });
+
+  window.addEventListener("sgcu:auth-state", (event) => {
+    const isAuthenticated = Boolean(event?.detail?.isAuthenticated);
+    if (!isAuthenticated) {
+      pendingConsentPage = null;
+      hideGlobalConsentModal();
+      return;
+    }
+    if (!hasGlobalConsent()) {
+      showGlobalConsentModal();
+    }
+  });
+  if (window.sgcuAuth?.auth?.currentUser && !hasGlobalConsent()) {
+    showGlobalConsentModal();
   }
 
   async function switchPage(page, { fromHash = false, bypassConsent = false } = {}) {
@@ -466,25 +428,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (!bypassConsent && targetPage === "borrow-assets" && !hasBorrowConsent()) {
-      pendingBorrowPage = targetPage;
-      showBorrowConsentModal();
-      if (currentPage) {
-        if (fromHash) {
-          if (history.replaceState) {
-            history.replaceState(null, "", "#" + currentPage);
-          } else {
-            window.location.hash = "#" + currentPage;
-          }
-        }
-        return;
-      }
-      await switchPage("home", { fromHash: true, bypassConsent: true });
-      return;
-    }
-    if (!bypassConsent && targetPage === "meeting-room-booking" && !hasMeetingConsent()) {
-      pendingMeetingPage = targetPage;
-      showMeetingConsentModal();
+    if (!bypassConsent && consentRequiredPages.has(targetPage) && !hasGlobalConsent()) {
+      pendingConsentPage = targetPage;
+      showGlobalConsentModal();
       if (currentPage) {
         if (fromHash) {
           if (history.replaceState) {

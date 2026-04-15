@@ -234,6 +234,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 12px;
 }
 
+.login-intro-card {
+  gap: 10px;
+}
+
+.login-profile-card {
+  gap: 14px;
+  border-color: rgba(236, 72, 153, 0.35);
+  box-shadow: 0 22px 46px rgba(15, 23, 42, 0.15);
+}
+
 .login-title {
   margin: 0;
   font-size: 18px;
@@ -363,6 +373,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   width: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.meeting-notification-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.meeting-notification-status {
+  margin-top: 8px;
+  font-size: 12px;
 }
 
 .meeting-room-stats {
@@ -1141,6 +1164,95 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   min-height: 20px;
 }
 
+.login-greeting {
+  margin-top: 0;
+  min-height: 0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.login-profile-form {
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-profile-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-profile-form .borrow-form-row {
+  column-gap: 18px;
+  row-gap: 14px;
+}
+
+.login-profile-form .borrow-form-field {
+  gap: 7px;
+}
+
+.login-profile-type-row .borrow-form-field {
+  gap: 8px;
+}
+
+.login-profile-actions {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-profile-status {
+  margin: 0;
+  min-height: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  background: rgba(240, 253, 250, 0.9);
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.login-profile-status:empty {
+  display: none;
+}
+
+.login-reload-btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 12px;
+}
+
+.login-logout-btn {
+  border: 1px solid rgba(15, 23, 42, 0.2);
+  background: transparent;
+  color: #64748b;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-logout-btn:hover {
+  border-color: rgba(15, 23, 42, 0.35);
+  color: #334155;
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.login-logout-btn:focus-visible {
+  outline: 2px solid rgba(236, 72, 153, 0.45);
+  outline-offset: 2px;
+}
+
 .btn-primary.w-full, .btn-secondary.w-full {
   width: 100%;
   text-align: center;
@@ -1302,6 +1414,30 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin: 0;
   font-size: 13px;
   color: #475569;
+}
+
+.login-consent-link {
+  margin-top: 8px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.login-consent-link:hover {
+  color: #334155;
+}
+
+.login-consent-link:focus-visible {
+  outline: 2px solid rgba(236, 72, 153, 0.45);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 @media (max-width: 900px) {

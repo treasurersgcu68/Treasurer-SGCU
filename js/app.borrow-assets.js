@@ -1752,9 +1752,9 @@ function initBorrowAssetsApp() {
             <div class="borrow-request-summary-value">${safeEscape(updatedDateText)}</div>
           </div>
         </div>
-          <div class="borrow-request-detail-grid">
-            <div class="borrow-request-detail-item borrow-request-detail-item-full"><span class="borrow-request-detail-label">หมายเหตุ Staff</span><span class="borrow-request-detail-value">${safeEscape(item.staffNote || "ยังไม่มีหมายเหตุ")}</span></div>
-          </div>
+
+        <div class="borrow-request-detail-grid">
+          <div class="borrow-request-detail-item borrow-request-detail-item-full"><span class="borrow-request-detail-label">หมายเหตุ Staff</span><span class="borrow-request-detail-value">${safeEscape(item.staffNote || "ยังไม่มีหมายเหตุ")}</span></div>
         </div>
 
         <div class="borrow-request-detail-section">

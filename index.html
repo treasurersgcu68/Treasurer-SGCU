@@ -1682,7 +1682,13 @@
                       <div class="borrow-detail-section-title">2) รายการพัสดุที่ต้องการยืม</div>
                       <div class="borrow-detail-section-caption">กรอกรหัสพัสดุหรือชื่อพัสดุ พร้อมจำนวนที่ต้องการ</div>
                     </div>
-                    <div id="borrowAssetList" class="borrow-asset-list">
+                    <div class="borrow-asset-quick-head" aria-hidden="true">
+                      <span>รหัสพัสดุ</span>
+                      <span>ชื่อพัสดุ</span>
+                      <span>จำนวน</span>
+                      <span>จัดการ</span>
+                    </div>
+                    <div id="borrowAssetList" class="borrow-asset-list is-quick-horizontal">
                       <div class="borrow-asset-row" data-asset-row>
                         <div class="borrow-form-row is-3">
                           <div class="borrow-form-field">
@@ -1729,7 +1735,7 @@
                       </div>
                     </div>
                     <div class="borrow-asset-actions">
-                      <div class="borrow-asset-actions-hint">เพิ่มได้หลายรายการในคำขอเดียว</div>
+                      <div class="borrow-asset-actions-hint"></div>
                       <button id="addBorrowAssetRow" class="btn-ghost borrow-asset-add" type="button">+ เพิ่มรายการพัสดุ</button>
                     </div>
                   </section>
@@ -3201,7 +3207,6 @@
 
                 <div class="panel panel-hover login-card login-profile-card">
                   <h3 class="login-title">ข้อมูลบัญชีผู้ใช้</h3>
-                  <p class="login-caption">ข้อมูลที่บันทึกที่นี่จะถูกใช้ร่วมในระบบยืมพัสดุ จองห้องประชุม และคำของบประมาณ</p>
                   <div id="loginProfileForm" class="login-profile-form">
                     <section class="login-profile-block">
                       <div class="borrow-form-row login-profile-type-row">

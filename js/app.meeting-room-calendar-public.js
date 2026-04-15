@@ -64,7 +64,6 @@
   let holidayLookup = new Map();
   let activeDayDate = "";
   let calendarCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  let hasAutoFocusedMonth = false;
 
   const resolveFirestoreBridge = () => {
     firestore = window.sgcuFirestore || {};
@@ -474,23 +473,6 @@
             status: normalizedStatus
           };
         });
-        if (!hasAutoFocusedMonth) {
-          const visibleBookings = sortBookings(bookings.filter((item) => item.status !== "rejected"));
-          const latestVisible = visibleBookings.slice(-1)[0];
-          if (latestVisible?.date) {
-            const parsed = new Date(`${latestVisible.date}T00:00:00`);
-            if (!Number.isNaN(parsed.getTime())) {
-              const currentMonth = getCalendarMonthState(calendarCursor);
-              const latestMonth = getCalendarMonthState(parsed);
-              const isSameMonth =
-                currentMonth.year === latestMonth.year && currentMonth.month === latestMonth.month;
-              if (!isSameMonth) {
-                calendarCursor = latestMonth.firstDay;
-              }
-            }
-          }
-          hasAutoFocusedMonth = true;
-        }
         renderCalendar();
         if (activeDayDate) setDayModalBody(activeDayDate);
       },

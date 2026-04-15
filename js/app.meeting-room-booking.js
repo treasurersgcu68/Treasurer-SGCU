@@ -558,74 +558,135 @@ function initMeetingRoomBookingApp() {
     if (typeof window === "undefined" || typeof Notification === "undefined") return;
     if (Notification.permission !== "granted") return;
     try {
+      const notificationIcon = "img/icons/icon-192.png";
       // eslint-disable-next-line no-new
-      new Notification(title, { body });
+      new Notification(title, { body, icon: notificationIcon, badge: notificationIcon });
     } catch (_) {
       // ignore browser notification errors
     }
   };
 
-  const syncApprovalNotifications = (list = []) => {
+  const showRuntimeToastNotice = (title, body, tone = "success") => {
+    if (typeof document === "undefined") return;
+    let host = document.getElementById("meetingRuntimeToastHost");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "meetingRuntimeToastHost";
+      host.style.position = "fixed";
+      host.style.top = "14px";
+      host.style.right = "14px";
+      host.style.zIndex = "9999";
+      host.style.display = "flex";
+      host.style.flexDirection = "column";
+      host.style.gap = "8px";
+      host.style.maxWidth = "min(92vw, 360px)";
+      host.style.pointerEvents = "none";
+      document.body.appendChild(host);
+    }
+    const toast = document.createElement("div");
+    const isError = tone === "error";
+    toast.style.borderRadius = "10px";
+    toast.style.border = isError ? "1px solid #fca5a5" : "1px solid #86efac";
+    toast.style.background = "#ffffff";
+    toast.style.boxShadow = "0 8px 20px rgba(15, 23, 42, 0.12)";
+    toast.style.padding = "10px 12px";
+    toast.style.pointerEvents = "auto";
+    toast.style.fontSize = "12px";
+    toast.style.lineHeight = "1.35";
+    toast.style.color = "#1f2937";
+    toast.innerHTML = `
+      <div style="font-weight:700; color:${isError ? "#b91c1c" : "#047857"};">${escapeText(title)}</div>
+      <div style="margin-top:3px;">${escapeText(body)}</div>
+    `;
+    host.appendChild(toast);
+    window.setTimeout(() => {
+      toast.remove();
+      if (host && !host.children.length) host.remove();
+    }, 5000);
+  };
+
+  const enqueueApprovalEvent = (booking) => {
+    const status = normalizeStatus(booking?.status);
+    if (status !== "approved" && status !== "rejected" && status !== "no_show") return;
+    const key = `${booking?.id || ""}:${status}`;
+    if (!booking?.id || pendingApprovalEventKeys.has(key)) return;
+    pendingApprovalEventKeys.add(key);
+    pendingApprovalEvents.push({
+      key,
+      id: booking.id,
+      status,
+      requesterEmail: (booking.requesterEmail || "").toString().trim().toLowerCase(),
+      room: normalizeRoomDisplay(booking.roomId, booking.roomName),
+      date: booking.date || "",
+      startTime: booking.startTime || "",
+      endTime: booking.endTime || "",
+      rejectionReason: (booking.rejectionReason || booking.cancelRequestReason || "").toString().trim()
+    });
+  };
+
+  const flushApprovalEventsForCurrentUser = () => {
     const email = (currentUserEmail || "").toString().trim().toLowerCase();
-    if (!email) {
-      hasApprovalSnapshotBaseline = false;
-      previousOwnBookingStatusById = new Map();
-      return;
-    }
+    if (!email || !pendingApprovalEvents.length) return;
+    const matched = pendingApprovalEvents.filter((event) => event.requesterEmail === email);
+    if (!matched.length) return;
 
-    const ownBookings = list.filter((item) => {
-      const requesterEmail = (item.requesterEmail || "").toString().trim().toLowerCase();
-      return requesterEmail && requesterEmail === email;
-    });
-    const nextStatusById = new Map(
-      ownBookings.map((item) => [item.id, normalizeStatus(item.status)])
-    );
+    const latest = matched[0];
+    const approvedCount = matched.filter((event) => event.status === "approved").length;
+    const rejectedCount = matched.filter((event) => event.status === "rejected" || event.status === "no_show").length;
+    const schedule = `${formatDate(latest.date)} ${latest.startTime || "-"}-${latest.endTime || "-"}`;
 
-    if (!hasApprovalSnapshotBaseline) {
-      previousOwnBookingStatusById = nextStatusById;
-      hasApprovalSnapshotBaseline = true;
-      return;
-    }
-
-    const newlyApproved = ownBookings.filter((item) => {
-      const nextStatus = normalizeStatus(item.status);
-      const prevStatus = previousOwnBookingStatusById.get(item.id) || "";
-      return nextStatus === "approved" && prevStatus !== "approved";
-    });
-    const newlyRejected = ownBookings.filter((item) => {
-      const nextStatus = normalizeStatus(item.status);
-      const prevStatus = previousOwnBookingStatusById.get(item.id) || "";
-      return (nextStatus === "rejected" || nextStatus === "no_show") && prevStatus !== nextStatus;
-    });
-
-    if (newlyApproved.length) {
-      const latest = newlyApproved[0];
-      const room = normalizeRoomDisplay(latest.roomId, latest.roomName);
-      const schedule = `${formatDate(latest.date)} ${latest.startTime || "-"}-${latest.endTime || "-"}`;
+    if (approvedCount) {
+      const title = `คำขอห้องประชุมได้รับอนุมัติ (${approvedCount})`;
+      const body = `${latest.room} • ${schedule}`;
       maybeSendBrowserNotification(
-        `คำขอห้องประชุมได้รับอนุมัติ (${newlyApproved.length})`,
-        `${room} • ${schedule}`
+        title,
+        body
       );
-      setMessage(`มีคำขอได้รับอนุมัติ ${newlyApproved.length} รายการ`, "#047857");
+      showRuntimeToastNotice(title, body, "success");
+      setMessage(`มีคำขอได้รับอนุมัติ ${approvedCount} รายการ`, "#047857");
     }
-    if (newlyRejected.length) {
-      const latest = newlyRejected[0];
-      const latestStatus = normalizeStatus(latest.status);
-      const room = normalizeRoomDisplay(latest.roomId, latest.roomName);
-      const schedule = `${formatDate(latest.date)} ${latest.startTime || "-"}-${latest.endTime || "-"}`;
-      const reasonText = (latest.rejectionReason || latest.cancelRequestReason || "").toString().trim();
-      const statusLabel = latestStatus === "no_show" ? "ถูกบันทึกเป็น No-show" : "ถูกไม่อนุมัติ/ยกเลิก";
+    if (rejectedCount) {
+      const isNoShow = latest.status === "no_show";
+      const statusLabel = isNoShow ? "ถูกบันทึกเป็น No-show" : "ถูกไม่อนุมัติ/ยกเลิก";
+      const reasonText = latest.rejectionReason;
+      const title = `คำขอห้องประชุม${statusLabel} (${rejectedCount})`;
+      const body = `${latest.room} • ${schedule}${reasonText ? ` • เหตุผล: ${reasonText}` : ""}`;
       maybeSendBrowserNotification(
-        `คำขอห้องประชุม${statusLabel} (${newlyRejected.length})`,
-        `${room} • ${schedule}${reasonText ? ` • เหตุผล: ${reasonText}` : ""}`
+        title,
+        body
       );
+      showRuntimeToastNotice(title, body, "error");
       setMessage(
-        `มีคำขอ${statusLabel} ${newlyRejected.length} รายการ${reasonText ? ` (เหตุผล: ${reasonText})` : ""}`,
+        `มีคำขอ${statusLabel} ${rejectedCount} รายการ${reasonText ? ` (เหตุผล: ${reasonText})` : ""}`,
         "#b91c1c"
       );
     }
 
-    previousOwnBookingStatusById = nextStatusById;
+    const matchedKeys = new Set(matched.map((event) => event.key));
+    pendingApprovalEvents = pendingApprovalEvents.filter((event) => !matchedKeys.has(event.key));
+    matchedKeys.forEach((key) => pendingApprovalEventKeys.delete(key));
+  };
+
+  const syncApprovalNotifications = (list = []) => {
+    const nextStatusById = new Map(
+      list.map((item) => [item.id, normalizeStatus(item.status)])
+    );
+    if (!hasApprovalStatusBaseline) {
+      previousBookingStatusById = nextStatusById;
+      hasApprovalStatusBaseline = true;
+      flushApprovalEventsForCurrentUser();
+      return;
+    }
+
+    list.forEach((item) => {
+      const nextStatus = normalizeStatus(item.status);
+      const prevStatus = previousBookingStatusById.get(item.id) || "";
+      if (nextStatus !== prevStatus && (nextStatus === "approved" || nextStatus === "rejected" || nextStatus === "no_show")) {
+        enqueueApprovalEvent(item);
+      }
+    });
+    previousBookingStatusById = nextStatusById;
+    flushApprovalEventsForCurrentUser();
   };
 
 
@@ -940,8 +1001,10 @@ function initMeetingRoomBookingApp() {
   let autoRetryAttempt = 0;
   let activeMeetingProfile = null;
   let reminderIntervalId = null;
-  let hasApprovalSnapshotBaseline = false;
-  let previousOwnBookingStatusById = new Map();
+  let hasApprovalStatusBaseline = false;
+  let previousBookingStatusById = new Map();
+  let pendingApprovalEvents = [];
+  const pendingApprovalEventKeys = new Set();
 
   const mapSnapshotDoc = (docItem) => {
     const data = docItem.data() || {};
@@ -2722,9 +2785,8 @@ function initMeetingRoomBookingApp() {
   if (window.sgcuAuth?.auth && typeof window.sgcuAuth.onAuthStateChanged === "function") {
     window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {
       currentUserEmail = readCurrentUserEmail();
-      hasApprovalSnapshotBaseline = false;
-      previousOwnBookingStatusById = new Map();
       if (!currentUserEmail) setReminderBanner("");
+      flushApprovalEventsForCurrentUser();
       restoreMeetingProfileForCurrentUser();
       void readMeetingProfileFromFirestore().then((profile) => {
         if (profile) applySharedProfileToMeetingForm(profile);
@@ -2740,9 +2802,8 @@ function initMeetingRoomBookingApp() {
 
   setupRoomOptions();
   currentUserEmail = readCurrentUserEmail();
-  hasApprovalSnapshotBaseline = false;
-  previousOwnBookingStatusById = new Map();
   if (!currentUserEmail) setReminderBanner("");
+  flushApprovalEventsForCurrentUser();
   restoreMeetingProfileForCurrentUser();
   void readMeetingProfileFromFirestore().then((profile) => {
     if (profile) applySharedProfileToMeetingForm(profile);

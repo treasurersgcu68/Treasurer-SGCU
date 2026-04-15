@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Treasurer SGCU68" />
     <title>Treasurer SGCU68 | ระบบติดตามโครงการและงบประมาณ</title>
     <meta name="description" content="ระบบติดตามโครงการและงบประมาณของเหรัญญิก SGCU68 เพื่อดูสถานะโครงการ การใช้จ่าย และข้อมูลการบริหารงบอย่างโปร่งใส">
     <meta name="keywords" content="เหรัญญิก SGCU68, เหรัญญิก อบจ68, เหรัญญิก อบจ, SGCU, อบจ, งบประมาณ SGCU, Project Status SGCU, Treasurer SGCU, SGCU68">
@@ -25,6 +29,7 @@
     <meta name="twitter:image:alt" content="Treasurer SGCU68 - ระบบติดตามโครงการและงบประมาณ">
     <link rel="icon" type="image/png" href="img/logo_treasurur jpg1.png">
     <link rel="apple-touch-icon" href="img/logo_treasurur jpg1.png">
+    <link rel="manifest" href="manifest.webmanifest" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -3311,8 +3316,15 @@
     <script src="js/app.downloads.js" defer></script>
     <script src="js/app.scoreboard.js" defer></script>
     <script src="js/app.motion.js" defer></script>
-    <script src="js/app.feature-loader.js?v=20260415-13" defer></script>
+    <script src="js/app.feature-loader.js?v=20260415-15" defer></script>
     <script src="js/app.init.js" defer></script>
     <script src="js/app.calendar.js" defer></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

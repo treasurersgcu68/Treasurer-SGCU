@@ -467,6 +467,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   flex-direction: column;
 }
 
+.meeting-notification-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.meeting-notification-status {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
 .meeting-room-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(130px, 1fr));

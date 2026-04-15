@@ -12,6 +12,9 @@ function initMeetingRoomStaffApproval() {
   const panelCaptionEl = document.getElementById("meetingRoomStaffPanelCaption");
   const staffActionMessageEl = document.getElementById("meetingRoomStaffActionMessage");
   const staffRequestReminderEl = document.getElementById("meetingStaffRequestReminder");
+  const notificationEnableBtn = document.getElementById("meetingStaffNotificationEnableBtn");
+  const pushSubscribeBtn = document.getElementById("meetingStaffPushSubscribeBtn");
+  const notificationStatusEl = document.getElementById("meetingStaffNotificationStatus");
   const historySearchWrapEl = document.getElementById("meetingRoomHistorySearchWrap");
   const historyDateInputEl = document.getElementById("meetingRoomHistoryDateInput");
   const historyRoomSelectEl = document.getElementById("meetingRoomHistoryRoomSelect");
@@ -872,6 +875,115 @@ function initMeetingRoomStaffApproval() {
 
   const readCurrentUserEmail = () =>
     (window.sgcuAuth?.auth?.currentUser?.email || "").toString().trim().toLowerCase();
+
+  const setNotificationStatus = (text = "", color = "#6b7280") => {
+    if (!notificationStatusEl) return;
+    notificationStatusEl.textContent = text || "";
+    notificationStatusEl.style.color = color;
+  };
+
+  const refreshNotificationControls = async () => {
+    if (!notificationEnableBtn && !pushSubscribeBtn && !notificationStatusEl) return;
+    const webPush = window.sgcuWebPush;
+    if (!webPush || typeof webPush.getClientState !== "function") {
+      if (notificationEnableBtn) notificationEnableBtn.disabled = true;
+      if (pushSubscribeBtn) {
+        pushSubscribeBtn.disabled = true;
+        pushSubscribeBtn.hidden = true;
+      }
+      setNotificationStatus("อุปกรณ์นี้ไม่รองรับการแจ้งเตือนผ่านเว็บ", "#b91c1c");
+      return;
+    }
+    const state = await webPush.getClientState();
+    const permissionText = state.permission === "granted"
+      ? "อนุญาตแล้ว"
+      : state.permission === "denied"
+        ? "ถูกบล็อก"
+        : "ยังไม่อนุญาต";
+    const pushText = state.pushSupported
+      ? state.subscribed ? "Push: เชื่อมต่อแล้ว" : "Push: ยังไม่เชื่อมต่อ"
+      : "Push: ไม่รองรับ";
+    const iosHint = state.isIOS && !state.standalone
+      ? " • iPhone ต้องเปิดจากแอปที่ติดตั้งบน Home Screen"
+      : "";
+    setNotificationStatus(`การแจ้งเตือน: ${permissionText} • ${pushText}${iosHint}`, state.permission === "denied" ? "#b91c1c" : "#6b7280");
+
+    if (notificationEnableBtn) {
+      notificationEnableBtn.disabled = !state.supported || state.permission === "granted";
+      notificationEnableBtn.textContent = state.permission === "granted"
+        ? "อนุญาตแจ้งเตือนแล้ว"
+        : "เปิดสิทธิ์แจ้งเตือน";
+    }
+    if (pushSubscribeBtn) {
+      pushSubscribeBtn.hidden = !state.pushSupported || state.permission !== "granted";
+      pushSubscribeBtn.disabled = !state.pushSupported || state.permission !== "granted";
+      pushSubscribeBtn.textContent = state.subscribed ? "ยกเลิก Push" : "เชื่อมต่อ Push";
+    }
+  };
+
+  const initNotificationControls = () => {
+    const webPush = window.sgcuWebPush;
+    if (!webPush) {
+      setNotificationStatus("กำลังโหลดระบบแจ้งเตือน...", "#6b7280");
+      return;
+    }
+
+    if (notificationEnableBtn) {
+      notificationEnableBtn.addEventListener("click", () => {
+        notificationEnableBtn.disabled = true;
+        setNotificationStatus("กำลังขอสิทธิ์แจ้งเตือน...", "#6b7280");
+        void webPush.requestPermission()
+          .then((permission) => {
+            if (permission === "granted") {
+              setNotificationStatus("เปิดสิทธิ์แจ้งเตือนแล้ว", "#047857");
+            } else if (permission === "denied") {
+              setNotificationStatus("ถูกบล็อกแจ้งเตือนจากเบราว์เซอร์", "#b91c1c");
+            } else {
+              setNotificationStatus("ยังไม่ได้อนุญาตแจ้งเตือน", "#92400e");
+            }
+          })
+          .catch(() => {
+            setNotificationStatus("เกิดปัญหาในการขอสิทธิ์แจ้งเตือน", "#b91c1c");
+          })
+          .finally(() => {
+            void refreshNotificationControls();
+          });
+      });
+    }
+
+    if (pushSubscribeBtn) {
+      pushSubscribeBtn.addEventListener("click", async () => {
+        const nextEmail = readCurrentUserEmail();
+        pushSubscribeBtn.disabled = true;
+        try {
+          const state = await webPush.getClientState();
+          if (state.subscribed) {
+            await webPush.unsubscribePush({ page: "meeting-room-staff", email: nextEmail });
+            setNotificationStatus("ยกเลิกการเชื่อมต่อ Push แล้ว", "#92400e");
+          } else {
+            await webPush.subscribePush({ page: "meeting-room-staff", email: nextEmail });
+            setNotificationStatus("เชื่อมต่อ Push แล้ว", "#047857");
+          }
+        } catch (error) {
+          const code = (error?.message || "").toString().trim();
+          if (code === "missing-vapid-public-key") {
+            setNotificationStatus("ยังไม่ได้ตั้งค่า VAPID public key สำหรับ Web Push", "#b91c1c");
+          } else if (code === "notification-permission-not-granted") {
+            setNotificationStatus("กรุณาอนุญาตแจ้งเตือนก่อนเชื่อมต่อ Push", "#b91c1c");
+          } else {
+            setNotificationStatus("เชื่อมต่อ Push ไม่สำเร็จ", "#b91c1c");
+          }
+        } finally {
+          void refreshNotificationControls();
+        }
+      });
+    }
+
+    window.addEventListener("sgcu:webpush-state-changed", () => {
+      void refreshNotificationControls();
+    });
+    void refreshNotificationControls();
+  };
 
   const retryStaffSubscriptions = () => {
     resolveFirestoreBridge();
@@ -2182,11 +2294,13 @@ function initMeetingRoomStaffApproval() {
   }
 
   window.__meetingRoomStaffInitDone = true;
+  initNotificationControls();
   subscribeRooms();
   subscribeHolidays();
   subscribeBookings();
   if (window.sgcuAuth?.auth && typeof window.sgcuAuth.onAuthStateChanged === "function") {
     window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {
+      void refreshNotificationControls();
       hasBookingSnapshotBaseline = false;
       previousQueueStatusById = new Map();
       setStaffRequestReminder("");

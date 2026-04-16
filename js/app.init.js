@@ -242,8 +242,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentPage = null;
   let pendingConsentPage = null;
   let consentAuthIdentity = { uid: "", email: "" };
-  const globalConsentKeyPrefix = "globalServiceConsent-v2";
-  const globalConsentPersistentKeyPrefix = "globalServiceConsent-persistent-v2";
+  const globalConsentVersion = "v3";
+  const globalConsentKeyPrefix = `globalServiceConsent-${globalConsentVersion}`;
+  const globalConsentPersistentKeyPrefix = `globalServiceConsent-persistent-${globalConsentVersion}`;
   const consentRequiredPages = new Set(["borrow-assets", "meeting-room-booking"]);
   const globalConsentModal = document.getElementById("globalConsentModal");
   const globalConsentConfirm = document.getElementById("globalConsentConfirm");
@@ -252,6 +253,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const globalConsentRules = document.getElementById("globalConsentRules");
   const globalConsentPdpa = document.getElementById("globalConsentPdpa");
   const loginViewConsentBtn = document.getElementById("loginViewConsentBtn");
+  const consentSections = globalConsentModal
+    ? Array.from(globalConsentModal.querySelectorAll(".modal-section"))
+    : [];
+  let consentAccordionReady = false;
+  const consentStore = window.sgcuFirestore || {};
+  const remoteConsentCollection = "userProfiles";
+  let remoteConsentSyncPromise = null;
+  let remoteConsentSyncedUid = "";
   const featureLoaderConfig = window.sgcuFeatureLoaderConfig || {};
   const pageFeatureScriptMap = featureLoaderConfig.pageScripts || {};
   const idlePrefetchPages = Array.isArray(featureLoaderConfig.idlePrefetchPages)
@@ -359,13 +368,148 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  const canUseRemoteConsentStore = () => {
+    return !!(
+      consentStore.db &&
+      consentStore.doc &&
+      consentStore.getDoc &&
+      consentStore.setDoc &&
+      consentStore.serverTimestamp
+    );
+  };
+
+  const getConsentUid = () => {
+    const currentUid = (window.sgcuAuth?.auth?.currentUser?.uid || "").toString().trim();
+    if (currentUid) return currentUid;
+    return (consentAuthIdentity?.uid || "").toString().trim();
+  };
+
+  const buildRemoteConsentRef = () => {
+    if (!canUseRemoteConsentStore()) return null;
+    const uid = getConsentUid();
+    if (!uid) return null;
+    return consentStore.doc(consentStore.db, remoteConsentCollection, uid);
+  };
+
+  const syncRemoteConsentToLocal = async () => {
+    const uid = getConsentUid();
+    if (!uid || !canUseRemoteConsentStore()) return false;
+    if (remoteConsentSyncedUid === uid && remoteConsentSyncPromise) {
+      return remoteConsentSyncPromise;
+    }
+
+    remoteConsentSyncedUid = uid;
+    remoteConsentSyncPromise = (async () => {
+      try {
+        const ref = buildRemoteConsentRef();
+        if (!ref) return false;
+        const snap = await consentStore.getDoc(ref);
+        if (!snap?.exists()) return false;
+        const data = snap.data() || {};
+        const accepted = data.globalServiceConsentAccepted === true;
+        const version = (data.globalServiceConsentVersion || "").toString().trim();
+        if (accepted && version === globalConsentVersion) {
+          writeGlobalConsentAccepted();
+          return true;
+        }
+        return false;
+      } catch (_) {
+        return false;
+      }
+    })();
+
+    return remoteConsentSyncPromise;
+  };
+
+  const writeRemoteConsentAccepted = async () => {
+    const ref = buildRemoteConsentRef();
+    if (!ref) return;
+    try {
+      await consentStore.setDoc(
+        ref,
+        {
+          globalServiceConsentAccepted: true,
+          globalServiceConsentVersion: globalConsentVersion,
+          globalServiceConsentAcceptedAt: consentStore.serverTimestamp(),
+          globalServiceConsentUpdatedAt: consentStore.serverTimestamp()
+        },
+        { merge: true }
+      );
+    } catch (_) {
+      // ignore remote consent write failures and keep local acceptance
+    }
+  };
+
+  const ensureGlobalConsentAccepted = async () => {
+    if (hasGlobalConsent()) return true;
+    await syncRemoteConsentToLocal();
+    return hasGlobalConsent();
+  };
+
   const updateGlobalConsentState = () => {
     if (!globalConsentConfirm || !globalConsentRules || !globalConsentPdpa) return;
     globalConsentConfirm.disabled = !(globalConsentRules.checked && globalConsentPdpa.checked);
   };
 
+  const setConsentSectionCollapsed = (section, collapsed) => {
+    if (!section) return;
+    const header = section.querySelector(".modal-section-header");
+    const contentNodes = Array.from(section.children).filter(
+      (node) => !node.classList.contains("modal-section-header")
+    );
+    section.classList.toggle("is-collapsed", collapsed);
+    contentNodes.forEach((node) => {
+      node.hidden = collapsed;
+    });
+    if (header) {
+      header.setAttribute("aria-expanded", String(!collapsed));
+    }
+  };
+
+  const resetConsentAccordion = () => {
+    consentSections.forEach((section, index) => {
+      setConsentSectionCollapsed(section, index !== 0);
+    });
+  };
+
+  const initializeConsentAccordion = () => {
+    if (consentAccordionReady || !consentSections.length) return;
+    consentSections.forEach((section) => {
+      const header = section.querySelector(".modal-section-header");
+      if (!header) return;
+      header.classList.add("consent-accordion-trigger");
+      header.setAttribute("role", "button");
+      header.setAttribute("tabindex", "0");
+      header.setAttribute("aria-expanded", "true");
+
+      const cue = document.createElement("span");
+      cue.className = "consent-accordion-cue";
+      cue.setAttribute("aria-hidden", "true");
+      cue.textContent = "⌄";
+      header.appendChild(cue);
+
+      const toggle = () => {
+        const shouldCollapse = !section.classList.contains("is-collapsed");
+        setConsentSectionCollapsed(section, shouldCollapse);
+      };
+
+      header.addEventListener("click", toggle);
+      header.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggle();
+        }
+      });
+    });
+
+    consentAccordionReady = true;
+    resetConsentAccordion();
+  };
+
   const showGlobalConsentModal = () => {
     if (!globalConsentModal) return;
+    initializeConsentAccordion();
+    resetConsentAccordion();
     if (globalConsentRules) globalConsentRules.checked = false;
     if (globalConsentPdpa) globalConsentPdpa.checked = false;
     updateGlobalConsentState();
@@ -390,6 +534,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (globalConsentConfirm) {
     globalConsentConfirm.addEventListener("click", () => {
       writeGlobalConsentAccepted();
+      void writeRemoteConsentAccepted();
       hideGlobalConsentModal();
       if (pendingConsentPage) {
         const target = pendingConsentPage;
@@ -423,24 +568,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  window.addEventListener("sgcu:auth-state", (event) => {
+  window.addEventListener("sgcu:auth-state", async (event) => {
     const isAuthenticated = Boolean(event?.detail?.isAuthenticated);
     const uid = (event?.detail?.uid || "").toString().trim();
     const email = (event?.detail?.email || "").toString().trim().toLowerCase();
+    if (uid && uid !== remoteConsentSyncedUid) {
+      remoteConsentSyncPromise = null;
+    }
     consentAuthIdentity = { uid, email };
     if (!isAuthenticated) {
+      remoteConsentSyncPromise = null;
+      remoteConsentSyncedUid = "";
       pendingConsentPage = null;
       hideGlobalConsentModal();
       return;
     }
-    if (!hasGlobalConsent()) {
+    const accepted = await ensureGlobalConsentAccepted();
+    if (!accepted) {
       showGlobalConsentModal();
       return;
     }
     hideGlobalConsentModal();
   });
-  if (window.sgcuAuth?.auth?.currentUser && !hasGlobalConsent()) {
-    showGlobalConsentModal();
+  if (window.sgcuAuth?.auth?.currentUser) {
+    const accepted = await ensureGlobalConsentAccepted();
+    if (!accepted) {
+      showGlobalConsentModal();
+    }
   }
 
   async function switchPage(page, { fromHash = false, bypassConsent = false } = {}) {
@@ -482,12 +636,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (
-      !bypassConsent &&
-      consentRequiredPages.has(targetPage) &&
-      isConsentCheckReady() &&
-      !hasGlobalConsent()
-    ) {
+    let consentAccepted = true;
+    if (!bypassConsent && consentRequiredPages.has(targetPage) && isConsentCheckReady()) {
+      consentAccepted = await ensureGlobalConsentAccepted();
+    }
+    if (!consentAccepted) {
       pendingConsentPage = targetPage;
       showGlobalConsentModal();
       if (currentPage) {

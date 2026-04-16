@@ -6712,12 +6712,41 @@ th.sortable.sort-desc::after {
   gap: 14px;
 }
 
+.consent-accordion-trigger {
+  cursor: pointer;
+}
+
+.consent-accordion-trigger:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+.consent-accordion-cue {
+  margin-left: auto;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.modal-section.is-collapsed .consent-accordion-cue {
+  transform: rotate(-90deg);
+}
+
 .consent-list {
   margin: 6px 0 0 18px;
   padding: 0;
   color: #374151;
   font-size: 12px;
   line-height: 1.6;
+}
+
+.consent-version {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .consent-checklist {

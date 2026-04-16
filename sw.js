@@ -93,12 +93,14 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = (event.notification?.data?.url || "./").toString();
+  const rawTargetUrl = (event.notification?.data?.url || "./").toString();
+  const targetUrl = new URL(rawTargetUrl, self.location.origin).href;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       for (const client of clients) {
         if ("focus" in client) {
-          if (client.url === targetUrl) return client.focus();
+          const clientUrl = new URL(client.url, self.location.origin).href;
+          if (clientUrl === targetUrl) return client.focus();
         }
       }
       if (self.clients.openWindow) {

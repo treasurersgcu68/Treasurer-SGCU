@@ -225,16 +225,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     staffModeToggleEl.style.display = "none";
   }
 
-  // ===== 2) โหลดดาวน์โหลดเอกสาร + ข่าว + คะแนนแบบ background =====
-  scheduleIdleTask(() => runBackgroundTask(loadDownloadDocuments, "downloads"));
-  scheduleIdleTask(() => runBackgroundTask(loadNewsFromSheet, "news"));
-  scheduleIdleTask(() => runBackgroundTask(initScoreboard, "scoreboard"));
-
-  
   // ===== 3) ตั้งปีใน footer =====
   if (footerYearEl) {
     footerYearEl.textContent = new Date().getFullYear();
   }
+  const resolveCurrentAcademicYearBE = () => {
+    if (typeof getCurrentAcademicYearBE === "function") {
+      return getCurrentAcademicYearBE();
+    }
+
+    const now = new Date();
+    const yearCE = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const academicYearCE = month >= 6 ? yearCE : yearCE - 1;
+    return String(academicYearCE + 543);
+  };
+  const aboutTeamLabel = (() => {
+    const academicYearBE = Number(resolveCurrentAcademicYearBE());
+    if (!Number.isFinite(academicYearBE)) return "SGCU68";
+    return `SGCU${String(academicYearBE).slice(-2)}`;
+  })();
+  [
+    "aboutTreasurerTeamLabel",
+    "aboutBudgetTeamLabel",
+    "aboutOrgStructureTitleLabel"
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = aboutTeamLabel;
+  });
 
   // ===== 4) ระบบสลับหน้าแบบ SPA =====
   const navLinks = document.querySelectorAll("header nav a[data-page]");
@@ -261,55 +279,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   const remoteConsentCollection = "userProfiles";
   let remoteConsentSyncPromise = null;
   let remoteConsentSyncedUid = "";
-  const featureLoaderConfig = window.sgcuFeatureLoaderConfig || {};
-  const pageFeatureScriptMap = featureLoaderConfig.pageScripts || {};
-  const idlePrefetchPages = Array.isArray(featureLoaderConfig.idlePrefetchPages)
-    ? featureLoaderConfig.idlePrefetchPages
-    : [];
-  const loadedFeatureScripts = new Map();
-
-  const loadFeatureScriptOnce = async (src) => {
-    const scriptSrc = (src || "").toString().trim();
-    if (!scriptSrc) return;
-    if (loadedFeatureScripts.has(scriptSrc)) {
-      await loadedFeatureScripts.get(scriptSrc);
-      return;
-    }
-    const promise = new Promise((resolve, reject) => {
-      const scriptEl = document.createElement("script");
-      scriptEl.src = scriptSrc;
-      scriptEl.defer = true;
-      scriptEl.async = false;
-      scriptEl.onload = () => resolve();
-      scriptEl.onerror = () => reject(new Error(`failed to load ${scriptSrc}`));
-      document.body.appendChild(scriptEl);
-    }).catch((error) => {
-      loadedFeatureScripts.delete(scriptSrc);
-      throw error;
-    });
-    loadedFeatureScripts.set(scriptSrc, promise);
-    await promise;
-  };
-
+  const featureLoader = window.sgcuFeatureLoader || null;
   const ensurePageFeatureLoaded = async (page) => {
-    const scriptSrc = pageFeatureScriptMap[page];
-    if (!scriptSrc) return;
-    await loadFeatureScriptOnce(scriptSrc);
+    if (!featureLoader || typeof featureLoader.ensurePageLoaded !== "function") return;
+    await featureLoader.ensurePageLoaded(page);
+  };
+  const prefetchFeatureScriptsInIdle = () => {
+    if (!featureLoader || typeof featureLoader.prefetchInIdle !== "function") return;
+    featureLoader.prefetchInIdle(currentPage || "");
+  };
+  const runFeatureTask = async (page, taskName) => {
+    await ensurePageFeatureLoaded(page);
+    const fn = window[taskName];
+    if (typeof fn === "function") {
+      await fn();
+    }
   };
 
-  const prefetchFeatureScriptsInIdle = () => {
-    if (!idlePrefetchPages.length) return;
-    scheduleIdleTask(() => {
-      const pages = idlePrefetchPages.filter((page) => page && page !== currentPage);
-      pages.forEach((page) => {
-        const scriptSrc = pageFeatureScriptMap[page];
-        if (!scriptSrc) return;
-        void loadFeatureScriptOnce(scriptSrc).catch(() => {
-          // ignore prefetch failures; normal navigation loader will retry and report
-        });
-      });
-    }, 2500);
-  };
+  // ===== 2) โหลดดาวน์โหลดเอกสาร + ข่าว + คะแนนแบบ background =====
+  scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("financial-docs", "loadDownloadDocuments"), "downloads"));
+  scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("news", "loadNewsFromSheet"), "news"));
+  scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("home", "initScoreboard"), "scoreboard"));
 
   const getConsentSubjects = () => {
     const user = window.sgcuAuth?.auth?.currentUser || null;
@@ -506,12 +496,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     resetConsentAccordion();
   };
 
-  const showGlobalConsentModal = () => {
+  const showGlobalConsentModal = ({ prefillAccepted = false } = {}) => {
     if (!globalConsentModal) return;
     initializeConsentAccordion();
     resetConsentAccordion();
-    if (globalConsentRules) globalConsentRules.checked = false;
-    if (globalConsentPdpa) globalConsentPdpa.checked = false;
+    if (globalConsentRules) globalConsentRules.checked = Boolean(prefillAccepted);
+    if (globalConsentPdpa) globalConsentPdpa.checked = Boolean(prefillAccepted);
     updateGlobalConsentState();
     globalConsentModal.classList.add("show");
     globalConsentModal.setAttribute("aria-hidden", "false");
@@ -562,9 +552,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
   if (loginViewConsentBtn) {
-    loginViewConsentBtn.addEventListener("click", () => {
+    loginViewConsentBtn.addEventListener("click", async () => {
       pendingConsentPage = null;
-      showGlobalConsentModal();
+      const accepted = await ensureGlobalConsentAccepted();
+      showGlobalConsentModal({ prefillAccepted: accepted });
     });
   }
 
@@ -699,6 +690,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     refreshMotionForActivePage();
+
+    if (page === "home") {
+      scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("news", "loadNewsFromSheet"), "news"));
+      scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("home", "initScoreboard"), "scoreboard"));
+    } else if (page === "news") {
+      await runFeatureTask("news", "loadNewsFromSheet");
+    } else if (page === "financial-docs") {
+      await runFeatureTask("financial-docs", "loadDownloadDocuments");
+    }
 
     if (shouldLoadProjectDataForPage(page)) {
       await ensureProjectDataLoaded();
@@ -894,13 +894,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ===== X) Modal ข่าว/ประกาศ =====
+  const closeNewsModalSafely = () => {
+    if (typeof closeNewsModal === "function") {
+      closeNewsModal();
+      return;
+    }
+    if (newsModalEl && typeof closeDialog === "function") {
+      closeDialog(newsModalEl);
+      return;
+    }
+    if (newsModalEl) {
+      newsModalEl.classList.remove("show");
+      newsModalEl.setAttribute("aria-hidden", "true");
+    }
+  };
   if (newsModalCloseEl) {
-    newsModalCloseEl.addEventListener("click", closeNewsModal);
+    newsModalCloseEl.addEventListener("click", closeNewsModalSafely);
   }
   if (newsModalEl) {
     newsModalEl.addEventListener("click", (e) => {
       if (e.target === newsModalEl) {
-        closeNewsModal();
+        closeNewsModalSafely();
       }
     });
   }

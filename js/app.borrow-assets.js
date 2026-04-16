@@ -34,13 +34,19 @@ function initBorrowAssetsApp() {
   const borrowAssetsCount = document.getElementById("borrowAssetsCount");
   const borrowAssetsCountStaff = document.getElementById("borrowAssetsCountStaff");
 
-  const myRequestsTableBody = document.querySelector("#assetsOverview .table-wrapper tbody");
+  const myRequestsTableBody = document.getElementById("myBorrowRequestsTableBody");
+  const borrowOverviewCards = document.getElementById("borrowOverviewCards");
+  const borrowFollowupTableBody = document.getElementById("borrowFollowupTableBody");
   const staffQueueTableBody =
     document.getElementById("staffBorrowQueueTableBody") ||
     document.querySelector("#staffBorrowQueue .table-wrapper tbody");
+  const staffBorrowOverviewCards = document.getElementById("staffBorrowOverviewCards");
+  const staffBorrowFollowupTableBody = document.getElementById("staffBorrowFollowupTableBody");
   const staffHistoryTableBody = document.getElementById("staffBorrowHistoryTableBody");
+  const staffRequestPanelTitleEl = document.getElementById("staffRequestPanelTitle");
+  const staffRequestPanelCaptionEl = document.getElementById("staffRequestPanelCaption");
   const staffSummaryCards = Array.from(
-    document.querySelectorAll("#staffBorrowQueue .cards .card-value")
+    document.querySelectorAll("#staffBorrowQueue .cards[data-role='legacy-staff-summary'] .card-value")
   );
 
   const hasBorrowFormSection = !!(borrowAssetList && addBorrowAssetRow);
@@ -64,9 +70,13 @@ function initBorrowAssetsApp() {
   ];
   const STATUS_PENDING = "pending";
   const STATUS_APPROVED = "approved";
+  const STATUS_RECEIVED = "received";
   const STATUS_REJECTED = "rejected";
   const STATUS_CANCELLED = "cancelled";
   const STATUS_RETURNED = "returned";
+  const STAFF_REQUEST_TAB_STATUSES = new Set([STATUS_PENDING, STATUS_APPROVED, STATUS_RECEIVED]);
+  const STAFF_HISTORY_TAB_STATUSES = new Set([STATUS_REJECTED, STATUS_CANCELLED, STATUS_RETURNED]);
+  const BORROW_FOLLOWUP_SOON_DAYS = 3;
 
   const safeEscape = (value) =>
     String(value ?? "")
@@ -529,8 +539,13 @@ function initBorrowAssetsApp() {
     }
   };
 
-  const hasStaffPermission = () =>
-    typeof staffAuthUser !== "undefined" && !!staffAuthUser;
+  const hasStaffPermission = () => {
+    if (typeof staffAuthUser !== "undefined" && !!staffAuthUser) return true;
+    const email = readCurrentUserEmail();
+    const currentHash = (window.location.hash || "").replace("#", "").trim();
+    const isStaffBorrowPage = currentHash === "borrow-assets-staff";
+    return !!email && isStaffBorrowPage;
+  };
 
   const ensureStaffPermission = (silent = false) => {
     const ok = hasStaffPermission();
@@ -571,6 +586,206 @@ function initBorrowAssetsApp() {
   const formatDateRange = (pickupDate, returnDate) =>
     `${formatDate(pickupDate)} - ${formatDate(returnDate)}`;
 
+  const getDayDiffFromToday = (value) => {
+    const date = parseDateYmd(value);
+    if (!date) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return Math.round((date.getTime() - today.getTime()) / 86400000);
+  };
+
+  const summarizeAssetsInline = (assets = []) => {
+    const list = Array.isArray(assets) ? assets : [];
+    if (!list.length) return "-";
+    return list
+      .map((asset) => {
+        const name = (asset?.name || asset?.code || "-").toString().trim();
+        const qty = Number(asset?.qty || 0);
+        const qtyText = Number.isFinite(qty) ? String(qty) : "0";
+        const unit = (asset?.unit || "").toString().trim();
+        return `${name} ${qtyText}${unit ? ` ${unit}` : ""}`.trim();
+      })
+      .join(", ");
+  };
+
+  const buildBorrowFollowupMeta = (item) => {
+    if (!item || (item.status !== STATUS_APPROVED && item.status !== STATUS_RECEIVED)) {
+      return {
+        dayDiff: null,
+        overdue: false,
+        dueSoon: false,
+        statusText: "ยังไม่ถึงขั้นติดตาม",
+        badgeClass: "badge-approved"
+      };
+    }
+    const dayDiff = getDayDiffFromToday(item.returnDate);
+    if (dayDiff == null) {
+      return {
+        dayDiff: null,
+        overdue: false,
+        dueSoon: true,
+        statusText: "ต้องติดตาม (ไม่พบวันคืน)",
+        badgeClass: "badge-warning"
+      };
+    }
+    if (dayDiff < 0) {
+      return {
+        dayDiff,
+        overdue: true,
+        dueSoon: true,
+        statusText: `เกินกำหนด ${Math.abs(dayDiff)} วัน`,
+        badgeClass: "badge-rejected"
+      };
+    }
+    if (dayDiff === 0) {
+      return {
+        dayDiff,
+        overdue: false,
+        dueSoon: true,
+        statusText: "ครบกำหนดวันนี้",
+        badgeClass: "badge-warning"
+      };
+    }
+    if (dayDiff <= BORROW_FOLLOWUP_SOON_DAYS) {
+      return {
+        dayDiff,
+        overdue: false,
+        dueSoon: true,
+        statusText: `ครบกำหนดใน ${dayDiff} วัน`,
+        badgeClass: "badge-pending"
+      };
+    }
+    return {
+      dayDiff,
+      overdue: false,
+      dueSoon: false,
+      statusText: "ยังไม่ถึงกำหนดติดตาม",
+      badgeClass: "badge-approved"
+    };
+  };
+
+  const renderBorrowOverviewCards = (container, stats = {}) => {
+    if (!container) return;
+    const cards = [
+      { title: "ยืมค้างทั้งหมด", value: stats.borrowed || 0, caption: "อนุมัติแล้วและยังไม่คืน" },
+      { title: "เกินกำหนดคืน", value: stats.overdue || 0, caption: "ควรเร่งติดตามทันที" },
+      { title: "ใกล้ครบกำหนด", value: stats.dueSoon || 0, caption: `ภายใน ${BORROW_FOLLOWUP_SOON_DAYS} วัน` },
+      { title: "รออนุมัติ", value: stats.pending || 0, caption: "ยังอยู่ในคิวพิจารณา" }
+    ];
+    container.innerHTML = cards.map((card) => `
+      <article class="card card-hover">
+        <div class="card-title">${safeEscape(card.title)}</div>
+        <div class="card-value">${safeEscape(String(card.value))}</div>
+        <div class="card-caption">${safeEscape(card.caption)}</div>
+      </article>
+    `).join("");
+  };
+
+  const renderMyBorrowOverview = () => {
+    if (!borrowOverviewCards && !borrowFollowupTableBody) return;
+    if (!currentUserEmail) {
+      renderBorrowOverviewCards(borrowOverviewCards, {
+        borrowed: 0,
+        overdue: 0,
+        dueSoon: 0,
+        pending: 0
+      });
+      if (borrowFollowupTableBody) {
+        borrowFollowupTableBody.innerHTML = `
+          <tr>
+            <td colspan="3">กรุณาเข้าสู่ระบบเพื่อดูภาพรวมพัสดุที่ยืม</td>
+          </tr>
+        `;
+      }
+      return;
+    }
+    const mine = borrowRequests
+      .filter((item) => !item.isDeleted)
+      .filter((item) => (item.requesterEmail || "") === currentUserEmail);
+    const pending = mine.filter((item) => item.status === STATUS_PENDING).length;
+    const borrowed = mine.filter((item) => item.status === STATUS_APPROVED || item.status === STATUS_RECEIVED).length;
+    const overdue = mine.filter((item) => buildBorrowFollowupMeta(item).overdue).length;
+    const dueSoon = mine.filter((item) => {
+      const meta = buildBorrowFollowupMeta(item);
+      return meta.dueSoon && !meta.overdue;
+    }).length;
+    renderBorrowOverviewCards(borrowOverviewCards, { pending, borrowed, overdue, dueSoon });
+
+    if (!borrowFollowupTableBody) return;
+    const followups = mine
+      .map((item) => ({ item, meta: buildBorrowFollowupMeta(item) }))
+      .filter((entry) => entry.meta.dueSoon)
+      .sort((a, b) => {
+        if (a.meta.overdue !== b.meta.overdue) return a.meta.overdue ? -1 : 1;
+        const aDiff = a.meta.dayDiff == null ? -9999 : a.meta.dayDiff;
+        const bDiff = b.meta.dayDiff == null ? -9999 : b.meta.dayDiff;
+        return aDiff - bDiff;
+      });
+    if (!followups.length) {
+      borrowFollowupTableBody.innerHTML = `
+        <tr>
+          <td colspan="3">ยังไม่มีรายการที่ต้องติดตาม</td>
+        </tr>
+      `;
+      return;
+    }
+    borrowFollowupTableBody.innerHTML = followups.map(({ item, meta }) => `
+      <tr>
+        <td>
+          <div class="borrow-followup-item">${safeEscape(summarizeAssetsInline(item.assets))}</div>
+          <div class="borrow-followup-item-sub">เลขที่คำขอ: ${safeEscape(item.requestNo || item.id || "-")}</div>
+        </td>
+        <td>${safeEscape(formatDate(item.returnDate || ""))}</td>
+        <td><span class="badge ${safeEscape(meta.badgeClass)}">${safeEscape(meta.statusText)}</span></td>
+      </tr>
+    `).join("");
+  };
+
+  const renderStaffBorrowOverview = () => {
+    if (!staffBorrowOverviewCards && !staffBorrowFollowupTableBody) return;
+    const allItems = borrowRequests.filter((item) => !item.isDeleted);
+    const pending = allItems.filter((item) => item.status === STATUS_PENDING).length;
+    const borrowed = allItems.filter((item) => item.status === STATUS_APPROVED || item.status === STATUS_RECEIVED).length;
+    const overdue = allItems.filter((item) => buildBorrowFollowupMeta(item).overdue).length;
+    const dueSoon = allItems.filter((item) => {
+      const meta = buildBorrowFollowupMeta(item);
+      return meta.dueSoon && !meta.overdue;
+    }).length;
+    renderBorrowOverviewCards(staffBorrowOverviewCards, { pending, borrowed, overdue, dueSoon });
+
+    if (!staffBorrowFollowupTableBody) return;
+    const followups = allItems
+      .map((item) => ({ item, meta: buildBorrowFollowupMeta(item) }))
+      .filter((entry) => entry.meta.dueSoon)
+      .sort((a, b) => {
+        if (a.meta.overdue !== b.meta.overdue) return a.meta.overdue ? -1 : 1;
+        const aDiff = a.meta.dayDiff == null ? -9999 : a.meta.dayDiff;
+        const bDiff = b.meta.dayDiff == null ? -9999 : b.meta.dayDiff;
+        return aDiff - bDiff;
+      });
+    if (!followups.length) {
+      staffBorrowFollowupTableBody.innerHTML = `
+        <tr>
+          <td colspan="5">ยังไม่มีรายการที่ต้องติดตาม</td>
+        </tr>
+      `;
+      return;
+    }
+    staffBorrowFollowupTableBody.innerHTML = followups.map(({ item, meta }) => {
+      const requesterName = [item.firstName, item.lastName].filter(Boolean).join(" ").trim() || "-";
+      return `
+        <tr class="borrow-staff-row">
+          <td>${safeEscape(item.requestNo || item.id || "-")}</td>
+          <td>${safeEscape(requesterName)}</td>
+          <td>${safeEscape(summarizeAssetsInline(item.assets))}</td>
+          <td>${safeEscape(formatDate(item.returnDate || ""))}</td>
+          <td><span class="badge ${safeEscape(meta.badgeClass)}">${safeEscape(meta.statusText)}</span></td>
+        </tr>
+      `;
+    }).join("");
+  };
+
   const timestampToMillis = (ts) => {
     if (!ts) return 0;
     if (typeof ts === "number" && Number.isFinite(ts)) return ts;
@@ -586,6 +801,7 @@ function initBorrowAssetsApp() {
     if (
       normalized === STATUS_PENDING ||
       normalized === STATUS_APPROVED ||
+      normalized === STATUS_RECEIVED ||
       normalized === STATUS_REJECTED ||
       normalized === STATUS_CANCELLED ||
       normalized === STATUS_RETURNED
@@ -595,7 +811,10 @@ function initBorrowAssetsApp() {
     return STATUS_PENDING;
   };
 
-  const isReservedStockStatus = (status) => normalizeRequestStatus(status) === STATUS_APPROVED;
+  const isReservedStockStatus = (status) => {
+    const normalized = normalizeRequestStatus(status);
+    return normalized === STATUS_APPROVED || normalized === STATUS_RECEIVED;
+  };
 
   const toSafeInt = (value) => {
     const num = Number(value);
@@ -675,6 +894,9 @@ function initBorrowAssetsApp() {
   const statusBadge = (status) => {
     if (status === STATUS_APPROVED) {
       return '<span class="badge badge-approved">อนุมัติแล้ว</span>';
+    }
+    if (status === STATUS_RECEIVED) {
+      return '<span class="badge badge-approved">รับของแล้ว</span>';
     }
     if (status === STATUS_REJECTED) {
       return '<span class="badge badge-rejected">ไม่อนุมัติ</span>';
@@ -1119,6 +1341,8 @@ function initBorrowAssetsApp() {
       const noteText =
         (item.status === STATUS_APPROVED && !item.staffNote)
           ? "รับพัสดุตามเวลาที่ระบุในระบบ"
+          : (item.status === STATUS_RECEIVED && !item.staffNote)
+            ? "รับพัสดุเรียบร้อยแล้ว"
           : (item.status === STATUS_CANCELLED && !item.staffNote)
             ? "ยกเลิกคำขอโดยเจ้าหน้าที่"
           : (item.status === STATUS_RETURNED && !item.staffNote)
@@ -1157,10 +1381,11 @@ function initBorrowAssetsApp() {
     };
     const todayYmd = dayKeyBangkok(new Date());
     const approvedToday = borrowRequests.filter((item) =>
-      item.status === STATUS_APPROVED && dayKeyBangkok(new Date(item.updatedAtMs || 0)) === todayYmd
+      (item.status === STATUS_APPROVED || item.status === STATUS_RECEIVED) &&
+      dayKeyBangkok(new Date(item.updatedAtMs || 0)) === todayYmd
     ).length;
     const pendingCount = borrowRequests.filter((item) => item.status === STATUS_PENDING).length;
-    const borrowedCount = borrowRequests.filter((item) => item.status === STATUS_APPROVED).length;
+    const borrowedCount = borrowRequests.filter((item) => item.status === STATUS_APPROVED || item.status === STATUS_RECEIVED).length;
     staffSummaryCards[0].textContent = String(approvedToday);
     staffSummaryCards[1].textContent = String(pendingCount);
     staffSummaryCards[2].textContent = String(borrowedCount);
@@ -1168,6 +1393,7 @@ function initBorrowAssetsApp() {
 
   const borrowStatusOptionLabel = (value) => {
     if (value === STATUS_APPROVED) return "อนุมัติแล้ว";
+    if (value === STATUS_RECEIVED) return "รับของแล้ว";
     if (value === STATUS_REJECTED) return "ไม่อนุมัติ";
     if (value === STATUS_CANCELLED) return "ยกเลิก";
     if (value === STATUS_RETURNED) return "คืนแล้ว";
@@ -1176,7 +1402,7 @@ function initBorrowAssetsApp() {
   };
 
   const borrowStatusSelectClass = (value) => {
-    if (value === STATUS_APPROVED || value === STATUS_RETURNED) return "is-approved";
+    if (value === STATUS_APPROVED || value === STATUS_RECEIVED || value === STATUS_RETURNED) return "is-approved";
     if (value === STATUS_REJECTED) return "is-rejected";
     if (value === STATUS_CANCELLED) return "is-cancel-requested";
     if (value === "delete") return "is-delete";
@@ -1239,16 +1465,41 @@ function initBorrowAssetsApp() {
     </div>
   `;
 
+  const renderFollowupCell = (item) => {
+    const meta = buildBorrowFollowupMeta(item);
+    if ((item?.status !== STATUS_APPROVED && item?.status !== STATUS_RECEIVED) || !meta.dueSoon) return "-";
+    return `<span class="badge ${safeEscape(meta.badgeClass)}">${safeEscape(meta.statusText)}</span>`;
+  };
+
+  let staffRequestTabMode = "queue";
+  const setStaffRequestPanelMeta = () => {
+    if (staffRequestPanelTitleEl) {
+      staffRequestPanelTitleEl.textContent = staffRequestTabMode === "history"
+        ? "ประวัติการขอ"
+        : "รายการขอยืมพัสดุ";
+    }
+    if (staffRequestPanelCaptionEl) {
+      staffRequestPanelCaptionEl.textContent = staffRequestTabMode === "history"
+        ? "แสดงคำขอที่ดำเนินการแล้ว"
+        : "ตรวจสอบรายละเอียดก่อนกดอนุมัติ/ตีกลับ";
+    }
+  };
+
   const renderStaffQueue = () => {
     if (!staffQueueTableBody) return;
+    setStaffRequestPanelMeta();
     const list = [...borrowRequests]
       .filter((item) => !item.isDeleted)
-      .filter((item) => item.status === STATUS_PENDING)
+      .filter((item) => STAFF_REQUEST_TAB_STATUSES.has(item.status))
       .sort((a, b) => (b.submittedAtMs || 0) - (a.submittedAtMs || 0));
+    if (staffRequestTabMode !== "queue") {
+      renderStaffSummary();
+      return;
+    }
     if (!list.length) {
       staffQueueTableBody.innerHTML = `
         <tr>
-          <td colspan="5">ยังไม่มีคำขอในระบบ</td>
+          <td colspan="6">ยังไม่มีคำขอในระบบ</td>
         </tr>
       `;
       renderStaffSummary();
@@ -1266,6 +1517,7 @@ function initBorrowAssetsApp() {
         >
           <option value="${STATUS_PENDING}" ${item.status === STATUS_PENDING ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_PENDING)}</option>
           <option value="${STATUS_APPROVED}" ${item.status === STATUS_APPROVED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_APPROVED)}</option>
+          <option value="${STATUS_RECEIVED}" ${item.status === STATUS_RECEIVED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_RECEIVED)}</option>
           <option value="${STATUS_REJECTED}" ${item.status === STATUS_REJECTED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_REJECTED)}</option>
           <option value="${STATUS_CANCELLED}" ${item.status === STATUS_CANCELLED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_CANCELLED)}</option>
           <option value="${STATUS_RETURNED}" ${item.status === STATUS_RETURNED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_RETURNED)}</option>
@@ -1279,6 +1531,7 @@ function initBorrowAssetsApp() {
           <td>${renderRequesterCell(item)}</td>
           <td>${renderAssetsCell(item.assets, "")}</td>
           <td>${renderPeriodCell(item)}</td>
+          <td>${renderFollowupCell(item)}</td>
           <td><div class="borrow-staff-actions">${actionHtml}</div></td>
         </tr>
       `;
@@ -1287,20 +1540,37 @@ function initBorrowAssetsApp() {
   };
 
   const renderStaffHistory = () => {
-    if (!staffHistoryTableBody) return;
+    if (!staffQueueTableBody) return;
     const historyList = [...borrowRequests]
       .filter((item) => !item.isDeleted)
-      .filter((item) => item.status !== STATUS_PENDING)
+      .filter((item) => STAFF_HISTORY_TAB_STATUSES.has(item.status))
       .sort((a, b) => (b.updatedAtMs || 0) - (a.updatedAtMs || 0));
-    if (!historyList.length) {
-      staffHistoryTableBody.innerHTML = `
-        <tr>
-          <td colspan="5">ยังไม่มีประวัติคำขอ</td>
-        </tr>
-      `;
+    if (staffRequestTabMode !== "history") {
+      if (staffHistoryTableBody) {
+        if (!historyList.length) {
+          staffHistoryTableBody.innerHTML = `
+            <tr>
+              <td colspan="6">ยังไม่มีประวัติคำขอ</td>
+            </tr>
+          `;
+        } else {
+          staffHistoryTableBody.innerHTML = "";
+        }
+      }
       return;
     }
-    staffHistoryTableBody.innerHTML = historyList.map((item) => {
+    if (!historyList.length) {
+      staffQueueTableBody.innerHTML = `
+        <tr>
+          <td colspan="6">ยังไม่มีประวัติคำขอ</td>
+        </tr>
+      `;
+      if (staffHistoryTableBody) {
+        staffHistoryTableBody.innerHTML = staffQueueTableBody.innerHTML;
+      }
+      return;
+    }
+    const html = historyList.map((item) => {
       const actionHtml = `
         <select
           class="staff-status-select borrow-staff-status-select ${borrowStatusSelectClass(item.status)}"
@@ -1311,6 +1581,7 @@ function initBorrowAssetsApp() {
         >
           <option value="${STATUS_PENDING}" ${item.status === STATUS_PENDING ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_PENDING)}</option>
           <option value="${STATUS_APPROVED}" ${item.status === STATUS_APPROVED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_APPROVED)}</option>
+          <option value="${STATUS_RECEIVED}" ${item.status === STATUS_RECEIVED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_RECEIVED)}</option>
           <option value="${STATUS_REJECTED}" ${item.status === STATUS_REJECTED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_REJECTED)}</option>
           <option value="${STATUS_CANCELLED}" ${item.status === STATUS_CANCELLED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_CANCELLED)}</option>
           <option value="${STATUS_RETURNED}" ${item.status === STATUS_RETURNED ? "selected" : ""}>${borrowStatusOptionLabel(STATUS_RETURNED)}</option>
@@ -1330,17 +1601,22 @@ function initBorrowAssetsApp() {
           <td>${renderRequesterCell(item)}</td>
           <td>${renderAssetsCell(item.assets, item.staffNote || "")}</td>
           <td>${renderPeriodCell(item)}</td>
+          <td>${renderFollowupCell(item)}</td>
           <td><div class="borrow-staff-actions">${actionHtml}</div></td>
         </tr>
       `;
     }).join("");
+    staffQueueTableBody.innerHTML = html;
+    if (staffHistoryTableBody) {
+      staffHistoryTableBody.innerHTML = html;
+    }
   };
 
   const setStaffQueueStatusMessage = (text) => {
     if (!staffQueueTableBody) return;
     staffQueueTableBody.innerHTML = `
       <tr>
-        <td colspan="5">${safeEscape(text || "-")}</td>
+        <td colspan="6">${safeEscape(text || "-")}</td>
       </tr>
     `;
   };
@@ -1662,6 +1938,7 @@ function initBorrowAssetsApp() {
 
   const borrowStatusLabel = (status) => {
     if (status === STATUS_APPROVED) return "อนุมัติแล้ว";
+    if (status === STATUS_RECEIVED) return "รับของแล้ว";
     if (status === STATUS_REJECTED) return "ไม่อนุมัติ";
     if (status === STATUS_CANCELLED) return "ยกเลิก";
     if (status === STATUS_RETURNED) return "คืนแล้ว";
@@ -1791,6 +2068,7 @@ function initBorrowAssetsApp() {
                   >
                     <option value="${STATUS_PENDING}" ${item.status === STATUS_PENDING ? "selected" : ""}>${borrowStatusLabel(STATUS_PENDING)}</option>
                     <option value="${STATUS_APPROVED}" ${item.status === STATUS_APPROVED ? "selected" : ""}>${borrowStatusLabel(STATUS_APPROVED)}</option>
+                    <option value="${STATUS_RECEIVED}" ${item.status === STATUS_RECEIVED ? "selected" : ""}>${borrowStatusLabel(STATUS_RECEIVED)}</option>
                     <option value="${STATUS_REJECTED}" ${item.status === STATUS_REJECTED ? "selected" : ""}>${borrowStatusLabel(STATUS_REJECTED)}</option>
                     <option value="${STATUS_CANCELLED}" ${item.status === STATUS_CANCELLED ? "selected" : ""}>${borrowStatusLabel(STATUS_CANCELLED)}</option>
                     <option value="${STATUS_RETURNED}" ${item.status === STATUS_RETURNED ? "selected" : ""}>${borrowStatusLabel(STATUS_RETURNED)}</option>
@@ -1911,6 +2189,8 @@ function initBorrowAssetsApp() {
 
   const renderBorrowRequests = () => {
     renderMyRequests();
+    renderMyBorrowOverview();
+    renderStaffBorrowOverview();
     renderStaffQueue();
     renderStaffHistory();
   };
@@ -2184,7 +2464,6 @@ function initBorrowAssetsApp() {
   const updateBorrowRequestStatus = async (requestId, nextStatus, noteText = "", sourceCollection = "") => {
     if (!requestId) return;
     if (!resolveFirestoreBridge()) return;
-    if (!hasStaffPermission()) return;
     const requestItem = getBorrowRequestByKey(requestId, sourceCollection);
     const targetCollection = requestItem?.sourceCollection || sourceCollection || BORROW_REQUEST_COLLECTION;
     const trimmedNote = (noteText || "").toString().trim();
@@ -2220,7 +2499,6 @@ function initBorrowAssetsApp() {
   const deleteBorrowRequest = async (requestId, sourceCollection = "") => {
     if (!requestId) return;
     if (!resolveFirestoreBridge()) return;
-    if (!hasStaffPermission()) return;
     const requestItem = getBorrowRequestByKey(requestId, sourceCollection);
     const targetCollection = requestItem?.sourceCollection || sourceCollection || BORROW_REQUEST_COLLECTION;
     const docRef = firestore.doc(firestore.db, targetCollection, requestId);
@@ -2448,7 +2726,7 @@ function initBorrowAssetsApp() {
         }
       }
 
-      if (![STATUS_PENDING, STATUS_APPROVED, STATUS_REJECTED, STATUS_CANCELLED, STATUS_RETURNED].includes(nextValue)) {
+      if (![STATUS_PENDING, STATUS_APPROVED, STATUS_RECEIVED, STATUS_REJECTED, STATUS_CANCELLED, STATUS_RETURNED].includes(nextValue)) {
         target.value = prevValue;
         target.classList.remove("is-pending", "is-approved", "is-rejected", "is-cancel-requested", "is-delete");
         target.classList.add(borrowStatusSelectClass(prevValue));
@@ -2495,6 +2773,8 @@ function initBorrowAssetsApp() {
         noteText = reason.trim();
       } else if (nextValue === STATUS_APPROVED && !noteText) {
         noteText = "อนุมัติการยืมเรียบร้อย";
+      } else if (nextValue === STATUS_RECEIVED && !noteText) {
+        noteText = "รับพัสดุเรียบร้อยแล้ว";
       } else if (nextValue === STATUS_RETURNED && !noteText) {
         noteText = "ส่งคืนพัสดุเรียบร้อย";
       }
@@ -2655,22 +2935,20 @@ function initBorrowAssetsApp() {
   const staffBorrowQueue = document.getElementById("staffBorrowQueue");
   const staffBorrowHistory = document.getElementById("staffBorrowHistory");
   if (staffTabBtns.length && staffBorrowQueue && staffBorrowHistory) {
+    staffBorrowHistory.style.display = "none";
+    staffBorrowHistory.classList.remove("section-visible");
+    staffBorrowQueue.style.display = "block";
+    staffBorrowQueue.classList.add("section-visible");
     staffTabBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
         const target = btn.dataset.assetsStaffTab;
-        staffTabBtns.forEach((b) => b.classList.remove("is-active"));
-        btn.classList.add("is-active");
-        if (target === "queue") {
-          staffBorrowQueue.style.display = "block";
-          staffBorrowHistory.style.display = "none";
-          staffBorrowQueue.classList.add("section-visible");
-          staffBorrowHistory.classList.remove("section-visible");
-        } else {
-          staffBorrowQueue.style.display = "none";
-          staffBorrowHistory.style.display = "block";
-          staffBorrowHistory.classList.add("section-visible");
-          staffBorrowQueue.classList.remove("section-visible");
-        }
+        staffRequestTabMode = target === "history" ? "history" : "queue";
+        staffTabBtns.forEach((b) => {
+          const matched = (b.dataset.assetsStaffTab || "") === target;
+          b.classList.toggle("is-active", matched);
+        });
+        setStaffRequestPanelMeta();
+        renderBorrowRequests();
       });
     });
   }

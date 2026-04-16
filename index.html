@@ -352,116 +352,142 @@
         <button id="appAlertRetry" class="app-alert-retry" type="button">ลองโหลดใหม่</button>
       </div>
       <!-- HOME PAGE -->
-      <section class="page-view active section-appear" data-page="home">
+      <section class="page-view active section-appear home-page-view" data-page="home">
+        <div class="home-snap-container">
           <!-- 1) Hero -->
-           
-          <div class="home-hero">
-            <div class="home-hero-inner">
-              <!-- ซ้าย: ข้อความหลัก -->
-              <div class="home-hero-text">
-                <div class="home-hero-eyebrow">เหรัญญิก SGCU68</div>
-                <h1 class="home-hero-title">
-                  "งบนิสิต เพื่อนิสิตของจุฬาฯ"
-                </h1>
-                <p class="home-hero-subtitle">
-                  เราเชื่อว่าความโปร่งใสคือพื้นฐานของความไว้วางใจ
-                  ทุกโครงการของนิสิตสามารถติดตามได้ทั้งงบประมาณ และเอกสารภายในเว็บไซต์นี้
-                </p>
+          <section class="home-snap-panel" aria-label="ช่วงหลัก 1">
+            <div class="home-snap-scroll">
+              <div class="home-snap-content">
+                <div class="home-hero">
+                  <div class="home-hero-inner">
+                    <!-- ซ้าย: ข้อความหลัก -->
+                    <div class="home-hero-text">
+                      <div class="home-hero-eyebrow">เหรัญญิก SGCU68</div>
+                      <h1 class="home-hero-title">
+                        "งบนิสิต เพื่อนิสิตของจุฬาฯ"
+                      </h1>
+                      <p class="home-hero-subtitle">
+                        เราเชื่อว่าความโปร่งใสคือพื้นฐานของความไว้วางใจ
+                        ทุกโครงการของนิสิตสามารถติดตามได้ทั้งงบประมาณ และเอกสารภายในเว็บไซต์นี้
+                      </p>
 
-                <!-- ปุ่มหลัก -->
-                <div class="home-hero-actions">
-                  <button
-                    class="btn-primary"
-                    type="button"
-                    data-goto-page="project-status"
-                  >
-                    ดูสถานะโครงการทั้งหมด
-                  </button>
-                  <button
-                    class="btn-secondary"
-                    type="button"
-                    data-goto-page="meeting-room-booking"
-                  >
-                    จองห้องประชุม
-                  </button>
-                </div>
-              </div>
+                      <!-- ปุ่มหลัก -->
+                      <div class="home-hero-actions">
+                        <button
+                          class="btn-primary"
+                          type="button"
+                          data-goto-page="project-status"
+                        >
+                          ดูสถานะโครงการทั้งหมด
+                        </button>
+                        <button
+                          class="btn-secondary"
+                          type="button"
+                          data-goto-page="meeting-room-booking"
+                        >
+                          จองห้องประชุม
+                        </button>
+                      </div>
+                    </div>
 
-              <!-- ขวา: เหรียญ Treasurer -->              
-              <div class="home-hero-badge">
-                <div class="home-hero-highlight" style="border-radius: 20px;">
-                  <a
-                    href="https://www.instagram.com/treasurer.sgcu?igsh=MXR0cXM0NWY5N3UwYg=="
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img src="./img/logo_treasurur jpg.png" alt="Treasurer SGCU68" class="home-hero-badge-img" style="border-radius: 20px;" decoding="async" width="240" height="240" />
-                  </a>
+                    <!-- ขวา: เหรียญ Treasurer -->
+                    <div class="home-hero-badge">
+                      <div class="home-hero-highlight" style="border-radius: 20px;">
+                        <a
+                          href="https://www.instagram.com/treasurer.sgcu?igsh=MXR0cXM0NWY5N3UwYg=="
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img src="./img/logo_treasurur jpg.png" alt="Treasurer SGCU68" class="home-hero-badge-img" style="border-radius: 20px;" decoding="async" width="240" height="240" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
           <!-- 2) ข่าว / ประกาศสั้น -->
-          <section class="home-news section-appear">
-            <header class="home-section-header">
-              <h2>ข่าวและประกาศจากฝ่ายเหรัญญิก</h2>
-              <p>สรุปสิ่งที่ทีมเหรัญญิกอยากแจ้งให้ชมรมและนิสิตทราบ</p>
-            </header>
-            <div id="homeNewsSkeleton" class="home-news-skeleton skeleton-grid" aria-hidden="true">
-              <div class="skeleton-card">
-                <div class="skeleton-line short"></div>
-                <div class="skeleton-line"></div>
-                <div class="skeleton-line tiny"></div>
-              </div>
-              <div class="skeleton-card">
-                <div class="skeleton-line short"></div>
-                <div class="skeleton-line"></div>
-                <div class="skeleton-line tiny"></div>
-              </div>
-            </div>
-            <div id="homeNewsPreview" class="home-news-grid"></div>
-          </section>
-
-          <section class="home-origin section-appear section-delay-1">
-            <article class="home-origin-card panel panel-hover">
-              <h3 class="home-origin-title">ที่มา</h3>
-              <p>
-                ในอดีต การติดตามสถานะโครงการและงบประมาณขององค์กรนิสิตยังขาดระบบกลางที่ชัดเจน
-                ข้อมูลกระจัดกระจาย ไม่สามารถตรวจสอบได้อย่างครบถ้วนว่าโครงการใดได้รับงบประมาณเท่าใด
-                ใช้จ่ายไปอย่างไร และมีสถานะการปิดโครงการในระดับใด
-              </p>
-              <p>
-                องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย วาระ 68 จึงได้พัฒนาเว็บไซต์นี้ขึ้น
-                เพื่อรวบรวมข้อมูลทั้งหมดไว้ในที่เดียว ยกระดับการบริหารงานให้เป็นระบบ โปร่งใส
-                และตรวจสอบได้ พร้อมทั้งสนับสนุนการทำงานและการส่งต่อองค์ความรู้สู่รุ่นถัดไป
-              </p>
-            </article>
-          </section>
-
-          <!-- 3) SCOREBOARD SGCU-10.001 -->
-          <section class="home-scoreboard section-appear">
-            <header class="home-section-header">
-              <h2>ผลการแข่งขันโครงการ SGCU-10.001</h2>
-              <p>
-                โครงการส่งเสริมการปิดโครงการอย่างมีประสิทธิภาพขององค์กรนิสิตภายใต้สโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย<br />
-                ประจำปีการศึกษา 2568
-              </p>
-            </header>
-
-            <div class="scoreboard-wrapper">
-              <!-- Podium: 3 อันดับแรก -->
-              <div id="scorePodium" class="score-podium">
-                <!-- JS จะเติมผลคะแนน -->
-                <div class="score-loading">กำลังโหลดผลคะแนน...</div>
-              </div>
-
-              <!-- Runners-up: อันดับถัดไป -->
-              <div id="scoreRunners" class="score-runners">
-                <!-- JS จะเติมผลคะแนน -->
+          <section class="home-snap-panel" aria-label="ช่วงหลัก 2">
+            <div class="home-snap-scroll">
+              <div class="home-snap-content">
+                <section class="home-news section-appear">
+                  <header class="home-section-header">
+                    <h2>ข่าวและประกาศจากฝ่ายเหรัญญิก</h2>
+                    <p>สรุปสิ่งที่ทีมเหรัญญิกอยากแจ้งให้ชมรมและนิสิตทราบ</p>
+                  </header>
+                  <div id="homeNewsSkeleton" class="home-news-skeleton skeleton-grid" aria-hidden="true">
+                    <div class="skeleton-card">
+                      <div class="skeleton-line short"></div>
+                      <div class="skeleton-line"></div>
+                      <div class="skeleton-line tiny"></div>
+                    </div>
+                    <div class="skeleton-card">
+                      <div class="skeleton-line short"></div>
+                      <div class="skeleton-line"></div>
+                      <div class="skeleton-line tiny"></div>
+                    </div>
+                  </div>
+                  <div id="homeNewsPreview" class="home-news-grid"></div>
+                </section>
               </div>
             </div>
           </section>
+
+          <!-- 3) ที่มา -->
+          <section class="home-snap-panel" aria-label="ช่วงหลัก 3">
+            <div class="home-snap-scroll">
+              <div class="home-snap-content">
+                <section class="home-origin section-appear section-delay-1">
+                  <article class="home-origin-card panel panel-hover">
+                    <h3 class="home-origin-title">ที่มา</h3>
+                    <p>
+                      ในอดีต การติดตามสถานะโครงการและงบประมาณขององค์กรนิสิตยังขาดระบบกลางที่ชัดเจน
+                      ข้อมูลกระจัดกระจาย ไม่สามารถตรวจสอบได้อย่างครบถ้วนว่าโครงการใดได้รับงบประมาณเท่าใด
+                      ใช้จ่ายไปอย่างไร และมีสถานะการปิดโครงการในระดับใด
+                    </p>
+                    <p>
+                      องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย วาระ 68 จึงได้พัฒนาเว็บไซต์นี้ขึ้น
+                      เพื่อรวบรวมข้อมูลทั้งหมดไว้ในที่เดียว ยกระดับการบริหารงานให้เป็นระบบ โปร่งใส
+                      และตรวจสอบได้ พร้อมทั้งสนับสนุนการทำงานและการส่งต่อองค์ความรู้สู่รุ่นถัดไป
+                    </p>
+                  </article>
+                </section>
+              </div>
+            </div>
+          </section>
+
+          <!-- 4) SCOREBOARD SGCU-10.001 -->
+          <section class="home-snap-panel" aria-label="ช่วงหลัก 4">
+            <div class="home-snap-scroll">
+              <div class="home-snap-content">
+                <section class="home-scoreboard section-appear">
+                  <header class="home-section-header">
+                    <h2>ผลการแข่งขันโครงการ SGCU-10.001</h2>
+                    <p>
+                      โครงการส่งเสริมการปิดโครงการอย่างมีประสิทธิภาพขององค์กรนิสิตภายใต้สโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย<br />
+                      ประจำปีการศึกษา 2568
+                    </p>
+                  </header>
+
+                  <div class="scoreboard-wrapper">
+                    <!-- Podium: 3 อันดับแรก -->
+                    <div id="scorePodium" class="score-podium">
+                      <!-- JS จะเติมผลคะแนน -->
+                      <div class="score-loading">กำลังโหลดผลคะแนน...</div>
+                    </div>
+
+                    <!-- Runners-up: อันดับถัดไป -->
+                    <div id="scoreRunners" class="score-runners">
+                      <!-- JS จะเติมผลคะแนน -->
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
 
       <!-- ============ ABOUT (PUBLIC) ============ -->

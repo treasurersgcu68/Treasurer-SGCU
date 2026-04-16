@@ -1,5 +1,62 @@
 /* ดาวน์โหลดเอกสารการเงิน */
 
+function toggleDownloadSkeleton(isLoading) {
+  const downloadSkeletonEl = document.getElementById("downloadSkeleton");
+  const downloadListEl = document.getElementById("downloadList");
+  if (downloadSkeletonEl) {
+    downloadSkeletonEl.style.display = isLoading ? "grid" : "none";
+  }
+  if (downloadListEl) {
+    downloadListEl.style.display = isLoading ? "none" : "";
+  }
+}
+
+function createDownloadHeader(titleText) {
+  const header = document.createElement("div");
+  header.className = "download-card-header";
+
+  const bar = document.createElement("span");
+  bar.className = "download-card-bar";
+  header.appendChild(bar);
+
+  const title = document.createElement("h3");
+  title.className = "download-card-title";
+  title.textContent = titleText;
+  header.appendChild(title);
+
+  return header;
+}
+
+function createDownloadListItem(doc) {
+  const li = document.createElement("li");
+  li.className = "download-item";
+
+  const main = document.createElement("div");
+  main.className = "download-main";
+  li.appendChild(main);
+
+  const title = document.createElement("div");
+  title.className = "download-title";
+  title.textContent = doc.org ? `${doc.name} (${doc.org})` : doc.name;
+  main.appendChild(title);
+
+  const buttons = document.createElement("div");
+  buttons.className = "download-buttons";
+  main.appendChild(buttons);
+
+  addDownloadButton(buttons, "EX", doc.exUrl);
+  addDownloadButton(buttons, "PDF", doc.pdfUrl);
+  addDownloadButton(buttons, "DOCX", doc.docxUrl);
+  addDownloadButton(buttons, "XLSX", doc.xlsxUrl);
+
+  const desc = document.createElement("div");
+  desc.className = "download-desc";
+  desc.textContent = doc.desc || "";
+  li.appendChild(desc);
+
+  return li;
+}
+
 /* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
 function addDownloadButton(wrapper, label, url) {
   if (!url || url === "-" || url === "--" || url === "") return;
@@ -7,6 +64,7 @@ function addDownloadButton(wrapper, label, url) {
   const a = document.createElement("a");
   a.className = "download-btn";
   a.target = "_blank";
+  a.rel = "noopener noreferrer";
   a.href = toDownloadUrl(url, label.toLowerCase());
   a.textContent = `⬇ ${label}`;
   wrapper.appendChild(a);
@@ -70,20 +128,31 @@ function setDownloadListState(listEl, type, message, options = {}) {
   const text = (message || "").toString().trim();
   if (!safeType || !text) return;
   const canRetry = !!options.showRetry;
-  listEl.innerHTML = `
-    <div class="panel" style="background:#f8fafc;">
-      <div class="panel-caption" style="color:#475569;">${text}</div>
-      ${canRetry ? '<button id="downloadRetryButton" class="btn-ghost" type="button" style="margin-top:8px;">ลองใหม่</button>' : ""}
-    </div>
-  `;
+  listEl.innerHTML = "";
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.style.background = "#f8fafc";
+
+  const caption = document.createElement("div");
+  caption.className = "panel-caption";
+  caption.style.color = "#475569";
+  caption.textContent = text;
+  panel.appendChild(caption);
+
   if (canRetry) {
-    const retryBtn = listEl.querySelector("#downloadRetryButton");
-    if (retryBtn) {
-      retryBtn.addEventListener("click", () => {
-        void loadDownloadDocuments();
-      });
-    }
+    const retryBtn = document.createElement("button");
+    retryBtn.id = "downloadRetryButton";
+    retryBtn.className = "btn-ghost";
+    retryBtn.type = "button";
+    retryBtn.style.marginTop = "8px";
+    retryBtn.textContent = "ลองใหม่";
+    retryBtn.addEventListener("click", () => {
+      void loadDownloadDocuments();
+    });
+    panel.appendChild(retryBtn);
   }
+
+  listEl.appendChild(panel);
 }
 
 async function loadDownloadDocuments() {
@@ -168,50 +237,13 @@ async function loadDownloadDocuments() {
       const section = document.createElement("section");
       section.className = "download-section-card";
       section.dataset.category = categoryName;
-
-      section.innerHTML = `
-        <div class="download-card-header">
-          <span class="download-card-bar"></span>
-          <h3 class="download-card-title">${categoryName}</h3>
-        </div>
-        <ul class="download-card-list"></ul>
-      `;
-
-      const ul = section.querySelector(".download-card-list");
+      section.appendChild(createDownloadHeader(categoryName));
+      const ul = document.createElement("ul");
+      ul.className = "download-card-list";
+      section.appendChild(ul);
 
       categories[categoryName].forEach((doc) => {
-        const li = document.createElement("li");
-        li.className = "download-item";
-
-        li.innerHTML = `
-          <div class="download-item">
-            <div class="download-main">
-              <!-- ซ้าย: ชื่อไฟล์ -->
-              <div class="download-title">
-                ${doc.name} ${doc.org ? `(${doc.org})` : ""}
-              </div>
-
-              <!-- ขวา: ปุ่มดาวน์โหลด -->
-              <div class="download-buttons">
-                <!-- ใส่ปุ่มด้วย JS ภายหลัง -->
-              </div>
-            </div>
-
-            <!-- แถวล่าง: คำอธิบาย -->
-            <div class="download-desc">
-              ${doc.desc ? doc.desc : ""}
-            </div>
-          </div>
-        `;     
-
-        const btnWrap = li.querySelector(".download-buttons");
-
-        addDownloadButton(btnWrap, "EX", doc.exUrl);
-        addDownloadButton(btnWrap, "PDF", doc.pdfUrl);
-        addDownloadButton(btnWrap, "DOCX", doc.docxUrl);
-        addDownloadButton(btnWrap, "XLSX", doc.xlsxUrl);
-
-        ul.appendChild(li);
+        ul.appendChild(createDownloadListItem(doc));
       });
 
       listEl.appendChild(section);

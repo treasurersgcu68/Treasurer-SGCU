@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f766e" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Treasurer SGCU68" />
@@ -51,142 +52,7 @@
     <!-- PapaParse (อ่าน CSV/ข้อมูลตาราง) -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-      import {
-        getAuth,
-        onAuthStateChanged,
-        signInWithPopup,
-        GoogleAuthProvider,
-        signOut,
-        signInWithEmailAndPassword
-      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-      import {
-        getAnalytics,
-        isSupported,
-        logEvent
-      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-      import {
-        getFirestore,
-        doc,
-        collection,
-        addDoc,
-        getDoc,
-        setDoc,
-        onSnapshot,
-        query,
-        orderBy,
-        updateDoc,
-        deleteDoc,
-        runTransaction,
-        serverTimestamp
-      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyDcRIz1Uy1AZd-9JJdLF92SyqU6m8bdSXo",
-        authDomain: "departmentwebsite-5aec1.firebaseapp.com",
-        projectId: "departmentwebsite-5aec1",
-        storageBucket: "departmentwebsite-5aec1.firebasestorage.app",
-        messagingSenderId: "827589080688",
-        appId: "1:827589080688:web:ad89c53218104f908926b5",
-        measurementId: "G-BFW19TSYL0"
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-      window.sgcuFirestore = {
-        db,
-        doc,
-        collection,
-        addDoc,
-        getDoc,
-        setDoc,
-        onSnapshot,
-        query,
-        orderBy,
-        updateDoc,
-        deleteDoc,
-        runTransaction,
-        serverTimestamp
-      };
-
-      window.sgcuAuth = {
-        auth,
-        GoogleAuthProvider,
-        signInWithPopup,
-        signOut,
-        onAuthStateChanged,
-        signInWithEmailAndPassword
-      };
-
-      window.sgcuAnalytics = {
-        trackPageView: () => {}
-      };
-      window.sgcuVisitorCounter = {
-        syncDailyVisitorCount: async () => null
-      };
-
-      isSupported()
-        .then((supported) => {
-          if (!supported) return;
-          const analytics = getAnalytics(app);
-          window.sgcuAnalytics.trackPageView = (pageName) => {
-            const safePage = (pageName || "home").toString();
-            const pagePath = `${window.location.pathname}#${safePage}`;
-            const pageLocation = `${window.location.origin}${pagePath}`;
-            logEvent(analytics, "page_view", {
-              page_title: `Treasurer SGCU - ${safePage}`,
-              page_location: pageLocation,
-              page_path: pagePath
-            });
-          };
-        })
-        .catch(() => {
-          // ignore analytics init failures
-        });
-
-      function getDateKeyInBangkok() {
-        const formatter = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "Asia/Bangkok",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit"
-        });
-        return formatter.format(new Date());
-      }
-
-      window.sgcuVisitorCounter.syncDailyVisitorCount = async () => {
-        const dateKey = getDateKeyInBangkok();
-        const dailyRef = doc(db, "site_daily_visitors", dateKey);
-        const allTimeRef = doc(db, "site_stats", "visitors_all_time");
-
-        return runTransaction(db, async (transaction) => {
-          const dailySnap = await transaction.get(dailyRef);
-          const allTimeSnap = await transaction.get(allTimeRef);
-
-          const currentDaily = Number(dailySnap.data()?.total || 0);
-          const currentAllTime = Number(allTimeSnap.data()?.total || 0);
-          const nextDaily = Number.isFinite(currentDaily) ? currentDaily + 1 : 1;
-          const nextAllTime = Number.isFinite(currentAllTime) ? currentAllTime + 1 : 1;
-
-          transaction.set(dailyRef, {
-            total: nextDaily,
-            updatedAt: serverTimestamp()
-          }, { merge: true });
-
-          transaction.set(allTimeRef, {
-            total: nextAllTime,
-            updatedAt: serverTimestamp()
-          }, { merge: true });
-
-          return {
-            dailyTotal: nextDaily,
-            allTimeTotal: nextAllTime
-          };
-        });
-      };
-    </script>
+    <script type="module" src="js/app.firebase-bootstrap.js?v=20260417-1"></script>
   </head>
   <body>
     <div id="appLoader" class="app-loader" aria-live="polite" aria-busy="true">
@@ -560,7 +426,10 @@
             <section class="home-scope section-appear section-delay-3 about-section-block">
               <header class="home-section-header">
                 <h2>ทีมเหรัญญิกดูแลเรื่องอะไรบ้าง?</h2>
-                <p>เลือกหัวข้อเพื่อดูว่าทีมไหนดูแลเรื่องใดในฝ่ายเหรัญญิก SGCU68</p>
+                <p>
+                  เลือกหัวข้อเพื่อดูว่าทีมไหนดูแลเรื่องใดในฝ่ายเหรัญญิก
+                  <span id="aboutTreasurerTeamLabel">SGCU68</span>
+                </p>
               </header>
 
               <div class="home-scope-pills">
@@ -615,7 +484,7 @@
                 <div class="scope-team-card" data-scope="budget" hidden>
                   <h3>ฝ่ายบริหารและพัฒนางบประมาณ</h3>
                   <p>
-                    ดูแลภาพรวมงบประมาณของ SGCU68 วางแผน แบ่งสัดส่วนงบ
+                    ดูแลภาพรวมงบประมาณของ <span id="aboutBudgetTeamLabel">SGCU68</span> วางแผน แบ่งสัดส่วนงบ
                     และติดตามการใช้จ่ายของโครงการทุกฝ่ายให้เป็นไปตามระเบียบมหาวิทยาลัย
                   </p>
                   <ul>
@@ -655,7 +524,7 @@
 
             <section class="home-org section-appear section-delay-4 about-section-block">
               <header class="home-section-header">
-                <h2>โครงสร้างทีมเหรัญญิก SGCU68</h2>
+                <h2>โครงสร้างทีมเหรัญญิก <span id="aboutOrgStructureTitleLabel">SGCU68</span></h2>
                 <p>ดูภาพรวมโครงสร้างทีมเหรัญญิกและสายการทำงานของแต่ละฝ่าย</p>
               </header>
 
@@ -1808,7 +1677,7 @@
                       <th>หมายเหตุ</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody id="myBorrowRequestsTableBody">
                     <tr>
                       <td>
                         ไมค์ไร้สาย 2 ชุด<br />
@@ -1902,22 +1771,23 @@
               <h2 class="page-title">Borrow & Return Assets For Staff</h2>
               <p class="page-subtitle">จัดคิวคำขอ ตรวจสอบความพร้อม และแจ้งผลให้ผู้ขอ</p>
             </div>
-            <div class="tabs">
-              <button class="tab-btn view-toggle-btn is-active" data-assets-staff-tab="queue" type="button">
-                คิวคำขอ
-              </button>
-              <button class="tab-btn view-toggle-btn" data-assets-staff-tab="history" type="button">
-                ประวัติการขอ
-              </button>
-            </div>
           </div>
 
           <div id="staffBorrowQueue" class="section-appear section-delay-1">
+            <div id="staffBorrowOverviewCards" class="cards borrow-overview-cards" aria-live="polite"></div>
             <div class="panel panel-hover">
               <div class="panel-header">
                 <div>
-                  <div class="panel-title">คิวคำขอรออนุมัติ</div>
-                  <div class="panel-caption">ตรวจสอบรายละเอียดก่อนกดอนุมัติ/ตีกลับ</div>
+                  <div id="staffRequestPanelTitle" class="panel-title">รายการขอยืมพัสดุ</div>
+                  <div id="staffRequestPanelCaption" class="panel-caption">ตรวจสอบรายละเอียดก่อนกดอนุมัติ/ตีกลับ</div>
+                </div>
+                <div class="tabs">
+                  <button class="tab-btn view-toggle-btn is-active" data-assets-staff-tab="queue" type="button">
+                    รายการขอยืมพัสดุ
+                  </button>
+                  <button class="tab-btn view-toggle-btn" data-assets-staff-tab="history" type="button">
+                    ประวัติการขอ
+                  </button>
                 </div>
               </div>
               <div class="table-wrapper">
@@ -1928,6 +1798,7 @@
                       <th>ผู้ขอ</th>
                       <th>รายการ</th>
                       <th>ช่วงเวลา</th>
+                      <th>ติดตามคืน</th>
                       <th>สถานะ</th>
                     </tr>
                   </thead>
@@ -1937,10 +1808,12 @@
                       <td>ชมรมดนตรีไทย</td>
                       <td>ไมค์ไร้สาย 2 ชุด</td>
                       <td>10-12 ต.ค. 2568</td>
+                      <td>-</td>
                       <td>
                         <select class="staff-status-select is-pending" aria-label="จัดการสถานะคำขอ">
                           <option value="pending" selected>รออนุมัติ</option>
                           <option value="approved">อนุมัติแล้ว</option>
+                          <option value="received">รับของแล้ว</option>
                           <option value="rejected">ไม่อนุมัติ</option>
                           <option value="cancelled">ยกเลิก</option>
                           <option value="returned">คืนแล้ว</option>
@@ -1953,10 +1826,12 @@
                       <td>ฝ่ายกิจกรรม SGCU</td>
                       <td>เก้าอี้พลาสติก 50 ตัว</td>
                       <td>09-11 ต.ค. 2568</td>
+                      <td><span class="badge badge-pending">ครบกำหนดใน 2 วัน</span></td>
                       <td>
                         <select class="staff-status-select is-approved" aria-label="จัดการสถานะคำขอ">
                           <option value="pending">รออนุมัติ</option>
                           <option value="approved" selected>อนุมัติแล้ว</option>
+                          <option value="received">รับของแล้ว</option>
                           <option value="rejected">ไม่อนุมัติ</option>
                           <option value="cancelled">ยกเลิก</option>
                           <option value="returned">คืนแล้ว</option>
@@ -2038,6 +1913,14 @@
                   <div class="panel-title">ประวัติการขอ</div>
                   <div class="panel-caption">แสดงคำขอที่ดำเนินการแล้ว</div>
                 </div>
+                <div class="tabs">
+                  <button class="tab-btn view-toggle-btn" data-assets-staff-tab="queue" type="button">
+                    คิวคำขอ
+                  </button>
+                  <button class="tab-btn view-toggle-btn is-active" data-assets-staff-tab="history" type="button">
+                    ประวัติการขอ
+                  </button>
+                </div>
               </div>
               <div class="table-wrapper">
                 <table>
@@ -2047,12 +1930,13 @@
                       <th>ผู้ขอ</th>
                       <th>รายการ</th>
                       <th>ช่วงเวลา</th>
+                      <th>ติดตามคืน</th>
                       <th>สถานะ</th>
                     </tr>
                   </thead>
                   <tbody id="staffBorrowHistoryTableBody">
                     <tr>
-                      <td colspan="5">กำลังโหลดประวัติคำขอ...</td>
+                      <td colspan="6">กำลังโหลดประวัติคำขอ...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -2291,22 +2175,6 @@
               <p class="page-subtitle">อนุมัติหรือปฏิเสธคำขอจองห้องประชุม พร้อมจัดการรายการทั้งหมด</p>
               <div id="meetingStaffRequestReminder" class="section-text-sm" aria-live="polite" hidden></div>
             </div>
-            <div class="tabs">
-              <button
-                class="tab-btn view-toggle-btn is-active"
-                type="button"
-                data-meeting-staff-tab="requests"
-              >
-                รายการคำขอ
-              </button>
-              <button
-                class="tab-btn view-toggle-btn"
-                type="button"
-                data-meeting-staff-tab="history"
-              >
-                ประวัติการขอ
-              </button>
-            </div>
           </div>
 
           <div class="separator-gradient"></div>
@@ -2350,6 +2218,22 @@
                   </div>
                 </div>
               </div>
+              <div class="tabs">
+                <button
+                  class="tab-btn view-toggle-btn is-active"
+                  type="button"
+                  data-meeting-staff-tab="requests"
+                >
+                  รายการคำขอ
+                </button>
+                <button
+                  class="tab-btn view-toggle-btn"
+                  type="button"
+                  data-meeting-staff-tab="history"
+                >
+                  ประวัติการขอ
+                </button>
+              </div>
             </div>
             <div class="table-wrapper">
               <table>
@@ -2365,7 +2249,7 @@
                 </thead>
                 <tbody id="meetingRoomAllTableBody">
                   <tr>
-                    <td colspan="5">กำลังโหลดข้อมูล...</td>
+                    <td colspan="6">กำลังโหลดข้อมูล...</td>
                   </tr>
                 </tbody>
               </table>
@@ -3423,7 +3307,8 @@
     </footer>
 
     <script src="js/app.core.js" defer></script>
-    <script src="js/app.helpers.js" defer></script>
+    <script src="js/app.helpers.js?v=20260416-1" defer></script>
+    <script src="js/app.file-links.js?v=20260417-1" defer></script>
     <script src="js/app.data.js" defer></script>
     <script src="js/app.project-ui.js" defer></script>
     <script src="js/app.project-modal.js" defer></script>
@@ -3431,33 +3316,18 @@
     <script src="js/app.pie.js" defer></script>
     <script src="js/app.sorting-auth.js?v=20260415-2" defer></script>
     <script src="js/app.org.js" defer></script>
-    <script src="js/app.news.js" defer></script>
-    <script src="js/app.downloads.js" defer></script>
-    <script src="js/app.scoreboard.js" defer></script>
     <script src="js/app.motion.js" defer></script>
     <script src="js/app.web-push.js" defer></script>
-    <script src="js/app.feature-loader.js?v=20260415-16" defer></script>
-    <script src="js/app.init.js?v=20260415-2" defer></script>
+    <script src="js/app.feature-loader.js?v=20260417-2" defer></script>
+    <script src="js/app.init.js?v=20260417-1" defer></script>
     <script src="js/app.calendar.js" defer></script>
     <script>
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260415-4";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",
         unsubscribeEndpoint: ""
       };
-    </script>
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          let didRefreshForNewWorker = false;
-          navigator.serviceWorker.addEventListener("controllerchange", () => {
-            if (didRefreshForNewWorker) return;
-            didRefreshForNewWorker = true;
-            window.location.reload();
-          });
-          navigator.serviceWorker.register("./sw.js?v=20260415-4").catch(() => {});
-        });
-      }
     </script>
   </body>
 </html>

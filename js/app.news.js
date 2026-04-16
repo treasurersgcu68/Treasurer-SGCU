@@ -12,52 +12,6 @@ const newsFilterState = {
 let newsFilterInitialized = false;
 let newsVisibleCount = NEWS_PAGE_SIZE;
 
-// ลิงก์ดาวน์โหลด/preview ใช้ทั้งหน้า News และหน้าดาวน์โหลด
-function toDownloadUrl(url, label) {
-  if (!url) return "#";
-  const trimmed = url.trim();
-
-  if (trimmed.includes("drive.google.com")) {
-    const mFile = trimmed.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
-    if (mFile && mFile[1]) {
-      return `https://drive.google.com/uc?export=download&id=${mFile[1]}`;
-    }
-
-    const mId = trimmed.match(/[?&]id=([^&]+)/);
-    if (mId && mId[1]) {
-      return `https://drive.google.com/uc?export=download&id=${mId[1]}`;
-    }
-
-    return trimmed;
-  }
-
-  return trimmed;
-}
-
-// แปลงลิงก์เป็น URL สำหรับฝัง preview ใน iframe
-function toPreviewUrl(url) {
-  if (!url) return "";
-  const u = url.trim();
-  if (!u) return "";
-
-  const mFile = u.match(/drive\.google\.com\/file\/d\/([^/]+)/);
-  if (mFile && mFile[1]) {
-    return `https://drive.google.com/file/d/${mFile[1]}/preview`;
-  }
-
-  if (u.includes("docs.google.com/document")) {
-    return u.replace(/\/edit.*$/, "/preview");
-  }
-  if (u.includes("docs.google.com/spreadsheets")) {
-    return u.replace(/\/edit.*$/, "/preview");
-  }
-  if (u.includes("docs.google.com/presentation")) {
-    return u.replace(/\/edit.*$/, "/preview");
-  }
-
-  return u;
-}
-
 function toggleNewsSkeleton(isLoading) {
   const homePreview = document.getElementById("homeNewsPreview");
   if (homeNewsSkeletonEl) {
@@ -71,16 +25,6 @@ function toggleNewsSkeleton(isLoading) {
   }
   if (newsListEl) {
     newsListEl.style.display = isLoading ? "none" : "";
-  }
-}
-
-function toggleDownloadSkeleton(isLoading) {
-  const downloadListEl = document.getElementById("downloadList");
-  if (downloadSkeletonEl) {
-    downloadSkeletonEl.style.display = isLoading ? "grid" : "none";
-  }
-  if (downloadListEl) {
-    downloadListEl.style.display = isLoading ? "none" : "";
   }
 }
 

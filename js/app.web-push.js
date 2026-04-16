@@ -4,6 +4,7 @@
 
   const DEFAULT_ICON = "img/icons/icon-192.png";
   const DEFAULT_BADGE = "img/icons/icon-192.png";
+  const DEFAULT_SW_URL = "./sw.js?v=20260415-4";
   const config = {
     applicationServerKey: "",
     subscribeEndpoint: "",
@@ -57,9 +58,10 @@
   const ensureServiceWorkerRegistration = async () => {
     if (!("serviceWorker" in window.navigator)) return null;
     try {
-      const existing = await window.navigator.serviceWorker.getRegistration("./");
+      const existing = await window.navigator.serviceWorker.getRegistration();
       if (existing) return existing;
-      return await window.navigator.serviceWorker.register("./sw.js");
+      const swUrl = (window.sgcuServiceWorkerUrl || DEFAULT_SW_URL).toString().trim() || DEFAULT_SW_URL;
+      return await window.navigator.serviceWorker.register(swUrl);
     } catch (_) {
       return null;
     }
@@ -201,4 +203,14 @@
     subscribePush,
     unsubscribePush
   };
+
+  if ("serviceWorker" in window.navigator) {
+    let didRefreshForNewWorker = false;
+    window.navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (didRefreshForNewWorker) return;
+      didRefreshForNewWorker = true;
+      window.location.reload();
+    });
+    void ensureServiceWorkerRegistration();
+  }
 })();

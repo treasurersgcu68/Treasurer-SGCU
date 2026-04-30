@@ -192,9 +192,190 @@ function syncRoleNavContainers() {
 
 function normalizeStaffRoleCode(role) {
   const raw = (role || "").toString().trim();
-  if (!raw) return "0";
+  if (!raw) return "";
   const normalized = raw.replace(/^0+(?=\d)/, "");
   return normalized || "0";
+}
+
+function hasStaffRoleToken(roleValue, roleToken) {
+  const target = normalizeStaffRoleCode(roleToken);
+  const tokens = (roleValue || "")
+    .toString()
+    .split(",")
+    .map((item) => normalizeStaffRoleCode(item))
+    .filter(Boolean);
+  return tokens.includes(target);
+}
+
+const STAFF_HEAD_OVERRIDES = new Set([]);
+const STAFF_PAGE_OPTIONS = [
+  "dashboard-staff",
+  "project-status-staff",
+  "borrow-assets-staff",
+  "meeting-room-staff",
+  "staff-approval",
+  "login"
+];
+let unsubscribeCurrentStaffApproval = null;
+let unsubscribeStaffPositionAccess = null;
+let staffPositionAccessByName = {};
+let staffPositionAccessByCode = {};
+const currentStaffApprovalState = {
+  email: "",
+  hasApproved: false,
+  approvedDivisionCodesYY: []
+};
+
+function normalizeDivisionCodeYY(value) {
+  const raw = (value || "").toString().trim();
+  if (!raw) return "";
+  return raw.padStart(2, "0").slice(-2);
+}
+
+function resolveStaffDivisionCodeYY(profile) {
+  const directYY = normalizeDivisionCodeYY(profile?.divisionCodeYY || profile?.positionCodeYY || "");
+  if (directYY) return directYY;
+  const positionCode = (profile?.positionCode || "").toString().trim();
+  const match = positionCode.match(/^SGCU\d{2}\.10\.(\d{2})\.\d{2}-\d{3}$/i);
+  if (match?.[1]) return normalizeDivisionCodeYY(match[1]);
+  const positionText = (profile?.position || "").toString().trim().replace(/\s+/g, " ");
+  if (positionText) {
+    if (positionText === "เหรัญญิก" || positionText === "เลขานุการฝ่ายเหรัญญิก") return "00";
+    if (positionText === "ผู้ช่วยเหรัญญิก") return "01";
+    if (positionText.includes("บริหารและพัฒนางบประมาณ")) return "02";
+    if (positionText.includes("หาทุนและสิทธิประโยชน์")) return "03";
+    if (positionText.includes("กายภาพและพัสดุ")) return "04";
+    if (positionText.includes("สำนักบริหารกิจการนิสิต")) return "09";
+    if (positionText.includes("เหรัญญิก")) return "00";
+  }
+  return "";
+}
+
+function resolveStaffDivisionCodesYY(profile) {
+  const codes = new Set();
+  const positions = Array.isArray(profile?.positions) ? profile.positions : [];
+  positions.forEach((entry) => {
+    const byField = normalizeDivisionCodeYY(entry?.yy || entry?.positionCodeYY || entry?.divisionCodeYY || "");
+    if (byField) {
+      codes.add(byField);
+      return;
+    }
+    const byCode = normalizeDivisionCodeYY(
+      (entry?.code || entry?.positionCode || "").toString().match(/^SGCU\d{2}\.10\.(\d{2})\.\d{2}-\d{3}$/i)?.[1] || ""
+    );
+    if (byCode) codes.add(byCode);
+  });
+  const legacy = resolveStaffDivisionCodeYY(profile);
+  if (legacy) codes.add(legacy);
+  return Array.from(codes);
+}
+
+function resolveDivisionCodeYYFromPositionLabel(positionText) {
+  const text = (positionText || "").toString().trim().replace(/\s+/g, " ");
+  if (!text) return "";
+  if (text === "เหรัญญิก" || text === "เลขานุการฝ่ายเหรัญญิก") return "00";
+  if (text === "ผู้ช่วยเหรัญญิก") return "01";
+  if (text.includes("บริหารและพัฒนางบประมาณ")) return "02";
+  if (text.includes("หาทุนและสิทธิประโยชน์")) return "03";
+  if (text.includes("กายภาพและพัสดุ")) return "04";
+  if (text.includes("สำนักบริหารกิจการนิสิต")) return "09";
+  if (text.includes("เหรัญญิก")) return "00";
+  return "";
+}
+
+function extractApprovedDivisionCodesFromDocs(docs = []) {
+  const approvedYY = new Set();
+  let hasApproved = false;
+  docs.forEach((docSnap) => {
+    const data = typeof docSnap?.data === "function" ? (docSnap.data() || {}) : (docSnap || {});
+    const status = (data.status || "").toString().trim().toLowerCase();
+    if (status !== "approved") return;
+    hasApproved = true;
+    const codeMatch = (data.approvedPositionCode || "").toString().match(/^SGCU\d{2}\.10\.(\d{2})\.\d{2}-\d{3}$/i);
+    const yyFromCode = normalizeDivisionCodeYY(codeMatch?.[1] || "");
+    const yyFromLabel = resolveDivisionCodeYYFromPositionLabel(data.approvedPosition || data.requestedPosition || "");
+    if (yyFromCode) approvedYY.add(yyFromCode);
+    else if (yyFromLabel) approvedYY.add(yyFromLabel);
+  });
+  return {
+    hasApproved,
+    divisionCodesYY: Array.from(approvedYY)
+  };
+}
+
+function isHeadStaffProfile(profile) {
+  const yyList = resolveStaffDivisionCodesYY(profile);
+  return yyList.includes("00");
+}
+
+function normalizeAllowedStaffPages(pages, fallbackYY = "") {
+  const list = Array.isArray(pages)
+    ? pages.map((item) => (item || "").toString().trim()).filter(Boolean)
+    : [];
+  const filtered = Array.from(new Set(list.filter((page) => STAFF_PAGE_OPTIONS.includes(page))));
+  return filtered.length ? filtered : Array.from(getAllowedStaffPagesByYY(fallbackYY));
+}
+
+function getAllowedStaffPagesByYY(yy, roleValue = "") {
+  const normalizedYY = normalizeDivisionCodeYY(yy);
+  if (normalizedYY === "00") {
+    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "staff-approval", "login"]);
+  }
+  const map = {
+    "01": ["project-status-staff", "dashboard-staff", "login"],
+    "02": ["project-status-staff", "dashboard-staff", "login"],
+    "03": ["dashboard-staff", "login"],
+    "04": ["borrow-assets-staff", "meeting-room-staff", "login"],
+    "09": ["meeting-room-staff", "login"]
+  };
+  return new Set(map[normalizedYY] || ["project-status-staff", "dashboard-staff", "login"]);
+}
+
+function getAllowedStaffPagesByYYList(yyList = [], roleValue = "") {
+  const list = Array.isArray(yyList) ? yyList : [];
+  if (!list.length) return new Set(["project-status-staff", "dashboard-staff", "login"]);
+  const merged = new Set();
+  list.forEach((yy) => {
+    getAllowedStaffPagesByYY(yy, roleValue).forEach((page) => merged.add(page));
+  });
+  return merged;
+}
+
+function resolveAllowedPagesFromPositionCatalog(positionName, yy, zz) {
+  const normalizedName = (positionName || "").toString().trim().toLowerCase();
+  const normalizedYY = normalizeDivisionCodeYY(yy);
+  const normalizedZZ = normalizeDivisionCodeYY(zz);
+  if (normalizedName && Array.isArray(staffPositionAccessByName[normalizedName])) {
+    return normalizeAllowedStaffPages(staffPositionAccessByName[normalizedName], normalizedYY);
+  }
+  const codeKey = normalizedYY && normalizedZZ ? `${normalizedYY}.${normalizedZZ}` : "";
+  if (codeKey && Array.isArray(staffPositionAccessByCode[codeKey])) {
+    return normalizeAllowedStaffPages(staffPositionAccessByCode[codeKey], normalizedYY);
+  }
+  return normalizeAllowedStaffPages([], normalizedYY);
+}
+
+function getAllowedStaffPagesByProfile(profile) {
+  const merged = new Set();
+  const positions = Array.isArray(profile?.positions) ? profile.positions : [];
+  positions.forEach((entry) => {
+    const yy = normalizeDivisionCodeYY(entry?.yy || entry?.positionCodeYY || entry?.divisionCodeYY || "");
+    const zz = normalizeDivisionCodeYY(entry?.zz || entry?.positionCodeZZ || entry?.levelCodeZZ || "");
+    const pages = normalizeAllowedStaffPages(
+      entry?.allowedPages,
+      yy
+    );
+    const effectivePages = Array.isArray(entry?.allowedPages) && entry.allowedPages.length
+      ? pages
+      : resolveAllowedPagesFromPositionCatalog(entry?.name || entry?.position || "", yy, zz);
+    effectivePages.forEach((page) => merged.add(page));
+  });
+
+  if (merged.size) return merged;
+  return getAllowedStaffPagesByYYList(
+    profile?.divisionCodesYY?.length ? profile.divisionCodesYY : [profile?.divisionCodeYY],
+    profile?.role
+  );
 }
 
 function getAllowedPagesForCurrentState() {
@@ -206,12 +387,9 @@ function getAllowedPagesForCurrentState() {
 
   const allowed = new Set(publicAllowed);
   const protectedAllowed = [
-    "dashboard-staff",
     "borrow-assets",
-    "borrow-assets-staff",
-    "project-status-staff",
     "meeting-room-booking",
-    "meeting-room-staff"
+    "staff-application"
   ];
   protectedAllowed.forEach((page) => allowed.add(page));
   if (isAffairsProfile) {
@@ -220,18 +398,12 @@ function getAllowedPagesForCurrentState() {
   }
 
   if (staffAuthUser && staffViewMode === "staff") {
-    const roleAllowedMap = {
-      "0": ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"],
-      "1": ["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"],
-      "4": ["borrow-assets-staff", "login"],
-      "9": ["meeting-room-staff", "login"]
-    };
-    const roleAllowed = roleAllowedMap[normalizeStaffRoleCode(staffAuthUser.role)] ||
-      ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"];
-    const filteredRoleAllowed = isAffairsProfile
-      ? roleAllowed.filter((page) => page !== "borrow-assets" && page !== "borrow-assets-staff")
-      : roleAllowed;
-    return new Set(filteredRoleAllowed);
+    const yyAllowed = getAllowedStaffPagesByProfile(staffAuthUser);
+    if (isAffairsProfile) {
+      yyAllowed.delete("borrow-assets");
+      yyAllowed.delete("borrow-assets-staff");
+    }
+    return yyAllowed;
   }
 
   if (staffViewMode !== "staff") {
@@ -239,6 +411,9 @@ function getAllowedPagesForCurrentState() {
     allowed.delete("borrow-assets-staff");
     allowed.delete("project-status-staff");
     allowed.delete("meeting-room-staff");
+    if (!isHeadStaffProfile(staffAuthUser)) {
+      allowed.delete("staff-approval");
+    }
   }
 
   return allowed;
@@ -246,13 +421,49 @@ function getAllowedPagesForCurrentState() {
 
 function getStaffProfileByEmail(email) {
   const normalized = (email || "").toString().trim().toLowerCase();
-  if (!normalized || !staffEmails.has(normalized)) return null;
+  if (!normalized) return null;
+  const isCurrentUserApproved =
+    currentStaffApprovalState.email === normalized && currentStaffApprovalState.hasApproved === true;
+  if (!isCurrentUserApproved) return null;
+  const hasRealProfile = staffEmails.has(normalized);
+  const isOverrideHead = STAFF_HEAD_OVERRIDES.has(normalized) && !hasRealProfile;
+  if (!isOverrideHead && !hasRealProfile) return null;
   const profile = staffProfilesByEmail[normalized] || {};
+  if (isOverrideHead) {
+    return {
+      email: normalized,
+      position: profile.position || "เหรัญญิก",
+      nick: profile.nick || "",
+      role: "0",
+      divisionCodeYY: "00",
+      divisionCodesYY: ["00"],
+      positionCodeYY: "00",
+      positionCode: (profile.positionCode || "").toString(),
+      positions: Array.isArray(profile.positions) ? profile.positions : []
+    };
+  }
+  const approvalYY = Array.isArray(currentStaffApprovalState.approvedDivisionCodesYY)
+    ? currentStaffApprovalState.approvedDivisionCodesYY
+    : [];
+  const profileYY = resolveStaffDivisionCodesYY(profile);
+  const mergedYY = Array.from(new Set([...profileYY, ...approvalYY].map((item) => normalizeDivisionCodeYY(item)).filter(Boolean)));
+  const effectiveYY = mergedYY[0] || resolveStaffDivisionCodeYY(profile);
+
   return {
     email: normalized,
     position: profile.position || "",
     nick: profile.nick || "",
-    role: normalizeStaffRoleCode(profile.role)
+    role: (() => {
+      const yyList = mergedYY.length ? mergedYY : resolveStaffDivisionCodesYY(profile);
+      const baseRole = normalizeStaffRoleCode(profile.role);
+      if (baseRole) return baseRole;
+      return yyList.includes("00") ? "0" : "1";
+    })(),
+    divisionCodeYY: effectiveYY,
+    divisionCodesYY: mergedYY.length ? mergedYY : resolveStaffDivisionCodesYY(profile),
+    positionCodeYY: effectiveYY,
+    positionCode: (profile.positionCode || "").toString(),
+    positions: Array.isArray(profile.positions) ? profile.positions : []
   };
 }
 
@@ -324,20 +535,18 @@ function updateNavForStaff(staffUser) {
   if (!navLinksAll.length || !staffUser) return;
   if (staffViewMode !== "staff") return;
 
-  const roleAllowedMap = {
-    "0": new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]),
-    "1": new Set(["project-status-staff", "dashboard-staff", "meeting-room-staff", "login"]),
-    "4": new Set(["borrow-assets-staff", "login"]),
-    "9": new Set(["meeting-room-staff", "login"])
-  };
-
-  const allowedStaffPages = roleAllowedMap[normalizeStaffRoleCode(staffUser.role)] ||
-    new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "login"]);
+  const allowedStaffPages = getAllowedStaffPagesByProfile(staffUser);
 
   navLinksAll.forEach((link) => {
     const page = link.dataset.page || "";
     link.style.display = allowedStaffPages.has(page) ? "" : "none";
   });
+
+  const desktopGeneral = document.getElementById("desktopNavGeneral");
+  const desktopStaff = document.getElementById("desktopNavStaff");
+  if (desktopGeneral) desktopGeneral.style.display = "none";
+  if (desktopStaff) desktopStaff.style.display = "flex";
+
   syncDesktopNavGroupVisibility();
   syncMobileNavGroupVisibility();
 }
@@ -381,6 +590,11 @@ function goToFirstVisibleNavPageWithPreference(preferredPage) {
 }
 
 function initAuthUI() {
+  const loginProfileCardEl = document.getElementById("loginProfileCard");
+  const loginHelpApplyBtnEl = document.getElementById("loginHelpApplyBtn");
+  const loginHeroEl = document.querySelector(".login-hero");
+  const loginHeroContentEl = document.getElementById("loginHeroContent");
+
   if (!window.sgcuAuth) {
     const panel = document.getElementById("authPanel");
     if (panel) {
@@ -396,6 +610,18 @@ function initAuthUI() {
     if (loginPageLogoutBtnEl) {
       loginPageLogoutBtnEl.style.display = "none";
       loginPageLogoutBtnEl.disabled = true;
+    }
+    if (loginHelpApplyBtnEl) {
+      loginHelpApplyBtnEl.hidden = true;
+    }
+    if (loginProfileCardEl) {
+      loginProfileCardEl.hidden = true;
+    }
+    if (loginHeroEl) {
+      loginHeroEl.classList.remove("is-authenticated");
+    }
+    if (loginHeroContentEl) {
+      loginHeroContentEl.hidden = false;
     }
     if (loginBtnEl) {
       loginBtnEl.style.display = "none";
@@ -512,6 +738,8 @@ function initAuthUI() {
   };
 
   const profileStore = window.sgcuFirestore || {};
+  const STAFF_PROFILE_COLLECTION = "staffProfiles";
+  const remoteStaffProfileLoadingEmails = new Set();
 
   function canUseRemoteProfileStore() {
     return !!(
@@ -521,6 +749,197 @@ function initAuthUI() {
       profileStore.setDoc &&
       profileStore.serverTimestamp
     );
+  }
+
+  function canUseRemoteStaffProfileStore() {
+    return !!(
+      profileStore.db &&
+      profileStore.doc &&
+      profileStore.getDoc
+    );
+  }
+
+  function watchStaffPositionAccessCatalog() {
+    if (typeof unsubscribeStaffPositionAccess === "function") return;
+    if (
+      !profileStore.db ||
+      !profileStore.collection ||
+      !profileStore.onSnapshot
+    ) return;
+
+    unsubscribeStaffPositionAccess = profileStore.onSnapshot(
+      profileStore.collection(profileStore.db, "staffPositionCatalog"),
+      (snapshot) => {
+        const nextByName = {};
+        const nextByCode = {};
+        (snapshot?.docs || []).forEach((docSnap) => {
+          const data = docSnap.data() || {};
+          const nameKey = (data.name || "").toString().trim().toLowerCase();
+          const yy = normalizeDivisionCodeYY(data.divisionCodeYY || "");
+          const zz = normalizeDivisionCodeYY(data.levelCodeZZ || "");
+          const pages = normalizeAllowedStaffPages(data.allowedPages, yy);
+          if (nameKey) nextByName[nameKey] = pages;
+          if (yy && zz) nextByCode[`${yy}.${zz}`] = pages;
+        });
+        staffPositionAccessByName = nextByName;
+        staffPositionAccessByCode = nextByCode;
+        if (auth.currentUser) {
+          refreshAuthDisplay(auth.currentUser);
+        }
+      },
+      () => {
+        staffPositionAccessByName = {};
+        staffPositionAccessByCode = {};
+      }
+    );
+  }
+
+  function resetCurrentStaffApprovalWatcher() {
+    if (typeof unsubscribeCurrentStaffApproval === "function") {
+      try {
+        unsubscribeCurrentStaffApproval();
+      } catch (_) {
+        // ignore unsubscribe errors
+      }
+    }
+    unsubscribeCurrentStaffApproval = null;
+    currentStaffApprovalState.email = "";
+    currentStaffApprovalState.hasApproved = false;
+    currentStaffApprovalState.approvedDivisionCodesYY = [];
+  }
+
+  function watchCurrentStaffApproval(firebaseUser) {
+    const firestore = window.sgcuFirestore || {};
+    const normalizedEmail = (firebaseUser?.email || "").toString().trim().toLowerCase();
+    const normalizedUid = (firebaseUser?.uid || "").toString().trim();
+    if (!normalizedEmail) {
+      resetCurrentStaffApprovalWatcher();
+      refreshAuthDisplay(firebaseUser || null);
+      return;
+    }
+    if (
+      !firestore.db ||
+      !firestore.collection ||
+      !firestore.query ||
+      !firestore.where ||
+      !firestore.onSnapshot
+    ) {
+      currentStaffApprovalState.email = normalizedEmail;
+      currentStaffApprovalState.hasApproved = true;
+      currentStaffApprovalState.approvedDivisionCodesYY = [];
+      refreshAuthDisplay(firebaseUser);
+      return;
+    }
+    if (currentStaffApprovalState.email === normalizedEmail && typeof unsubscribeCurrentStaffApproval === "function") {
+      return;
+    }
+
+    resetCurrentStaffApprovalWatcher();
+    currentStaffApprovalState.email = normalizedEmail;
+    currentStaffApprovalState.hasApproved = false;
+    currentStaffApprovalState.approvedDivisionCodesYY = [];
+    const snapshotByKey = new Map();
+
+    const applyMergedState = () => {
+      const mergedDocs = Array.from(snapshotByKey.values()).flatMap((snap) => snap?.docs || []);
+      const unique = new Map();
+      mergedDocs.forEach((docSnap) => {
+        const id = (docSnap?.id || "").toString();
+        if (!id) return;
+        if (!unique.has(id)) unique.set(id, docSnap);
+      });
+      const resolved = extractApprovedDivisionCodesFromDocs(Array.from(unique.values()));
+      currentStaffApprovalState.email = normalizedEmail;
+      currentStaffApprovalState.hasApproved = resolved.hasApproved;
+      currentStaffApprovalState.approvedDivisionCodesYY = resolved.divisionCodesYY;
+      refreshAuthDisplay(auth.currentUser || firebaseUser || null);
+    };
+
+    const listeners = [];
+    const makeListener = (key, queryRef) => {
+      const unsub = firestore.onSnapshot(
+        queryRef,
+        (snapshot) => {
+          snapshotByKey.set(key, snapshot);
+          applyMergedState();
+        },
+        () => {
+          snapshotByKey.delete(key);
+          applyMergedState();
+        }
+      );
+      listeners.push(unsub);
+    };
+
+    const qByEmail = firestore.query(
+      firestore.collection(firestore.db, "staffApplications"),
+      firestore.where("applicantEmail", "==", normalizedEmail)
+    );
+    makeListener("email", qByEmail);
+
+    if (normalizedUid) {
+      const qByUid = firestore.query(
+        firestore.collection(firestore.db, "staffApplications"),
+        firestore.where("applicantUid", "==", normalizedUid)
+      );
+      makeListener("uid", qByUid);
+    }
+
+    unsubscribeCurrentStaffApproval = () => {
+      listeners.forEach((fn) => {
+        try { fn?.(); } catch (_) {}
+      });
+    };
+  }
+
+  async function hydrateStaffProfileFromRemote(email) {
+    const normalizedEmail = (email || "").toString().trim().toLowerCase();
+    if (!normalizedEmail) return;
+    if (remoteStaffProfileLoadingEmails.has(normalizedEmail)) return;
+    if (!canUseRemoteStaffProfileStore()) return;
+    remoteStaffProfileLoadingEmails.add(normalizedEmail);
+
+    try {
+      const ref = profileStore.doc(profileStore.db, STAFF_PROFILE_COLLECTION, normalizedEmail);
+      const snap = await profileStore.getDoc(ref);
+      if (snap?.exists()) {
+        const data = snap.data() || {};
+        const remotePositions = Array.isArray(data.positions) ? data.positions : [];
+        const derivedRoleFromPositions = resolveStaffDivisionCodesYY({ positions: remotePositions }).includes("00") ? "0" : "";
+        const remoteRole = normalizeStaffRoleCode(data.role || derivedRoleFromPositions || "");
+        const remotePosition = (data.position || "").toString().trim();
+        const remoteNick = (data.nick || "").toString().trim();
+        const remotePositionCode = (data.positionCode || "").toString().trim();
+        const remoteDivisionCodeYY = resolveStaffDivisionCodeYY({
+          positions: remotePositions,
+          divisionCodeYY: data.divisionCodeYY,
+          positionCodeYY: data.positionCodeYY,
+          positionCode: remotePositionCode
+        });
+
+        if (staffEmails instanceof Set) {
+          staffEmails.add(normalizedEmail);
+        }
+        staffProfilesByEmail[normalizedEmail] = {
+          ...(staffProfilesByEmail[normalizedEmail] || {}),
+          position: remotePosition,
+          nick: remoteNick,
+          role: remoteRole,
+          positionCode: remotePositionCode,
+          divisionCodeYY: remoteDivisionCodeYY,
+          positionCodeYY: remoteDivisionCodeYY,
+          positions: remotePositions
+        };
+
+        if ((auth.currentUser?.email || "").toString().trim().toLowerCase() === normalizedEmail) {
+          refreshAuthDisplay(auth.currentUser);
+        }
+      }
+    } catch (_) {
+      // ignore remote profile read failures
+    } finally {
+      remoteStaffProfileLoadingEmails.delete(normalizedEmail);
+    }
   }
 
   function buildRemoteProfileRef(firebaseUser) {
@@ -560,7 +979,7 @@ function initAuthUI() {
       return { ok: true, code: "" };
     } catch (err) {
       const code = (err?.code || "unknown").toString();
-      console.error("save user profile to firestore failed - app.sorting-auth.js:562", err);
+      console.error("save user profile to firestore failed - app.sorting-auth.js:760", err);
       return { ok: false, code };
     }
   }
@@ -934,6 +1353,9 @@ function initAuthUI() {
   function refreshAuthDisplay(firebaseUser) {
     const hasFirebase = !!firebaseUser;
     staffAuthUser = hasFirebase ? getStaffProfileByEmail(firebaseUser.email) : null;
+    if (hasFirebase) {
+      void hydrateStaffProfileFromRemote(firebaseUser.email);
+    }
     if (!staffAuthUser) {
       staffViewMode = "normal";
     }
@@ -959,6 +1381,18 @@ function initAuthUI() {
     if (loginPageLogoutBtnEl) {
       loginPageLogoutBtnEl.style.display = isAuth ? "inline-block" : "none";
     }
+    if (loginHelpApplyBtnEl) {
+      loginHelpApplyBtnEl.hidden = !isAuth;
+    }
+    if (loginProfileCardEl) {
+      loginProfileCardEl.hidden = !isAuth;
+    }
+    if (loginHeroEl) {
+      loginHeroEl.classList.toggle("is-authenticated", isAuth);
+    }
+    if (loginHeroContentEl) {
+      loginHeroContentEl.hidden = isAuth;
+    }
     setLoginProfileEnabled(isAuth);
     loadLoginProfileByUser(firebaseUser);
     if (!isAuth) {
@@ -977,12 +1411,13 @@ function initAuthUI() {
   }
 
   onAuthStateChanged(auth, (user) => {
+    watchCurrentStaffApproval(user || null);
     if (user) {
       const startedAt = resolveSessionStart(user);
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:970", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:1189", err);
         });
         refreshAuthDisplay(null);
         window.dispatchEvent(
@@ -994,6 +1429,7 @@ function initAuthUI() {
       }
     } else {
       clearAuthSession();
+      resetCurrentStaffApprovalWatcher();
     }
     refreshAuthDisplay(user);
     window.dispatchEvent(
@@ -1079,7 +1515,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:1067", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:1287", err);
     });
     loginProfileLoadedForEmail = "";
     setLoginProfileStatus("ออกจากระบบแล้ว", "#6b7280");
@@ -1156,5 +1592,6 @@ function initAuthUI() {
   }
 
   initLoginNotificationControls();
+  watchStaffPositionAccessCatalog();
   refreshAuthDisplayFn = refreshAuthDisplay;
 }

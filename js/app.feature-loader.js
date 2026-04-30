@@ -14,7 +14,10 @@
       "borrow-assets-staff": "js/app.borrow-assets.js?v=20260417-6",
       "meeting-room-booking": "js/app.meeting-room-booking.js?v=20260415-15",
       "meeting-room-staff": "js/app.meeting-room-staff.js?v=20260415-4",
-      "budget-approval-request": "js/app.budget-request.js?v=20260414-1"
+      "budget-approval-request": "js/app.budget-request.js?v=20260414-1",
+      login: "js/app.staff-access.js?v=20260430-7",
+      "staff-application": "js/app.staff-access.js?v=20260430-7",
+      "staff-approval": "js/app.staff-access.js?v=20260430-7"
     },
     idlePrefetchPages: [
       "home",
@@ -24,7 +27,9 @@
       "meeting-room-booking",
       "borrow-assets-staff",
       "meeting-room-staff",
-      "budget-approval-request"
+      "budget-approval-request",
+      "staff-application",
+      "staff-approval"
     ]
   };
 

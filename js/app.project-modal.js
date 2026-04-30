@@ -528,30 +528,26 @@ function applyThaiSegmentation(rootEl) {
   if (!rootEl || typeof Intl === "undefined" || !Intl.Segmenter) return;
 
   const segmenter = new Intl.Segmenter("th", { granularity: "word" });
-  const targets = rootEl.querySelectorAll(".pdf-paragraph");
+  const doc = rootEl.ownerDocument;
+  const walker = doc.createTreeWalker(rootEl, 4);
+  const textNodes = [];
 
-  targets.forEach((el) => {
-    const doc = el.ownerDocument;
-    const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    const textNodes = [];
+  while (walker.nextNode()) {
+    textNodes.push(walker.currentNode);
+  }
 
-    while (walker.nextNode()) {
-      textNodes.push(walker.currentNode);
-    }
+  textNodes.forEach((node) => {
+    const text = node.nodeValue || "";
+    if (!text.trim() || !/[\u0E00-\u0E7F]/.test(text)) return;
 
-    textNodes.forEach((node) => {
-      const text = node.nodeValue || "";
-      if (!text.trim()) return;
-
-      const frag = doc.createDocumentFragment();
-      for (const seg of segmenter.segment(text)) {
-        frag.appendChild(doc.createTextNode(seg.segment));
-        if (seg.isWordLike) {
-          frag.appendChild(doc.createElement("wbr"));
-        }
+    const frag = doc.createDocumentFragment();
+    for (const seg of segmenter.segment(text)) {
+      frag.appendChild(doc.createTextNode(seg.segment));
+      if (seg.isWordLike) {
+        frag.appendChild(doc.createElement("wbr"));
       }
-      node.parentNode.replaceChild(frag, node);
-    });
+    }
+    node.parentNode.replaceChild(frag, node);
   });
 }
 

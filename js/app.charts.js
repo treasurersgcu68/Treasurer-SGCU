@@ -71,6 +71,11 @@ function initCharts(ctxKey = activeProjectStatusContext) {
       plugins: {
         legend: {
           position: "bottom",
+          onClick(e, legendItem, legend) {
+            Chart.defaults.plugins.legend.onClick.call(this, e, legendItem, legend);
+            updateClosureXAxisMax(legend.chart);
+            legend.chart.update();
+          },
           labels: {
             font: { size: 11 },
             usePointStyle: true,
@@ -227,20 +232,31 @@ function resizeClosureChart(numLabels) {
   if (budgetByMonthChart) budgetByMonthChart.resize();
 }
 
-function updateClosureXAxisMax(pendingData, yellowData, orangeData, redData, greenData, grayData, blackData) {
-  if (!budgetByMonthChart) return;
-  const totals = pendingData.map(
-    (_, i) =>
-      (pendingData[i] || 0) +
-      (yellowData[i] || 0) +
-      (orangeData[i] || 0) +
-      (redData[i] || 0) +
-      (greenData[i] || 0) +
-      (grayData[i] || 0) +
-      (blackData[i] || 0)
+function getNiceProjectCountAxisMax(maxTotal) {
+  if (!Number.isFinite(maxTotal) || maxTotal <= 0) return 4;
+  if (maxTotal <= 4) return 4;
+  const padded = maxTotal * 1.1;
+  let step = 1;
+  if (padded > 500) step = 100;
+  else if (padded > 250) step = 50;
+  else if (padded > 100) step = 25;
+  else if (padded > 50) step = 10;
+  else if (padded > 20) step = 5;
+  else if (padded > 10) step = 2;
+  return Math.max(4, Math.ceil(padded / step) * step);
+}
+
+function updateClosureXAxisMax(chart = budgetByMonthChart) {
+  if (!chart) return;
+  const labelCount = chart.data.labels?.length || 0;
+  const totals = Array.from({ length: labelCount }, (_, i) =>
+    chart.data.datasets.reduce((sum, dataset, datasetIndex) => {
+      if (!chart.isDatasetVisible(datasetIndex)) return sum;
+      return sum + (Number(dataset.data?.[i]) || 0);
+    }, 0)
   );
   const maxTotal = totals.length ? Math.max(...totals) : 0;
-  budgetByMonthChart.options.scales.x.max = Math.max(4, maxTotal);
+  chart.options.scales.x.max = getNiceProjectCountAxisMax(maxTotal);
 }
 
 function getChartOrgGroups() {
@@ -372,7 +388,7 @@ function updateClosureStatusChart(filtered) {
     budgetByMonthChart.data.datasets[5].data = grayData;
     budgetByMonthChart.data.datasets[6].data = blackData;
 
-    updateClosureXAxisMax(pendingData, yellowData, orangeData, redData, greenData, grayData, blackData);
+    updateClosureXAxisMax();
     resizeClosureChart(labels.length);
     budgetByMonthChart.update();
     return;
@@ -437,7 +453,7 @@ function updateClosureStatusChart(filtered) {
   budgetByMonthChart.data.datasets[5].data = grayData;
   budgetByMonthChart.data.datasets[6].data = blackData;
 
-  updateClosureXAxisMax(pendingData, yellowData, orangeData, redData, greenData, grayData, blackData);
+  updateClosureXAxisMax();
   resizeClosureChart(labels.length);
   budgetByMonthChart.update();
 }

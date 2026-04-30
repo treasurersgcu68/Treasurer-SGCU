@@ -256,6 +256,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pageViews = document.querySelectorAll(".page-view");
   const siteHeaderEl = document.querySelector(".site-header");
   const siteFooterEl = document.querySelector(".site-footer");
+  const mainContainerEl = document.querySelector("main.main");
   let currentPage = null;
   let pendingConsentPage = null;
   let consentAuthIdentity = { uid: "", email: "" };
@@ -303,7 +304,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.documentElement.style.setProperty("--home-shell-footer-h", `${footerHeight}px`);
   };
 
-  window.addEventListener("resize", syncHomeShellMetrics, { passive: true });
+  const shouldUseFixedHomeShell = (pageName) => {
+    return pageName === "home" && window.matchMedia("(min-width: 961px)").matches;
+  };
+
+  const applyHomeShellState = (pageOverride = null) => {
+    const pageForState = typeof pageOverride === "string" && pageOverride
+      ? pageOverride
+      : currentPage;
+    const shouldUseFixedShell = shouldUseFixedHomeShell(pageForState);
+    document.body.classList.toggle("home-fixed-shell", shouldUseFixedShell);
+    if (shouldUseFixedShell) {
+      syncHomeShellMetrics();
+    } else {
+      document.documentElement.style.removeProperty("--home-shell-header-h");
+      document.documentElement.style.removeProperty("--home-shell-footer-h");
+    }
+  };
+
+  window.addEventListener("resize", () => {
+    applyHomeShellState(currentPage);
+  }, { passive: true });
 
   // ===== 2) โหลดข้อมูลหน้าแรกแบบ background หลัง route แรกพร้อมใช้งาน =====
 
@@ -687,13 +708,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       link.classList.toggle("active", link.dataset.page === page);
     });
 
-    const isHomePage = page === "home";
-    document.body.classList.toggle("home-fixed-shell", isHomePage);
-    if (isHomePage) {
-      syncHomeShellMetrics();
-    } else {
-      document.documentElement.style.removeProperty("--home-shell-header-h");
-      document.documentElement.style.removeProperty("--home-shell-footer-h");
+    applyHomeShellState(page);
+    if (page === "home") {
+      mainContainerEl?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      const homeSnapContainer = document.querySelector('.page-view[data-page="home"] .home-snap-container');
+      if (homeSnapContainer instanceof HTMLElement) {
+        homeSnapContainer.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
     }
 
     if (page === "project-status") {

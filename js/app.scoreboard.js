@@ -35,11 +35,12 @@ function initScoreboard() {
     return;
   }
 
-  fetchTextWithProgress(SCORE_SHEET, (ratio) => {
-    if (typeof updateLoaderProgress === "function") {
-      updateLoaderProgress("scoreboard", ratio);
-    }
-  })
+  Promise.resolve(window.sgcuVendorLoader?.ensurePapa?.())
+    .then(() => fetchTextWithProgress(SCORE_SHEET, (ratio) => {
+      if (typeof updateLoaderProgress === "function") {
+        updateLoaderProgress("scoreboard", ratio);
+      }
+    }))
     .then((csvText) => {
       const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: true });
       const rows = parsed.data || [];

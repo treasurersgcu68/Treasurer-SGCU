@@ -39,6 +39,7 @@ async function loadNewsFromSheet() {
       return;
     }
 
+    await window.sgcuVendorLoader?.ensurePapa?.();
     const csvText = await fetchTextWithProgress(NEWS_SHEET_CSV, (ratio) => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("news", ratio);

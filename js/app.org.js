@@ -13,6 +13,7 @@ async function loadOrgStructure() {
   toggleOrgStructureLoading(true);
   const el = document.getElementById("org-structure-content");
   try {
+    await window.sgcuVendorLoader?.ensurePapa?.();
     const structureCsvText = await fetchTextWithProgress(ORG_STRUCTURE_SHEET_CSV, (ratio) => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("orgStructure", ratio);

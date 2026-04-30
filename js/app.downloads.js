@@ -178,6 +178,7 @@ async function loadDownloadDocuments() {
       return;
     }
 
+    await window.sgcuVendorLoader?.ensurePapa?.();
     const csvText = await fetchTextWithProgress(DOWNLOAD_SHEET, (ratio) => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("downloads", ratio);

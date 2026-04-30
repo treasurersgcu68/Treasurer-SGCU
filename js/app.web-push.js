@@ -4,7 +4,7 @@
 
   const DEFAULT_ICON = "img/icons/icon-192.png";
   const DEFAULT_BADGE = "img/icons/icon-192.png";
-  const DEFAULT_SW_URL = "./sw.js?v=20260415-4";
+  const DEFAULT_SW_URL = "./sw.js?v=20260430-2";
   const config = {
     applicationServerKey: "",
     subscribeEndpoint: "",

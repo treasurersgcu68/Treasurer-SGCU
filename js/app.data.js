@@ -12,6 +12,7 @@ async function loadProjectsFromSheet() {
     }
 
     console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:895");
+    await window.sgcuVendorLoader?.ensurePapa?.();
     const csvText = await fetchTextWithProgress(SHEET_CSV_URL, (ratio) => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("projects", ratio);
@@ -94,6 +95,7 @@ async function loadOrgFilters() {
       }
     }
 
+    await window.sgcuVendorLoader?.ensurePapa?.();
     const csvText = await fetchTextWithProgress(ORG_FILTER_CSV_URL, (ratio) => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("orgFilters", ratio);
@@ -150,11 +152,13 @@ async function ensureProjectDataLoaded() {
       }
 
       await loadOrgFilters();                     // โหลดตัวเลือก filter ประเภท/ฝ่าย
+      await window.sgcuVendorLoader?.ensureChart?.();
       renderHomeKpis();                           // KPI สำหรับ dashboard (staff)
     } catch (err) {
       console.error("โหลดข้อมูลหน้า Project Status ไม่สำเร็จ  ใช้ข้อมูลสำรองแทน - app.js:999", err);
       projects = getFallbackProjects();
       await loadOrgFilters();
+      await window.sgcuVendorLoader?.ensureChart?.();
       renderHomeKpis();
     } finally {
       setLoading(false, "public");
@@ -173,7 +177,9 @@ function ensureProjectStatusInitialized(ctxKey = activeProjectStatusContext) {
   setActiveProjectStatusContext(ctxKey);
   initOrgTypeOptions();                       // เติม options ประเภทองค์กร
   initOrgOptions();                           // เติมรายชื่อองค์กร
-  initCharts(ctxKey);                         // สร้างกราฟ Chart.js
+  if (typeof Chart !== "undefined") {
+    initCharts(ctxKey);                       // สร้างกราฟ Chart.js
+  }
   initCalendar(ctxKey);                       // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
   ctx.isInitialized = true;
 }

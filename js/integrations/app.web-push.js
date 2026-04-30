@@ -4,7 +4,7 @@
 
   const DEFAULT_ICON = "img/icons/icon-192.png";
   const DEFAULT_BADGE = "img/icons/icon-192.png";
-  const DEFAULT_SW_URL = "./sw.js?v=20260430-2";
+  const DEFAULT_SW_URL = "./sw.js?v=20260501-5";
   const config = {
     applicationServerKey: "",
     subscribeEndpoint: "",
@@ -58,10 +58,12 @@
   const ensureServiceWorkerRegistration = async () => {
     if (!("serviceWorker" in window.navigator)) return null;
     try {
-      const existing = await window.navigator.serviceWorker.getRegistration();
-      if (existing) return existing;
       const swUrl = (window.sgcuServiceWorkerUrl || DEFAULT_SW_URL).toString().trim() || DEFAULT_SW_URL;
-      return await window.navigator.serviceWorker.register(swUrl);
+      const registration = await window.navigator.serviceWorker.register(swUrl);
+      if (typeof registration.update === "function") {
+        void registration.update();
+      }
+      return registration;
     } catch (_) {
       return null;
     }

@@ -9,19 +9,19 @@
     },
     pageScripts: {
       home: [
-        "js/app.news.js?v=20260417-1",
-        "js/app.scoreboard.js?v=20260417-1"
+        "js/features/news/app.news.js?v=20260417-1",
+        "js/features/news/app.scoreboard.js?v=20260501-1"
       ],
-      news: "js/app.news.js?v=20260417-1",
-      "financial-docs": "js/app.downloads.js?v=20260417-1",
-      "borrow-assets": "js/app.borrow-assets.js?v=20260417-6",
-      "borrow-assets-staff": "js/app.borrow-assets.js?v=20260417-6",
-      "meeting-room-booking": "js/app.meeting-room-booking.js?v=20260415-15",
-      "meeting-room-staff": "js/app.meeting-room-staff.js?v=20260415-4",
-      "budget-approval-request": "js/app.budget-request.js?v=20260414-1",
-      login: "js/app.staff-access.js?v=20260430-7",
-      "staff-application": "js/app.staff-access.js?v=20260430-7",
-      "staff-approval": "js/app.staff-access.js?v=20260430-7"
+      news: "js/features/news/app.news.js?v=20260417-1",
+      "financial-docs": "js/features/docs/app.downloads.js?v=20260501-1",
+      "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260417-6",
+      "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260417-6",
+      "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260415-15",
+      "meeting-room-staff": "js/features/booking/app.meeting-room-staff.js?v=20260415-4",
+      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260414-1",
+      login: "js/features/staff/app.staff-access.js?v=20260430-7",
+      "staff-application": "js/features/staff/app.staff-access.js?v=20260430-7",
+      "staff-approval": "js/features/staff/app.staff-access.js?v=20260430-7"
     },
     idlePrefetchPages: [
       "home",

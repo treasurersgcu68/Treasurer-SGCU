@@ -2524,7 +2524,6 @@ body.home-fixed-shell .main {
   }
 }
 
-
 /* Page containers */
 
 .page-view {
@@ -4136,7 +4135,6 @@ th.sortable.sort-desc::after {
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable;
 }
 
 .home-snap-panel {

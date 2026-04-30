@@ -44,7 +44,11 @@ function initScoreboard() {
     .then((csvText) => {
       const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: true });
       const rows = parsed.data || [];
-      if (rows.length < 2) return;
+      if (rows.length < 2) {
+        renderLoadState(podiumEl, "empty", "ยังไม่มีข้อมูลคะแนน");
+        runnersEl.innerHTML = "";
+        return;
+      }
 
       const headerRow = rows[0] || [];
       const headerOrgIdx = getHeaderIndex(headerRow, [/องค์กร/i, /org/i, /ฝ่าย/i, /ชมรม/i]);
@@ -65,7 +69,11 @@ function initScoreboard() {
         items.push({ org, score: scoreVal });
       }
 
-      if (!items.length) return;
+      if (!items.length) {
+        renderLoadState(podiumEl, "empty", "ยังไม่มีข้อมูลคะแนน");
+        runnersEl.innerHTML = "";
+        return;
+      }
 
       items.sort((a, b) => b.score - a.score);
       setCache(CACHE_KEYS.SCOREBOARD, items);
@@ -80,7 +88,10 @@ function initScoreboard() {
       console.error("Error loading SCORE_SHEET - app.js:4641", err);
       recordLoadError("scoreboard", "โหลดคะแนนไม่สำเร็จ", { showRetry: true });
       if (podiumEl) {
-        setInlineError(podiumEl, "ไม่สามารถโหลดผลคะแนนได้ในขณะนี้");
+        setInlineError(podiumEl, "ไม่สามารถโหลดผลคะแนนได้ในขณะนี้", {
+          retryButtonId: "scoreboardRetryButton",
+          onRetry: () => initScoreboard()
+        });
       }
       if (runnersEl) {
         runnersEl.innerHTML = "";

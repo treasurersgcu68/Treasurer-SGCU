@@ -43,7 +43,7 @@
     />
     <link rel="stylesheet" href="css/style.css?v=20260430-8" />
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
-    <script type="module" src="js/app.firebase-bootstrap.js?v=20260423-1"></script>
+    <script type="module" src="js/integrations/app.firebase-bootstrap.js?v=20260423-1"></script>
   </head>
   <body>
     <div id="appLoader" class="app-loader" aria-live="polite" aria-busy="true">
@@ -3544,23 +3544,25 @@
       </div>
     </footer>
 
-    <script src="js/app.core.js" defer></script>
-    <script src="js/app.helpers.js?v=20260416-1" defer></script>
-    <script src="js/app.file-links.js?v=20260417-1" defer></script>
-    <script src="js/app.data.js" defer></script>
-    <script src="js/app.project-ui.js" defer></script>
-    <script src="js/app.project-modal.js" defer></script>
-    <script src="js/app.charts.js" defer></script>
-    <script src="js/app.pie.js" defer></script>
-    <script src="js/app.sorting-auth.js?v=20260430-6" defer></script>
-    <script src="js/app.org.js?v=20260428-1" defer></script>
-    <script src="js/app.motion.js" defer></script>
-    <script src="js/app.web-push.js" defer></script>
-    <script src="js/app.feature-loader.js?v=20260430-9" defer></script>
-    <script src="js/app.init.js?v=20260430-1" defer></script>
-    <script src="js/app.calendar.js" defer></script>
+    <script src="js/core/app.config.js?v=20260501-1" defer></script>
+    <script src="js/core/app.core.js" defer></script>
+    <script src="js/core/app.dialog.js?v=20260501-1" defer></script>
+    <script src="js/core/app.helpers.js?v=20260501-1" defer></script>
+    <script src="js/features/docs/app.file-links.js?v=20260417-1" defer></script>
+    <script src="js/features/project/app.data.js" defer></script>
+    <script src="js/features/project/app.project-ui.js" defer></script>
+    <script src="js/features/project/app.project-modal.js" defer></script>
+    <script src="js/features/project/app.charts.js" defer></script>
+    <script src="js/features/project/app.pie.js" defer></script>
+    <script src="js/features/project/app.sorting-auth.js?v=20260430-6" defer></script>
+    <script src="js/features/org/app.org.js?v=20260428-1" defer></script>
+    <script src="js/motion/app.motion.js" defer></script>
+    <script src="js/integrations/app.web-push.js" defer></script>
+    <script src="js/core/app.feature-loader.js?v=20260501-2" defer></script>
+    <script src="js/core/app.init.js?v=20260430-1" defer></script>
+    <script src="js/features/project/app.calendar.js" defer></script>
     <script>
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260430-2";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260501-5";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",

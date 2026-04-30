@@ -1,33 +1,15 @@
-/* Core config + shared globals (used across modules) */
+/* Core shared globals (used across modules) */
 
-/* Config: sheet endpoints */
-const SHEET_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfcEartu_DeoGQXOJ7_rYPGizNtDhYJEaXivywadNZibj1rch9WKC1GF1yNbZ3zRgQ4Efjj8jrTOrf/pub?gid=1357605440&single=true&output=csv";
+const APP_CONFIG = SGCU_APP_CONFIG;
 
-const ORG_STRUCTURE_SHEET_CSV =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSiGgrustQXlqTrRlPj2sY7pkI7slLhTFSIKjPDHenzt0ddhhoQA6VHbffoiT29J2Hk1ndxYGKVSZ4B/pub?output=csv";
-
-const DOWNLOAD_SHEET =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTburYaUshqF-DOvbwOEinWik0KXNwqqJLfO6frlxUn1iEsLu5RzkNoum4KgnWeSwBdo4--B1eScRD5/pub?output=csv";
-
-const SCORE_SHEET =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_oiV1Ntv0x8UuRBKyvl9tTaUxrKkvImEmyFUU4oPp0pSKnLHOjJIz574Te4l25Y2IKFbLMaFlp3UW/pub?gid=676554954&single=true&output=csv";
-
-const NEWS_SHEET_CSV =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLaBypwNGVEZHCjCxQDSLn8s7tTx1EKAIKuYjL7oIx7_fmssMnAcq9hpLyC4N5TvwIhrzwtZxxCAe0/pub?output=csv"; 
-
-const ORG_FILTER_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3mW8GVPRgbiURGAx59WyB3TZT5GbKoXJxHxmgpU2LRd_jgow9JBwXVjtjJRvfIgYYL5MKLLuZEddd/pub?output=csv";
-
-const DEFAULT_BASE_GROUPS = [
-  "ชมรมฝ่ายศิลปะและวัฒนธรรม",
-  "ชมรมฝ่ายวิชาการ",
-  "ชมรมฝ่ายพัฒนาสังคมและบำเพ็ญประโยชน์",
-  "ชมรมฝ่ายกีฬา",
-  "องค์การบริหารสโมสรนิสิต",
-  "สภานิสิต",
-  "องค์การบริหารสโมสรนิสิต, สภานิสิต"
-];
+/* Backward-compatible config aliases */
+const SHEET_CSV_URL = APP_CONFIG.sheets.projects;
+const ORG_STRUCTURE_SHEET_CSV = APP_CONFIG.sheets.orgStructure;
+const DOWNLOAD_SHEET = APP_CONFIG.sheets.downloads;
+const SCORE_SHEET = APP_CONFIG.sheets.scoreboard;
+const NEWS_SHEET_CSV = APP_CONFIG.sheets.news;
+const ORG_FILTER_CSV_URL = APP_CONFIG.sheets.orgFilters;
+const DEFAULT_BASE_GROUPS = APP_CONFIG.org.defaultBaseGroups;
 
 // Auth/session defaults (can be overridden from global config before scripts run)
 const AUTH_SESSION_MAX_AGE_MS =
@@ -35,24 +17,18 @@ const AUTH_SESSION_MAX_AGE_MS =
   Number.isFinite(globalThis.AUTH_SESSION_MAX_AGE_MS) &&
   globalThis.AUTH_SESSION_MAX_AGE_MS > 0
     ? globalThis.AUTH_SESSION_MAX_AGE_MS
-    : 7 * 24 * 60 * 60 * 1000; // 7 days
+    : APP_CONFIG.auth.sessionMaxAgeMs;
 
 // Backward-compat for legacy auth sheet column mapping
 const COL_STAFF_EMAIL_LEGACY =
   typeof globalThis.COL_STAFF_EMAIL_LEGACY === "number" &&
   Number.isFinite(globalThis.COL_STAFF_EMAIL_LEGACY)
     ? globalThis.COL_STAFF_EMAIL_LEGACY
-    : -1;
+    : APP_CONFIG.auth.staffEmailLegacyColumn;
 
 // Cache
-const CACHE_TTL_MS = 3 * 60 * 1000; // 3 นาที
-const CACHE_KEYS = {
-  PROJECTS: "sgcu_cache_projects",
-  NEWS: "sgcu_cache_news",
-  DOWNLOADS: "sgcu_cache_downloads",
-  ORG_FILTERS: "sgcu_cache_org_filters",
-  SCOREBOARD: "sgcu_cache_scoreboard"
-};
+const CACHE_TTL_MS = APP_CONFIG.cache.ttlMs;
+const CACHE_KEYS = APP_CONFIG.cache.keys;
 
 /* Globals: shared state */
 let projects = [];
@@ -193,112 +169,6 @@ let projectsLastUpdatedStaffEl;
 // Motion globals
 let sectionObserver = null;
 let hasInitCountup = false;
-
-// Accessibility helpers (focus trap + dialog state)
-const focusTrapHandlers = new Map();
-let activeModalEl = null;
-let lastModalFocusedEl = null;
-let lastMenuFocusedEl = null;
-
-const FOCUSABLE_SELECTOR =
-  "a[href], button:not([disabled]), input:not([disabled]):not([type='hidden']), " +
-  "select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
-
-function getFocusableElements(container) {
-  if (!container) return [];
-  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
-    (el) => el.offsetParent !== null && !el.hasAttribute("disabled")
-  );
-}
-
-function enableFocusTrap(container) {
-  if (!container || focusTrapHandlers.has(container)) return;
-  const handler = (e) => {
-    if (e.key !== "Tab") return;
-    const focusables = getFocusableElements(container);
-    if (!focusables.length) {
-      e.preventDefault();
-      return;
-    }
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    const isShift = e.shiftKey;
-    if (isShift && document.activeElement === first) {
-      last.focus();
-      e.preventDefault();
-    } else if (!isShift && document.activeElement === last) {
-      first.focus();
-      e.preventDefault();
-    }
-  };
-  container.addEventListener("keydown", handler);
-  focusTrapHandlers.set(container, handler);
-}
-
-function disableFocusTrap(container) {
-  const handler = focusTrapHandlers.get(container);
-  if (!handler) return;
-  container.removeEventListener("keydown", handler);
-  focusTrapHandlers.delete(container);
-}
-
-function openDialog(modalEl, options = {}) {
-  if (!modalEl) return;
-  lastModalFocusedEl = document.activeElement;
-  modalEl.classList.add("show");
-  modalEl.setAttribute("aria-hidden", "false");
-  if (!modalEl.hasAttribute("tabindex")) modalEl.setAttribute("tabindex", "-1");
-  document.body.classList.add("has-modal");
-  activeModalEl = modalEl;
-
-  enableFocusTrap(modalEl);
-
-  const target = options.focusSelector
-    ? modalEl.querySelector(options.focusSelector)
-    : null;
-  const fallback = getFocusableElements(modalEl)[0];
-  const focusTarget = target || fallback || modalEl;
-  if (focusTarget && typeof focusTarget.focus === "function") {
-    focusTarget.focus({ preventScroll: true });
-  }
-}
-
-function closeDialog(modalEl) {
-  if (!modalEl) return;
-  modalEl.classList.remove("show");
-  modalEl.setAttribute("aria-hidden", "true");
-  disableFocusTrap(modalEl);
-  if (activeModalEl === modalEl) activeModalEl = null;
-  document.body.classList.remove("has-modal");
-  if (lastModalFocusedEl && typeof lastModalFocusedEl.focus === "function") {
-    lastModalFocusedEl.focus({ preventScroll: true });
-  }
-}
-
-function setMobileMenuState(menuEl, buttonEl, isExpanded) {
-  if (!menuEl || !buttonEl) return;
-  menuEl.classList.toggle("show", isExpanded);
-  menuEl.setAttribute("aria-hidden", isExpanded ? "false" : "true");
-  buttonEl.setAttribute("aria-expanded", isExpanded ? "true" : "false");
-  if (!menuEl.hasAttribute("tabindex")) menuEl.setAttribute("tabindex", "-1");
-  document.body.classList.toggle("mobile-menu-open", isExpanded);
-
-  if (isExpanded) {
-    lastMenuFocusedEl = document.activeElement;
-    enableFocusTrap(menuEl);
-    const focusable = getFocusableElements(menuEl);
-    if (focusable[0]) {
-      focusable[0].focus({ preventScroll: true });
-    } else {
-      menuEl.focus({ preventScroll: true });
-    }
-  } else {
-    disableFocusTrap(menuEl);
-    if (lastMenuFocusedEl && typeof lastMenuFocusedEl.focus === "function") {
-      lastMenuFocusedEl.focus({ preventScroll: true });
-    }
-  }
-}
 
 /* 3) Plugin: Center Text in Doughnut */
 const centerTextPlugin = {

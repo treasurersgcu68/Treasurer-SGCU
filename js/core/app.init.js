@@ -683,7 +683,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await ensurePageFeatureLoaded(targetPage);
       clearLoadError("feature-loader");
     } catch (error) {
-      console.error("page feature script failed to load - app.init.js:686", targetPage, error);
+      console.error("page feature script failed to load - app.init.js:665", targetPage, error);
       recordLoadError("feature-loader", "ไม่สามารถโหลดฟีเจอร์ของหน้านี้ได้", { showRetry: true });
       return;
     }
@@ -958,8 +958,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ปุ่ม Esc: ปิดโมดัลที่เปิดอยู่ หรือปิดเมนูมือถือ
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (activeModalEl) {
-      closeDialog(activeModalEl);
+    const activeDialogEl =
+      typeof getActiveDialog === "function" ? getActiveDialog() : null;
+    if (activeDialogEl) {
+      closeDialog(activeDialogEl);
       return;
     }
     const menuEl = document.getElementById("mobileMenu");

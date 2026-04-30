@@ -1,23 +1,27 @@
-const CACHE_NAME = "treasurer-sgcu-shell-v49";
+const CACHE_VERSION = "20260501-5";
+const CACHE_PREFIX = "treasurer-sgcu-shell";
+const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
   "./css/style.css?v=20260430-8",
-  "./js/app.core.js",
-  "./js/app.helpers.js?v=20260416-1",
-  "./js/app.file-links.js?v=20260417-1",
-  "./js/app.data.js",
-  "./js/app.project-ui.js",
-  "./js/app.project-modal.js",
-  "./js/app.charts.js",
-  "./js/app.pie.js",
-  "./js/app.sorting-auth.js?v=20260430-6",
-  "./js/app.org.js?v=20260428-1",
-  "./js/app.motion.js",
-  "./js/app.feature-loader.js?v=20260430-9",
-  "./js/app.init.js?v=20260430-1",
-  "./js/app.calendar.js",
-  "./js/app.web-push.js",
+  "./js/core/app.config.js?v=20260501-1",
+  "./js/core/app.core.js",
+  "./js/core/app.dialog.js?v=20260501-1",
+  "./js/core/app.helpers.js?v=20260501-1",
+  "./js/features/docs/app.file-links.js?v=20260417-1",
+  "./js/features/project/app.data.js",
+  "./js/features/project/app.project-ui.js",
+  "./js/features/project/app.project-modal.js",
+  "./js/features/project/app.charts.js",
+  "./js/features/project/app.pie.js",
+  "./js/features/project/app.sorting-auth.js?v=20260430-6",
+  "./js/features/org/app.org.js?v=20260428-1",
+  "./js/motion/app.motion.js",
+  "./js/core/app.feature-loader.js?v=20260501-2",
+  "./js/core/app.init.js?v=20260430-1",
+  "./js/features/project/app.calendar.js",
+  "./js/integrations/app.web-push.js",
   "./manifest.webmanifest",
   "./img/icons/icon-192.png",
   "./img/icons/icon-512.png"
@@ -34,7 +38,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
+          if (key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME) return caches.delete(key);
           return null;
         })
       )
@@ -60,10 +64,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      caches.match("./index.html").then((cachedResponse) => {
-        const networkPromise = updateCache().catch(() => cachedResponse || caches.match("./index.html"));
-        return cachedResponse || networkPromise;
-      })
+      updateCache().catch(() => caches.match("./index.html"))
     );
     return;
   }

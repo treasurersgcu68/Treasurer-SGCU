@@ -127,32 +127,12 @@ function setDownloadListState(listEl, type, message, options = {}) {
   const safeType = (type || "").toString().trim();
   const text = (message || "").toString().trim();
   if (!safeType || !text) return;
-  const canRetry = !!options.showRetry;
-  listEl.innerHTML = "";
-  const panel = document.createElement("div");
-  panel.className = "panel";
-  panel.style.background = "#f8fafc";
-
-  const caption = document.createElement("div");
-  caption.className = "panel-caption";
-  caption.style.color = "#475569";
-  caption.textContent = text;
-  panel.appendChild(caption);
-
-  if (canRetry) {
-    const retryBtn = document.createElement("button");
-    retryBtn.id = "downloadRetryButton";
-    retryBtn.className = "btn-ghost";
-    retryBtn.type = "button";
-    retryBtn.style.marginTop = "8px";
-    retryBtn.textContent = "ลองใหม่";
-    retryBtn.addEventListener("click", () => {
-      void loadDownloadDocuments();
-    });
-    panel.appendChild(retryBtn);
-  }
-
-  listEl.appendChild(panel);
+  renderLoadState(listEl, safeType, text, {
+    className: "panel load-state",
+    captionClassName: "panel-caption",
+    retryButtonId: "downloadRetryButton",
+    onRetry: options.showRetry ? () => void loadDownloadDocuments() : null
+  });
 }
 
 async function loadDownloadDocuments() {

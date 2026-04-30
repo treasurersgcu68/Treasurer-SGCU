@@ -245,12 +245,40 @@ function clearLoadError(key) {
   updateAppAlert();
 }
 
-function setInlineError(el, message) {
-  if (!el) return;
-  const box = document.createElement("div");
-  box.className = "load-error-text";
-  box.textContent = message;
-  el.replaceChildren(box);
+function renderLoadState(container, type, message, options = {}) {
+  if (!container) return null;
+  const stateType = (type || "info").toString().trim() || "info";
+  const text = (message || "").toString().trim();
+  const panel = document.createElement("div");
+  panel.className = options.className || `load-state load-state-${stateType}`;
+  panel.setAttribute("role", stateType === "error" ? "alert" : "status");
+  panel.setAttribute("aria-live", stateType === "error" ? "assertive" : "polite");
+
+  const caption = document.createElement("div");
+  caption.className = options.captionClassName || "load-state-caption";
+  caption.textContent = text;
+  panel.appendChild(caption);
+
+  if (typeof options.onRetry === "function") {
+    const retryBtn = document.createElement("button");
+    retryBtn.id = options.retryButtonId || "";
+    retryBtn.className = options.retryClassName || "btn-ghost";
+    retryBtn.type = "button";
+    retryBtn.textContent = options.retryLabel || "ลองใหม่";
+    retryBtn.addEventListener("click", options.onRetry);
+    panel.appendChild(retryBtn);
+  }
+
+  container.replaceChildren(panel);
+  return panel;
+}
+
+function setInlineError(el, message, options = {}) {
+  return renderLoadState(el, "error", message, {
+    className: "load-error-text",
+    captionClassName: "load-error-caption",
+    ...options
+  });
 }
 
 async function fetchTextWithProgress(url, onProgress, options = {}) {

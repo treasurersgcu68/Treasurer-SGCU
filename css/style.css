@@ -2458,6 +2458,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 body.home-fixed-shell {
   overflow: hidden;
+  background: var(--theme-bg);
 }
 
 body.home-fixed-shell .site-header {
@@ -2477,19 +2478,52 @@ body.home-fixed-shell .site-footer {
 }
 
 body.home-fixed-shell .main {
-  height: calc(100vh - var(--home-shell-header-h, 64px) - var(--home-shell-footer-h, 74px));
-  margin-top: var(--home-shell-header-h, 64px);
-  margin-bottom: var(--home-shell-footer-h, 74px);
+  position: fixed;
+  top: var(--home-shell-header-h, 64px);
+  left: 0;
+  right: 0;
+  bottom: var(--home-shell-footer-h, 74px);
+  height: auto;
+  margin: 0;
+  width: 100%;
+  max-width: none;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  background: var(--theme-bg);
 }
 
 @supports (height: 100dvh) {
   body.home-fixed-shell .main {
-    height: calc(100dvh - var(--home-shell-header-h, 64px) - var(--home-shell-footer-h, 74px));
+    top: var(--home-shell-header-h, 64px);
+    bottom: var(--home-shell-footer-h, 74px);
   }
 }
+
+@media (max-width: 960px) {
+  body.home-fixed-shell {
+    overflow: auto;
+  }
+
+  body.home-fixed-shell .site-header {
+    position: sticky;
+  }
+
+  body.home-fixed-shell .site-footer {
+    position: static;
+  }
+
+  body.home-fixed-shell .main {
+    position: static;
+    inset: auto;
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+    max-width: 1120px;
+    overflow: visible;
+  }
+}
+
 
 /* Page containers */
 
@@ -4210,24 +4244,6 @@ th.sortable.sort-desc::after {
     padding: 14px 0;
   }
 
-  .home-page-view .home-snap-panel:first-child {
-    min-height: calc(100vh - 132px);
-    display: flex;
-    align-items: center;
-  }
-
-  @supports (height: 100dvh) {
-    .home-page-view .home-snap-panel:first-child {
-      min-height: calc(100dvh - 132px);
-    }
-  }
-
-  .home-page-view .home-snap-panel:first-child .home-snap-scroll {
-    width: 100%;
-    padding-top: 0;
-    padding-bottom: 0;
-    justify-content: center;
-  }
 }
 
 .home-hero {
@@ -6835,11 +6851,15 @@ th.sortable.sort-desc::after {
 /* responsive (scoreboard) */
 @media (max-width: 768px) {
   .score-podium {
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    align-items: end;
   }
 
   .score-podium-card {
-    width: 120px;
+    width: auto;
+    min-width: 0;
     padding: 12px 8px 14px;
     height: auto;
     min-height: 190px;
@@ -6876,6 +6896,7 @@ th.sortable.sort-desc::after {
 
   .scoreboard-wrapper {
     padding: 24px 16px 20px;
+    overflow: hidden;
   }
 }
 

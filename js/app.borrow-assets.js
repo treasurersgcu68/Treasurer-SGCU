@@ -1038,7 +1038,7 @@ function initBorrowAssetsApp() {
     populateSelect(borrowAssetsTypeFilterStaff);
   };
 
-  const loadBorrowAssets = () => {
+  const loadBorrowAssets = async () => {
     if (!USE_CSV_ASSET_CATALOG) {
       borrowAssetsRows = [];
       assetMap.clear();
@@ -1061,6 +1061,7 @@ function initBorrowAssetsApp() {
       if (borrowAssetsCountStaff) borrowAssetsCountStaff.textContent = "ปิดการใช้งาน CSV ชั่วคราว";
       return;
     }
+    await window.sgcuVendorLoader?.ensurePapa?.();
     if (!window.Papa || !window.fetch) return;
     fetch(BORROW_ASSETS_CSV_URL)
       .then((res) => res.text())

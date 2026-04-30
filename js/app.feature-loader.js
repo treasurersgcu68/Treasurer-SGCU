@@ -3,6 +3,10 @@
   if (window.sgcuFeatureLoader) return;
 
   const config = {
+    vendorScripts: {
+      chart: "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js",
+      papa: "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"
+    },
     pageScripts: {
       home: [
         "js/app.news.js?v=20260417-1",
@@ -22,14 +26,7 @@
     idlePrefetchPages: [
       "home",
       "news",
-      "financial-docs",
-      "borrow-assets",
-      "meeting-room-booking",
-      "borrow-assets-staff",
-      "meeting-room-staff",
-      "budget-approval-request",
-      "staff-application",
-      "staff-approval"
+      "financial-docs"
     ]
   };
 
@@ -75,6 +72,21 @@
     }
   };
 
+  const ensureVendorLoaded = async (key, globalName) => {
+    if (globalName && window[globalName]) {
+      if (key === "chart" && typeof window.registerCenterTextPlugin === "function") {
+        window.registerCenterTextPlugin();
+      }
+      return;
+    }
+    const src = config.vendorScripts[key];
+    if (!src) return;
+    await loadScriptOnce(src);
+    if (key === "chart" && typeof window.registerCenterTextPlugin === "function") {
+      window.registerCenterTextPlugin();
+    }
+  };
+
   const scheduleIdle = (task, timeout = 2000) => {
     if (typeof window.requestIdleCallback === "function") {
       window.requestIdleCallback(() => task(), { timeout });
@@ -106,5 +118,9 @@
     config,
     ensurePageLoaded,
     prefetchInIdle
+  };
+  window.sgcuVendorLoader = {
+    ensureChart: () => ensureVendorLoaded("chart", "Chart"),
+    ensurePapa: () => ensureVendorLoaded("papa", "Papa")
   };
 })();

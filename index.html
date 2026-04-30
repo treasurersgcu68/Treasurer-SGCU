@@ -28,8 +28,8 @@
     <meta name="twitter:description" content="ดูสถานะโครงการและงบประมาณแบบอัปเดตโดยเหรัญญิก อบจ68">
     <meta name="twitter:image" content="https://treasurersgcu68.github.io/Treasurer-SGCU/img/banner%20SGCU.jpg">
     <meta name="twitter:image:alt" content="Treasurer SGCU68 - ระบบติดตามโครงการและงบประมาณ">
-    <link rel="icon" type="image/png" href="img/logo_treasurur jpg1.png">
-    <link rel="apple-touch-icon" href="img/logo_treasurur jpg1.png">
+    <link rel="icon" type="image/png" href="img/icons/icon-512.png">
+    <link rel="apple-touch-icon" href="img/icons/icon-512.png">
     <link rel="manifest" href="manifest.webmanifest" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -38,19 +38,10 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
     <link rel="preconnect" href="https://www.gstatic.com" />
     <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
-    />
-    <link
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css?v=20260430-8" />
-    <!-- Chart.js (กราฟในหน้า Status/Dashboard) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
-    <!-- PapaParse (อ่าน CSV/ข้อมูลตาราง) -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
     <script type="module" src="js/app.firebase-bootstrap.js?v=20260423-1"></script>
   </head>
@@ -58,7 +49,7 @@
     <div id="appLoader" class="app-loader" aria-live="polite" aria-busy="true">
       <div class="app-loader-panel">
         <div class="app-loader-logo" aria-hidden="true">
-          <img src="img/logo_treasurur jpg.png" alt="" decoding="async" width="70" height="70" />
+          <img src="img/icons/icon-512.png" alt="" decoding="async" width="70" height="70" />
         </div>
         <div class="app-loader-title">Treasurer SGCU</div>
         <div class="app-loader-status">
@@ -83,7 +74,7 @@
               rel="noopener noreferrer"
             >
               <img
-                src="./img/logo_treasurur jpg.png"
+                src="./img/icons/icon-512.png"
                 alt="Treasurer SGCU68"
                 class="home-hero-badge-img"
                 decoding="async"
@@ -266,7 +257,7 @@
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <img src="./img/logo_treasurur jpg.png" alt="Treasurer SGCU68" class="home-hero-badge-img" style="border-radius: 20px;" decoding="async" width="240" height="240" />
+                          <img src="./img/icons/icon-512.png" alt="Treasurer SGCU68" class="home-hero-badge-img" style="border-radius: 20px;" decoding="async" width="240" height="240" />
                         </a>
                       </div>
                     </div>
@@ -3565,11 +3556,11 @@
     <script src="js/app.org.js?v=20260428-1" defer></script>
     <script src="js/app.motion.js" defer></script>
     <script src="js/app.web-push.js" defer></script>
-    <script src="js/app.feature-loader.js?v=20260430-7" defer></script>
-    <script src="js/app.init.js?v=20260417-1" defer></script>
+    <script src="js/app.feature-loader.js?v=20260430-9" defer></script>
+    <script src="js/app.init.js?v=20260430-1" defer></script>
     <script src="js/app.calendar.js" defer></script>
     <script>
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260415-4";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260430-2";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",

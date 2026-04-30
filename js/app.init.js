@@ -156,10 +156,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const hasLoaderUi = Boolean(appLoaderPercentEl);
   const loaderStepKeys = new Set();
   if (hasLoaderUi) {
-    loaderStepKeys.add("downloads");
     loaderStepKeys.add("news");
-    loaderStepKeys.add("projects");
-    loaderStepKeys.add("orgFilters");
     if (document.getElementById("scorePodium") && document.getElementById("scoreRunners")) {
       loaderStepKeys.add("scoreboard");
     }
@@ -257,6 +254,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===== 4) ระบบสลับหน้าแบบ SPA =====
   const navLinks = document.querySelectorAll("header nav a[data-page]");
   const pageViews = document.querySelectorAll(".page-view");
+  const siteHeaderEl = document.querySelector(".site-header");
+  const siteFooterEl = document.querySelector(".site-footer");
   let currentPage = null;
   let pendingConsentPage = null;
   let consentAuthIdentity = { uid: "", email: "" };
@@ -296,10 +295,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // ===== 2) โหลดดาวน์โหลดเอกสาร + ข่าว + คะแนนแบบ background =====
-  scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("financial-docs", "loadDownloadDocuments"), "downloads"));
-  scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("news", "loadNewsFromSheet"), "news"));
-  scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("home", "initScoreboard"), "scoreboard"));
+  const syncHomeShellMetrics = () => {
+    if (!document.body.classList.contains("home-fixed-shell")) return;
+    const headerHeight = Math.max(0, Math.round(siteHeaderEl?.offsetHeight || 0));
+    const footerHeight = Math.max(0, Math.round(siteFooterEl?.offsetHeight || 0));
+    document.documentElement.style.setProperty("--home-shell-header-h", `${headerHeight}px`);
+    document.documentElement.style.setProperty("--home-shell-footer-h", `${footerHeight}px`);
+  };
+
+  window.addEventListener("resize", syncHomeShellMetrics, { passive: true });
+
+  // ===== 2) โหลดข้อมูลหน้าแรกแบบ background หลัง route แรกพร้อมใช้งาน =====
 
   const getConsentSubjects = () => {
     const user = window.sgcuAuth?.auth?.currentUser || null;
@@ -680,6 +686,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     navLinks.forEach((link) => {
       link.classList.toggle("active", link.dataset.page === page);
     });
+
+    const isHomePage = page === "home";
+    document.body.classList.toggle("home-fixed-shell", isHomePage);
+    if (isHomePage) {
+      syncHomeShellMetrics();
+    } else {
+      document.documentElement.style.removeProperty("--home-shell-header-h");
+      document.documentElement.style.removeProperty("--home-shell-footer-h");
+    }
 
     if (page === "project-status") {
       setActiveProjectStatusContext("public");

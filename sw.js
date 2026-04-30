@@ -1,15 +1,26 @@
-const CACHE_NAME = "treasurer-sgcu-shell-v47";
+const CACHE_NAME = "treasurer-sgcu-shell-v49";
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260430-5",
-  "./js/app.sorting-auth.js?v=20260430-4",
-  "./js/app.feature-loader.js?v=20260430-7",
+  "./css/style.css?v=20260430-8",
+  "./js/app.core.js",
+  "./js/app.helpers.js?v=20260416-1",
+  "./js/app.file-links.js?v=20260417-1",
+  "./js/app.data.js",
+  "./js/app.project-ui.js",
+  "./js/app.project-modal.js",
+  "./js/app.charts.js",
+  "./js/app.pie.js",
+  "./js/app.sorting-auth.js?v=20260430-6",
+  "./js/app.org.js?v=20260428-1",
+  "./js/app.motion.js",
+  "./js/app.feature-loader.js?v=20260430-9",
+  "./js/app.init.js?v=20260430-1",
+  "./js/app.calendar.js",
   "./js/app.web-push.js",
   "./manifest.webmanifest",
   "./img/icons/icon-192.png",
-  "./img/icons/icon-512.png",
-  "./img/logo_treasurur%20jpg1.png"
+  "./img/icons/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -37,24 +48,33 @@ self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(request.url);
   if (requestUrl.origin !== self.location.origin) return;
 
+  const updateCache = async () => {
+    const networkResponse = await fetch(request);
+    if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
+      const responseClone = networkResponse.clone();
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, responseClone);
+    }
+    return networkResponse;
+  };
+
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match("./index.html"))
+      caches.match("./index.html").then((cachedResponse) => {
+        const networkPromise = updateCache().catch(() => cachedResponse || caches.match("./index.html"));
+        return cachedResponse || networkPromise;
+      })
     );
     return;
   }
 
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== "basic") {
-          return networkResponse;
-        }
-        const responseClone = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-        return networkResponse;
-      });
+      if (cachedResponse) {
+        event.waitUntil(updateCache().catch(() => null));
+        return cachedResponse;
+      }
+      return updateCache();
     })
   );
 });

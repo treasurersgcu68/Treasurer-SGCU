@@ -342,7 +342,13 @@ const centerTextPlugin = {
   }
 };
 
-Chart.register(centerTextPlugin);
+function registerCenterTextPlugin() {
+  if (typeof Chart === "undefined" || !Chart.register) return;
+  if (Chart.registry?.plugins?.get?.("centerText")) return;
+  Chart.register(centerTextPlugin);
+}
+
+registerCenterTextPlugin();
 
 // ===== Helpers: Project Status contexts (public / staff) =====
 function buildProjectStatusContext(suffix = "", key = "public") {

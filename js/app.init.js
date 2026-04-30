@@ -57,7 +57,7 @@ async function initDailyVisitorCounter() {
     );
   } catch (err) {
     setCounterText("-", "-");
-    console.warn("visitor counter error", err);
+    console.warn("visitor counter error - app.init.js:60", err);
   }
 }
 
@@ -662,7 +662,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await ensurePageFeatureLoaded(targetPage);
       clearLoadError("feature-loader");
     } catch (error) {
-      console.error("page feature script failed to load - app.init.js:487", targetPage, error);
+      console.error("page feature script failed to load - app.init.js:686", targetPage, error);
       recordLoadError("feature-loader", "ไม่สามารถโหลดฟีเจอร์ของหน้านี้ได้", { showRetry: true });
       return;
     }

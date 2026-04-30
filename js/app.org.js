@@ -23,20 +23,10 @@ async function loadOrgStructure() {
       header: false,
       skipEmptyLines: false
     });
-    let authRows = null;
-    try {
-      const authCsvText = await fetchTextWithProgress(ORG_SHEET_CSV);
-      const authParsed = Papa.parse(authCsvText, {
-        header: false,
-        skipEmptyLines: false
-      });
-      authRows = authParsed.data;
-    } catch (authErr) {
-      console.error("WARN: โหลดข้อมูล staff auth ไม่สำเร็จ, ใช้ข้อมูลเดิมต่อ - app.org.js:35", authErr);
-    }
+    const staffProfiles = await loadOrgStaffProfilesFromFirestore();
 
     const rows = parsed.data;
-    renderOrgStructure(rows, authRows);
+    renderOrgStructure(rows, staffProfiles);
   } catch (err) {
     console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:41", err);
     recordLoadError("orgStructure", "โหลดโครงสร้างองค์กรไม่สำเร็จ", { showRetry: true });
@@ -49,7 +39,49 @@ async function loadOrgStructure() {
   }
 }
 
-function renderOrgStructure(rows, authRows = null) {
+async function loadOrgStaffProfilesFromFirestore() {
+  const store = window.sgcuFirestore || {};
+  if (!store.db || !store.collection || !store.onSnapshot) return null;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let unsubscribe = null;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      if (typeof unsubscribe === "function") {
+        try {
+          unsubscribe();
+        } catch (_) {
+          // ignore
+        }
+      }
+      resolve(value);
+    };
+
+    try {
+      unsubscribe = store.onSnapshot(
+        store.collection(store.db, "staffProfiles"),
+        (snapshot) => {
+          const docs = (snapshot?.docs || []).map((docSnap) => ({
+            id: docSnap.id,
+            ...(docSnap.data() || {})
+          }));
+          finish(docs);
+        },
+        (error) => {
+          console.error("WARN: โหลด staffProfiles จาก Firestore ไม่สำเร็จ - app.org.js", error);
+          finish(null);
+        }
+      );
+    } catch (error) {
+      console.error("WARN: เริ่ม listener staffProfiles ไม่สำเร็จ - app.org.js", error);
+      finish(null);
+    }
+  });
+}
+
+function renderOrgStructure(rows, staffProfileDocs = null) {
   const container = document.getElementById("org-structure-content");
   if (!container) return;
   const esc = (value) =>
@@ -81,24 +113,6 @@ function renderOrgStructure(rows, authRows = null) {
   const STRUCT_COL_LINE = 10;  // เดิม M -> ใหม่ K
   const STRUCT_COL_PHONE = 11; // เดิม N -> ใหม่ L
   const STRUCT_COL_PHOTO = 13; // เดิม AA -> ใหม่ N
-
-  // ====== คอลัมน์ในชีตสิทธิ์ (ORG_SHEET_CSV: คงเดิม) ======
-  const AUTH_COL_POS = 3;
-  const AUTH_COL_PREFIX = 4;
-  const AUTH_COL_FIRST = 5;
-  const AUTH_COL_LAST = 6;
-  const AUTH_COL_NICK = 7;
-  const AUTH_COL_YEAR = 9;
-  const AUTH_COL_FAC = 10;
-  const AUTH_COL_LINE = 12;
-  const AUTH_COL_PHONE = 13;
-  const AUTH_COL_PHOTO = 26;
-  const AUTH_COL_STAFF_EMAIL = 28;
-  const AUTH_COL_STAFF_ROLE = 27;
-  const COL_STAFF_EMAIL_LEGACY =
-    typeof globalThis.COL_STAFF_EMAIL_LEGACY === "number"
-      ? globalThis.COL_STAFF_EMAIL_LEGACY
-      : -1;
 
   const fullName = (r, cols) =>
     [r[cols.prefix], r[cols.first], r[cols.last]].filter(Boolean).join(" ").trim();
@@ -165,11 +179,8 @@ function renderOrgStructure(rows, authRows = null) {
 
   // ====== peopleByPos + assistantContactsByName (global) ======
   assistantContactsByName = {}; // reset global
-  const authDataRows = Array.isArray(authRows) && authRows.length > 1 ? authRows.slice(1) : null;
-  if (authDataRows) {
-    staffEmails = new Set();
-    staffProfilesByEmail = {};
-  }
+  staffEmails = new Set();
+  staffProfilesByEmail = {};
 
   const peopleByPos = {};
   for (const r of dataRows) {
@@ -180,34 +191,20 @@ function renderOrgStructure(rows, authRows = null) {
 
   }
 
-  // ข้อมูล contact สำหรับ popup/Project Modal ใช้จาก ORG_SHEET_CSV
-  // ถ้าโหลด ORG_SHEET_CSV ไม่สำเร็จ ค่อย fallback ไปข้อมูลโครงสร้าง
-  const contactRows = authDataRows || dataRows;
-  const contactCols = authDataRows
-    ? {
-        pos: AUTH_COL_POS,
-        prefix: AUTH_COL_PREFIX,
-        first: AUTH_COL_FIRST,
-        last: AUTH_COL_LAST,
-        nick: AUTH_COL_NICK,
-        year: AUTH_COL_YEAR,
-        fac: AUTH_COL_FAC,
-        line: AUTH_COL_LINE,
-        phone: AUTH_COL_PHONE,
-        photo: AUTH_COL_PHOTO
-      }
-    : {
-        pos: STRUCT_COL_POS,
-        prefix: STRUCT_COL_PREFIX,
-        first: STRUCT_COL_FIRST,
-        last: STRUCT_COL_LAST,
-        nick: STRUCT_COL_NICK,
-        year: STRUCT_COL_YEAR,
-        fac: STRUCT_COL_FAC,
-        line: STRUCT_COL_LINE,
-        phone: STRUCT_COL_PHONE,
-        photo: STRUCT_COL_PHOTO
-      };
+  // ข้อมูล contact สำหรับ popup/Project Modal ใช้จากชีตโครงสร้างองค์กร
+  const contactRows = dataRows;
+  const contactCols = {
+    pos: STRUCT_COL_POS,
+    prefix: STRUCT_COL_PREFIX,
+    first: STRUCT_COL_FIRST,
+    last: STRUCT_COL_LAST,
+    nick: STRUCT_COL_NICK,
+    year: STRUCT_COL_YEAR,
+    fac: STRUCT_COL_FAC,
+    line: STRUCT_COL_LINE,
+    phone: STRUCT_COL_PHONE,
+    photo: STRUCT_COL_PHOTO
+  };
   for (const r of contactRows) {
     const key = (r[contactCols.nick] || "").toString().trim();
     if (!key) continue;
@@ -226,38 +223,21 @@ function renderOrgStructure(rows, authRows = null) {
     };
   }
 
-  if (authDataRows) {
-    for (const r of authDataRows) {
-      const pos = (r[AUTH_COL_POS] || "").trim();
-      const legacyStaffEmail =
-        COL_STAFF_EMAIL_LEGACY >= 0 ? r[COL_STAFF_EMAIL_LEGACY] : "";
-      const staffEmail = (r[AUTH_COL_STAFF_EMAIL] || legacyStaffEmail || "")
-        .toString()
-        .trim()
-        .toLowerCase();
+  if (Array.isArray(staffProfileDocs)) {
+    for (const item of staffProfileDocs) {
+      const staffEmail = (item?.email || item?.mail || item?.id || "").toString().trim().toLowerCase();
       if (!staffEmail) continue;
       staffEmails.add(staffEmail);
-      const nextRole = (r[AUTH_COL_STAFF_ROLE] || "").toString().trim() || "0";
-      const existingProfile = staffProfilesByEmail[staffEmail];
-      if (existingProfile) {
-        const mergedRoles = new Set(
-          [existingProfile.role, nextRole]
-            .flatMap((value) => (value || "").toString().split(","))
-            .map((value) => value.trim())
-            .filter(Boolean)
-        );
-        staffProfilesByEmail[staffEmail] = {
-          position: existingProfile.position || pos,
-          nick: existingProfile.nick || (r[AUTH_COL_NICK] || "").toString().trim(),
-          role: Array.from(mergedRoles).join(",")
-        };
-      } else {
-        staffProfilesByEmail[staffEmail] = {
-          position: pos,
-          nick: (r[AUTH_COL_NICK] || "").toString().trim(),
-          role: nextRole
-        };
-      }
+      staffProfilesByEmail[staffEmail] = {
+        ...(staffProfilesByEmail[staffEmail] || {}),
+        position: (item?.position || "").toString().trim(),
+        nick: (item?.nick || "").toString().trim(),
+        role: (item?.role || "").toString().trim(),
+        positionCode: (item?.positionCode || "").toString().trim(),
+        divisionCodeYY: (item?.divisionCodeYY || item?.positionCodeYY || "").toString().trim(),
+        positionCodeYY: (item?.positionCodeYY || item?.divisionCodeYY || "").toString().trim(),
+        positions: Array.isArray(item?.positions) ? item.positions : []
+      };
     }
   }
 

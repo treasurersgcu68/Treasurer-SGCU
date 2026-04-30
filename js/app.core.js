@@ -4,9 +4,6 @@
 const SHEET_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfcEartu_DeoGQXOJ7_rYPGizNtDhYJEaXivywadNZibj1rch9WKC1GF1yNbZ3zRgQ4Efjj8jrTOrf/pub?gid=1357605440&single=true&output=csv";
 
-const ORG_SHEET_CSV =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ84XOAc7rrKIloXHL5o_0ekzKdi4cQlPMUCGRPb6equG5WAguoaR2fa5ip3j7cT9noG5u9Ozv-VDot/pub?output=csv";
-
 const ORG_STRUCTURE_SHEET_CSV =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSiGgrustQXlqTrRlPj2sY7pkI7slLhTFSIKjPDHenzt0ddhhoQA6VHbffoiT29J2Hk1ndxYGKVSZ4B/pub?output=csv";
 
@@ -284,6 +281,7 @@ function setMobileMenuState(menuEl, buttonEl, isExpanded) {
   menuEl.setAttribute("aria-hidden", isExpanded ? "false" : "true");
   buttonEl.setAttribute("aria-expanded", isExpanded ? "true" : "false");
   if (!menuEl.hasAttribute("tabindex")) menuEl.setAttribute("tabindex", "-1");
+  document.body.classList.toggle("mobile-menu-open", isExpanded);
 
   if (isExpanded) {
     lastMenuFocusedEl = document.activeElement;

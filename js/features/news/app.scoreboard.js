@@ -12,16 +12,7 @@ function initScoreboard() {
 
   podiumEl.classList.remove("score-animate-in");
   runnersEl.classList.remove("score-animate-in");
-  podiumEl.innerHTML = `
-    <div class="score-loading" role="status" aria-live="polite">
-      <div class="score-loading-spinner" aria-hidden="true"></div>
-      <div class="score-loading-text">กำลังโหลดผลคะแนน...</div>
-      <div class="score-loading-bars" aria-hidden="true">
-        <span></span><span></span><span></span>
-      </div>
-    </div>
-  `;
-  runnersEl.innerHTML = "";
+  renderScoreSkeleton(podiumEl, runnersEl);
 
   const cached = getCache(CACHE_KEYS.SCOREBOARD, CACHE_TTL_MS);
   if (cached && Array.isArray(cached) && cached.length) {
@@ -102,6 +93,40 @@ function initScoreboard() {
         markLoaderStep("scoreboard");
       }
     });
+}
+
+function renderScoreSkeleton(podiumEl, runnersEl) {
+  podiumEl.innerHTML = `
+    <div class="score-loading-status" role="status" aria-live="polite">กำลังโหลดผลคะแนน...</div>
+    <div class="score-podium-card score-skeleton-card second" aria-hidden="true">
+      <div class="score-skeleton-medal"></div>
+      <div class="score-skeleton-line score-skeleton-line-rank"></div>
+      <div class="score-skeleton-line score-skeleton-line-name"></div>
+      <div class="score-skeleton-line score-skeleton-line-score"></div>
+    </div>
+    <div class="score-podium-card score-skeleton-card first" aria-hidden="true">
+      <div class="score-skeleton-badge"></div>
+      <div class="score-skeleton-medal"></div>
+      <div class="score-skeleton-line score-skeleton-line-rank"></div>
+      <div class="score-skeleton-line score-skeleton-line-name"></div>
+      <div class="score-skeleton-line score-skeleton-line-score"></div>
+    </div>
+    <div class="score-podium-card score-skeleton-card third" aria-hidden="true">
+      <div class="score-skeleton-medal"></div>
+      <div class="score-skeleton-line score-skeleton-line-rank"></div>
+      <div class="score-skeleton-line score-skeleton-line-name"></div>
+      <div class="score-skeleton-line score-skeleton-line-score"></div>
+    </div>
+  `;
+
+  runnersEl.style.display = "flex";
+  runnersEl.innerHTML = `
+    <span class="score-skeleton-title" aria-hidden="true"></span>
+    <span class="score-skeleton-chip" aria-hidden="true"></span>
+    <span class="score-skeleton-chip" aria-hidden="true"></span>
+    <span class="score-skeleton-chip" aria-hidden="true"></span>
+    <span class="score-skeleton-chip score-skeleton-chip-short" aria-hidden="true"></span>
+  `;
 }
 
 function normalizeScoreOrgName(value) {

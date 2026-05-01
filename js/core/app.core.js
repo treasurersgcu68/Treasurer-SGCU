@@ -3,6 +3,7 @@
 const APP_CONFIG = SGCU_APP_CONFIG;
 
 /* Backward-compatible config aliases */
+const PROJECT_SOURCES_CSV_URL = APP_CONFIG.sheets.projectSources || "";
 const SHEET_CSV_URL = APP_CONFIG.sheets.projects;
 const PROJECT_CONTACTS_CSV_URL = APP_CONFIG.sheets.projectContacts || "";
 const ORG_STRUCTURE_SHEET_CSV = APP_CONFIG.sheets.orgStructure;

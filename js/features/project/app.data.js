@@ -138,22 +138,75 @@ async function loadProjectContactsFromCsv(url) {
   applyProjectContactRows(parsed.data || []);
 }
 
+function isTruthySheetValue(value) {
+  const normalized = (value || "").toString().trim().toLowerCase();
+  return ["true", "yes", "y", "1", "active", "ใช่", "เปิด"].includes(normalized);
+}
+
+function parseProjectSourceRows(rows) {
+  if (!Array.isArray(rows) || rows.length < 2) return null;
+  const dataRows = rows.slice(1).filter((row) => {
+    const year = (row[0] || "").toString().trim();
+    const projectUrl = (row[1] || "").toString().trim();
+    return year || projectUrl;
+  });
+  if (!dataRows.length) return null;
+
+  const activeRow =
+    dataRows.find((row) => isTruthySheetValue(row[3])) ||
+    dataRows[dataRows.length - 1];
+  const projectUrl = (activeRow[1] || "").toString().trim();
+  if (!projectUrl) return null;
+
+  return {
+    year: (activeRow[0] || "").toString().trim(),
+    projectUrl,
+    contactUrl: (activeRow[2] || "").toString().trim()
+  };
+}
+
+async function resolveProjectSourceConfig() {
+  const fallback = {
+    year: "",
+    projectUrl: SHEET_CSV_URL,
+    contactUrl: PROJECT_CONTACTS_CSV_URL
+  };
+  const sourceUrl = (PROJECT_SOURCES_CSV_URL || "").toString().trim();
+  if (!sourceUrl) return fallback;
+
+  try {
+    await window.sgcuVendorLoader?.ensurePapa?.();
+    const csvText = await fetchTextWithProgress(sourceUrl);
+    const parsed = Papa.parse(csvText, {
+      header: false,
+      skipEmptyLines: false
+    });
+    return parseProjectSourceRows(parsed.data || []) || fallback;
+  } catch (err) {
+    console.error("โหลด projectSources ไม่สำเร็จ ใช้ config fallback - app.data.js", err);
+    return fallback;
+  }
+}
+
 async function loadProjectsFromSheet() {
   try {
-    const isPublishedHtml = isPublishedHtmlSheetUrl(SHEET_CSV_URL);
+    const sourceConfig = await resolveProjectSourceConfig();
+    const projectUrl = sourceConfig.projectUrl || SHEET_CSV_URL;
+    const contactUrl = sourceConfig.contactUrl || PROJECT_CONTACTS_CSV_URL;
+    const isPublishedHtml = isPublishedHtmlSheetUrl(projectUrl);
     const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       projects = cached;
       hydrateProjectsCache(projects);
       if (isPublishedHtml) {
         try {
-          await loadProjectContactsFromPublishedHtml(SHEET_CSV_URL);
+          await loadProjectContactsFromPublishedHtml(projectUrl);
         } catch (err) {
           console.error("โหลดข้อมูลติดต่อจากชีตโครงการไม่สำเร็จ - app.data.js", err);
         }
-      } else if (PROJECT_CONTACTS_CSV_URL) {
+      } else if (contactUrl) {
         try {
-          await loadProjectContactsFromCsv(PROJECT_CONTACTS_CSV_URL);
+          await loadProjectContactsFromCsv(contactUrl);
         } catch (err) {
           console.error("โหลดข้อมูลติดต่อจากชีต 2 ไม่สำเร็จ - app.data.js", err);
         }
@@ -167,7 +220,7 @@ async function loadProjectsFromSheet() {
     console.log("[SGCU] โหลดข้อมูลโครงการจาก Google Sheets ... - app.js:895");
     let rows = [];
     if (isPublishedHtml) {
-      const workbookRows = await loadRowsFromPublishedHtmlWorkbook(SHEET_CSV_URL, (ratio) => {
+      const workbookRows = await loadRowsFromPublishedHtmlWorkbook(projectUrl, (ratio) => {
         if (typeof updateLoaderProgress === "function") {
           updateLoaderProgress("projects", ratio);
         }
@@ -176,7 +229,7 @@ async function loadProjectsFromSheet() {
       applyProjectContactRows(workbookRows.contactRows);
     } else {
       await window.sgcuVendorLoader?.ensurePapa?.();
-      const csvText = await fetchTextWithProgress(SHEET_CSV_URL, (ratio) => {
+      const csvText = await fetchTextWithProgress(projectUrl, (ratio) => {
         if (typeof updateLoaderProgress === "function") {
           updateLoaderProgress("projects", ratio);
         }
@@ -188,7 +241,7 @@ async function loadProjectsFromSheet() {
       });
       rows = parsed.data;
       try {
-        await loadProjectContactsFromCsv(PROJECT_CONTACTS_CSV_URL);
+        await loadProjectContactsFromCsv(contactUrl);
       } catch (err) {
         console.error("โหลดข้อมูลติดต่อจากชีท 2 ไม่สำเร็จ - app.data.js", err);
       }

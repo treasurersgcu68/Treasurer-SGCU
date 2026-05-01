@@ -1,10 +1,10 @@
-const CACHE_VERSION = "20260501-21";
+const CACHE_VERSION = "20260502-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260501-16",
+  "./css/style.css?v=20260502-1",
   "./js/core/app.config.js?v=20260501-1",
   "./js/core/app.core.js",
   "./js/core/app.dialog.js?v=20260501-1",

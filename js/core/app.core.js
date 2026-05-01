@@ -4,6 +4,7 @@ const APP_CONFIG = SGCU_APP_CONFIG;
 
 /* Backward-compatible config aliases */
 const SHEET_CSV_URL = APP_CONFIG.sheets.projects;
+const PROJECT_CONTACTS_CSV_URL = APP_CONFIG.sheets.projectContacts || "";
 const ORG_STRUCTURE_SHEET_CSV = APP_CONFIG.sheets.orgStructure;
 const DOWNLOAD_SHEET = APP_CONFIG.sheets.downloads;
 const SCORE_SHEET = APP_CONFIG.sheets.scoreboard;

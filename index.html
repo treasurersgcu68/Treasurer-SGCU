@@ -41,7 +41,7 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css?v=20260430-8" />
+    <link rel="stylesheet" href="css/style.css?v=20260501-16" />
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
     <script type="module" src="js/integrations/app.firebase-bootstrap.js?v=20260423-1"></script>
   </head>
@@ -354,7 +354,7 @@
         <div class="page about-page">
           <div class="page-header-flex section-appear">
             <div>
-              <h1 class="page-title">เกี่ยวกับฝ่ายเหรัญญิก SGCU68</h1>
+              <h1 class="page-title">เกี่ยวกับฝ่ายเหรัญญิก</h1>
               <p class="page-subtitle">ภาพรวมแนวคิด ระบบงาน และทิศทางการพัฒนางานเหรัญญิก</p>
             </div>
           </div>
@@ -517,25 +517,100 @@
 
             <section class="home-org section-appear section-delay-4 about-section-block">
               <header class="home-section-header">
-                <h2>โครงสร้างทีมเหรัญญิก <span id="aboutOrgStructureTitleLabel">SGCU68</span></h2>
+                <h2>โครงสร้างทีมเหรัญญิก</h2>
                 <p>ดูภาพรวมโครงสร้างทีมเหรัญญิกและสายการทำงานของแต่ละฝ่าย</p>
               </header>
 
-              <div id="orgStructureSkeleton" class="org-structure-skeleton skeleton-grid" aria-hidden="true">
-                <div class="skeleton-card">
-                  <div class="skeleton-line"></div>
-                  <div class="skeleton-line short"></div>
-                  <div class="skeleton-line tiny"></div>
+              <div id="orgStructureSkeleton" class="org-structure-skeleton" aria-hidden="true">
+                <div class="org-skeleton-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
                 </div>
-                <div class="skeleton-card">
-                  <div class="skeleton-line"></div>
-                  <div class="skeleton-line short"></div>
-                  <div class="skeleton-line tiny"></div>
+
+                <div class="org-skeleton-row org-skeleton-row-top">
+                  <div class="org-skeleton-person org-skeleton-person-lg">
+                    <div class="org-skeleton-avatar"></div>
+                    <div class="org-skeleton-line org-skeleton-line-role"></div>
+                    <div class="org-skeleton-line org-skeleton-line-name"></div>
+                    <div class="org-skeleton-line org-skeleton-line-nick"></div>
+                  </div>
                 </div>
-                <div class="skeleton-card">
-                  <div class="skeleton-line"></div>
-                  <div class="skeleton-line short"></div>
-                  <div class="skeleton-line tiny"></div>
+
+                <div class="org-skeleton-row org-skeleton-row-secretaries">
+                  <div class="org-skeleton-person">
+                    <div class="org-skeleton-avatar"></div>
+                    <div class="org-skeleton-line org-skeleton-line-role"></div>
+                    <div class="org-skeleton-line org-skeleton-line-name"></div>
+                  </div>
+                  <div class="org-skeleton-person">
+                    <div class="org-skeleton-avatar"></div>
+                    <div class="org-skeleton-line org-skeleton-line-role"></div>
+                    <div class="org-skeleton-line org-skeleton-line-name"></div>
+                  </div>
+                </div>
+
+                <div class="org-skeleton-main">
+                  <div class="org-skeleton-assistants">
+                    <div class="org-skeleton-pill"></div>
+                    <div class="org-skeleton-pill"></div>
+                    <div class="org-skeleton-pill"></div>
+                    <div class="org-skeleton-pill"></div>
+                    <div class="org-skeleton-pill"></div>
+                    <div class="org-skeleton-pill"></div>
+                  </div>
+
+                  <div class="org-skeleton-branches">
+                    <div class="org-skeleton-branch">
+                      <div class="org-skeleton-person org-skeleton-person-lg">
+                        <div class="org-skeleton-avatar"></div>
+                        <div class="org-skeleton-line org-skeleton-line-role"></div>
+                        <div class="org-skeleton-line org-skeleton-line-name"></div>
+                      </div>
+                      <div class="org-skeleton-person">
+                        <div class="org-skeleton-avatar"></div>
+                        <div class="org-skeleton-line org-skeleton-line-role"></div>
+                      </div>
+                      <div class="org-skeleton-pill"></div>
+                    </div>
+
+                    <div class="org-skeleton-branch">
+                      <div class="org-skeleton-person org-skeleton-person-lg">
+                        <div class="org-skeleton-avatar"></div>
+                        <div class="org-skeleton-line org-skeleton-line-role"></div>
+                        <div class="org-skeleton-line org-skeleton-line-name"></div>
+                      </div>
+                      <div class="org-skeleton-deps">
+                        <div class="org-skeleton-person">
+                          <div class="org-skeleton-avatar"></div>
+                          <div class="org-skeleton-line org-skeleton-line-role"></div>
+                        </div>
+                        <div class="org-skeleton-person">
+                          <div class="org-skeleton-avatar"></div>
+                          <div class="org-skeleton-line org-skeleton-line-role"></div>
+                        </div>
+                      </div>
+                      <div class="org-skeleton-pill"></div>
+                    </div>
+
+                    <div class="org-skeleton-branch">
+                      <div class="org-skeleton-deps">
+                        <div class="org-skeleton-person org-skeleton-person-lg">
+                          <div class="org-skeleton-avatar"></div>
+                          <div class="org-skeleton-line org-skeleton-line-role"></div>
+                        </div>
+                        <div class="org-skeleton-person org-skeleton-person-lg">
+                          <div class="org-skeleton-avatar"></div>
+                          <div class="org-skeleton-line org-skeleton-line-role"></div>
+                        </div>
+                      </div>
+                      <div class="org-skeleton-person">
+                        <div class="org-skeleton-avatar"></div>
+                        <div class="org-skeleton-line org-skeleton-line-role"></div>
+                      </div>
+                      <div class="org-skeleton-pill"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -3555,7 +3630,7 @@
     <script src="js/features/project/app.charts.js" defer></script>
     <script src="js/features/project/app.pie.js" defer></script>
     <script src="js/features/project/app.sorting-auth.js?v=20260430-6" defer></script>
-    <script src="js/features/org/app.org.js?v=20260428-1" defer></script>
+    <script src="js/features/org/app.org.js?v=20260501-10" defer></script>
     <script src="js/motion/app.motion.js" defer></script>
     <script src="js/integrations/app.web-push.js" defer></script>
     <script src="js/core/app.feature-loader.js?v=20260501-2" defer></script>

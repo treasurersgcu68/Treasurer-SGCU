@@ -29,7 +29,7 @@ async function loadOrgStructure() {
     const rows = parsed.data;
     renderOrgStructure(rows, staffProfiles);
   } catch (err) {
-    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:41", err);
+    console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:32", err);
     recordLoadError("orgStructure", "โหลดโครงสร้างองค์กรไม่สำเร็จ", { showRetry: true });
     setInlineError(el, "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้");
   } finally {
@@ -71,12 +71,12 @@ async function loadOrgStaffProfilesFromFirestore() {
           finish(docs);
         },
         (error) => {
-          console.error("WARN: โหลด staffProfiles จาก Firestore ไม่สำเร็จ - app.org.js", error);
+          console.error("WARN: โหลด staffProfiles จาก Firestore ไม่สำเร็จ - app.org.js:74", error);
           finish(null);
         }
       );
     } catch (error) {
-      console.error("WARN: เริ่ม listener staffProfiles ไม่สำเร็จ - app.org.js", error);
+      console.error("WARN: เริ่ม listener staffProfiles ไม่สำเร็จ - app.org.js:79", error);
       finish(null);
     }
   });
@@ -113,7 +113,66 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
   const STRUCT_COL_FAC = 8;    // เดิม K -> ใหม่ I
   const STRUCT_COL_LINE = 10;  // เดิม M -> ใหม่ K
   const STRUCT_COL_PHONE = 11; // เดิม N -> ใหม่ L
-  const STRUCT_COL_PHOTO = 13; // เดิม AA -> ใหม่ N
+  const STRUCT_COL_PHOTO = 12; // คอลัมน์ M: URL/Google Drive รูปโปรไฟล์
+
+  const resolveCurrentOrgTermLabel = () => {
+    if (typeof getCurrentAcademicYearBE === "function") {
+      const academicYearBE = Number(getCurrentAcademicYearBE());
+      if (Number.isFinite(academicYearBE)) {
+        return `SGCU${String(academicYearBE).slice(-2)}`;
+      }
+    }
+    return "SGCU68";
+  };
+
+  const STRUCT_COL_POSITION_CODE = 0;
+
+  const getOrgTermLabelFromPositionCode = (value) => {
+    const raw = (value || "").toString().trim();
+    if (!raw) return "";
+    const sgcuPrefixMatch = raw.match(/^SGCU\s*(\d{2,4})(?=\.|$)/i);
+    if (sgcuPrefixMatch) return `SGCU${sgcuPrefixMatch[1].slice(-2)}`;
+    return "";
+  };
+
+  const parseOrgPositionCode = (value) => {
+    const raw = (value || "").toString().trim();
+    const match = raw.match(/^(?:SGCU\s*\d{2,4}\.)?10\.(\d{2})\.(\d{2})-(\d{3})$/i);
+    if (!match) return null;
+    return {
+      raw,
+      yy: match[1],
+      zz: match[2],
+      aaa: match[3],
+      yyNumber: Number(match[1]),
+      zzNumber: Number(match[2]),
+      aaaNumber: Number(match[3])
+    };
+  };
+
+  const getOrgTermSortValue = (label) => {
+    const match = (label || "").toString().match(/\d{2,4}/);
+    return match ? Number(match[0].slice(-2)) : -Infinity;
+  };
+
+  const fallbackOrgTermLabel = resolveCurrentOrgTermLabel();
+  const orgTerms = [];
+  const orgRowsByTerm = new Map();
+
+  for (const r of dataRows) {
+    const label =
+      getOrgTermLabelFromPositionCode(r[STRUCT_COL_POSITION_CODE]) ||
+      fallbackOrgTermLabel;
+    if (!orgRowsByTerm.has(label)) {
+      orgRowsByTerm.set(label, []);
+      orgTerms.push(label);
+    }
+    orgRowsByTerm.get(label).push(r);
+  }
+
+  orgTerms.sort((a, b) => getOrgTermSortValue(b) - getOrgTermSortValue(a));
+  const initialOrgTermLabel =
+    orgTerms.includes(fallbackOrgTermLabel) ? fallbackOrgTermLabel : orgTerms[0] || fallbackOrgTermLabel;
 
   const fullName = (r, cols) =>
     [r[cols.prefix], r[cols.first], r[cols.last]].filter(Boolean).join(" ").trim();
@@ -140,11 +199,11 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
     if (/^https?:\/\//i.test(val)) {
       const mFile = val.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
       if (mFile && mFile[1]) {
-        return `https://drive.google.com/uc?export=view&id=${mFile[1]}`;
+        return `https://drive.google.com/thumbnail?id=${mFile[1]}&sz=w400`;
       }
       const mId = val.match(/[?&]id=([^&]+)/);
       if (mId && mId[1]) {
-        return `https://drive.google.com/uc?export=view&id=${mId[1]}`;
+        return `https://drive.google.com/thumbnail?id=${mId[1]}&sz=w400`;
       }
       return val;
     }
@@ -160,9 +219,10 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
   function avatarHTML(r, size) {
     const url = buildAvatarUrlFromCell(r[STRUCT_COL_PHOTO]);
     const cls = size === "sm" ? "org-node-circle sm" : "org-node-circle";
+    const fallbackInitials = initials(r, { first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST });
     if (url) {
       return `
-        <div class="${cls}">
+        <div class="${cls}" data-initials="${esc(fallbackInitials)}">
           <img
             src="${esc(url)}"
             alt="${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}"
@@ -175,25 +235,9 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
         </div>
       `;
     }
-    return `<div class="${cls}">${esc(initials(r, { first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}</div>`;
+    return `<div class="${cls}">${esc(fallbackInitials)}</div>`;
   }
 
-  // ====== peopleByPos + assistantContactsByName (global) ======
-  assistantContactsByName = {}; // reset global
-  staffEmails = new Set();
-  staffProfilesByEmail = {};
-
-  const peopleByPos = {};
-  for (const r of dataRows) {
-    const pos = (r[STRUCT_COL_POS] || "").trim();
-    if (!pos) continue;
-    if (!peopleByPos[pos]) peopleByPos[pos] = [];
-    peopleByPos[pos].push(r);
-
-  }
-
-  // ข้อมูล contact สำหรับ popup/Project Modal ใช้จากชีตโครงสร้างองค์กร
-  const contactRows = dataRows;
   const contactCols = {
     pos: STRUCT_COL_POS,
     prefix: STRUCT_COL_PREFIX,
@@ -206,12 +250,11 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
     phone: STRUCT_COL_PHONE,
     photo: STRUCT_COL_PHOTO
   };
-  for (const r of contactRows) {
-    const key = (r[contactCols.nick] || "").toString().trim();
-    if (!key) continue;
+
+  const makeContactInfo = (r, key) => {
     const pos = (r[contactCols.pos] || "").trim();
     const avatarUrl = buildAvatarUrlFromCell(r[contactCols.photo]);
-    assistantContactsByName[key] = {
+    return {
       key,
       fullName: fullName(r, contactCols),
       nick: r[contactCols.nick] || "",
@@ -222,8 +265,30 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
       year: (r[contactCols.year] || "").toString().trim(),
       avatarUrl
     };
-  }
+  };
 
+  // ข้อมูล contact สำหรับ popup/Project Modal ใช้จากชีตโครงสร้างองค์กร
+  const existingContactsByName = { ...assistantContactsByName };
+  assistantContactsByName = {}; // reset global
+  for (const r of dataRows) {
+    const key = (r[contactCols.nick] || "").toString().trim();
+    if (!key) continue;
+    const termLabel =
+      getOrgTermLabelFromPositionCode(r[STRUCT_COL_POSITION_CODE]) ||
+      fallbackOrgTermLabel;
+    const contactInfo = makeContactInfo(r, key);
+    assistantContactsByName[`${termLabel}::${key}`] = contactInfo;
+    if (termLabel === initialOrgTermLabel || !assistantContactsByName[key]) {
+      assistantContactsByName[key] = contactInfo;
+    }
+  }
+  assistantContactsByName = {
+    ...assistantContactsByName,
+    ...existingContactsByName
+  };
+
+  staffEmails = new Set();
+  staffProfilesByEmail = {};
   if (Array.isArray(staffProfileDocs)) {
     for (const item of staffProfileDocs) {
       const staffEmail = (item?.email || item?.mail || item?.id || "").toString().trim().toLowerCase();
@@ -242,180 +307,283 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
     }
   }
 
-  function getPerson(position, index = 0) {
-    const list = peopleByPos[position] || [];
-    return list[index] || null;
-  }
+  function buildOrgTreeHtml(termLabel) {
+    const termRows = orgRowsByTerm.get(termLabel) || [];
 
-  function getUniquePeople(position) {
-    const list = peopleByPos[position] || [];
-    const seen = new Set();
-    return list.filter((r) => {
+    function personKey(r) {
       const nick = (r[STRUCT_COL_NICK] || "").toString().trim();
-      const identity =
+      const key =
         nick ||
         fullName(r, {
           prefix: STRUCT_COL_PREFIX,
           first: STRUCT_COL_FIRST,
           last: STRUCT_COL_LAST
         });
-      if (!identity || seen.has(identity)) return false;
-      seen.add(identity);
-      return true;
-    });
-  }
+      return `${termLabel}::${key}`;
+    }
 
-  function personKey(r) {
-    const nick = (r[STRUCT_COL_NICK] || "").toString().trim();
-    if (nick) return nick;
-    return fullName(r, {
-      prefix: STRUCT_COL_PREFIX,
-      first: STRUCT_COL_FIRST,
-      last: STRUCT_COL_LAST
-    });
-  }
+    function renderPersonNode(r, opts = {}) {
+      if (!r) return "";
 
-  function renderPersonNode(r, opts = {}) {
-    if (!r) return "";
+      const key = personKey(r);
+      const size = opts.size || "lg";
+      const code = (r[STRUCT_COL_POSITION_CODE] || "").toString().trim();
 
-    const key = personKey(r);
-    const size = opts.size || "lg";
+      return `
+        <button class="org-node" type="button" data-person-key="${esc(key)}">
+          ${avatarHTML(r, size === "sm" ? "sm" : "lg")}
+          <div class="org-node-role">${esc((r[STRUCT_COL_POS] || "").trim())}</div>
+          <div class="org-node-name">${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}</div>
+          <div class="org-node-nick">${esc(nickNameText(r, { nick: STRUCT_COL_NICK }))}</div>
+          ${code ? `<div class="org-node-code">${esc(code)}</div>` : ""}
+        </button>
+      `;
+    }
 
+    const uniqueRows = [];
+    const seenRows = new Set();
+    for (const r of termRows) {
+      const nick = (r[STRUCT_COL_NICK] || "").toString().trim();
+      const name = fullName(r, {
+        prefix: STRUCT_COL_PREFIX,
+        first: STRUCT_COL_FIRST,
+        last: STRUCT_COL_LAST
+      });
+      const code = (r[STRUCT_COL_POSITION_CODE] || "").toString().trim();
+      const identity = `${code}::${nick || name}`;
+      if (!identity.trim() || seenRows.has(identity)) continue;
+      seenRows.add(identity);
+      uniqueRows.push(r);
+    }
+
+    const sortByPositionCode = (a, b) => {
+      const codeA = parseOrgPositionCode(a[STRUCT_COL_POSITION_CODE]);
+      const codeB = parseOrgPositionCode(b[STRUCT_COL_POSITION_CODE]);
+      if (!codeA && !codeB) return 0;
+      if (!codeA) return 1;
+      if (!codeB) return -1;
+      return (
+        codeA.yyNumber - codeB.yyNumber ||
+        codeA.zzNumber - codeB.zzNumber ||
+        codeA.aaaNumber - codeB.aaaNumber
+      );
+    };
+    uniqueRows.sort(sortByPositionCode);
+
+    const codedRows = uniqueRows
+      .map((row) => ({ row, code: parseOrgPositionCode(row[STRUCT_COL_POSITION_CODE]) }))
+      .filter((item) => item.code);
+    const uncodedRows = uniqueRows.filter((row) => !parseOrgPositionCode(row[STRUCT_COL_POSITION_CODE]));
+    const centralRows = codedRows.filter((item) => item.code.yy === "00").map((item) => item.row);
+    const topNode = centralRows[0] || uncodedRows[0] || null;
+    const centralSupportRows = centralRows.slice(1);
+    const branchesByYy = new Map();
+
+    for (const item of codedRows) {
+      if (item.code.yy === "00") continue;
+      if (!branchesByYy.has(item.code.yy)) branchesByYy.set(item.code.yy, []);
+      branchesByYy.get(item.code.yy).push(item.row);
+    }
+    if (!branchesByYy.has("01")) {
+      branchesByYy.set("01", []);
+    }
+
+    const branchEntries = Array.from(branchesByYy.entries())
+      .sort(([yyA], [yyB]) => Number(yyA) - Number(yyB))
+      .map(([yy, rows]) => [yy, rows.sort(sortByPositionCode)]);
+    const uncodedSupportRows = topNode ? uncodedRows.slice(1) : uncodedRows;
+
+    const renderBranchTitle = (yy, rows) => {
+      if (yy === "01") return "เหรัญญิก";
+      const firstRole = (rows[0]?.[STRUCT_COL_POS] || "").toString().trim();
+      const title = firstRole.replace(/^(ประธาน|รองประธาน|เลขานุการ|ผู้ช่วย)(ฝ่าย)?/u, "").trim();
+      return title || `ฝ่าย ${yy}`;
+    };
+
+    const renderAssistantBox = (labelText) => {
+      if (!labelText) return "";
+      return `<div class="org-node-assistant-box org-code-assistant-box">${esc(labelText)}</div>`;
+    };
+
+    const renderBranchAssistantLabel = (yy, rows) => {
+      if (yy === "01") return "ผู้ช่วยเหรัญญิก";
+      const title = renderBranchTitle(yy, rows);
+      if (!title || title === `ฝ่าย ${yy}`) return `ผู้ช่วยฝ่าย ${yy}`;
+      return title.startsWith("ฝ่าย") ? `ผู้ช่วย${title}` : `ผู้ช่วยฝ่าย${title}`;
+    };
+
+    const getRowsByZz = (rows) => {
+      const groups = new Map();
+      for (const row of rows) {
+        const code = parseOrgPositionCode(row[STRUCT_COL_POSITION_CODE]);
+        const zz = code?.zz || "อื่น ๆ";
+        if (!groups.has(zz)) groups.set(zz, []);
+        groups.get(zz).push(row);
+      }
+      return Array.from(groups.entries())
+        .sort(([zzA], [zzB]) => Number(zzA) - Number(zzB))
+        .map(([zz, groupRows]) => [zz, groupRows.sort(sortByPositionCode)]);
+    };
+
+    const getBranchColumnCount = (count) => {
+      if (count <= 1) return 1;
+      if (count === 2) return 2;
+      if (count === 4) return 2;
+      return 3;
+    };
+    const branchColumnCount = getBranchColumnCount(branchEntries.length);
+
+    // ====== ประกอบ HTML Org Tree ======
     return `
-      <button class="org-node" type="button" data-person-key="${esc(key)}">
-        ${avatarHTML(r, size === "sm" ? "sm" : "lg")}
-        <div class="org-node-role">${esc((r[STRUCT_COL_POS] || "").trim())}</div>
-        <div class="org-node-name">${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}</div>
-        <div class="org-node-nick">${esc(nickNameText(r, { nick: STRUCT_COL_NICK }))}</div>
-      </button>
-    `;
-  }
+      <div class="org-tree org-tree-code-layout" data-org-term-panel="${esc(termLabel)}">
+        <div class="org-code-top">
+          ${topNode
+            ? renderPersonNode(topNode, { size: "lg" })
+            : "<p>ไม่พบข้อมูลโครงสร้างทีมเหรัญญิก</p>"}
+        </div>
 
-  // กล่องผู้ช่วย: fixed label ตามรูป, ไม่ผูก popup
-  function renderAssistantBox(labelText) {
-    if (!labelText) return "";
-    return `
-      <div class="org-node-assistant-box">
-        ${labelText}
+        ${centralSupportRows.length
+          ? `
+            <div class="org-code-section">
+              <div class="org-code-section-label">ส่วนกลาง</div>
+              <div class="org-code-central-grid">
+                ${centralSupportRows.map((row) => renderPersonNode(row, { size: "sm" })).join("")}
+              </div>
+            </div>
+          `
+          : ""}
+
+        ${branchEntries.length
+          ? `
+            <div class="org-code-branches org-code-branches-cols-${branchColumnCount}">
+              ${branchEntries.map(([yy, rows]) => `
+	                <section class="org-code-branch" data-org-yy="${esc(yy)}">
+		                  <div class="org-code-branch-label">
+		                    <strong>${esc(renderBranchTitle(yy, rows))}</strong>
+		                  </div>
+		                  <div class="org-code-branch-people">
+		                    ${getRowsByZz(rows).map(([zz, zzRows], groupIndex) => `
+                        <div class="org-code-zz-row" data-org-zz="${esc(zz)}">
+	                          <div class="org-code-zz-people">
+                            ${zzRows.map((row) => renderPersonNode(row, { size: groupIndex === 0 ? "lg" : "sm" })).join("")}
+                          </div>
+                        </div>
+                      `).join("")}
+	                  </div>
+                    ${renderAssistantBox(renderBranchAssistantLabel(yy, rows))}
+	                </section>
+	              `).join("")}
+            </div>
+          `
+          : ""}
+
+        ${uncodedSupportRows.length
+          ? `
+            <div class="org-code-section">
+              <div class="org-code-section-label">ยังไม่มีรหัส SGCUXX.10.YY.ZZ-AAA</div>
+              <div class="org-code-central-grid">
+                ${uncodedSupportRows.map((row) => renderPersonNode(row, { size: "sm" })).join("")}
+              </div>
+            </div>
+          `
+          : ""}
       </div>
     `;
   }
+  const dotsHtml = orgTerms.length
+    ? `
+      <div class="org-term-dots" role="tablist" aria-label="เลือกปีโครงสร้างทีมเหรัญญิก">
+        ${orgTerms.map((termLabel) => `
+          <button
+            class="org-term-dot${termLabel === initialOrgTermLabel ? " is-active" : ""}"
+            type="button"
+            role="tab"
+            aria-selected="${termLabel === initialOrgTermLabel ? "true" : "false"}"
+            aria-label="${esc(termLabel)}"
+            data-org-term="${esc(termLabel)}"
+          >
+            <span class="org-term-dot-mark" aria-hidden="true"></span>
+            <span class="org-term-dot-label">${esc(termLabel)}</span>
+          </button>
+        `).join("")}
+      </div>
+    `
+    : "";
 
-  // ====== ดึงคนตามตำแหน่งหลัก ๆ ตามรูปโครงสร้าง ======
-  const treasurer   = getPerson("เหรัญญิก", 0);
-
-  const secretary1  = getPerson("เลขานุการฝ่ายเหรัญญิก", 0);
-  const secretary2  = getPerson("เลขานุการฝ่ายเหรัญญิก", 1);
-
-  const headBudget  = getPerson("ประธานฝ่ายบริหารและพัฒนางบประมาณ", 0);
-  const headFund    = getPerson("ประธานฝ่ายหาทุนและสิทธิประโยชน์", 0);
-
-  // ประธานฝ่ายกายภาพและพัสดุ 2 คน
-  const headAsset1  = getPerson("ประธานฝ่ายกายภาพและพัสดุ", 0);
-  const headAsset2  = getPerson("ประธานฝ่ายกายภาพและพัสดุ", 1);
-
-  const depBudget   = getPerson("รองประธานฝ่ายบริหารและพัฒนางบประมาณ", 0);
-  const depFunds    = getUniquePeople("รองประธานฝ่ายหาทุนและสิทธิประโยชน์").slice(0, 2);
-  const depAsset    = getPerson("รองประธานฝ่ายกายภาพและพัสดุ", 0);
-  const secAssets   = getUniquePeople("เลขานุการฝ่ายกายภาพและพัสดุ");
-
-  // ====== ประกอบ HTML Org Tree ======
   let html = `
-    <div class="org-tree">
-
-      <!-- Level 1: เหรัญญิก -->
-      <div class="org-level">
-        ${treasurer
-          ? renderPersonNode(treasurer, { size: "lg" })
-          : "<p>ไม่พบข้อมูลเหรัญญิก</p>"}
-      </div>
-
-      <!-- เส้นลงมาเชื่อมกับเลขาฯ -->
-      <div class="org-line-vertical"></div>
-
-      <!-- Level 2: เลขานุการ 2 คน -->
-      <div class="org-level org-level-secretaries">
-        ${secretary1 ? renderPersonNode(secretary1, { size: "sm" }) : ""}
-        ${secretary2 ? renderPersonNode(secretary2, { size: "sm" }) : ""}
-      </div>
-
-      <!-- เส้นแนวนอนเชื่อมไปยัง 3 ประธาน -->
-      <div class="org-connector-wide"></div>
-
-      <!-- Level 3: ผู้ช่วยเหรัญญิก + สามประธาน -->
-      <div class="org-level org-level-main-branches">
-
-        <!-- LEFT: ผู้ช่วยเหรัญญิก -->
-        <div class="org-left-asst" style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
-          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายเทคโนโลยีสารสนเทศ")}
-          ${renderAssistantBox("ผู้ช่วยเหรัญญิกส่วนกลาง")}
-          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายศิลปะและวัฒนธรรม")}
-          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายวิชาการ")}
-          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายกีฬา")}
-          ${renderAssistantBox("ผู้ช่วยเหรัญญิกฝ่ายพัฒนาสังคมและบำเพ็ญประโยชน์")}
+    ${dotsHtml}
+    <div class="org-term-panels">
+      ${orgTerms.map((termLabel) => `
+        <div class="org-term-panel${termLabel === initialOrgTermLabel ? " is-active" : ""}" data-org-term-panel-wrap="${esc(termLabel)}">
+          ${buildOrgTreeHtml(termLabel)}
         </div>
-
-        <!-- RIGHT: สามสาขา -->
-        <div class="org-right-branches">
-
-          <!-- Branch: บริหารและพัฒนางบประมาณ -->
-          <div class="org-branch org-branch-budget">
-            <div class="org-branch-head">
-              ${headBudget ? renderPersonNode(headBudget, { size: "lg" }) : ""}
-            </div>
-            <div class="org-branch-dep">
-              ${depBudget ? renderPersonNode(depBudget, { size: "sm" }) : ""}
-            </div>
-            <div class="org-branch-assistant">
-              ${renderAssistantBox("ผู้ช่วยฝ่ายบริหารและพัฒนางบประมาณ")}
-            </div>
-          </div>
-
-          <!-- Branch: หาทุนและสิทธิประโยชน์ -->
-          <div class="org-branch org-branch-fund">
-            <div class="org-branch-head">
-              ${headFund ? renderPersonNode(headFund, { size: "lg" }) : ""}
-            </div>
-            <div class="org-branch-dep org-level-depfund">
-              ${depFunds.map(p => renderPersonNode(p, { size: "sm" })).join("")}
-            </div>
-            <div class="org-branch-assistant">
-              ${renderAssistantBox("ผู้ช่วยฝ่ายหาทุนและสิทธิประโยชน์")}
-            </div>
-          </div>
-
-          <!-- Branch: กายภาพและพัสดุ (ประธาน 2 คน) -->
-          <div class="org-branch org-branch-asset">
-            <div class="org-branch-head org-level-asset-heads">
-              ${headAsset1 ? renderPersonNode(headAsset1, { size: "lg" }) : ""}
-              ${headAsset2 ? renderPersonNode(headAsset2, { size: "lg" }) : ""}
-            </div>
-            <div class="org-branch-dep">
-              ${depAsset ? renderPersonNode(depAsset, { size: "sm" }) : ""}
-            </div>
-            <div class="org-branch-secretary">
-              ${secAssets.length
-                ? secAssets.map(p => renderPersonNode(p, { size: "sm" })).join("")
-                : renderAssistantBox("เลขานุการฝ่ายกายภาพและพัสดุ")}
-            </div>
-            <div class="org-branch-assistant">
-              ${renderAssistantBox("ผู้ช่วยฝ่ายกายภาพและพัสดุ")}
-            </div>
-          </div>
-
-        </div>
-      </div>
+      `).join("")}
     </div>
   `;
 
   container.innerHTML = html;
+  syncOrgTermLabels(initialOrgTermLabel);
 
   if (refreshAuthDisplayFn && window.sgcuAuth?.auth?.currentUser) {
     refreshAuthDisplayFn(window.sgcuAuth.auth.currentUser);
   }
 
+  initOrgTermDots(initialOrgTermLabel);
+  initOrgImageFallbacks();
   // ผูก popup ให้เฉพาะปุ่มคน (วงกลม)
   initOrgPersonPopup();
+}
+
+function initOrgImageFallbacks() {
+  const container = document.getElementById("org-structure-content");
+  if (!container) return;
+  container.querySelectorAll(".org-node-circle img").forEach((img) => {
+    img.addEventListener("error", () => {
+      const avatar = img.closest(".org-node-circle");
+      if (!avatar) return;
+      avatar.textContent = avatar.dataset.initials || "SG";
+    });
+  });
+}
+
+function syncOrgTermLabels(termLabel) {
+  const safeLabel = termLabel || "SGCU68";
+  [
+    "aboutTreasurerTeamLabel",
+    "aboutBudgetTeamLabel",
+    "aboutOrgStructureTitleLabel"
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = safeLabel;
+  });
+}
+
+function initOrgTermDots(initialTermLabel) {
+  const container = document.getElementById("org-structure-content");
+  if (!container) return;
+  const dots = Array.from(container.querySelectorAll(".org-term-dot[data-org-term]"));
+  const panels = Array.from(container.querySelectorAll(".org-term-panel[data-org-term-panel-wrap]"));
+  if (!dots.length || !panels.length) return;
+
+  function setActiveTerm(termLabel) {
+    dots.forEach((dot) => {
+      const isActive = dot.dataset.orgTerm === termLabel;
+      dot.classList.toggle("is-active", isActive);
+      dot.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    panels.forEach((panel) => {
+      panel.classList.toggle("is-active", panel.dataset.orgTermPanelWrap === termLabel);
+    });
+    syncOrgTermLabels(termLabel);
+  }
+
+  dots.forEach((dot) => {
+    dot.addEventListener("click", () => {
+      setActiveTerm(dot.dataset.orgTerm || initialTermLabel);
+    });
+  });
+
+  setActiveTerm(initialTermLabel);
 }
 
 function initOrgPersonPopup() {

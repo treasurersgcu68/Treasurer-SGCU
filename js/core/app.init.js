@@ -683,7 +683,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await ensurePageFeatureLoaded(targetPage);
       clearLoadError("feature-loader");
     } catch (error) {
-      console.error("page feature script failed to load - app.init.js:665", targetPage, error);
+      console.error("page feature script failed to load - app.init.js:686", targetPage, error);
       recordLoadError("feature-loader", "ไม่สามารถโหลดฟีเจอร์ของหน้านี้ได้", { showRetry: true });
       return;
     }

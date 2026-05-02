@@ -1,0 +1,171 @@
+      <!-- LOGIN PAGE -->
+      <section class="page-view" data-page="login">
+        <div class="page login-page">
+          <div class="page-header-flex">
+            <div>
+              <h1 class="page-title">เข้าสู่ระบบ</h1>
+              <p class="page-subtitle">เข้าสู่ระบบด้วยบัญชี Mail CHULA ที่ได้รับอนุญาต และจัดการข้อมูลผู้ใช้ร่วมทุกระบบ</p>
+            </div>
+            <div id="staffModeToggle" class="staff-mode-toggle login-staff-mode-toggle tabs">
+              <button class="staff-mode-btn tab-btn view-toggle-btn is-active" data-staff-mode="normal" type="button">ทั่วไป</button>
+              <button class="staff-mode-btn tab-btn view-toggle-btn" data-staff-mode="staff" type="button">สตาฟ</button>
+            </div>
+          </div>
+
+          <div class="login-shell">
+            <div class="login-hero">
+              <div id="loginHeroContent" class="login-hero-content">
+                <div class="login-hero-eyebrow">Treasurer SGCU 68</div>
+                <h2 class="login-hero-title">ศูนย์กลางงานการเงินของนิสิต</h2>
+                <p class="login-hero-lead">
+                  เข้าสู่ระบบเพื่อดูสถานะโครงการ งบประมาณ และเอกสารการเงินแบบเป็นทางการ
+                  ข้อมูลทั้งหมดอัปเดตแบบโปร่งใสและตรวจสอบย้อนหลังได้
+                </p>
+                <div class="login-hero-list">
+                  <div class="login-hero-item">
+                    <span class="login-hero-icon" aria-hidden="true">+</span>
+                    <span>ติดตามการอนุมัติและเบิกจ่ายแบบเรียลไทม์</span>
+                  </div>
+                  <div class="login-hero-item">
+                    <span class="login-hero-icon" aria-hidden="true">+</span>
+                    <span>ระบบยืม - คืนพัสดุ</span>
+                  </div>
+                  <div class="login-hero-item">
+                    <span class="login-hero-icon" aria-hidden="true">+</span>
+                    <span>จองห้องประชุม</span>
+                  </div>
+                </div>
+                <div class="login-hero-meta">
+                  <div class="login-hero-chip">Secure Access</div>
+                  <div class="login-hero-chip">SGCU 68</div>
+                  <div class="login-hero-chip">Finance Hub</div>
+                </div>
+              </div>
+
+              <div class="login-hero-panel">
+                <div class="login-grid">
+                  <div id="loginGooglePanel" class="panel panel-hover login-card login-intro-card">
+                    <h3 class="login-title">เข้าสู่ระบบด้วย Mail CHULA</h3>
+                    <button id="loginPageGoogleBtn" type="button" class="btn-primary w-full">Sign in with Mail CHULA</button>
+                    <button id="loginPageLogoutBtn" type="button" class="login-logout-btn" style="display:none;">Sign Out</button>
+                    <div class="login-status login-greeting" id="loginPageStatus"></div>
+                    <div class="login-notification-controls">
+                      <button id="loginNotificationEnableBtn" class="btn-ghost" type="button">อนุญาตแจ้งเตือนแล้ว</button>
+                    </div>
+                    <div id="loginNotificationSummary" class="section-text-sm login-notification-summary" aria-live="polite">
+                      การแจ้งเตือน: อนุญาตแล้ว
+                    </div>
+                  </div>
+
+                  <div id="loginProfileCard" class="panel panel-hover login-card login-profile-card" hidden>
+                    <h3 class="login-title">ข้อมูลบัญชีผู้ใช้</h3>
+                    <div id="loginProfileForm" class="login-profile-form">
+                      <section class="login-profile-block">
+                        <div class="borrow-form-row login-profile-type-row">
+                          <div class="borrow-form-field">
+                            <label class="login-label">ประเภทผู้ใช้งาน</label>
+                            <div class="tabs" id="loginProfileTypeGroup">
+                              <label class="tab-btn view-toggle-btn is-active" style="cursor:pointer;">
+                                <input id="loginProfileTypeStudent" type="radio" name="loginProfileType" value="student" checked style="display:none;" />
+                                นิสิต
+                              </label>
+                              <label class="tab-btn view-toggle-btn" style="cursor:pointer;">
+                                <input id="loginProfileTypeAffairs" type="radio" name="loginProfileType" value="affairs" style="display:none;" />
+                                เจ้าหน้าที่สำนักบริหารกิจการนิสิต
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+
+                      <section class="login-profile-block">
+                        <div class="borrow-form-row">
+                          <div class="borrow-form-field">
+                            <label class="login-label" for="loginProfileFirstName">ชื่อ</label>
+                            <input id="loginProfileFirstName" class="login-input" type="text" placeholder="ชื่อจริง" required />
+                          </div>
+                          <div class="borrow-form-field">
+                            <label class="login-label" for="loginProfileLastName">นามสกุล</label>
+                            <input id="loginProfileLastName" class="login-input" type="text" placeholder="นามสกุล" required />
+                          </div>
+                        </div>
+
+                        <div id="loginProfileStudentFields">
+                          <div class="borrow-form-row">
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="loginProfileNickname">ชื่อเล่น</label>
+                              <input id="loginProfileNickname" class="login-input" type="text" placeholder="ชื่อเล่น" required />
+                            </div>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="loginProfileStudentId">เลขประจำตัวนิสิต</label>
+                              <input
+                                id="loginProfileStudentId"
+                                class="login-input"
+                                type="text"
+                                placeholder="รูปแบบ: xxxXXXXXxx"
+                                pattern="^(?:5[6-9]|6[0-9])[3478]\d{5}(?:(?:0[1-2])|(?:2[0-9]|3[0-9]|40)|51|53|55|56|58)$"
+                                required
+                              />
+                              <div id="loginProfileStudentIdWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                                เลขประจำตัวนิสิตไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="borrow-form-row">
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="loginProfileFaculty">คณะ</label>
+                              <input id="loginProfileFaculty" class="login-input" type="text" placeholder="ระบบจะแสดงคณะจากเลขประจำตัวนิสิต" readonly />
+                              <div id="loginProfileFacultyWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                                ไม่พบคณะจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
+                              </div>
+                            </div>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="loginProfileYear">ชั้นปี</label>
+                              <input id="loginProfileYear" class="login-input" type="text" placeholder="ระบบจะแสดงชั้นปีจากเลขประจำตัวนิสิต" readonly />
+                              <div id="loginProfileYearWarning" class="section-text-sm" style="color:#b91c1c;" hidden>
+                                ไม่พบชั้นปีจากเลขประจำตัวนิสิต กรุณาตรวจสอบอีกครั้ง
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="borrow-form-row">
+                          <div class="borrow-form-field">
+                            <label id="loginProfilePhoneLabel" class="login-label" for="loginProfilePhone">เบอร์โทรติดต่อกลับ</label>
+                            <input
+                              id="loginProfilePhone"
+                              class="login-input"
+                              type="tel"
+                              placeholder="รูปแบบ: 0xxXXXxxxx"
+                              pattern="^0\d{9}$"
+                              required
+                            />
+                          </div>
+                          <div class="borrow-form-field">
+                            <label id="loginProfileLineIdLabel" class="login-label" for="loginProfileLineId">Line ID</label>
+                            <input id="loginProfileLineId" class="login-input" type="text" placeholder="Line ID" required />
+                          </div>
+                        </div>
+                      </section>
+
+                      <section class="login-profile-block">
+                        <div class="login-profile-actions">
+                          <button id="loginProfileSaveBtn" type="button" class="btn-primary w-full">บันทึกข้อมูลผู้ใช้</button>
+                          <div id="loginProfileStatus" class="login-status login-profile-status"></div>
+                        </div>
+                        <button id="loginViewConsentBtn" type="button" class="login-consent-link">อ่านข้อกำหนดและความยินยอม</button>
+                      </section>
+                    </div>
+                  </div>
+                </div>
+                <div class="login-help">
+                  <div class="login-help-title">ยังไม่มีสิทธิ์เข้าใช้งาน?</div>
+                  <p class="login-help-text">ติดต่อฝ่ายเหรัญญิกเพื่อขอเพิ่มสิทธิ์เข้าระบบ</p>
+                  <button id="loginHelpApplyBtn" class="btn-ghost login-help-cta" type="button" hidden>สมัครเป็นสตาฟ</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>

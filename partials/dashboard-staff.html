@@ -1,0 +1,166 @@
+      <!-- ============ DASHBOARD (STAFF) ============ -->
+      <section class="page-view" data-page="dashboard-staff">
+        <div class="page">
+          <div class="page-header-flex">
+            <div>
+              <h1 class="page-title">Dashboard ภาพรวม</h1>
+              <p class="page-meta">ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง | ผู้เข้าชมสะสม : <span id="dashboardVisitorAllTimeCount">-</span> ครั้ง</p>
+            </div>
+          </div>
+
+          <div id="filterBarHostDashboardStaff"></div>
+
+          <section class="dashboard-overview section-appear section-delay-1">
+            <header class="panel-header">
+              <div>
+                <h3 class="panel-title">ภาพรวมโครงการ</h3>
+                <p class="panel-caption">สรุปอัตราสถานะ งบเฉลี่ย และหน่วยงานที่ใช้งบสูงสุด</p>
+              </div>
+            </header>
+
+            <div class="dashboard-grid">
+              <article class="dashboard-metric">
+                <div class="metric-label">งบประมาณเฉลี่ยต่อโครงการ</div>
+                <div id="avgBudgetStaff" class="metric-value">0</div>
+                <div id="avgBudgetCaptionStaff" class="metric-caption">-</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="metric-label">จำนวนฝ่าย/ชมรมที่มีโครงการ</div>
+                <div id="activeOrgCountStaff" class="metric-value">0</div>
+                <div id="activeOrgCaptionStaff" class="metric-caption">-</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="metric-label">ฝ่าย / ชมรมใช้งบสูงสุด</div>
+                <div id="topOrgNameStaff" class="metric-value">-</div>
+                <div id="topOrgBudgetStaff" class="metric-caption">-</div>
+              </article>
+            </div>
+
+            <div class="dashboard-grid"> 
+              <article class="dashboard-metric">
+                <div class="metric-label">อัตราอนุมัติโครงการ</div>
+                <div class="donut-wrap">
+                  <canvas id="approvalRateDonutStaff"></canvas>
+                </div>
+                <div class="metric-caption" id="approvalRateCaptionStaff">กำลังประมวลผล</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="metric-label">การใช้จ่ายเทียบงบ</div>
+                <div class="donut-wrap">
+                  <canvas id="kpiBudgetUsageDonutStaff"></canvas>
+                </div>
+                <div class="metric-caption" id="kpiBudgetUsageCaption">กำลังประมวลผล</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="metric-label">อัตราปิดโครงการ</div>
+                <div class="donut-wrap">
+                  <canvas id="closureRateDonutStaff"></canvas>
+                </div>
+                <div class="metric-caption" id="closureRateCaptionStaff">กำลังประมวลผล</div>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="metric-label">% ปิดโครงการตรงเวลา</div>
+                <div class="donut-wrap">
+                  <canvas id="kpiOnTimeDonutStaff"></canvas>
+                </div>
+                <div class="metric-caption" id="kpiOnTimeCaption">กำลังประมวลผล</div>
+              </article>
+            </div>
+
+            <div class="dashboard-charts-grid section-appear section-delay-2" style="margin-top:12px;">
+              <article class="chart-card">
+                  <header class="chart-header">
+                    <h3 class="chart-title">จำนวนโครงการค้างปิดรายเดือน</h3>
+                  </header>
+                <div class="chart-inner">
+                  <canvas id="trendLineChartStaff"></canvas>
+                </div>
+              </article>
+
+              <article class="chart-card">
+                <header class="chart-header">
+                  <h3 class="chart-title">เปรียบเทียบรายเดือน</h3>
+                  <p class="chart-caption" id="kpiMonthlyCaption">กำลังเตรียมข้อมูล</p>
+                </header>
+                <div class="chart-inner">
+                  <canvas id="homeKpiChart" height="140"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="dashboard-charts-grid" style="margin-top:12px;">
+              <article class="chart-card">
+                <div class="calendar-heatmap-header">
+                  <h4 class="calendar-heatmap-title">Heat map วันปฏิบัติงานวันสุดท้าย</h4>
+                </div>
+                <div class="heatmap-year">
+                  <div id="homeHeatmapMonths" class="heatmap-axis heatmap-axis-months"></div>
+                  <div class="heatmap-body">
+                    <div class="heatmap-axis heatmap-axis-days" aria-hidden="true">
+                      <span>อา</span>
+                      <span>จ</span>
+                      <span>อ</span>
+                      <span>พ</span>
+                      <span>พฤ</span>
+                      <span>ศ</span>
+                      <span>ส</span>
+                    </div>
+                    <div id="homeHeatmap" class="heatmap-year-grid"></div>
+                  </div>
+                </div>
+                <div class="calendar-heatmap-legend" aria-hidden="true">
+                  <span class="heatmap-legend-label">น้อย</span>
+                  <span class="heatmap-legend-swatch heat-1"></span>
+                  <span class="heatmap-legend-swatch heat-2"></span>
+                  <span class="heatmap-legend-swatch heat-3"></span>
+                  <span class="heatmap-legend-swatch heat-4"></span>
+                  <span class="heatmap-legend-swatch heat-5"></span>
+                  <span class="heatmap-legend-label">มาก</span>
+                </div>
+              </article>
+            </div>
+
+            <div class="dashboard-lower" style="margin-top:12px;">
+              <article class="dashboard-card dashboard-card-wide">
+                <h4 class="dashboard-card-title">โครงการค้างปิดนานสุด</h4>
+                <div class="dashboard-filter-bar">
+                  <div class="filter-group">
+                    <label for="longestOpenAssistantFilterStaff">ผู้รับผิดชอบ</label>
+                    <select id="longestOpenAssistantFilterStaff">
+                      <option value="all">ทั้งหมด</option>
+                    </select>
+                  </div>
+                  <div class="filter-group">
+                    <label for="longestOpenStatusFilterStaff">สถานะปิดโครงการ</label>
+                    <select id="longestOpenStatusFilterStaff">
+                      <option value="all">ทั้งหมด</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="project-table-wrapper">
+                  <table id="longestOpenTableStaff">
+                    <caption id="longestOpenTableCaptionStaff">แสดงผล 0 โครงการ</caption>
+                    <thead>
+                      <tr>
+                        <th style="text-align:center;">รหัสโครงการ</th>
+                        <th style="text-align:center;">ชื่อโครงการ</th>
+                        <th style="text-align:center;">ผู้รับผิดชอบ</th>
+                        <th style="text-align:center;">สถานะปิดโครงการ</th>
+                        <th style="text-align:right;">ยอดวันที่ค้าง</th>
+                      </tr>
+                    </thead>
+                    <tbody id="longestOpenTableBodyStaff">
+                      <!-- JS ใส่ข้อมูล -->
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>

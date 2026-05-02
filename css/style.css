@@ -2189,6 +2189,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
+.staff-position-chip.is-editing {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border-color: rgba(236, 72, 153, 0.34);
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(236, 72, 153, 0.14);
+}
+
 .staff-position-chip:hover {
   border-color: rgba(236, 72, 153, 0.32);
   box-shadow: 0 12px 26px rgba(236, 72, 153, 0.14);
@@ -2196,6 +2204,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .staff-position-chip-main {
   min-width: 0;
+}
+
+.staff-position-chip-summary {
+  display: grid;
+  gap: 8px;
 }
 
 .staff-position-chip-name {
@@ -2240,6 +2253,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-top: 9px;
 }
 
+.staff-position-chip-pages.is-muted {
+  margin-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(244, 114, 182, 0.14);
+}
+
 .staff-position-page-badge {
   display: inline-flex;
   align-items: center;
@@ -2270,15 +2289,33 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .staff-position-editor {
   margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed rgba(244, 114, 182, 0.24);
   display: grid;
-  gap: 10px;
+  gap: 14px;
+}
+
+.staff-position-editor-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.staff-position-editor-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--theme-pink-800);
+}
+
+.staff-position-editor-caption {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--theme-pink-700);
 }
 
 .staff-position-editor-grid {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(160px, 1fr));
 }
 
@@ -2291,6 +2328,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .staff-position-editor-pages {
   display: grid;
   gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(244, 114, 182, 0.16);
+  background: rgba(255, 247, 252, 0.75);
 }
 
 .staff-position-editor-pages-title {
@@ -2303,6 +2344,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .staff-position-remove-btn {

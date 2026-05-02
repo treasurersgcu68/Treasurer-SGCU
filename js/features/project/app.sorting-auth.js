@@ -321,19 +321,12 @@ function getAllowedStaffPagesByYY(yy, roleValue = "") {
   if (normalizedYY === "00") {
     return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "staff-approval", "login"]);
   }
-  const map = {
-    "01": ["project-status-staff", "dashboard-staff", "login"],
-    "02": ["project-status-staff", "dashboard-staff", "login"],
-    "03": ["dashboard-staff", "login"],
-    "04": ["borrow-assets-staff", "meeting-room-staff", "login"],
-    "09": ["meeting-room-staff", "login"]
-  };
-  return new Set(map[normalizedYY] || ["project-status-staff", "dashboard-staff", "login"]);
+  return new Set(["login"]);
 }
 
 function getAllowedStaffPagesByYYList(yyList = [], roleValue = "") {
   const list = Array.isArray(yyList) ? yyList : [];
-  if (!list.length) return new Set(["project-status-staff", "dashboard-staff", "login"]);
+  if (!list.length) return new Set(["login"]);
   const merged = new Set();
   list.forEach((yy) => {
     getAllowedStaffPagesByYY(yy, roleValue).forEach((page) => merged.add(page));
@@ -341,18 +334,18 @@ function getAllowedStaffPagesByYYList(yyList = [], roleValue = "") {
   return merged;
 }
 
-function resolveAllowedPagesFromPositionCatalog(positionName, yy, zz) {
+function findAllowedPagesFromPositionCatalog(positionName, yy, zz) {
   const normalizedName = (positionName || "").toString().trim().toLowerCase();
   const normalizedYY = normalizeDivisionCodeYY(yy);
   const normalizedZZ = normalizeDivisionCodeYY(zz);
   if (normalizedName && Array.isArray(staffPositionAccessByName[normalizedName])) {
-    return normalizeAllowedStaffPages(staffPositionAccessByName[normalizedName], normalizedYY);
+    return staffPositionAccessByName[normalizedName];
   }
   const codeKey = normalizedYY && normalizedZZ ? `${normalizedYY}.${normalizedZZ}` : "";
   if (codeKey && Array.isArray(staffPositionAccessByCode[codeKey])) {
-    return normalizeAllowedStaffPages(staffPositionAccessByCode[codeKey], normalizedYY);
+    return staffPositionAccessByCode[codeKey];
   }
-  return normalizeAllowedStaffPages([], normalizedYY);
+  return null;
 }
 
 function getAllowedStaffPagesByProfile(profile) {
@@ -361,13 +354,10 @@ function getAllowedStaffPagesByProfile(profile) {
   positions.forEach((entry) => {
     const yy = normalizeDivisionCodeYY(entry?.yy || entry?.positionCodeYY || entry?.divisionCodeYY || "");
     const zz = normalizeDivisionCodeYY(entry?.zz || entry?.positionCodeZZ || entry?.levelCodeZZ || "");
-    const pages = normalizeAllowedStaffPages(
-      entry?.allowedPages,
-      yy
-    );
-    const effectivePages = Array.isArray(entry?.allowedPages) && entry.allowedPages.length
-      ? pages
-      : resolveAllowedPagesFromPositionCatalog(entry?.name || entry?.position || "", yy, zz);
+    const catalogPages = findAllowedPagesFromPositionCatalog(entry?.name || entry?.position || "", yy, zz);
+    const effectivePages = Array.isArray(catalogPages)
+      ? normalizeAllowedStaffPages(catalogPages, yy)
+      : normalizeAllowedStaffPages(entry?.allowedPages, yy);
     effectivePages.forEach((page) => merged.add(page));
   });
 
@@ -979,7 +969,7 @@ function initAuthUI() {
       return { ok: true, code: "" };
     } catch (err) {
       const code = (err?.code || "unknown").toString();
-      console.error("save user profile to firestore failed - app.sorting-auth.js:760", err);
+      console.error("save user profile to firestore failed - app.sorting-auth.js:979", err);
       return { ok: false, code };
     }
   }
@@ -1417,7 +1407,7 @@ function initAuthUI() {
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
         clearAuthSession();
         signOut(auth).catch((err) => {
-          console.error("auto logout error (session expired) - app.sorting-auth.js:1189", err);
+          console.error("auto logout error (session expired) - app.sorting-auth.js:1417", err);
         });
         refreshAuthDisplay(null);
         window.dispatchEvent(
@@ -1515,7 +1505,7 @@ function initAuthUI() {
     refreshAuthDisplay(auth.currentUser);
     clearAuthSession();
     signOut(auth).catch((err) => {
-      console.error("logout error  app.js:3632 - app.sorting-auth.js:1287", err);
+      console.error("logout error  app.js:3632 - app.sorting-auth.js:1515", err);
     });
     loginProfileLoadedForEmail = "";
     setLoginProfileStatus("ออกจากระบบแล้ว", "#6b7280");

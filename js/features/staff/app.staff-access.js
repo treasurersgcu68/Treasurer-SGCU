@@ -557,14 +557,7 @@ function initStaffAccessPages() {
     if (code === "00") {
       return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "staff-approval", "login"];
     }
-    const map = {
-      "01": ["project-status-staff", "dashboard-staff", "login"],
-      "02": ["project-status-staff", "dashboard-staff", "login"],
-      "03": ["dashboard-staff", "login"],
-      "04": ["borrow-assets-staff", "meeting-room-staff", "login"],
-      "09": ["meeting-room-staff", "login"]
-    };
-    return map[code] ? [...map[code]] : ["project-status-staff", "dashboard-staff", "login"];
+    return ["login"];
   };
   const normalizeAllowedPages = (pages, fallbackYY = "") => {
     const list = Array.isArray(pages)
@@ -1039,13 +1032,13 @@ function initStaffAccessPages() {
     if (appProfileHintEl) {
       appProfileHintEl.textContent = profileType === "affairs"
         ? "ระบบกำหนดตำแหน่งสมัครได้เพียงรายการเดียวตามประเภทบัญชีผู้ใช้"
-        : "เลือกหมวดงาน (YY) ก่อน แล้วค่อยเลือกระดับตำแหน่ง (ZZ)";
+        : "เลือกหมวดงานก่อน แล้วค่อยเลือกระดับตำแหน่ง";
     }
     if (appDivisionLabelEl) {
-      appDivisionLabelEl.textContent = profileType === "affairs" ? "หมวดงาน (YY)" : "ฝ่าย / หมวดงาน (YY)";
+      appDivisionLabelEl.textContent = profileType === "affairs" ? "หมวดงาน" : "ฝ่าย / หมวดงาน";
     }
     if (appLevelLabelEl) {
-      appLevelLabelEl.textContent = profileType === "affairs" ? "ระดับตำแหน่ง (ZZ)" : "ตำแหน่ง (ZZ)";
+      appLevelLabelEl.textContent = profileType === "affairs" ? "ระดับตำแหน่ง" : "ตำแหน่ง";
     }
 
     if (appStudentFieldsEl) appStudentFieldsEl.hidden = false;
@@ -1058,11 +1051,11 @@ function initStaffAccessPages() {
       if (appResolvedPositionEl) appResolvedPositionEl.value = positionName;
       if (appPositionEl) appPositionEl.value = positionName;
       if (appDivisionEl) {
-        appDivisionEl.innerHTML = '<option value="09" selected>09 เจ้าหน้าที่สำนักบริหารกิจการนิสิต</option>';
+        appDivisionEl.innerHTML = '<option value="09" selected>เจ้าหน้าที่สำนักบริหารกิจการนิสิต</option>';
         appDivisionEl.value = "09";
       }
       if (appLevelEl) {
-        appLevelEl.innerHTML = '<option value="04" selected>04 เจ้าหน้าที่</option>';
+        appLevelEl.innerHTML = '<option value="04" selected>เจ้าหน้าที่</option>';
         appLevelEl.value = "04";
       }
       return;
@@ -1082,7 +1075,7 @@ function initStaffAccessPages() {
         '<option value="" selected disabled>เลือกฝ่ายใหญ่</option>',
         ...divisionList.map((item) => {
           const yy = normalizeCode2(item.divisionCodeYY);
-          return `<option value="${toSafeText(yy)}">${toSafeText(`${yy} ${divisionCodeLabel(yy)}`)}</option>`;
+          return `<option value="${toSafeText(yy)}">${toSafeText(divisionCodeLabel(yy))}</option>`;
         })
       ].join("");
       if (divisionList.some((item) => normalizeCode2(item.divisionCodeYY) === currentDivision)) {
@@ -1103,7 +1096,7 @@ function initStaffAccessPages() {
         '<option value="" selected disabled>เลือกระดับตำแหน่ง</option>',
         ...uniqueLevels.map((item) => {
           const zz = normalizeCode2(item.levelCodeZZ);
-          return `<option value="${toSafeText(zz)}">${toSafeText(`${zz} ${levelCodeLabel(zz)}`)}</option>`;
+          return `<option value="${toSafeText(zz)}">${toSafeText(levelCodeLabel(zz))}</option>`;
         })
       ].join("");
       if (uniqueLevels.some((item) => normalizeCode2(item.levelCodeZZ) === currentLevel)) {
@@ -1145,16 +1138,12 @@ function initStaffAccessPages() {
         const allowedPages = getAllowedPagesForCatalogPosition(item);
         const isEditing = allowManage && currentEditingPositionId === item.id;
         return `
-          <div class="staff-position-chip">
+          <div class="staff-position-chip${isEditing ? " is-editing" : ""}">
             <div class="staff-position-chip-main">
-              <span class="staff-position-chip-name">${toSafeText(item.name)}</span>
-              <div class="staff-position-chip-meta">
-                <span class="staff-position-chip-badge">YY ${toSafeText(yy)}</span>
-                <span class="staff-position-chip-badge is-soft">${toSafeText(divisionCodeLabel(yy))}</span>
-                <span class="staff-position-chip-badge">ZZ ${toSafeText(zz)}</span>
-                <span class="staff-position-chip-badge is-soft">${toSafeText(levelCodeLabel(zz))}</span>
+              <div class="staff-position-chip-summary">
+                <span class="staff-position-chip-name">${toSafeText(item.name)}</span>
               </div>
-              <div class="staff-position-chip-pages">
+              <div class="staff-position-chip-pages${isEditing ? " is-muted" : ""}">
                 ${allowedPages.map((page) => {
                   const label = STAFF_PAGE_OPTIONS.find((entry) => entry.id === page)?.label || page;
                   return `<span class="staff-position-page-badge">${toSafeText(label)}</span>`;
@@ -1162,6 +1151,12 @@ function initStaffAccessPages() {
               </div>
               ${isEditing ? `
                 <div class="staff-position-editor">
+                  <div class="staff-position-editor-head">
+                    <div>
+                      <div class="staff-position-editor-title">แก้ไขตำแหน่ง</div>
+                      <div class="staff-position-editor-caption">ค่าที่บันทึกในรายการนี้จะถูกใช้เป็นสิทธิ์หลักจาก staffPositionCatalog</div>
+                    </div>
+                  </div>
                   <div class="staff-position-editor-grid">
                     <div class="staff-position-editor-field">
                       <label class="login-label" for="staffPositionEditName-${toSafeText(item.id)}">ชื่อตำแหน่ง</label>
@@ -1174,23 +1169,23 @@ function initStaffAccessPages() {
                       />
                     </div>
                     <div class="staff-position-editor-field">
-                      <label class="login-label" for="staffPositionEditYY-${toSafeText(item.id)}">หมวดงาน (YY)</label>
+                      <label class="login-label" for="staffPositionEditYY-${toSafeText(item.id)}">หมวดงาน</label>
                       <select id="staffPositionEditYY-${toSafeText(item.id)}" class="login-input" data-role="edit-yy">
-                        <option value="00" ${yy === "00" ? "selected" : ""}>00 เหรัญญิก / เลขานุการฝ่ายเหรัญญิก</option>
-                        <option value="01" ${yy === "01" ? "selected" : ""}>01 ผู้ช่วยเหรัญญิก</option>
-                        <option value="02" ${yy === "02" ? "selected" : ""}>02 บริหารและพัฒนางบประมาณ</option>
-                        <option value="03" ${yy === "03" ? "selected" : ""}>03 หาทุนและสิทธิประโยชน์</option>
-                        <option value="04" ${yy === "04" ? "selected" : ""}>04 กายภาพและพัสดุ</option>
-                        <option value="09" ${yy === "09" ? "selected" : ""}>09 เจ้าหน้าที่สำนักบริหารกิจการนิสิต</option>
+                        <option value="00" ${yy === "00" ? "selected" : ""}>เหรัญญิก / เลขานุการฝ่ายเหรัญญิก</option>
+                        <option value="01" ${yy === "01" ? "selected" : ""}>ผู้ช่วยเหรัญญิก</option>
+                        <option value="02" ${yy === "02" ? "selected" : ""}>บริหารและพัฒนางบประมาณ</option>
+                        <option value="03" ${yy === "03" ? "selected" : ""}>หาทุนและสิทธิประโยชน์</option>
+                        <option value="04" ${yy === "04" ? "selected" : ""}>กายภาพและพัสดุ</option>
+                        <option value="09" ${yy === "09" ? "selected" : ""}>เจ้าหน้าที่สำนักบริหารกิจการนิสิต</option>
                       </select>
                     </div>
                     <div class="staff-position-editor-field">
-                      <label class="login-label" for="staffPositionEditZZ-${toSafeText(item.id)}">ระดับตำแหน่ง (ZZ)</label>
+                      <label class="login-label" for="staffPositionEditZZ-${toSafeText(item.id)}">ระดับตำแหน่ง</label>
                       <select id="staffPositionEditZZ-${toSafeText(item.id)}" class="login-input" data-role="edit-zz">
-                        <option value="01" ${zz === "01" ? "selected" : ""}>01 ประธานฝ่าย</option>
-                        <option value="02" ${zz === "02" ? "selected" : ""}>02 รองประธานฝ่าย</option>
-                        <option value="03" ${zz === "03" ? "selected" : ""}>03 เลขานุการฝ่าย</option>
-                        <option value="04" ${zz === "04" ? "selected" : ""}>04 ผู้ช่วยฝ่าย</option>
+                        <option value="01" ${zz === "01" ? "selected" : ""}>ประธานฝ่าย</option>
+                        <option value="02" ${zz === "02" ? "selected" : ""}>รองประธานฝ่าย</option>
+                        <option value="03" ${zz === "03" ? "selected" : ""}>เลขานุการฝ่าย</option>
+                        <option value="04" ${zz === "04" ? "selected" : ""}>ผู้ช่วยฝ่าย</option>
                       </select>
                     </div>
                   </div>
@@ -2071,7 +2066,7 @@ function initStaffAccessPages() {
       return;
     }
     if (!isValidDivisionCodeYY(divisionCodeYY) || !isValidLevelCodeZZ(levelCodeZZ)) {
-      setMessage(positionManageMessageEl, "กรุณาเลือกรหัสหมวด (YY) และรหัสระดับ (ZZ)", "#b91c1c");
+      setMessage(positionManageMessageEl, "กรุณาเลือกหมวดงานและระดับตำแหน่ง", "#b91c1c");
       return;
     }
 
@@ -2164,7 +2159,7 @@ function initStaffAccessPages() {
       return false;
     }
     if (!isValidDivisionCodeYY(divisionCodeYY) || !isValidLevelCodeZZ(levelCodeZZ)) {
-      setMessage(positionManageMessageEl, "กรุณาเลือกรหัสหมวด (YY) และรหัสระดับ (ZZ)", "#b91c1c");
+      setMessage(positionManageMessageEl, "กรุณาเลือกหมวดงานและระดับตำแหน่ง", "#b91c1c");
       return false;
     }
 

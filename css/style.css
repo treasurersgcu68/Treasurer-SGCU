@@ -7276,6 +7276,19 @@ th.sortable.sort-desc::after {
     box-shadow: inset 4px 0 0 #dc2626, 0 8px 22px rgba(148, 163, 184, 0.16);
   }
 
+  /* longest-open: avoid per-cell red blocks on mobile card layout */
+  #longestOpenTableStaff tr.project-row-advance {
+    background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+  }
+
+  #longestOpenTableStaff tr.project-row-advance td {
+    background: transparent;
+  }
+
+  #longestOpenTableStaff tr.project-row-advance td:first-child {
+    box-shadow: none;
+  }
+
   #projectTable td,
   #projectTableStaff td,
   #longestOpenTableStaff td {
@@ -7330,6 +7343,19 @@ th.sortable.sort-desc::after {
     content: "งบประมาณ";
   }
 
+  /* longest-open table uses a different column schema on mobile */
+  #longestOpenTableStaff td:nth-child(3)::before {
+    content: "ผู้รับผิดชอบ";
+  }
+
+  #longestOpenTableStaff td:nth-child(4)::before {
+    content: "สถานะปิดโครงการ";
+  }
+
+  #longestOpenTableStaff td:nth-child(5)::before {
+    content: "ยอดวันที่ค้าง";
+  }
+
   #projectTable td[colspan],
   #projectTableStaff td[colspan],
   #longestOpenTableStaff td[colspan] {
@@ -7382,6 +7408,16 @@ th.sortable.sort-desc::after {
   #projectTableStaff td.col-budget,
   #longestOpenTableStaff td.col-budget {
     grid-column: 1 / -1;
+  }
+
+  #longestOpenTableStaff td.col-assistant {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+    align-items: flex-start;
+    text-align: right;
+    gap: 10px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 
   #projectTable td.col-code::before,

@@ -1,0 +1,209 @@
+import { constants as fsConstants } from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, "..");
+const distDir = path.join(rootDir, "dist");
+const isCheckOnly = process.argv.includes("--check");
+const buildVersion = process.env.BUILD_VERSION || new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 12);
+
+const copyIgnoreNames = new Set([
+  ".git",
+  ".gitignore",
+  ".DS_Store",
+  ".github",
+  "dist",
+  "node_modules",
+  "package.json",
+  "package-lock.json",
+  "tools"
+]);
+
+const textFileExtensions = new Set([
+  ".css",
+  ".html",
+  ".js",
+  ".json",
+  ".md",
+  ".mjs",
+  ".txt",
+  ".webmanifest",
+  ".yml",
+  ".yaml"
+]);
+
+const textTransforms = new Map([
+  ["index.html", transformIndexHtml],
+  ["sw.js", transformServiceWorker]
+]);
+
+async function exists(filePath) {
+  try {
+    await fs.access(filePath, fsConstants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function copyRecursive(source, target) {
+  const entries = await fs.readdir(source, { withFileTypes: true });
+  await fs.mkdir(target, { recursive: true });
+
+  for (const entry of entries) {
+    if (copyIgnoreNames.has(entry.name)) continue;
+
+    const sourcePath = path.join(source, entry.name);
+    const targetPath = path.join(target, entry.name);
+    if (entry.isDirectory()) {
+      await copyRecursive(sourcePath, targetPath);
+      continue;
+    }
+    if (entry.isFile()) {
+      await fs.copyFile(sourcePath, targetPath);
+    }
+  }
+}
+
+async function listProjectFiles(source) {
+  const entries = await fs.readdir(source, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    if (copyIgnoreNames.has(entry.name)) continue;
+
+    const sourcePath = path.join(source, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...await listProjectFiles(sourcePath));
+      continue;
+    }
+    if (entry.isFile()) {
+      files.push(sourcePath);
+    }
+  }
+
+  return files;
+}
+
+async function validateNoConflictMarkers() {
+  const files = await listProjectFiles(rootDir);
+  const conflictMarkerRe = /^(<<<<<<<|=======|>>>>>>>)\b/m;
+  const offenders = [];
+
+  for (const filePath of files) {
+    const ext = path.extname(filePath);
+    if (!textFileExtensions.has(ext)) continue;
+
+    const content = await fs.readFile(filePath, "utf8");
+    if (conflictMarkerRe.test(content)) {
+      offenders.push(path.relative(rootDir, filePath));
+    }
+  }
+
+  if (offenders.length) {
+    throw new Error(`Conflict markers found:\n${offenders.map((item) => `- ${item}`).join("\n")}`);
+  }
+}
+
+function withVersionedLocalAssets(html) {
+  return html
+    .replace(/((?:src|href)=["'](?:\.\/)?(?:css|js)\/[^"']+?)(?:\?v=[^"']*)?(["'])/g, `$1?v=${buildVersion}$2`)
+    .replace(/(window\.sgcuServiceWorkerUrl\s*=\s*["']\.\/sw\.js)(?:\?v=[^"']*)?(["'])/g, `$1?v=${buildVersion}$2`);
+}
+
+function transformIndexHtml(html) {
+  return withVersionedLocalAssets(html);
+}
+
+function transformServiceWorker(source) {
+  return source
+    .replace(/const CACHE_VERSION = ".*?";/, `const CACHE_VERSION = "${buildVersion}";`)
+    .replace(/(\.\/(?:css|js)\/[^"',]+?)(?:\?v=[^"',]*)?(["'])/g, `$1?v=${buildVersion}$2`);
+}
+
+async function applyTextTransforms() {
+  for (const [relativePath, transform] of textTransforms) {
+    const filePath = path.join(distDir, relativePath);
+    if (!(await exists(filePath))) continue;
+    const before = await fs.readFile(filePath, "utf8");
+    const after = transform(before);
+    if (after !== before) {
+      await fs.writeFile(filePath, after);
+    }
+  }
+}
+
+function getLocalAssetRefs(html) {
+  const refs = [];
+  const attrRe = /\b(?:src|href)=["']([^"']+)["']/g;
+  let match;
+  while ((match = attrRe.exec(html)) !== null) {
+    const rawRef = match[1].trim();
+    if (
+      !rawRef ||
+      rawRef.startsWith("#") ||
+      rawRef.startsWith("http:") ||
+      rawRef.startsWith("https:") ||
+      rawRef.startsWith("mailto:") ||
+      rawRef.startsWith("tel:") ||
+      rawRef.startsWith("data:")
+    ) {
+      continue;
+    }
+    refs.push(rawRef);
+  }
+  return refs;
+}
+
+async function validateLocalAssetRefs() {
+  const htmlFiles = ["index.html", "meeting-room-calendar.html", "googleb88e39dd5e406a95.html"];
+  const missing = [];
+
+  for (const htmlFile of htmlFiles) {
+    const filePath = path.join(distDir, htmlFile);
+    if (!(await exists(filePath))) continue;
+    const html = await fs.readFile(filePath, "utf8");
+    for (const ref of getLocalAssetRefs(html)) {
+      const cleanRef = ref.split("#")[0].split("?")[0];
+      if (!cleanRef || cleanRef === "./" || cleanRef === "/") continue;
+
+      const targetPath = path.resolve(path.dirname(filePath), cleanRef);
+      if (!targetPath.startsWith(distDir)) continue;
+      if (!(await exists(targetPath))) {
+        missing.push(`${htmlFile} -> ${ref}`);
+      }
+    }
+  }
+
+  if (missing.length) {
+    throw new Error(`Missing local asset references:\n${missing.map((item) => `- ${item}`).join("\n")}`);
+  }
+}
+
+async function build() {
+  await validateNoConflictMarkers();
+  await fs.rm(distDir, { recursive: true, force: true });
+  await copyRecursive(rootDir, distDir);
+  await applyTextTransforms();
+  await validateLocalAssetRefs();
+}
+
+async function check() {
+  await build();
+  await fs.rm(distDir, { recursive: true, force: true });
+}
+
+try {
+  if (isCheckOnly) {
+    await check();
+    console.log("Static asset check passed. - build-static.mjs:201");
+  } else {
+    await build();
+    console.log(`Built static site to dist/ with version ${buildVersion}. - build-static.mjs:204`);
+  }
+} catch (error) {
+  console.error(error.message || error);
+  process.exitCode = 1;
+}

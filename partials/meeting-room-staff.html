@@ -1,0 +1,172 @@
+      <!-- ============ STAFF: MEETING ROOM APPROVAL ============ -->
+      <section class="page-view" data-page="meeting-room-staff">
+        <div class="page">
+          <div class="page-header-flex section-appear">
+            <div>
+              <h2 class="page-title">Meeting Room Approval For Staff</h2>
+              <p class="page-subtitle">อนุมัติหรือปฏิเสธคำขอจองห้องประชุม พร้อมจัดการรายการทั้งหมด</p>
+              <div id="meetingStaffRequestReminder" class="section-text-sm" aria-live="polite" hidden></div>
+            </div>
+          </div>
+
+          <div class="separator-gradient"></div>
+
+          <div id="staffMeetingAll" class="panel panel-hover section-appear section-delay-1" style="margin-top: 18px;">
+            <div class="panel-header">
+              <div>
+                <div id="meetingRoomStaffPanelTitle" class="panel-title">รายการคำขอ</div>
+                <div id="meetingRoomStaffPanelCaption" class="panel-caption">แสดงคำขอที่ยังไม่เลยวันขอ</div>
+                <div id="meetingRoomStaffActionMessage" class="section-text-sm" aria-live="polite"></div>
+                <div id="meetingRoomHistorySearchWrap" class="meeting-history-filter-bar" style="display:none;">
+                  <div class="filter-group">
+                    <label for="meetingRoomHistoryDateInput">กรองตามวัน</label>
+                    <input id="meetingRoomHistoryDateInput" type="date" />
+                  </div>
+                  <div class="filter-group">
+                    <label for="meetingRoomHistoryRoomSelect">กรองตามห้อง</label>
+                    <select id="meetingRoomHistoryRoomSelect">
+                      <option value="all">ทุกห้องประชุม</option>
+                    </select>
+                  </div>
+                  <div class="filter-group filter-search">
+                    <label for="meetingRoomHistorySearchInput">ค้นหาประวัติการขอ</label>
+                    <div class="search-box">
+                      <input
+                        id="meetingRoomHistorySearchInput"
+                        type="search"
+                        placeholder="พิมพ์คำค้น เช่น ห้องประชุม 1 หรือ ชื่อผู้ขอ"
+                        autocomplete="off"
+                      />
+                      <button
+                        id="meetingRoomHistorySearchClear"
+                        class="search-clear"
+                        type="button"
+                        aria-label="ล้างคำค้นหา"
+                        style="display:none;"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="tabs">
+                <button
+                  class="tab-btn view-toggle-btn is-active"
+                  type="button"
+                  data-meeting-staff-tab="requests"
+                >
+                  รายการคำขอ
+                </button>
+                <button
+                  class="tab-btn view-toggle-btn"
+                  type="button"
+                  data-meeting-staff-tab="history"
+                >
+                  ประวัติการขอ
+                </button>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ห้อง</th>
+                    <th>วันที่</th>
+                    <th>เวลา</th>
+                    <th>ผู้ขอ</th>
+                    <th>วัตถุประสงค์</th>
+                    <th>สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody id="meetingRoomAllTableBody">
+                  <tr>
+                    <td colspan="6">กำลังโหลดข้อมูล...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="meetingRoomStaffCalendarPanel" class="panel panel-hover section-appear section-delay-2 meeting-calendar-panel" style="margin-top: 18px;">
+            <div class="panel-header">
+              <div>
+                <div id="meetingStaffCalendarTitle" class="panel-title">ปฏิทินคำขอจองห้องประชุม</div>
+              </div>
+              <div class="meeting-calendar-toolbar">
+                <button id="meetingStaffCalendarPrevMonth" class="btn-ghost" type="button">เดือนก่อน</button>
+                <button id="meetingStaffCalendarNextMonth" class="btn-ghost" type="button">เดือนถัดไป</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="calendar-grid-scroll">
+                <div class="calendar-weekday-row" aria-hidden="true">
+                  <div class="calendar-weekday">อา</div>
+                  <div class="calendar-weekday">จ</div>
+                  <div class="calendar-weekday">อ</div>
+                  <div class="calendar-weekday">พ</div>
+                  <div class="calendar-weekday">พฤ</div>
+                  <div class="calendar-weekday">ศ</div>
+                  <div class="calendar-weekday">ส</div>
+                </div>
+                <div id="meetingRoomStaffCalendar" class="calendar-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel panel-hover section-appear section-delay-3 meeting-room-manage-panel" style="margin-top: 18px;">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">จัดการห้องประชุม</div>
+                <div class="panel-caption">เพิ่มห้องใหม่ ลบห้องที่ไม่ใช้งาน และกำหนดสิทธิ์การจองของแต่ละห้อง</div>
+                <div id="meetingRoomManageCount" class="panel-meta">พบ 0 ห้อง</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <form id="meetingRoomManageForm" class="meeting-room-manage-form">
+                <div class="meeting-room-manage-row">
+                  <input
+                    id="meetingRoomManageInput"
+                    class="login-input"
+                    type="text"
+                    placeholder="เช่น ห้องประชุม 4 ชั้น 3"
+                    maxlength="100"
+                    required
+                  />
+                  <button class="btn-primary" type="submit">เพิ่มห้อง</button>
+                </div>
+                <div id="meetingRoomManageMessage" class="section-text-sm" aria-live="polite"></div>
+              </form>
+              <div id="meetingRoomManageList" class="meeting-room-manage-list"></div>
+            </div>
+          </div>
+
+          <div class="panel panel-hover section-appear section-delay-4 meeting-room-holiday-panel" style="margin-top: 18px;">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">จัดการวันหยุด</div>
+                <div class="panel-caption">เพิ่ม/ลบวันหยุดราชการเพิ่มเติมสำหรับปฏิทินจองห้องประชุม</div>
+                <div id="meetingHolidayManageCount" class="panel-meta">พบ 0 วัน</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <form id="meetingHolidayManageForm" class="meeting-room-manage-form">
+                <div class="meeting-room-manage-row">
+                  <input id="meetingHolidayManageDate" class="login-input" type="date" required />
+                  <input
+                    id="meetingHolidayManageName"
+                    class="login-input"
+                    type="text"
+                    placeholder="เช่น วันหยุดพิเศษ"
+                    maxlength="100"
+                    required
+                  />
+                  <button class="btn-primary" type="submit">เพิ่มวันหยุด</button>
+                </div>
+                <div id="meetingHolidayManageMessage" class="section-text-sm" aria-live="polite"></div>
+              </form>
+              <div id="meetingHolidayManageList" class="meeting-room-manage-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>

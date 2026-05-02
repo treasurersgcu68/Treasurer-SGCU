@@ -18,7 +18,15 @@ const copyIgnoreNames = new Set([
   "node_modules",
   "package.json",
   "package-lock.json",
+  "partials",
   "tools"
+]);
+
+const scanIgnoreNames = new Set([
+  ".git",
+  ".DS_Store",
+  "dist",
+  "node_modules"
 ]);
 
 const textFileExtensions = new Set([
@@ -67,16 +75,16 @@ async function copyRecursive(source, target) {
   }
 }
 
-async function listProjectFiles(source) {
+async function listProjectFiles(source, ignoreNames = scanIgnoreNames) {
   const entries = await fs.readdir(source, { withFileTypes: true });
   const files = [];
 
   for (const entry of entries) {
-    if (copyIgnoreNames.has(entry.name)) continue;
+    if (ignoreNames.has(entry.name)) continue;
 
     const sourcePath = path.join(source, entry.name);
     if (entry.isDirectory()) {
-      files.push(...await listProjectFiles(sourcePath));
+      files.push(...await listProjectFiles(sourcePath, ignoreNames));
       continue;
     }
     if (entry.isFile()) {
@@ -107,14 +115,42 @@ async function validateNoConflictMarkers() {
   }
 }
 
+async function resolveIncludes(content, fromDir, seen = []) {
+  const includeRe = /<!--\s*@include\s+([^\s]+)\s*-->/g;
+  let output = "";
+  let cursor = 0;
+  let match;
+
+  while ((match = includeRe.exec(content)) !== null) {
+    output += content.slice(cursor, match.index);
+    const includePath = match[1].trim();
+    const targetPath = path.resolve(fromDir, includePath);
+
+    if (!targetPath.startsWith(rootDir + path.sep)) {
+      throw new Error(`Include path escapes project root: ${includePath}`);
+    }
+    if (seen.includes(targetPath)) {
+      throw new Error(`Circular include detected: ${seen.concat(targetPath).map((item) => path.relative(rootDir, item)).join(" -> ")}`);
+    }
+
+    const partial = await fs.readFile(targetPath, "utf8");
+    output += await resolveIncludes(partial, path.dirname(targetPath), seen.concat(targetPath));
+    cursor = includeRe.lastIndex;
+  }
+
+  output += content.slice(cursor);
+  return output;
+}
+
 function withVersionedLocalAssets(html) {
   return html
     .replace(/((?:src|href)=["'](?:\.\/)?(?:css|js)\/[^"']+?)(?:\?v=[^"']*)?(["'])/g, `$1?v=${buildVersion}$2`)
     .replace(/(window\.sgcuServiceWorkerUrl\s*=\s*["']\.\/sw\.js)(?:\?v=[^"']*)?(["'])/g, `$1?v=${buildVersion}$2`);
 }
 
-function transformIndexHtml(html) {
-  return withVersionedLocalAssets(html);
+async function transformIndexHtml(html) {
+  const resolvedHtml = await resolveIncludes(html, rootDir);
+  return withVersionedLocalAssets(resolvedHtml);
 }
 
 function transformServiceWorker(source) {
@@ -128,7 +164,7 @@ async function applyTextTransforms() {
     const filePath = path.join(distDir, relativePath);
     if (!(await exists(filePath))) continue;
     const before = await fs.readFile(filePath, "utf8");
-    const after = transform(before);
+    const after = await transform(before);
     if (after !== before) {
       await fs.writeFile(filePath, after);
     }

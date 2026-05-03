@@ -49,11 +49,14 @@ function initStaffAccessPages() {
   const positionManageFormEl = document.getElementById("staffPositionManageForm");
   const positionManageInputEl = document.getElementById("staffPositionManageInput");
   const positionDivisionCodeEl = document.getElementById("staffPositionDivisionCode");
+  const positionDivisionNameEl = document.getElementById("staffPositionDivisionName");
   const positionLevelCodeEl = document.getElementById("staffPositionLevelCode");
   const positionAllowedPagesEl = document.getElementById("staffPositionAllowedPages");
   const positionManageMessageEl = document.getElementById("staffPositionManageMessage");
   const positionListEl = document.getElementById("staffPositionList");
   const positionOptionsDatalistEl = document.getElementById("staffPositionOptionsList");
+  const divisionCodeOptionsDatalistEl = document.getElementById("staffDivisionCodeOptionsList");
+  const divisionNameOptionsDatalistEl = document.getElementById("staffDivisionNameOptionsList");
 
   const COLLECTION_APPLICATIONS = "staffApplications";
   const COLLECTION_PROFILES = "staffProfiles";
@@ -548,8 +551,12 @@ function initStaffAccessPages() {
       .replaceAll("'", "&#39;");
 
   const normalizePositionText = (value) => (value || "").toString().trim().replace(/\s+/g, " ");
-  const normalizeCode2 = (value) => String(value || "").trim().padStart(2, "0").slice(-2);
-  const isValidDivisionCodeYY = (value) => ["00", "01", "02", "03", "04", "09"].includes(normalizeCode2(value));
+  const normalizeCode2 = (value) => {
+    const digits = String(value || "").trim().replace(/\D/g, "");
+    if (!digits) return "";
+    return digits.padStart(2, "0").slice(-2);
+  };
+  const isValidDivisionCodeYY = (value) => /^\d{2}$/.test(normalizeCode2(value));
   const isValidLevelCodeZZ = (value) => ["01", "02", "03", "04"].includes(normalizeCode2(value));
   const isKnownStaffPage = (page) => STAFF_PAGE_OPTIONS.some((item) => item.id === (page || "").toString().trim());
   const getDefaultAllowedPagesByYY = (yy) => {
@@ -569,13 +576,16 @@ function initStaffAccessPages() {
 
   const divisionCodeLabel = (yy) => {
     const code = normalizeCode2(yy);
+    const catalogItem = currentPositionCatalog.find((item) => normalizeCode2(item.divisionCodeYY || item.yy || "") === code);
+    const catalogLabel = normalizePositionText(catalogItem?.divisionLabel || catalogItem?.divisionName || "");
+    if (catalogLabel) return catalogLabel;
     if (code === "00") return "เหรัญญิก / เลขานุการฝ่ายเหรัญญิก";
     if (code === "01") return "ผู้ช่วยเหรัญญิก";
     if (code === "02") return "บริหารและพัฒนางบประมาณ";
     if (code === "03") return "หาทุนและสิทธิประโยชน์";
     if (code === "04") return "กายภาพและพัสดุ";
     if (code === "09") return "เจ้าหน้าที่สำนักบริหารกิจการนิสิต";
-    return "-";
+    return code ? `หมวดงาน ${code}` : "-";
   };
 
   const levelCodeLabel = (zz) => {
@@ -585,6 +595,23 @@ function initStaffAccessPages() {
     if (code === "03") return "เลขานุการฝ่าย";
     if (code === "04") return "ผู้ช่วยฝ่าย";
     return "-";
+  };
+
+  const buildPositionNameFromParts = (divisionCodeYY, levelCodeZZ, divisionLabelRaw = "") => {
+    const yy = normalizeCode2(divisionCodeYY);
+    const zz = normalizeCode2(levelCodeZZ);
+    const divisionLabel = normalizePositionText(divisionLabelRaw || divisionCodeLabel(yy));
+    const levelLabel = levelCodeLabel(zz);
+    if (yy === "00") {
+      if (zz === "01") return "เหรัญญิก";
+      if (zz === "03") return "เลขานุการฝ่ายเหรัญญิก";
+      if (zz === "04") return "ผู้ช่วยเหรัญญิก";
+    }
+    if (yy === "01" && divisionLabel) return divisionLabel;
+    if (yy === "09" && divisionLabel) return divisionLabel;
+    if (!divisionLabel || divisionLabel === "-" || !levelLabel || levelLabel === "-") return "";
+    const divisionCore = divisionLabel.replace(/^ฝ่าย\s*/u, "");
+    return `${levelLabel}${divisionCore}`;
   };
 
   const getAcademicYearCodeXX = () => {
@@ -908,6 +935,7 @@ function initStaffAccessPages() {
     const disabled = !enabled;
     if (positionManageInputEl) positionManageInputEl.disabled = disabled;
     if (positionDivisionCodeEl) positionDivisionCodeEl.disabled = disabled;
+    if (positionDivisionNameEl) positionDivisionNameEl.disabled = disabled;
     if (positionLevelCodeEl) positionLevelCodeEl.disabled = disabled;
     const addBtn = document.getElementById("staffPositionManageAddBtn");
     if (addBtn) addBtn.disabled = disabled;
@@ -917,7 +945,7 @@ function initStaffAccessPages() {
       });
     }
     if (!positionListEl) return;
-    positionListEl.querySelectorAll("button[data-position-id], button[data-edit-position-id], button[data-save-position-id], button[data-cancel-position-id]").forEach((btn) => {
+    positionListEl.querySelectorAll("button[data-position-id], button[data-edit-position-id], button[data-save-position-id]").forEach((btn) => {
       btn.disabled = disabled;
     });
   };
@@ -953,6 +981,15 @@ function initStaffAccessPages() {
     return "pending";
   };
 
+  const sortPositionCatalogItems = (items = []) =>
+    [...items].sort((a, b) => {
+      const yyCompare = normalizeCode2(a.divisionCodeYY).localeCompare(normalizeCode2(b.divisionCodeYY));
+      if (yyCompare !== 0) return yyCompare;
+      const zzCompare = normalizeCode2(a.levelCodeZZ).localeCompare(normalizeCode2(b.levelCodeZZ));
+      if (zzCompare !== 0) return zzCompare;
+      return normalizePositionText(a.name).localeCompare(normalizePositionText(b.name), "th");
+    });
+
   const refreshSummaryCounts = () => {
     if (staffApprovalPendingCountEl) {
       staffApprovalPendingCountEl.textContent = String(currentPendingApplications.length);
@@ -966,33 +1003,83 @@ function initStaffAccessPages() {
   };
 
   const renderPositionDatalist = () => {
-    if (!positionOptionsDatalistEl) return;
-    positionOptionsDatalistEl.innerHTML = currentPositionCatalog
-      .map((item) => `<option value="${toSafeText(item.name)}"></option>`)
-      .join("");
+    if (positionOptionsDatalistEl) {
+      positionOptionsDatalistEl.innerHTML = currentPositionCatalog
+        .map((item) => `<option value="${toSafeText(item.name)}"></option>`)
+        .join("");
+    }
+    const divisions = Array.from(
+      new Map(
+        currentPositionCatalog
+          .map((item) => {
+            const code = normalizeCode2(item.divisionCodeYY || item.yy || "");
+            if (!code) return null;
+            return [code, divisionCodeLabel(code)];
+          })
+          .filter(Boolean)
+      ).entries()
+    ).sort((a, b) => a[0].localeCompare(b[0]));
+    if (divisionCodeOptionsDatalistEl) {
+      divisionCodeOptionsDatalistEl.innerHTML = divisions
+        .map(([code, label]) => `<option value="${toSafeText(code)}">${toSafeText(label)}</option>`)
+        .join("");
+    }
+    if (divisionNameOptionsDatalistEl) {
+      divisionNameOptionsDatalistEl.innerHTML = divisions
+        .map(([, label]) => `<option value="${toSafeText(label)}"></option>`)
+        .join("");
+    }
   };
 
   const renderPositionAllowedPageOptions = (selectedPages = [], fallbackYY = "") => {
     if (!positionAllowedPagesEl) return;
     const selected = new Set(normalizeAllowedPages(selectedPages, fallbackYY));
-    positionAllowedPagesEl.innerHTML = STAFF_PAGE_OPTIONS
+    const allSelected = STAFF_PAGE_OPTIONS.every((item) => selected.has(item.id));
+    positionAllowedPagesEl.innerHTML = [
+      `
+        <label class="staff-position-page-option staff-position-page-option-all">
+          <input
+            type="checkbox"
+            class="staff-position-page-checkbox staff-position-page-checkbox-all"
+            data-role="all-page-checkbox"
+            ${allSelected ? "checked" : ""}
+          />
+          <span>แสดงทุกหน้า</span>
+        </label>
+      `,
+      ...STAFF_PAGE_OPTIONS
       .map((item) => `
         <label class="staff-position-page-option">
           <input
             type="checkbox"
             class="staff-position-page-checkbox"
+            data-role="page-checkbox"
             value="${toSafeText(item.id)}"
             ${selected.has(item.id) ? "checked" : ""}
           />
           <span>${toSafeText(item.label)}</span>
         </label>
       `)
+    ]
       .join("");
   };
 
   const renderPositionAllowedPageOptionsMarkup = (selectedPages = [], fallbackYY = "", prefix = "edit") => {
     const selected = new Set(normalizeAllowedPages(selectedPages, fallbackYY));
-    return STAFF_PAGE_OPTIONS
+    const allSelected = STAFF_PAGE_OPTIONS.every((item) => selected.has(item.id));
+    return [
+      `
+        <label class="staff-position-page-option staff-position-page-option-all">
+          <input
+            type="checkbox"
+            class="staff-position-page-checkbox staff-position-page-checkbox-all"
+            data-role="${toSafeText(prefix)}-all-page-checkbox"
+            ${allSelected ? "checked" : ""}
+          />
+          <span>แสดงทุกหน้า</span>
+        </label>
+      `,
+      ...STAFF_PAGE_OPTIONS
       .map((item) => `
         <label class="staff-position-page-option">
           <input
@@ -1005,7 +1092,35 @@ function initStaffAccessPages() {
           <span>${toSafeText(item.label)}</span>
         </label>
       `)
+    ]
       .join("");
+  };
+
+  const updateManageResolvedPositionName = () => {
+    if (!positionManageInputEl) return;
+    const divisionCodeYY = normalizeCode2(positionDivisionCodeEl?.value || "");
+    const existingDivision = currentPositionCatalog.find((item) => normalizeCode2(item.divisionCodeYY || "") === divisionCodeYY);
+    const divisionLabel = normalizePositionText(
+      positionDivisionNameEl?.value ||
+      existingDivision?.divisionLabel ||
+      existingDivision?.divisionName ||
+      ""
+    );
+    const levelCodeZZ = normalizeCode2(positionLevelCodeEl?.value || "");
+    positionManageInputEl.value = buildPositionNameFromParts(divisionCodeYY, levelCodeZZ, divisionLabel);
+  };
+
+  const updatePositionEditorResolvedName = (container) => {
+    if (!(container instanceof Element)) return;
+    const nameInput = container.querySelector('[data-role="edit-name"]');
+    const yyInput = container.querySelector('[data-role="edit-yy"]');
+    const divisionLabelInput = container.querySelector('[data-role="edit-division-label"]');
+    const zzSelect = container.querySelector('[data-role="edit-zz"]');
+    if (!(nameInput instanceof HTMLInputElement)) return;
+    const divisionCodeYY = yyInput instanceof HTMLInputElement ? yyInput.value : "";
+    const divisionLabel = divisionLabelInput instanceof HTMLInputElement ? divisionLabelInput.value : "";
+    const levelCodeZZ = zzSelect instanceof HTMLSelectElement ? zzSelect.value : "";
+    nameInput.value = buildPositionNameFromParts(divisionCodeYY, levelCodeZZ, divisionLabel);
   };
 
   const readSelectedPositionAllowedPages = () => {
@@ -1020,6 +1135,42 @@ function initStaffAccessPages() {
     return Array.from(container.querySelectorAll('[data-role="edit-page-checkbox"]:checked'))
       .map((input) => (input instanceof HTMLInputElement ? input.value : ""))
       .filter(Boolean);
+  };
+
+  const syncAllPagesCheckbox = (container, prefix = "") => {
+    if (!(container instanceof Element)) return;
+    const pageSelector = prefix
+      ? `[data-role="${prefix}-page-checkbox"]`
+      : '[data-role="page-checkbox"]';
+    const allSelector = prefix
+      ? `[data-role="${prefix}-all-page-checkbox"]`
+      : '[data-role="all-page-checkbox"]';
+    const pages = Array.from(container.querySelectorAll(pageSelector))
+      .filter((input) => input instanceof HTMLInputElement);
+    const allInput = container.querySelector(allSelector);
+    if (!(allInput instanceof HTMLInputElement)) return;
+    allInput.checked = pages.length > 0 && pages.every((input) => input.checked);
+    allInput.indeterminate = pages.some((input) => input.checked) && !allInput.checked;
+  };
+
+  const handleAllowedPagesToggle = (event, container, prefix = "") => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    const allRole = prefix ? `${prefix}-all-page-checkbox` : "all-page-checkbox";
+    const pageRole = prefix ? `${prefix}-page-checkbox` : "page-checkbox";
+    if (target.dataset.role === allRole) {
+      const pageSelector = prefix
+        ? `[data-role="${prefix}-page-checkbox"]`
+        : '[data-role="page-checkbox"]';
+      container.querySelectorAll(pageSelector).forEach((input) => {
+        if (input instanceof HTMLInputElement) input.checked = target.checked;
+      });
+      target.indeterminate = false;
+      return;
+    }
+    if (target.dataset.role === pageRole) {
+      syncAllPagesCheckbox(container, prefix);
+    }
   };
 
   const renderApplicationPositionSelect = () => {
@@ -1131,17 +1282,19 @@ function initStaffAccessPages() {
           ? `<button type="button" class="btn-ghost staff-position-remove-btn" data-position-id="${toSafeText(item.id)}">ลบ</button>`
           : "";
         const editBtn = allowManage
-          ? `<button type="button" class="btn-ghost staff-position-edit-btn" data-edit-position-id="${toSafeText(item.id)}">${currentEditingPositionId === item.id ? "ปิด" : "แก้ไข"}</button>`
+          ? `<button type="button" class="btn-ghost staff-position-edit-btn" data-edit-position-id="${toSafeText(item.id)}">${currentEditingPositionId === item.id ? "ยกเลิก" : "แก้ไข"}</button>`
           : "";
         const yy = normalizeCode2(item.divisionCodeYY || "00");
         const zz = normalizeCode2(item.levelCodeZZ || "00");
+        const divisionLabel = normalizePositionText(item.divisionLabel || item.divisionName || divisionCodeLabel(yy));
+        const generatedName = buildPositionNameFromParts(yy, zz, divisionLabel) || item.name;
         const allowedPages = getAllowedPagesForCatalogPosition(item);
         const isEditing = allowManage && currentEditingPositionId === item.id;
         return `
           <div class="staff-position-chip${isEditing ? " is-editing" : ""}">
             <div class="staff-position-chip-main">
               <div class="staff-position-chip-summary">
-                <span class="staff-position-chip-name">${toSafeText(item.name)}</span>
+                <span class="staff-position-chip-name">${toSafeText(generatedName)}</span>
               </div>
               <div class="staff-position-chip-pages${isEditing ? " is-muted" : ""}">
                 ${allowedPages.map((page) => {
@@ -1154,30 +1307,46 @@ function initStaffAccessPages() {
                   <div class="staff-position-editor-head">
                     <div>
                       <div class="staff-position-editor-title">แก้ไขตำแหน่ง</div>
-                      <div class="staff-position-editor-caption">ค่าที่บันทึกในรายการนี้จะถูกใช้เป็นสิทธิ์หลักจาก staffPositionCatalog</div>
                     </div>
+                    <div class="staff-position-editor-source">ใช้เป็นสิทธิ์หลัก</div>
                   </div>
                   <div class="staff-position-editor-grid">
-                    <div class="staff-position-editor-field">
+                    <div class="staff-position-editor-field staff-position-editor-result-field">
                       <label class="login-label" for="staffPositionEditName-${toSafeText(item.id)}">ชื่อตำแหน่ง</label>
                       <input
                         id="staffPositionEditName-${toSafeText(item.id)}"
-                        class="login-input"
+                        class="login-input staff-position-result-input"
                         type="text"
                         data-role="edit-name"
-                        value="${toSafeText(item.name)}"
+                        value="${toSafeText(generatedName)}"
+                        readonly
+                        aria-readonly="true"
                       />
                     </div>
                     <div class="staff-position-editor-field">
                       <label class="login-label" for="staffPositionEditYY-${toSafeText(item.id)}">หมวดงาน</label>
-                      <select id="staffPositionEditYY-${toSafeText(item.id)}" class="login-input" data-role="edit-yy">
-                        <option value="00" ${yy === "00" ? "selected" : ""}>เหรัญญิก / เลขานุการฝ่ายเหรัญญิก</option>
-                        <option value="01" ${yy === "01" ? "selected" : ""}>ผู้ช่วยเหรัญญิก</option>
-                        <option value="02" ${yy === "02" ? "selected" : ""}>บริหารและพัฒนางบประมาณ</option>
-                        <option value="03" ${yy === "03" ? "selected" : ""}>หาทุนและสิทธิประโยชน์</option>
-                        <option value="04" ${yy === "04" ? "selected" : ""}>กายภาพและพัสดุ</option>
-                        <option value="09" ${yy === "09" ? "selected" : ""}>เจ้าหน้าที่สำนักบริหารกิจการนิสิต</option>
-                      </select>
+                      <input
+                        id="staffPositionEditYY-${toSafeText(item.id)}"
+                        class="login-input"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="\\d{2}"
+                        maxlength="2"
+                        list="staffDivisionCodeOptionsList"
+                        data-role="edit-yy"
+                        value="${toSafeText(yy)}"
+                      />
+                    </div>
+                    <div class="staff-position-editor-field">
+                      <label class="login-label" for="staffPositionEditDivisionName-${toSafeText(item.id)}">ชื่อหมวดงาน</label>
+                      <input
+                        id="staffPositionEditDivisionName-${toSafeText(item.id)}"
+                        class="login-input"
+                        type="text"
+                        list="staffDivisionNameOptionsList"
+                        data-role="edit-division-label"
+                        value="${toSafeText(divisionLabel)}"
+                      />
                     </div>
                     <div class="staff-position-editor-field">
                       <label class="login-label" for="staffPositionEditZZ-${toSafeText(item.id)}">ระดับตำแหน่ง</label>
@@ -1197,7 +1366,6 @@ function initStaffAccessPages() {
                   </div>
                   <div class="staff-position-editor-actions">
                     <button type="button" class="btn-primary staff-position-save-btn" data-save-position-id="${toSafeText(item.id)}">บันทึกการแก้ไข</button>
-                    <button type="button" class="btn-ghost staff-position-cancel-btn" data-cancel-position-id="${toSafeText(item.id)}">ยกเลิก</button>
                   </div>
                 </div>
               ` : ""}
@@ -1498,12 +1666,16 @@ function initStaffAccessPages() {
       codeMeta.allowedPages || catalogMeta?.allowedPages,
       divisionCodeYY
     );
+    const divisionLabel = normalizePositionText(
+      codeMeta.divisionLabel || catalogMeta?.divisionLabel || catalogMeta?.divisionName || divisionCodeLabel(divisionCodeYY)
+    );
     const ref = firestore.doc(firestore.db, COLLECTION_POSITIONS, docId);
     await firestore.setDoc(
       ref,
       {
         name: safeName,
         divisionCodeYY,
+        divisionLabel,
         levelCodeZZ,
         allowedPages,
         updatedAt: firestore.serverTimestamp(),
@@ -1515,13 +1687,14 @@ function initStaffAccessPages() {
 
   const startPositionCatalogListener = () => {
     if (!resolveStore()) {
-      currentPositionCatalog = DEFAULT_POSITION_OPTIONS.map((item) => ({
+      currentPositionCatalog = sortPositionCatalogItems(DEFAULT_POSITION_OPTIONS.map((item) => ({
         id: slugifyPosition(item.name),
         name: item.name,
         divisionCodeYY: item.divisionCodeYY,
+        divisionLabel: divisionCodeLabel(item.divisionCodeYY),
         levelCodeZZ: item.levelCodeZZ,
         allowedPages: normalizeAllowedPages(item.allowedPages, item.divisionCodeYY)
-      }));
+      })));
       renderPositionDatalist();
       renderPositionCatalog();
       renderPositionAllowedPageOptions([], "");
@@ -1553,6 +1726,7 @@ function initStaffAccessPages() {
               id: item.id,
               name,
               divisionCodeYY: yy,
+              divisionLabel: normalizePositionText(item.divisionLabel || item.divisionName || divisionCodeLabel(yy)),
               levelCodeZZ: zz,
               allowedPages: normalizeAllowedPages(item.allowedPages, yy)
             };
@@ -1566,6 +1740,7 @@ function initStaffAccessPages() {
             id: slugifyPosition(item.name),
             name: item.name,
             divisionCodeYY: item.divisionCodeYY,
+            divisionLabel: item.divisionLabel || divisionCodeLabel(item.divisionCodeYY),
             levelCodeZZ: item.levelCodeZZ,
             allowedPages: normalizeAllowedPages(item.allowedPages, item.divisionCodeYY)
           }))
@@ -1575,7 +1750,7 @@ function initStaffAccessPages() {
           if (!uniqueByName.has(key)) uniqueByName.set(key, item);
         });
 
-        currentPositionCatalog = Array.from(uniqueByName.values()).sort((a, b) => a.name.localeCompare(b.name, "th"));
+        currentPositionCatalog = sortPositionCatalogItems(Array.from(uniqueByName.values()));
         renderPositionDatalist();
         renderApplicationPositionSelect();
         renderPositionCatalog();
@@ -2058,15 +2233,26 @@ function initStaffAccessPages() {
     }
 
     const user = readCurrentUser();
-    const safeName = normalizePositionText(positionManageInputEl?.value || "");
     const divisionCodeYY = normalizeCode2(positionDivisionCodeEl?.value || "");
+    const existingDivision = currentPositionCatalog.find((item) => normalizeCode2(item.divisionCodeYY || "") === divisionCodeYY);
+    const divisionLabel = normalizePositionText(
+      positionDivisionNameEl?.value ||
+      existingDivision?.divisionLabel ||
+      existingDivision?.divisionName ||
+      ""
+    );
     const levelCodeZZ = normalizeCode2(positionLevelCodeEl?.value || "");
-    if (!safeName) {
-      setMessage(positionManageMessageEl, "กรุณากรอกชื่อตำแหน่ง", "#b91c1c");
-      return;
-    }
     if (!isValidDivisionCodeYY(divisionCodeYY) || !isValidLevelCodeZZ(levelCodeZZ)) {
       setMessage(positionManageMessageEl, "กรุณาเลือกหมวดงานและระดับตำแหน่ง", "#b91c1c");
+      return;
+    }
+    if (!divisionLabel) {
+      setMessage(positionManageMessageEl, "กรุณากรอกชื่อหมวดงาน", "#b91c1c");
+      return;
+    }
+    const safeName = buildPositionNameFromParts(divisionCodeYY, levelCodeZZ, divisionLabel);
+    if (!safeName) {
+      setMessage(positionManageMessageEl, "ระบบสร้างชื่อตำแหน่งไม่ได้ กรุณาตรวจสอบหมวดงานและระดับตำแหน่ง", "#b91c1c");
       return;
     }
 
@@ -2086,6 +2272,7 @@ function initStaffAccessPages() {
         {
           name: safeName,
           divisionCodeYY,
+          divisionLabel,
           levelCodeZZ,
           allowedPages,
           createdAt: firestore.serverTimestamp(),
@@ -2096,7 +2283,9 @@ function initStaffAccessPages() {
       );
       if (positionManageInputEl) positionManageInputEl.value = "";
       if (positionDivisionCodeEl) positionDivisionCodeEl.value = "";
+      if (positionDivisionNameEl) positionDivisionNameEl.value = "";
       if (positionLevelCodeEl) positionLevelCodeEl.value = "";
+      updateManageResolvedPositionName();
       renderPositionAllowedPageOptions([], "");
       setMessage(positionManageMessageEl, "เพิ่มตำแหน่งเรียบร้อยแล้ว", "#047857");
     } catch (error) {
@@ -2149,17 +2338,28 @@ function initStaffAccessPages() {
       return false;
     }
 
-    const safeName = normalizePositionText(nextData.name || "");
     const divisionCodeYY = normalizeCode2(nextData.divisionCodeYY || "");
+    const existingDivision = currentPositionCatalog.find((item) => normalizeCode2(item.divisionCodeYY || "") === divisionCodeYY);
+    const divisionLabel = normalizePositionText(
+      nextData.divisionLabel ||
+      existingDivision?.divisionLabel ||
+      existingDivision?.divisionName ||
+      ""
+    );
     const levelCodeZZ = normalizeCode2(nextData.levelCodeZZ || "");
     const allowedPages = normalizeAllowedPages(nextData.allowedPages, divisionCodeYY);
 
-    if (!safeName) {
-      setMessage(positionManageMessageEl, "กรุณาระบุชื่อตำแหน่ง", "#b91c1c");
-      return false;
-    }
     if (!isValidDivisionCodeYY(divisionCodeYY) || !isValidLevelCodeZZ(levelCodeZZ)) {
       setMessage(positionManageMessageEl, "กรุณาเลือกหมวดงานและระดับตำแหน่ง", "#b91c1c");
+      return false;
+    }
+    if (!divisionLabel) {
+      setMessage(positionManageMessageEl, "กรุณากรอกชื่อหมวดงาน", "#b91c1c");
+      return false;
+    }
+    const safeName = buildPositionNameFromParts(divisionCodeYY, levelCodeZZ, divisionLabel);
+    if (!safeName) {
+      setMessage(positionManageMessageEl, "ระบบสร้างชื่อตำแหน่งไม่ได้ กรุณาตรวจสอบหมวดงานและระดับตำแหน่ง", "#b91c1c");
       return false;
     }
 
@@ -2178,6 +2378,7 @@ function initStaffAccessPages() {
         {
           name: safeName,
           divisionCodeYY,
+          divisionLabel,
           levelCodeZZ,
           allowedPages,
           updatedAt: firestore.serverTimestamp(),
@@ -2595,12 +2796,67 @@ function initStaffAccessPages() {
   }
 
   if (positionDivisionCodeEl) {
-    positionDivisionCodeEl.addEventListener("change", () => {
-      renderPositionAllowedPageOptions([], positionDivisionCodeEl.value || "");
+    const syncDivisionManageFields = ({ commit = false } = {}) => {
+      const rawCode = (positionDivisionCodeEl.value || "").toString().replace(/\D/g, "").slice(0, 2);
+      const code = commit ? normalizeCode2(rawCode) : rawCode;
+      if (commit && positionDivisionCodeEl.value !== code) positionDivisionCodeEl.value = code;
+      const existing = currentPositionCatalog.find((item) => normalizeCode2(item.divisionCodeYY || "") === code);
+      const label = normalizePositionText(existing?.divisionLabel || existing?.divisionName || "");
+      if (positionDivisionNameEl && label) {
+        positionDivisionNameEl.value = label;
+      }
+      renderPositionAllowedPageOptions([], code);
+      updateManageResolvedPositionName();
+    };
+    positionDivisionCodeEl.addEventListener("input", () => syncDivisionManageFields());
+    positionDivisionCodeEl.addEventListener("change", () => syncDivisionManageFields({ commit: true }));
+    positionDivisionCodeEl.addEventListener("blur", () => syncDivisionManageFields({ commit: true }));
+  }
+
+  if (positionDivisionNameEl && positionDivisionCodeEl) {
+    positionDivisionNameEl.addEventListener("input", updateManageResolvedPositionName);
+    positionDivisionNameEl.addEventListener("change", () => {
+      const wantedLabel = normalizePositionText(positionDivisionNameEl.value || "");
+      if (!wantedLabel || normalizeCode2(positionDivisionCodeEl.value || "")) return;
+      const match = currentPositionCatalog.find((item) =>
+        normalizePositionText(item.divisionLabel || item.divisionName || divisionCodeLabel(item.divisionCodeYY)).toLowerCase() === wantedLabel.toLowerCase()
+      );
+      if (match) {
+        positionDivisionCodeEl.value = normalizeCode2(match.divisionCodeYY || "");
+        renderPositionAllowedPageOptions([], positionDivisionCodeEl.value || "");
+      }
+      updateManageResolvedPositionName();
+    });
+  }
+
+  if (positionLevelCodeEl) {
+    positionLevelCodeEl.addEventListener("change", updateManageResolvedPositionName);
+  }
+
+  if (positionAllowedPagesEl) {
+    positionAllowedPagesEl.addEventListener("change", (event) => {
+      handleAllowedPagesToggle(event, positionAllowedPagesEl);
     });
   }
 
   if (positionListEl) {
+    const syncEditorNameFromEvent = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.matches('[data-role="edit-yy"], [data-role="edit-division-label"], [data-role="edit-zz"]')) return;
+      const cardEl = target.closest(".staff-position-chip");
+      updatePositionEditorResolvedName(cardEl);
+    };
+    positionListEl.addEventListener("input", syncEditorNameFromEvent);
+    positionListEl.addEventListener("change", syncEditorNameFromEvent);
+    positionListEl.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.matches('[data-role="edit-all-page-checkbox"], [data-role="edit-page-checkbox"]')) return;
+      const cardEl = target.closest(".staff-position-chip");
+      if (!(cardEl instanceof Element)) return;
+      handleAllowedPagesToggle(event, cardEl, "edit");
+    });
     positionListEl.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -2611,23 +2867,19 @@ function initStaffAccessPages() {
         renderPositionCatalog();
         return;
       }
-      const cancelBtn = target.closest("button[data-cancel-position-id]");
-      if (cancelBtn instanceof HTMLButtonElement) {
-        currentEditingPositionId = "";
-        renderPositionCatalog();
-        return;
-      }
       const saveBtn = target.closest("button[data-save-position-id]");
       if (saveBtn instanceof HTMLButtonElement) {
         const positionId = (saveBtn.dataset.savePositionId || "").toString();
         const cardEl = saveBtn.closest(".staff-position-chip");
         if (!(cardEl instanceof Element)) return;
         const nameInput = cardEl.querySelector('[data-role="edit-name"]');
-        const yySelect = cardEl.querySelector('[data-role="edit-yy"]');
+        const yyInput = cardEl.querySelector('[data-role="edit-yy"]');
+        const divisionLabelInput = cardEl.querySelector('[data-role="edit-division-label"]');
         const zzSelect = cardEl.querySelector('[data-role="edit-zz"]');
         void updatePosition(positionId, {
           name: nameInput instanceof HTMLInputElement ? nameInput.value : "",
-          divisionCodeYY: yySelect instanceof HTMLSelectElement ? yySelect.value : "",
+          divisionCodeYY: yyInput instanceof HTMLInputElement ? yyInput.value : "",
+          divisionLabel: divisionLabelInput instanceof HTMLInputElement ? divisionLabelInput.value : "",
           levelCodeZZ: zzSelect instanceof HTMLSelectElement ? zzSelect.value : "",
           allowedPages: readSelectedPositionAllowedPagesFrom(cardEl)
         });

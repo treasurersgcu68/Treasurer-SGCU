@@ -104,27 +104,41 @@
             </div>
             <div class="panel-body">
               <form id="staffPositionManageForm" class="staff-position-form">
-                <div class="staff-position-field staff-position-field-name">
+                <div class="staff-position-field staff-position-field-name staff-position-result-field">
                   <label class="login-label" for="staffPositionManageInput">ชื่อตำแหน่ง</label>
                   <input
                     id="staffPositionManageInput"
-                    class="login-input"
+                    class="login-input staff-position-result-input"
                     type="text"
-                    placeholder="เช่น ผู้ช่วยฝ่ายกายภาพและพัสดุ"
-                    required
+                    placeholder="เลือกหมวดงานและระดับตำแหน่ง"
+                    readonly
+                    aria-readonly="true"
                   />
                 </div>
                 <div class="staff-position-field">
                   <label class="login-label" for="staffPositionDivisionCode">หมวดงาน</label>
-                  <select id="staffPositionDivisionCode" class="login-input staff-position-code-select" required>
-                    <option value="" selected disabled>เลือกหมวดงาน</option>
-                    <option value="00">เหรัญญิก / เลขานุการฝ่ายเหรัญญิก</option>
-                    <option value="01">ผู้ช่วยเหรัญญิก</option>
-                    <option value="02">บริหารและพัฒนางบประมาณ</option>
-                    <option value="03">หาทุนและสิทธิประโยชน์</option>
-                    <option value="04">กายภาพและพัสดุ</option>
-                    <option value="09">เจ้าหน้าที่สำนักบริหารกิจการนิสิต</option>
-                  </select>
+                  <input
+                    id="staffPositionDivisionCode"
+                    class="login-input staff-position-code-select"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="\d{2}"
+                    maxlength="2"
+                    list="staffDivisionCodeOptionsList"
+                    placeholder="เช่น 05"
+                    required
+                  />
+                </div>
+                <div class="staff-position-field">
+                  <label class="login-label" for="staffPositionDivisionName">ชื่อหมวดงาน</label>
+                  <input
+                    id="staffPositionDivisionName"
+                    class="login-input"
+                    type="text"
+                    list="staffDivisionNameOptionsList"
+                    placeholder="เช่น ชื่อฝ่ายใหม่"
+                    required
+                  />
                 </div>
                 <div class="staff-position-field">
                   <label class="login-label" for="staffPositionLevelCode">ระดับตำแหน่ง</label>
@@ -156,3 +170,5 @@
       </section>
 
       <datalist id="staffPositionOptionsList"></datalist>
+      <datalist id="staffDivisionCodeOptionsList"></datalist>
+      <datalist id="staffDivisionNameOptionsList"></datalist>

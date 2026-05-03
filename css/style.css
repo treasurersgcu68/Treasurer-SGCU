@@ -2069,7 +2069,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .staff-position-form {
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(280px, 1.2fr) minmax(210px, 1fr) minmax(210px, 1fr) auto;
+  grid-template-columns: minmax(120px, 0.6fr) minmax(220px, 1.2fr) minmax(180px, 0.9fr) auto;
   margin-bottom: 12px;
   padding: 14px;
   border: 1px solid rgba(244, 114, 182, 0.18);
@@ -2082,6 +2082,28 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .staff-position-field {
   display: grid;
   gap: 6px;
+}
+
+.staff-position-result-field {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(244, 114, 182, 0.16);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.staff-position-result-input {
+  min-height: 46px;
+  border-color: rgba(236, 72, 153, 0.22);
+  background: rgba(255, 247, 252, 0.88);
+  color: var(--theme-pink-800);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.staff-position-result-input::placeholder {
+  color: rgba(157, 23, 77, 0.46);
+  font-weight: 600;
 }
 
 .staff-position-field-pages {
@@ -2120,6 +2142,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: var(--theme-pink-800);
   font-size: 12px;
   font-weight: 600;
+}
+
+.staff-position-page-option-all {
+  border-color: rgba(236, 72, 153, 0.28);
+  background: rgba(252, 231, 243, 0.72);
+  color: var(--theme-pink-800);
+  font-weight: 800;
 }
 
 .staff-position-page-checkbox {
@@ -2297,7 +2326,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  align-items: start;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 247, 252, 0.76);
+  border: 1px solid rgba(244, 114, 182, 0.14);
 }
 
 .staff-position-editor-title {
@@ -2313,16 +2346,34 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: var(--theme-pink-700);
 }
 
+.staff-position-editor-source {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.12);
+  border: 1px solid rgba(236, 72, 153, 0.18);
+  color: var(--theme-pink-800);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .staff-position-editor-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(160px, 1fr));
+  grid-template-columns: minmax(110px, 0.6fr) minmax(220px, 1.25fr) minmax(180px, 0.9fr);
 }
 
 .staff-position-editor-field {
   display: grid;
   gap: 6px;
   min-width: 0;
+}
+
+.staff-position-editor-result-field {
+  grid-column: 1 / -1;
 }
 
 .staff-position-editor-pages {
@@ -2425,7 +2476,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   .staff-position-chip-actions {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .staff-position-editor-grid {
@@ -2437,14 +2490,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   .staff-position-editor-actions .btn-primary,
-  .staff-position-editor-actions .btn-ghost,
-  .staff-position-edit-btn,
-  .staff-position-remove-btn {
+  .staff-position-editor-actions .btn-ghost {
     width: 100%;
   }
 
+  .staff-position-edit-btn,
   .staff-position-remove-btn {
-    width: 100%;
+    width: auto;
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
   }
 
   .staff-application-intro-item {

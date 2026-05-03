@@ -1,10 +1,10 @@
-const CACHE_VERSION = "20260503-15";
+const CACHE_VERSION = "20260504-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260503-13",
+  "./css/style.css?v=20260504-1",
   "./js/core/app.config.js?v=20260501-1",
   "./js/core/app.core.js",
   "./js/core/app.dialog.js?v=20260501-1",
@@ -15,7 +15,7 @@ const APP_SHELL_URLS = [
   "./js/features/project/app.project-modal.js",
   "./js/features/project/app.charts.js",
   "./js/features/project/app.pie.js",
-  "./js/features/project/app.sorting-auth.js?v=20260503-1",
+  "./js/features/project/app.sorting-auth.js?v=20260504-1",
   "./js/features/org/app.org.js?v=20260503-1",
   "./js/motion/app.motion.js",
   "./js/core/app.feature-loader.js?v=20260503-8",

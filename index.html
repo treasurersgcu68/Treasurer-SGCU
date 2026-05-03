@@ -41,7 +41,7 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css?v=20260503-13" />
+    <link rel="stylesheet" href="css/style.css?v=20260504-1" />
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
     <script type="module" src="js/integrations/app.firebase-bootstrap.js?v=20260423-1"></script>
   </head>
@@ -119,11 +119,17 @@
             <a href="#" data-page="dashboard-staff" class="nav-pill" data-visible="protected">ภาพรวม</a>
 
             <div class="nav-group">
-              <button class="nav-group-toggle" type="button" aria-expanded="false">งานอนุมัติ</button>
+              <button class="nav-group-toggle" type="button" aria-expanded="false">จัดการคำขอ</button>
               <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการคำขอยืม-คืนพัสดุ</a>
                 <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม</a>
                 <a href="#" data-page="budget-approval-staff" data-visible="protected">จัดการคำของบ</a>
+              </div>
+            </div>
+
+            <div class="nav-group">
+              <button class="nav-group-toggle" type="button" aria-expanded="false">ผู้ใช้งาน</button>
+              <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
               </div>
             </div>
@@ -180,13 +186,25 @@
           </details>
 
           <details class="mobile-menu-group">
-            <summary>เมนู Staff</summary>
+            <summary>Staff</summary>
             <div class="mobile-menu-links">
               <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมสำหรับ Staff</a>
               <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ (Staff)</a>
+            </div>
+          </details>
+
+          <details class="mobile-menu-group">
+            <summary>จัดการคำขอ</summary>
+            <div class="mobile-menu-links">
               <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการยืม-คืนพัสดุ (Staff)</a>
               <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม (Staff)</a>
               <a href="#" data-page="budget-approval-staff" data-visible="protected">จัดการคำของบ</a>
+            </div>
+          </details>
+
+          <details class="mobile-menu-group">
+            <summary>ผู้ใช้งาน</summary>
+            <div class="mobile-menu-links">
               <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
             </div>
           </details>
@@ -1054,12 +1072,12 @@
     <script src="js/features/project/app.project-modal.js" defer></script>
     <script src="js/features/project/app.charts.js" defer></script>
     <script src="js/features/project/app.pie.js" defer></script>
-    <script src="js/features/project/app.sorting-auth.js?v=20260503-1" defer></script>
+    <script src="js/features/project/app.sorting-auth.js?v=20260504-1" defer></script>
     <script src="js/features/project/app.calendar.js" defer></script>
     <script src="js/features/org/app.org.js?v=20260503-1" defer></script>
     <script src="js/motion/app.motion.js" defer></script>
     <script>
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260503-15";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260504-1";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",

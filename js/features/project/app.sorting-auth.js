@@ -213,6 +213,7 @@ const STAFF_PAGE_OPTIONS = [
   "project-status-staff",
   "borrow-assets-staff",
   "meeting-room-staff",
+  "budget-approval-request",
   "staff-approval",
   "login"
 ];
@@ -319,7 +320,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "staff-approval", "login"]);
+    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-request", "staff-approval", "login"]);
   }
   return new Set(["login"]);
 }
@@ -379,6 +380,7 @@ function getAllowedPagesForCurrentState() {
   const protectedAllowed = [
     "borrow-assets",
     "meeting-room-booking",
+    "budget-approval-request",
     "staff-application"
   ];
   protectedAllowed.forEach((page) => allowed.add(page));
@@ -389,6 +391,7 @@ function getAllowedPagesForCurrentState() {
 
   if (staffAuthUser && staffViewMode === "staff") {
     const yyAllowed = getAllowedStaffPagesByProfile(staffAuthUser);
+    yyAllowed.add("budget-approval-request");
     if (isAffairsProfile) {
       yyAllowed.delete("borrow-assets");
       yyAllowed.delete("borrow-assets-staff");
@@ -489,6 +492,7 @@ function getModeMappedPage(currentPage, mode) {
 
 function applyStaffViewMode() {
   const staffMode = !!staffAuthUser && staffViewMode === "staff";
+  const suppressStaffApplicationRedirect = window.__sgcuStaffApplicationFlowActive === true;
   updateNavVisibility(isUserAuthenticated);
   syncRoleNavContainers();
   updateNavForStaff(staffMode ? staffAuthUser : null);
@@ -500,7 +504,7 @@ function applyStaffViewMode() {
     btn.classList.toggle("is-active", btn.dataset.staffMode === staffViewMode);
   });
 
-  if (!isCurrentNavVisible()) {
+  if (!isCurrentNavVisible() && !suppressStaffApplicationRedirect) {
     goToFirstVisibleNavPageWithPreference(null);
   }
 }
@@ -582,6 +586,7 @@ function goToFirstVisibleNavPageWithPreference(preferredPage) {
 function initAuthUI() {
   const loginProfileCardEl = document.getElementById("loginProfileCard");
   const loginHelpApplyBtnEl = document.getElementById("loginHelpApplyBtn");
+  const budgetRepresentativeApplyBtnEl = document.getElementById("budgetRepresentativeApplyBtn");
   const loginHeroEl = document.querySelector(".login-hero");
   const loginHeroContentEl = document.getElementById("loginHeroContent");
 
@@ -603,6 +608,9 @@ function initAuthUI() {
     }
     if (loginHelpApplyBtnEl) {
       loginHelpApplyBtnEl.hidden = true;
+    }
+    if (budgetRepresentativeApplyBtnEl) {
+      budgetRepresentativeApplyBtnEl.hidden = true;
     }
     if (loginProfileCardEl) {
       loginProfileCardEl.hidden = true;
@@ -1374,6 +1382,9 @@ function initAuthUI() {
     if (loginHelpApplyBtnEl) {
       loginHelpApplyBtnEl.hidden = !isAuth;
     }
+    if (budgetRepresentativeApplyBtnEl) {
+      budgetRepresentativeApplyBtnEl.hidden = !isAuth;
+    }
     if (loginProfileCardEl) {
       loginProfileCardEl.hidden = !isAuth;
     }
@@ -1395,7 +1406,7 @@ function initAuthUI() {
     // เปลี่ยนหน้าเฉพาะเมื่อหน้าปัจจุบันไม่สามารถมองเห็นได้
     const preferredPage = getPreferredPageForState(isAuth);
     const currentPage = getCurrentPageFromHash();
-    if (!isNavPageVisible(currentPage)) {
+    if (!isNavPageVisible(currentPage) && window.__sgcuStaffApplicationFlowActive !== true) {
       goToFirstVisibleNavPageWithPreference(preferredPage);
     }
   }

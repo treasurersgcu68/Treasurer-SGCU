@@ -3,26 +3,20 @@
         <div class="page">
           <div class="page-header-flex">
             <div>
-              <h1 class="page-title">อนุมัติสมาชิกสตาฟ</h1>
-              <p class="page-subtitle">ตรวจคำขอและกำหนดตำแหน่งก่อนอนุมัติเข้าระบบ</p>
+              <h1 class="page-title">จัดการสิทธิ์ผู้ใช้งาน</h1>
+              <p class="page-subtitle">ตรวจคำขอสตาฟและตัวแทนองค์กรก่อนอนุมัติเข้าระบบ</p>
+            </div>
+            <div class="tabs staff-approval-type-toggle" role="tablist" aria-label="เลือกประเภทคำขอ">
+              <button id="staffApprovalTypeStaffBtn" type="button" class="tab-btn view-toggle-btn is-active" role="tab" aria-selected="true">
+                สมาชิกสตาฟ
+              </button>
+              <button id="staffApprovalTypeOrgBtn" type="button" class="tab-btn view-toggle-btn" role="tab" aria-selected="false">
+                ตัวแทนองค์กร
+              </button>
             </div>
           </div>
 
-          <div class="staff-approval-stats">
-            <article class="dashboard-metric">
-              <div class="metric-label">คำขอรออนุมัติ</div>
-              <div id="staffApprovalPendingCount" class="metric-value">0</div>
-            </article>
-            <article class="dashboard-metric">
-              <div class="metric-label">อนุมัติแล้วทั้งหมด</div>
-              <div id="staffApprovalApprovedCount" class="metric-value">0</div>
-            </article>
-            <article class="dashboard-metric">
-              <div class="metric-label">จำนวนตำแหน่งที่ใช้งาน</div>
-              <div id="staffApprovalPositionCount" class="metric-value">0</div>
-            </article>
-          </div>
-
+          <div id="staffApprovalStaffSection">
           <div id="staffApprovalPendingPanel" class="panel panel-hover staff-access-panel">
             <div class="panel-header">
               <div>
@@ -74,6 +68,64 @@
               </div>
             </div>
           </div>
+          </div>
+
+          <div id="orgRepresentativeApprovalSection" style="display:none;">
+            <div class="panel panel-hover staff-access-panel">
+              <div class="panel-header">
+                <div>
+                  <h3 id="orgRepresentativeApprovalPanelTitle" class="panel-title">คำขอตัวแทนองค์กรที่รออนุมัติ</h3>
+                  <p id="orgRepresentativeApprovalPanelCaption" class="panel-caption">แสดงผล 0 รายการ</p>
+                </div>
+                <div class="tabs staff-approval-view-toggle" role="tablist" aria-label="เลือกมุมมองคำขอตัวแทนองค์กร">
+                  <button id="orgRepresentativeShowPendingBtn" type="button" class="tab-btn view-toggle-btn is-active" role="tab" aria-selected="true">
+                    คำขอที่รออนุมัติ
+                  </button>
+                  <button id="orgRepresentativeShowHistoryBtn" type="button" class="tab-btn view-toggle-btn" role="tab" aria-selected="false">
+                    ตัวแทนที่อนุมัติแล้ว
+                  </button>
+                </div>
+              </div>
+              <div id="orgRepresentativePendingContent">
+                <div id="orgRepresentativeApprovalMessage" class="section-text-sm staff-access-status" aria-live="polite"></div>
+                <div class="project-table-wrapper">
+                  <table id="orgRepresentativePendingTable">
+                    <thead>
+                      <tr>
+                        <th>ผู้สมัคร</th>
+                        <th>องค์กร</th>
+                        <th>ตำแหน่ง</th>
+                        <th>ข้อมูลยืนยัน</th>
+                        <th>จัดการคำขอ</th>
+                      </tr>
+                    </thead>
+                    <tbody id="orgRepresentativePendingBody">
+                      <tr><td colspan="5">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="orgRepresentativeHistoryContent" style="display:none;">
+                <p id="orgRepresentativeHistoryCaption" class="panel-caption" style="display:none;">แสดงผล 0 รายการ</p>
+                <div class="project-table-wrapper">
+                  <table id="orgRepresentativeHistoryTable">
+                    <thead>
+                      <tr>
+                        <th>ตัวแทน</th>
+                        <th>องค์กร</th>
+                        <th>ตำแหน่ง</th>
+                        <th>เวลาที่อนุมัติ</th>
+                        <th>จัดการสิทธิ์</th>
+                      </tr>
+                    </thead>
+                    <tbody id="orgRepresentativeHistoryBody">
+                      <tr><td colspan="5">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div
             id="staffApprovalDetailModal"
@@ -95,7 +147,7 @@
             </div>
           </div>
 
-          <div class="panel panel-hover staff-access-panel">
+          <div id="staffPositionManagePanel" class="panel panel-hover staff-access-panel">
             <div class="panel-header">
               <div>
                 <h3 class="panel-title">จัดการตำแหน่งสตาฟ</h3>

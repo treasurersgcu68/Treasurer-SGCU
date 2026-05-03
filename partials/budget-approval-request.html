@@ -13,6 +13,48 @@
           <div class="separator-gradient"></div>
 
           <div class="section-appear section-delay-1">
+            <div class="panel panel-hover budget-org-overview-panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">องค์กรตัวแทนที่ใช้ยื่นของบ</div>
+                  <div class="panel-caption">ระบบกำหนดตามสิทธิ์ตัวแทนองค์กรที่ได้รับอนุมัติแล้ว</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div class="budget-org-overview">
+                  <div class="borrow-profile-grid budget-org-display-grid">
+                    <div class="borrow-profile-item">
+                      <span class="borrow-profile-label">ฝ่าย / ชมรม</span>
+                      <p id="budgetOrgDeptDisplay" class="borrow-profile-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</p>
+                    </div>
+                    <div class="borrow-profile-item">
+                      <span class="borrow-profile-label">ประเภทองค์กร</span>
+                      <p id="budgetOrgTypeDisplay" class="borrow-profile-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</p>
+                    </div>
+                  </div>
+                  <div class="budget-org-summary" aria-label="สรุปการขออนุมัติงบประมาณขององค์กร">
+                    <div class="budget-org-summary-card">
+                      <span class="budget-org-summary-label">โครงการที่ขอไป</span>
+                      <strong id="budgetOrgSummaryProjectCount" class="budget-org-summary-value">0</strong>
+                    </div>
+                    <div class="budget-org-summary-card">
+                      <span class="budget-org-summary-label">งบรวมที่ขอ</span>
+                      <strong id="budgetOrgSummaryTotalExpense" class="budget-org-summary-value">0.00 บาท</strong>
+                    </div>
+                    <div class="budget-org-summary-card">
+                      <span class="budget-org-summary-label">รอพิจารณา</span>
+                      <strong id="budgetOrgSummaryPendingCount" class="budget-org-summary-value">0</strong>
+                    </div>
+                    <div class="budget-org-summary-card">
+                      <span class="budget-org-summary-label">อนุมัติแล้ว</span>
+                      <strong id="budgetOrgSummaryApprovedCount" class="budget-org-summary-value">0</strong>
+                    </div>
+                  </div>
+                  <div id="budgetOrgSummaryCaption" class="borrow-detail-section-caption budget-org-summary-caption">ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว</div>
+                </div>
+              </div>
+            </div>
+
             <form id="budgetApprovalForm" class="borrow-request-form" aria-label="แบบฟอร์มขออนุมัติงบประมาณ">
               <div class="panel panel-hover">
                 <div class="panel-header">
@@ -23,13 +65,13 @@
                 </div>
                 <div class="panel-body">
                   <div class="borrow-form-row">
-                    <div class="borrow-form-field">
+                    <div class="borrow-form-field" style="display:none;">
                       <label class="login-label" for="budgetOrgType">ประเภทองค์กร</label>
                       <select id="budgetOrgType" class="login-input" required>
                         <option value="" selected disabled>เลือกประเภทองค์กร</option>
                       </select>
                     </div>
-                    <div class="borrow-form-field">
+                    <div class="borrow-form-field" style="display:none;">
                       <label class="login-label" for="budgetOrgDept">ฝ่าย / ชมรม</label>
                       <select id="budgetOrgDept" class="login-input" required>
                         <option value="" selected disabled>เลือกฝ่าย / ชมรม</option>
@@ -128,6 +170,7 @@
 
                   <div class="meeting-form-actions">
                     <button id="budgetApprovalSubmitBtn" type="submit" class="btn-primary">ยื่นคำขออนุมัติงบประมาณ</button>
+                    <button id="budgetApprovalCancelEditBtn" type="button" class="btn-ghost" hidden>ยกเลิกการแก้ไข</button>
                     <span id="budgetApprovalMessage" class="section-text-sm" aria-live="polite"></span>
                   </div>
                 </div>
@@ -146,19 +189,132 @@
                   <thead>
                     <tr>
                       <th style="text-align:center;">วันที่ยื่นคำขอ</th>
-                      <th style="text-align:center;">ประเภทองค์กร / ฝ่าย</th>
+                      <th style="text-align:center;">ฝ่าย / ประเภทองค์กร</th>
                       <th style="text-align:center;">ชื่อโครงการ</th>
                       <th style="text-align:center;">ช่วงปฏิบัติงาน</th>
                       <th style="text-align:right;">ประมาณการรายจ่าย</th>
                       <th style="text-align:center;">สถานะ</th>
+                      <th style="text-align:center;">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody id="budgetApprovalMyRequestsTableBody">
                     <tr>
-                      <td colspan="6" style="text-align:center; color:#6b7280;">กำลังโหลดข้อมูล...</td>
+                      <td colspan="7" style="text-align:center; color:#6b7280;">กำลังโหลดข้อมูล...</td>
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="budgetRepresentativeApplicationModal"
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-hidden="true"
+          aria-labelledby="budgetRepresentativeApplicationTitle"
+        >
+          <div class="modal-dialog budget-representative-modal-dialog">
+            <div class="modal-header">
+              <div>
+                <div id="budgetRepresentativeApplicationTitle" class="modal-title">สมัครเป็นตัวแทนองค์กร</div>
+                <div class="modal-subtitle">ยื่นคำขอเพื่อใช้บัญชีนี้แทนชมรมหรือองค์กรในการทำรายการของบประมาณ</div>
+              </div>
+              <button id="budgetRepresentativeApplicationClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
+            </div>
+            <div class="modal-body budget-representative-modal-body">
+              <div class="panel panel-hover staff-access-panel">
+                <div class="panel-header">
+                  <div>
+                    <h3 class="panel-title">แบบฟอร์มสมัคร</h3>
+                    <p class="panel-caption">ต้องเข้าสู่ระบบก่อนจึงจะยื่นคำขอได้</p>
+                  </div>
+                </div>
+                <div class="panel-body">
+                  <form id="budgetRepresentativeApplicationForm" class="staff-access-form" aria-label="แบบฟอร์มสมัครเป็นตัวแทนองค์กร">
+                    <div class="staff-application-position-grid">
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="budgetRepresentativeOrgType">ประเภทองค์กร</label>
+                        <select id="budgetRepresentativeOrgType" class="login-input" required>
+                          <option value="" selected disabled>เลือกประเภทองค์กร</option>
+                        </select>
+                      </div>
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="budgetRepresentativeOrgDept">ฝ่าย / ชมรม</label>
+                        <select id="budgetRepresentativeOrgDept" class="login-input" required>
+                          <option value="" selected disabled>เลือกประเภทองค์กรก่อน</option>
+                        </select>
+                      </div>
+
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="budgetRepresentativeRole">ตำแหน่งในองค์กร</label>
+                        <select id="budgetRepresentativeRole" class="login-input" required>
+                          <option value="" selected disabled>เลือกตำแหน่ง</option>
+                          <option value="ประธานองค์กร/ชมรม">ประธานองค์กร/ชมรม</option>
+                          <option value="เหรัญญิกองค์กร/ชมรม">เหรัญญิกองค์กร/ชมรม</option>
+                          <option value="ผู้ประสานงานโครงการ">ผู้ประสานงานโครงการ</option>
+                          <option value="ผู้รับผิดชอบเอกสารการเงิน">ผู้รับผิดชอบเอกสารการเงิน</option>
+                          <option value="อื่น ๆ">อื่น ๆ</option>
+                        </select>
+                      </div>
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="budgetRepresentativeRoleOther">ตำแหน่งอื่น ๆ</label>
+                        <input
+                          id="budgetRepresentativeRoleOther"
+                          class="login-input"
+                          type="text"
+                          maxlength="120"
+                          placeholder="ระบุเมื่อตำแหน่งไม่อยู่ในรายการ"
+                          disabled
+                        />
+                      </div>
+
+                      <div class="borrow-form-field staff-application-result-field">
+                        <label class="login-label" for="budgetRepresentativeEvidence">ข้อมูลยืนยันเพิ่มเติม</label>
+                        <textarea
+                          id="budgetRepresentativeEvidence"
+                          class="login-input staff-access-textarea"
+                          rows="4"
+                          maxlength="1000"
+                          placeholder="เช่น ช่องทางติดต่อผู้รับรอง ลิงก์เอกสารแต่งตั้ง หรือรายละเอียดที่ช่วยยืนยันสิทธิ์"
+                        ></textarea>
+                      </div>
+                    </div>
+
+                    <div class="staff-access-actions">
+                      <button id="budgetRepresentativeSubmitBtn" type="submit" class="btn-primary">ส่งคำขอสมัคร</button>
+                      <button id="budgetRepresentativeCancelBtn" type="button" class="btn-ghost">ยกเลิก</button>
+                      <div id="budgetRepresentativeApplicationMessage" class="section-text-sm" aria-live="polite"></div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="panel panel-hover staff-access-panel">
+                <div class="panel-header">
+                  <div>
+                    <h3 class="panel-title">ประวัติคำขอของฉัน</h3>
+                    <p id="budgetRepresentativeStatusCaption" class="panel-caption">กำลังตรวจสอบสิทธิ์ตัวแทนองค์กร...</p>
+                  </div>
+                </div>
+                <div class="project-table-wrapper budget-representative-table-wrap">
+                  <div id="budgetRepresentativeMessage" class="section-text-sm staff-access-status" aria-live="polite"></div>
+                  <table id="budgetRepresentativeMyApplicationsTable">
+                    <thead>
+                      <tr>
+                        <th>เวลายื่นคำขอ</th>
+                        <th>องค์กร</th>
+                        <th>ตำแหน่ง</th>
+                        <th>สถานะ</th>
+                      </tr>
+                    </thead>
+                    <tbody id="budgetRepresentativeMyApplicationsBody">
+                      <tr><td colspan="4">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

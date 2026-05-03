@@ -189,6 +189,22 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
 
   const AVATAR_BASE_PATH = "img/org/";
 
+  function extractGoogleDriveFileId(value) {
+    const raw = (value || "").toString().trim();
+    if (!raw) return "";
+
+    const fileMatch = raw.match(/drive\.google\.com\/file\/d\/([^/?#]+)/i);
+    if (fileMatch && fileMatch[1]) return fileMatch[1];
+
+    const idMatch = raw.match(/[?&]id=([^&#]+)/i);
+    if (idMatch && idMatch[1]) return idMatch[1];
+
+    const openMatch = raw.match(/drive\.google\.com\/open\?id=([^&#]+)/i);
+    if (openMatch && openMatch[1]) return openMatch[1];
+
+    return "";
+  }
+
   function buildAvatarUrlFromCell(raw) {
     if (!raw) return "";
 
@@ -197,14 +213,8 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
 
     // ถ้าเป็นลิงก์ Google Drive / URL
     if (/^https?:\/\//i.test(val)) {
-      const mFile = val.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
-      if (mFile && mFile[1]) {
-        return `https://drive.google.com/thumbnail?id=${mFile[1]}&sz=w400`;
-      }
-      const mId = val.match(/[?&]id=([^&]+)/);
-      if (mId && mId[1]) {
-        return `https://drive.google.com/thumbnail?id=${mId[1]}&sz=w400`;
-      }
+      const driveFileId = extractGoogleDriveFileId(val);
+      if (driveFileId) return `https://lh3.googleusercontent.com/d/${driveFileId}=w400`;
       return val;
     }
 
@@ -216,8 +226,14 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
     return `${AVATAR_BASE_PATH}${val}`;
   }
 
+  function buildAvatarFallbackUrlFromCell(raw) {
+    const driveFileId = extractGoogleDriveFileId(raw);
+    return driveFileId ? `https://drive.google.com/thumbnail?id=${driveFileId}&sz=w400` : "";
+  }
+
   function avatarHTML(r, size) {
     const url = buildAvatarUrlFromCell(r[STRUCT_COL_PHOTO]);
+    const fallbackUrl = buildAvatarFallbackUrlFromCell(r[STRUCT_COL_PHOTO]);
     const cls = size === "sm" ? "org-node-circle sm" : "org-node-circle";
     const fallbackInitials = initials(r, { first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST });
     if (url) {
@@ -229,6 +245,8 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
             loading="lazy"
             decoding="async"
             fetchpriority="low"
+            referrerpolicy="no-referrer"
+            ${fallbackUrl && fallbackUrl !== url ? `data-fallback-src="${esc(fallbackUrl)}"` : ""}
             width="128"
             height="128"
           >
@@ -539,6 +557,13 @@ function initOrgImageFallbacks() {
   if (!container) return;
   container.querySelectorAll(".org-node-circle img").forEach((img) => {
     img.addEventListener("error", () => {
+      const fallbackSrc = img.getAttribute("data-fallback-src");
+      if (fallbackSrc && img.src !== fallbackSrc) {
+        img.removeAttribute("data-fallback-src");
+        img.src = fallbackSrc;
+        return;
+      }
+
       const avatar = img.closest(".org-node-circle");
       if (!avatar) return;
       avatar.textContent = avatar.dataset.initials || "SG";

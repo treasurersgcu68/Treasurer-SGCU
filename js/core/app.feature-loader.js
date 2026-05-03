@@ -19,7 +19,10 @@
       "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260415-15",
       "meeting-room-staff": "js/features/booking/app.meeting-room-staff.js?v=20260415-4",
       "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260414-1",
-      login: "js/features/staff/app.staff-access.js?v=20260430-7",
+      login: [
+        "js/features/staff/app.staff-access.js?v=20260430-7",
+        "js/features/budget/app.budget-request.js?v=20260414-2"
+      ],
       "staff-application": "js/features/staff/app.staff-access.js?v=20260430-7",
       "staff-approval": "js/features/staff/app.staff-access.js?v=20260430-7"
     },

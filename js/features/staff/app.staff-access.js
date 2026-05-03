@@ -41,12 +41,27 @@ function initStaffAccessPages() {
   const staffApprovalPendingCountEl = document.getElementById("staffApprovalPendingCount");
   const staffApprovalApprovedCountEl = document.getElementById("staffApprovalApprovedCount");
   const staffApprovalPositionCountEl = document.getElementById("staffApprovalPositionCount");
+  const staffApprovalTypeStaffBtnEl = document.getElementById("staffApprovalTypeStaffBtn");
+  const staffApprovalTypeOrgBtnEl = document.getElementById("staffApprovalTypeOrgBtn");
+  const staffApprovalStaffSectionEl = document.getElementById("staffApprovalStaffSection");
+  const orgRepresentativeApprovalSectionEl = document.getElementById("orgRepresentativeApprovalSection");
+  const orgRepresentativePanelTitleEl = document.getElementById("orgRepresentativeApprovalPanelTitle");
+  const orgRepresentativePanelCaptionEl = document.getElementById("orgRepresentativeApprovalPanelCaption");
+  const orgRepresentativePendingContentEl = document.getElementById("orgRepresentativePendingContent");
+  const orgRepresentativeHistoryContentEl = document.getElementById("orgRepresentativeHistoryContent");
+  const orgRepresentativePendingBodyEl = document.getElementById("orgRepresentativePendingBody");
+  const orgRepresentativeHistoryBodyEl = document.getElementById("orgRepresentativeHistoryBody");
+  const orgRepresentativeHistoryCaptionEl = document.getElementById("orgRepresentativeHistoryCaption");
+  const orgRepresentativeMessageEl = document.getElementById("orgRepresentativeApprovalMessage");
+  const orgRepresentativeShowPendingBtnEl = document.getElementById("orgRepresentativeShowPendingBtn");
+  const orgRepresentativeShowHistoryBtnEl = document.getElementById("orgRepresentativeShowHistoryBtn");
 
   if (approvalDetailModalEl && approvalDetailModalEl.parentElement !== document.body) {
     document.body.appendChild(approvalDetailModalEl);
   }
 
   const positionManageFormEl = document.getElementById("staffPositionManageForm");
+  const positionManagePanelEl = document.getElementById("staffPositionManagePanel");
   const positionManageInputEl = document.getElementById("staffPositionManageInput");
   const positionDivisionCodeEl = document.getElementById("staffPositionDivisionCode");
   const positionDivisionNameEl = document.getElementById("staffPositionDivisionName");
@@ -59,6 +74,7 @@ function initStaffAccessPages() {
   const divisionNameOptionsDatalistEl = document.getElementById("staffDivisionNameOptionsList");
 
   const COLLECTION_APPLICATIONS = "staffApplications";
+  const COLLECTION_ORG_REPRESENTATIVES = "organizationRepresentativeApplications";
   const COLLECTION_PROFILES = "staffProfiles";
   const COLLECTION_USER_PROFILES = "userProfiles";
   const COLLECTION_POSITIONS = "staffPositionCatalog";
@@ -110,6 +126,7 @@ function initStaffAccessPages() {
     { id: "project-status-staff", label: "กำกับสถานะโครงการ" },
     { id: "borrow-assets-staff", label: "อนุมัติยืมทรัพย์สิน" },
     { id: "meeting-room-staff", label: "อนุมัติห้องประชุม" },
+    { id: "budget-approval-request", label: "ขออนุมัติงบประมาณ" },
     { id: "staff-approval", label: "อนุมัติสมาชิกสตาฟ" },
     { id: "login", label: "หน้าเข้าสู่ระบบ" }
   ];
@@ -120,15 +137,21 @@ function initStaffAccessPages() {
   let unsubscribePendingApplications = null;
   let unsubscribeApprovalHistory = null;
   let unsubscribePositionCatalog = null;
+  let unsubscribeOrgRepresentativeApplications = null;
 
   let currentMyApplications = [];
   let currentPendingApplications = [];
   let currentApprovedHistory = [];
   let currentApprovedHistoryGrouped = [];
+  let currentOrgRepresentativeApplications = [];
+  let currentOrgRepresentativePending = [];
+  let currentOrgRepresentativeApproved = [];
   let currentPositionCatalog = [];
   let currentEditingPositionId = "";
   let appFormStatusLocked = false;
   let currentApprovalView = "pending";
+  let currentApprovalType = "staff";
+  let currentOrgRepresentativeView = "pending";
   let currentApprovalDetailRequestKey = "";
   let lastKnownAuthState = {
     isAuthenticated: false,
@@ -167,8 +190,53 @@ function initStaffAccessPages() {
     }
   };
 
+  const syncOrgRepresentativePanelCaption = () => {
+    if (!orgRepresentativePanelCaptionEl) return;
+    orgRepresentativePanelCaptionEl.textContent = currentOrgRepresentativeView === "history"
+      ? (orgRepresentativeHistoryCaptionEl?.textContent || "แสดงผล 0 รายการ")
+      : `แสดงผล ${currentOrgRepresentativePending.length} รายการ`;
+  };
+
+  const setOrgRepresentativeView = (view = "pending") => {
+    currentOrgRepresentativeView = view === "history" ? "history" : "pending";
+    const showPending = currentOrgRepresentativeView === "pending";
+    if (orgRepresentativePendingContentEl) orgRepresentativePendingContentEl.style.display = showPending ? "" : "none";
+    if (orgRepresentativeHistoryContentEl) orgRepresentativeHistoryContentEl.style.display = showPending ? "none" : "";
+    if (orgRepresentativePanelTitleEl) {
+      orgRepresentativePanelTitleEl.textContent = showPending
+        ? "คำขอตัวแทนองค์กรที่รออนุมัติ"
+        : "ตัวแทนองค์กรที่อนุมัติแล้ว";
+    }
+    if (orgRepresentativeShowPendingBtnEl) {
+      orgRepresentativeShowPendingBtnEl.classList.toggle("is-active", showPending);
+      orgRepresentativeShowPendingBtnEl.setAttribute("aria-selected", showPending ? "true" : "false");
+    }
+    if (orgRepresentativeShowHistoryBtnEl) {
+      orgRepresentativeShowHistoryBtnEl.classList.toggle("is-active", !showPending);
+      orgRepresentativeShowHistoryBtnEl.setAttribute("aria-selected", showPending ? "false" : "true");
+    }
+    syncOrgRepresentativePanelCaption();
+  };
+
+  const setApprovalType = (type = "staff") => {
+    currentApprovalType = type === "org" ? "org" : "staff";
+    const showOrg = currentApprovalType === "org";
+    if (staffApprovalStaffSectionEl) staffApprovalStaffSectionEl.style.display = showOrg ? "none" : "";
+    if (positionManagePanelEl) positionManagePanelEl.style.display = showOrg ? "none" : "";
+    if (orgRepresentativeApprovalSectionEl) orgRepresentativeApprovalSectionEl.style.display = showOrg ? "" : "none";
+    if (staffApprovalTypeStaffBtnEl) {
+      staffApprovalTypeStaffBtnEl.classList.toggle("is-active", !showOrg);
+      staffApprovalTypeStaffBtnEl.setAttribute("aria-selected", showOrg ? "false" : "true");
+    }
+    if (staffApprovalTypeOrgBtnEl) {
+      staffApprovalTypeOrgBtnEl.classList.toggle("is-active", showOrg);
+      staffApprovalTypeOrgBtnEl.setAttribute("aria-selected", showOrg ? "true" : "false");
+    }
+  };
+
   const openApplicationModal = () => {
     if (!applicationModalEl) return;
+    window.__sgcuStaffApplicationFlowActive = true;
     prefillApplicationForm();
     const currentUserEmail = getCurrentAuthEmail();
     const localProfile = currentUserEmail ? (readLoginProfiles()[currentUserEmail] || {}) : {};
@@ -186,12 +254,156 @@ function initStaffAccessPages() {
 
   const closeApplicationModal = () => {
     if (!applicationModalEl) return;
+    window.__sgcuStaffApplicationFlowActive = false;
     if (typeof closeDialog === "function") {
       closeDialog(applicationModalEl);
       return;
     }
     applicationModalEl.classList.remove("show");
     applicationModalEl.setAttribute("aria-hidden", "true");
+  };
+
+  const ensureStaffRejectionReasonModal = () => {
+    let modalEl = document.getElementById("staffRejectionReasonModal");
+    if (modalEl) return modalEl;
+    if (!document.body) return null;
+
+    document.body.insertAdjacentHTML("beforeend", `
+      <div
+        id="staffRejectionReasonModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden="true"
+        aria-labelledby="staffRejectionReasonTitle"
+      >
+        <div class="modal-dialog staff-rejection-reason-dialog">
+          <div class="modal-header">
+            <div>
+              <div id="staffRejectionReasonTitle" class="modal-title">เหตุผลที่ไม่อนุมัติ</div>
+              <div id="staffRejectionReasonSubtitle" class="modal-subtitle">เหตุผลนี้จะแสดงในประวัติคำขอของผู้สมัคร</div>
+            </div>
+            <button id="staffRejectionReasonClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-section staff-rejection-reason-section">
+              <label class="login-label" for="staffRejectionReasonInput">เหตุผล</label>
+              <textarea
+                id="staffRejectionReasonInput"
+                class="login-input staff-rejection-reason-input"
+                rows="5"
+                maxlength="300"
+                placeholder="ระบุเหตุผลที่ไม่อนุมัติ"
+              ></textarea>
+              <div class="staff-rejection-reason-meta">
+                <span id="staffRejectionReasonCounter" class="section-text-sm staff-rejection-reason-counter">0/300</span>
+              </div>
+              <div id="staffRejectionReasonError" class="section-text-sm staff-rejection-reason-error" aria-live="polite"></div>
+            </div>
+          </div>
+          <div class="modal-footer staff-rejection-reason-actions">
+            <button id="staffRejectionReasonCancel" type="button" class="btn-ghost">ยกเลิก</button>
+            <button id="staffRejectionReasonSubmit" type="button" class="btn-primary">บันทึกไม่อนุมัติ</button>
+          </div>
+        </div>
+      </div>
+    `);
+    return document.getElementById("staffRejectionReasonModal");
+  };
+
+  const askStaffRejectionReason = ({
+    initialValue = "",
+    subtitle = "เหตุผลนี้จะแสดงในประวัติคำขอของผู้สมัคร",
+    helperText = "กดบันทึกไม่อนุมัติเพื่อยืนยัน หรือกดยกเลิกเพื่อไม่เปลี่ยนสถานะ"
+  } = {}) => {
+    const modalEl = ensureStaffRejectionReasonModal();
+    const inputEl = document.getElementById("staffRejectionReasonInput");
+    const subtitleEl = document.getElementById("staffRejectionReasonSubtitle");
+    const helperEl = document.getElementById("staffRejectionReasonHelper");
+    const counterEl = document.getElementById("staffRejectionReasonCounter");
+    const errorEl = document.getElementById("staffRejectionReasonError");
+    const submitEl = document.getElementById("staffRejectionReasonSubmit");
+    const cancelEl = document.getElementById("staffRejectionReasonCancel");
+    const closeEl = document.getElementById("staffRejectionReasonClose");
+
+    if (
+      !modalEl ||
+      !(inputEl instanceof HTMLTextAreaElement) ||
+      !(submitEl instanceof HTMLButtonElement) ||
+      !(cancelEl instanceof HTMLButtonElement) ||
+      !(closeEl instanceof HTMLButtonElement)
+    ) {
+      const input = window.prompt("ระบุเหตุผลที่ไม่อนุมัติ (ไม่บังคับ)", initialValue || "");
+      if (input === null) return Promise.resolve(null);
+      return Promise.resolve((input || "").toString().trim());
+    }
+
+    return new Promise((resolve) => {
+      const updateCounter = () => {
+        if (counterEl) counterEl.textContent = `${inputEl.value.length}/300`;
+      };
+      const cleanup = () => {
+        submitEl.removeEventListener("click", onSubmit);
+        cancelEl.removeEventListener("click", onCancel);
+        closeEl.removeEventListener("click", onCancel);
+        modalEl.removeEventListener("click", onBackdropClick);
+        modalEl.removeEventListener("keydown", onKeydown);
+        inputEl.removeEventListener("input", updateCounter);
+      };
+      const closeReasonDialog = (value) => {
+        cleanup();
+        if (typeof closeDialog === "function") {
+          closeDialog(modalEl);
+        } else {
+          modalEl.classList.remove("show");
+          modalEl.setAttribute("aria-hidden", "true");
+        }
+        resolve(value);
+      };
+      const onSubmit = () => {
+        if (errorEl) errorEl.textContent = "";
+        closeReasonDialog((inputEl.value || "").toString().trim());
+      };
+      const onCancel = () => {
+        if (errorEl) errorEl.textContent = "";
+        closeReasonDialog(null);
+      };
+      const onBackdropClick = (event) => {
+        if (event.target === modalEl) onCancel();
+      };
+      const onKeydown = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+          event.preventDefault();
+          onSubmit();
+        }
+      };
+      if (subtitleEl) subtitleEl.textContent = subtitle;
+      if (helperEl) helperEl.textContent = helperText;
+      if (errorEl) errorEl.textContent = "";
+      inputEl.value = (initialValue || "").toString().slice(0, 300);
+      updateCounter();
+      submitEl.addEventListener("click", onSubmit);
+      cancelEl.addEventListener("click", onCancel);
+      closeEl.addEventListener("click", onCancel);
+      modalEl.addEventListener("click", onBackdropClick);
+      modalEl.addEventListener("keydown", onKeydown);
+      inputEl.addEventListener("input", updateCounter);
+
+      if (typeof openDialog === "function") {
+        openDialog(modalEl, { focusSelector: "#staffRejectionReasonInput" });
+      } else {
+        modalEl.classList.add("show");
+        modalEl.setAttribute("aria-hidden", "false");
+      }
+      setTimeout(() => {
+        inputEl.focus();
+        inputEl.select();
+      }, 0);
+    });
   };
 
   const openApprovalDetailModal = (item) => {
@@ -473,6 +685,7 @@ function initStaffAccessPages() {
       startMyApplicationsListener();
       startPendingApplicationsListener();
       startApprovedHistoryListener();
+      startOrgRepresentativeApplicationsListener();
     }, 350);
   };
 
@@ -562,7 +775,7 @@ function initStaffAccessPages() {
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
-      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "staff-approval", "login"];
+      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-request", "staff-approval", "login"];
     }
     return ["login"];
   };
@@ -633,7 +846,7 @@ function initStaffAccessPages() {
     const normalized = normalizePositionText(positionText);
     if (!normalized) return "00";
     if (normalized === "เหรัญญิก" || normalized === "เลขานุการฝ่ายเหรัญญิก") return "00";
-    if (normalized === "ผู้ช่วยเหรัญญิก") return "01";
+    if (normalized === "ผู้ช่วยเหรัญญิก") return "00";
     if (normalized.includes("บริหารและพัฒนางบประมาณ")) return "02";
     if (normalized.includes("หาทุนและสิทธิประโยชน์")) return "03";
     if (normalized.includes("กายภาพและพัสดุ")) return "04";
@@ -704,24 +917,16 @@ function initStaffAccessPages() {
     const catalogMeta = findPositionMetaByName(positionText);
     const normalizedPosition = normalizePositionText(positionText);
     const inferredYY = resolveDivisionCodeYY(positionText);
-    const isKnownDivisionByName =
-      inferredYY === "00" ||
-      inferredYY === "01" ||
-      inferredYY === "02" ||
-      inferredYY === "03" ||
-      inferredYY === "04" ||
-      inferredYY === "09";
     const forcedTreasurerYY =
       normalizedPosition === "เหรัญญิก" ||
       normalizedPosition === "เลขานุการฝ่ายเหรัญญิก" ||
       normalizedPosition === "ผู้ช่วยเหรัญญิก";
     const fallbackYY = inferredYY;
+    const catalogYY = normalizeCode2(catalogMeta?.divisionCodeYY || "");
     const yy = forcedTreasurerYY
       ? fallbackYY
-      : isKnownDivisionByName
-      ? fallbackYY
-      : catalogMeta?.divisionCodeYY
-      ? normalizeCode2(catalogMeta.divisionCodeYY)
+      : isValidDivisionCodeYY(catalogYY)
+        ? catalogYY
         : fallbackYY;
     let zz = catalogMeta?.levelCodeZZ
       ? normalizeCode2(catalogMeta.levelCodeZZ)
@@ -979,6 +1184,11 @@ function initStaffAccessPages() {
     const status = (value || "").toString().trim().toLowerCase();
     if (status === "approved" || status === "rejected" || status === "pending") return status;
     return "pending";
+  };
+
+  const isStaffApplicationRecord = (item = {}) => {
+    const requestType = (item.requestType || "staff_application").toString().trim();
+    return !requestType || requestType === "staff_application";
   };
 
   const sortPositionCatalogItems = (items = []) =>
@@ -1393,15 +1603,15 @@ function initStaffAccessPages() {
 
     myTableBodyEl.innerHTML = currentMyApplications
       .map((item) => {
-        const reviewerNote = (item.reviewedNote || "").toString().trim();
-        return `
-          <tr>
-            <td>${toSafeText(formatDateTime(item.createdAt))}</td>
-            <td>${toSafeText(item.requestedPosition || "-")}</td>
-            <td>${mapStatusBadge(item.status)}</td>
-            <td>${toSafeText(reviewerNote || "-")}</td>
-          </tr>
-        `;
+          const reviewerNote = (item.reviewedNote || "").toString().trim();
+          return `
+            <tr>
+              <td data-label="เวลายื่นคำขอ">${toSafeText(formatDateTime(item.createdAt))}</td>
+              <td data-label="ตำแหน่ง">${toSafeText(item.requestedPosition || "-")}</td>
+              <td data-label="สถานะ">${mapStatusBadge(item.status)}</td>
+              <td data-label="หมายเหตุ">${toSafeText(reviewerNote || "-")}</td>
+            </tr>
+          `;
       })
       .join("");
   };
@@ -1470,7 +1680,7 @@ function initStaffAccessPages() {
       refreshSummaryCounts();
       syncApprovalPanelCaption();
     } catch (error) {
-      console.error("renderApprovalRows failed - app.staff-access.js:1013", error);
+      console.error("renderApprovalRows failed - app.staff-access.js:1683", error);
       approvalBodyEl.innerHTML = `<tr><td colspan="4">แสดงผลคำขอไม่สำเร็จ: ${toSafeText(error?.message || "unknown")}</td></tr>`;
       setMessage(approvalMessageEl, "แสดงผลคำขอไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
     }
@@ -1594,9 +1804,277 @@ function initStaffAccessPages() {
       refreshSummaryCounts();
       syncApprovalPanelCaption();
     } catch (error) {
-      console.error("renderApprovedHistory failed - app.staff-access.js:1137", error);
+      console.error("renderApprovedHistory failed - app.staff-access.js:1807", error);
       approvalHistoryBodyEl.innerHTML = `<tr><td colspan="3">แสดงผลรายชื่อไม่สำเร็จ: ${toSafeText(error?.message || "unknown")}</td></tr>`;
     }
+  };
+
+  const getOrgRepresentativeApplicant = (item = {}) => {
+    const applicant = item.applicant && typeof item.applicant === "object" ? item.applicant : {};
+    const requester = item.requester && typeof item.requester === "object" ? item.requester : {};
+    const email = (item.applicantEmail || applicant.email || requester.email || "").toString().trim().toLowerCase();
+    const academic = deriveAcademicProfile(
+      {
+        ...requester,
+        ...applicant,
+        studentId: applicant.studentId || requester.studentId || item.studentId || "",
+        faculty: applicant.faculty || requester.faculty || item.faculty || "",
+        year: applicant.year || requester.year || item.year || ""
+      },
+      email
+    );
+    const displayName = (applicant.displayName || requester.displayName || item.applicantName || email || "-").toString();
+    return {
+      email,
+      displayName,
+      phone: (applicant.phone || requester.phone || "").toString(),
+      lineId: (applicant.lineId || requester.lineId || "").toString(),
+      studentId: getMeaningfulProfileValue(applicant.studentId, requester.studentId, item.studentId, academic.studentId),
+      faculty: getMeaningfulProfileValue(applicant.faculty, requester.faculty, item.faculty, academic.faculty),
+      year: getMeaningfulProfileValue(applicant.year, requester.year, item.year, academic.year)
+    };
+  };
+
+  const renderOrgRepresentativePending = () => {
+    if (!orgRepresentativePendingBodyEl) return;
+    currentOrgRepresentativePending = currentOrgRepresentativeApplications
+      .filter((item) => normalizeApplicationStatus(item.status) === "pending");
+
+    if (!currentOrgRepresentativePending.length) {
+      orgRepresentativePendingBodyEl.innerHTML = '<tr><td colspan="5">ไม่มีคำขอตัวแทนองค์กรที่รออนุมัติ</td></tr>';
+      setMessage(orgRepresentativeMessageEl, "", "#6b7280");
+      syncOrgRepresentativePanelCaption();
+      return;
+    }
+
+    orgRepresentativePendingBodyEl.innerHTML = currentOrgRepresentativePending.map((item) => {
+      const id = (item.id || "").toString();
+      const applicant = getOrgRepresentativeApplicant(item);
+      const orgType = (item.organizationType || "-").toString();
+      const orgName = (item.organizationName || "-").toString();
+      const role = (item.representativeRole || "-").toString();
+      const evidence = (item.evidenceNote || "-").toString();
+      return `
+        <tr class="org-representative-row" data-org-representative-id="${toSafeText(id)}">
+          <td>
+            <div>${toSafeText(applicant.displayName)}</div>
+            <div class="section-text-sm">${toSafeText(applicant.email || "-")}</div>
+            <div class="section-text-sm">${toSafeText([applicant.phone, applicant.lineId].filter(Boolean).join(" / ") || "")}</div>
+          </td>
+          <td>
+            <div>${toSafeText(orgName)}</div>
+            <div class="section-text-sm">${toSafeText(orgType)}</div>
+          </td>
+          <td>${toSafeText(role)}</td>
+          <td>${toSafeText(evidence)}</td>
+          <td>
+            <select
+              class="staff-status-select is-pending org-representative-action-select"
+              data-role="org-representative-status-select"
+              data-org-representative-id="${toSafeText(id)}"
+              aria-label="จัดการคำขอตัวแทนองค์กร"
+            >
+              <option value="pending" selected>รออนุมัติ</option>
+              <option value="approved">อนุมัติแล้ว</option>
+              <option value="rejected">ไม่อนุมัติ</option>
+            </select>
+          </td>
+        </tr>
+      `;
+    }).join("");
+    syncOrgRepresentativePanelCaption();
+  };
+
+  const renderOrgRepresentativeHistory = () => {
+    if (!orgRepresentativeHistoryBodyEl || !orgRepresentativeHistoryCaptionEl) return;
+    currentOrgRepresentativeApproved = currentOrgRepresentativeApplications
+      .filter((item) => normalizeApplicationStatus(item.status) === "approved");
+    orgRepresentativeHistoryCaptionEl.textContent = `แสดงผล ${currentOrgRepresentativeApproved.length} รายการ`;
+
+    if (!currentOrgRepresentativeApproved.length) {
+      orgRepresentativeHistoryBodyEl.innerHTML = '<tr><td colspan="5">ยังไม่มีตัวแทนองค์กรที่อนุมัติแล้ว</td></tr>';
+      syncOrgRepresentativePanelCaption();
+      return;
+    }
+
+    orgRepresentativeHistoryBodyEl.innerHTML = currentOrgRepresentativeApproved.map((item) => {
+      const applicant = getOrgRepresentativeApplicant(item);
+      const orgType = (item.organizationType || "-").toString();
+      const orgName = (item.organizationName || "-").toString();
+      const role = (item.representativeRole || "-").toString();
+      const id = (item.id || "").toString();
+      return `
+        <tr class="org-representative-row" data-org-representative-id="${toSafeText(id)}">
+          <td>
+            <div>${toSafeText(applicant.displayName)}</div>
+            <div class="section-text-sm">${toSafeText(applicant.email || "-")}</div>
+          </td>
+          <td>
+            <div>${toSafeText(orgName)}</div>
+            <div class="section-text-sm">${toSafeText(orgType)}</div>
+          </td>
+          <td>${toSafeText(role)}</td>
+          <td>${toSafeText(formatDateTime(item.reviewedAt || item.updatedAt || item.createdAt))}</td>
+          <td>
+            <select
+              class="staff-status-select is-approved org-representative-history-action-select"
+              data-role="org-representative-status-select"
+              data-org-representative-id="${toSafeText(id)}"
+              aria-label="จัดการสิทธิ์ตัวแทนองค์กร"
+            >
+              <option value="approved" selected>อนุมัติแล้ว</option>
+              <option value="pending">ยกเลิกอนุมัติ</option>
+              <option value="rejected">ลบสิทธิ์/ไม่อนุมัติ</option>
+            </select>
+          </td>
+        </tr>
+      `;
+    }).join("");
+    syncOrgRepresentativePanelCaption();
+  };
+
+  const renderOrgRepresentativeApplications = () => {
+    renderOrgRepresentativePending();
+    renderOrgRepresentativeHistory();
+  };
+
+  const openOrgRepresentativeDetailModal = (item) => {
+    if (!approvalDetailModalEl || !approvalDetailBodyEl || !item) return;
+    const detailTitleEl = document.getElementById("staffApprovalDetailTitle");
+    if (detailTitleEl) {
+      detailTitleEl.textContent = "รายละเอียดตัวแทนองค์กร";
+    }
+    const applicant = getOrgRepresentativeApplicant(item);
+    const applicationId = (item.id || "").toString();
+    const applicantUid = (item.applicantUid || item.applicant?.uid || item.requester?.uid || "").toString().trim();
+    const applicantEmail = (applicant.email || item.applicantEmail || "").toString().trim().toLowerCase();
+    const requestKey = `org:${applicationId}:${Date.now()}`;
+    currentApprovalDetailRequestKey = requestKey;
+    const status = normalizeApplicationStatus(item.status);
+    const statusText = status === "approved" ? "อนุมัติแล้ว" : status === "rejected" ? "ไม่อนุมัติ" : "รออนุมัติ";
+    const statusClass = status === "approved" ? "badge-approved" : status === "rejected" ? "badge-rejected" : "badge-pending";
+    approvalDetailBodyEl.setAttribute("data-application-id", applicationId);
+    approvalDetailBodyEl.setAttribute("data-request-key", requestKey);
+    approvalDetailBodyEl.innerHTML = `
+      <div class="staff-approval-detail-layout">
+        <div class="modal-section">
+          <div class="modal-section-title">ข้อมูลผู้สมัคร</div>
+          <div class="modal-section-grid">
+            <div>
+              <div class="modal-item-label">ชื่อผู้สมัคร</div>
+              <div class="modal-item-value">${toSafeText(applicant.displayName || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">อีเมล</div>
+              <div class="modal-item-value">${toSafeText(applicant.email || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">รหัสนิสิต</div>
+              <div id="orgRepresentativeDetailStudentId" class="modal-item-value">${toSafeText(applicant.studentId || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">คณะ</div>
+              <div id="orgRepresentativeDetailFaculty" class="modal-item-value">${toSafeText(applicant.faculty || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">ชั้นปี</div>
+              <div id="orgRepresentativeDetailYear" class="modal-item-value">${toSafeText(applicant.year || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">เบอร์โทร</div>
+              <div class="modal-item-value">${toSafeText(applicant.phone || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">Line ID</div>
+              <div class="modal-item-value">${toSafeText(applicant.lineId || "-")}</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <div class="modal-section-title">ข้อมูลองค์กร</div>
+          <div class="modal-section-grid">
+            <div>
+              <div class="modal-item-label">ฝ่าย / ชมรม</div>
+              <div class="modal-item-value">${toSafeText(item.organizationName || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">ประเภทองค์กร</div>
+              <div class="modal-item-value">${toSafeText(item.organizationType || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">ตำแหน่งในองค์กร</div>
+              <div class="modal-item-value">${toSafeText(item.representativeRole || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">สถานะ</div>
+              <div class="modal-item-value"><span class="badge ${statusClass}">${toSafeText(statusText)}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <div class="modal-section-title">ข้อมูลยืนยันและการพิจารณา</div>
+          <div class="modal-section-grid">
+            <div class="staff-approval-note-block">
+              <div class="modal-item-label">ข้อมูลยืนยันเพิ่มเติม</div>
+              <div class="modal-item-value">${toSafeText(item.evidenceNote || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">เวลายื่นคำขอ</div>
+              <div class="modal-item-value">${toSafeText(formatDateTime(item.createdAt))}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">ผู้พิจารณา</div>
+              <div class="modal-item-value">${toSafeText(item.reviewedByEmail || "-")}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">เวลาพิจารณา</div>
+              <div class="modal-item-value">${toSafeText(formatDateTime(item.reviewedAt || item.updatedAt))}</div>
+            </div>
+            <div class="staff-approval-note-block">
+              <div class="modal-item-label">หมายเหตุ</div>
+              <div class="modal-item-value">${toSafeText(item.reviewedNote || "-")}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    const fillAcademicFields = (profile) => {
+      if (currentApprovalDetailRequestKey !== requestKey) return;
+      const studentIdEl = document.getElementById("orgRepresentativeDetailStudentId");
+      const facultyEl = document.getElementById("orgRepresentativeDetailFaculty");
+      const yearEl = document.getElementById("orgRepresentativeDetailYear");
+      const effectiveEmail = ((profile?.email || applicantEmail || "").toString().trim().toLowerCase());
+      const fallback = deriveAcademicProfile(profile || {}, effectiveEmail);
+      const studentId = getMeaningfulProfileValue(profile?.studentId, applicant.studentId, fallback.studentId) || "-";
+      const faculty = getMeaningfulProfileValue(profile?.faculty, applicant.faculty, fallback.faculty) || "-";
+      const year = getMeaningfulProfileValue(profile?.year, applicant.year, fallback.year) || "-";
+      if (studentIdEl) studentIdEl.textContent = studentId;
+      if (facultyEl) facultyEl.textContent = faculty;
+      if (yearEl) yearEl.textContent = year;
+    };
+
+    const localProfiles = readLoginProfiles();
+    fillAcademicFields(localProfiles[applicantEmail] || {});
+
+    if (firestore?.db && firestore?.doc && firestore?.getDoc) {
+      const fetchByUid = applicantUid
+        ? firestore
+          .getDoc(firestore.doc(firestore.db, COLLECTION_USER_PROFILES, applicantUid))
+          .then((snap) => (snap?.exists?.() ? (snap.data() || {}) : null))
+          .catch(() => null)
+        : Promise.resolve(null);
+
+      fetchByUid.then((profile) => {
+        if (profile && Object.keys(profile).length) fillAcademicFields(profile);
+      });
+    }
+
+    if (typeof openDialog === "function") {
+      openDialog(approvalDetailModalEl, { focusSelector: "#staffApprovalDetailClose" });
+      return;
+    }
+    approvalDetailModalEl.classList.add("show");
+    approvalDetailModalEl.setAttribute("aria-hidden", "false");
   };
 
   const refreshLocalStaffCache = (email, profile) => {
@@ -1759,7 +2237,7 @@ function initStaffAccessPages() {
         }
       },
       (error) => {
-        console.error("staff position catalog listener failed - app.staff-access.js:1278", error);
+        console.error("staff position catalog listener failed - app.staff-access.js:2240", error);
         currentPositionCatalog = DEFAULT_POSITION_OPTIONS.map((item) => ({
           id: slugifyPosition(item.name),
           name: item.name,
@@ -1810,14 +2288,16 @@ function initStaffAccessPages() {
       q,
       (snapshot) => {
         currentMyApplications = sortByTimestampDesc(
-          (snapshot?.docs || []).map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() || {}) })),
+          (snapshot?.docs || [])
+            .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() || {}) }))
+            .filter(isStaffApplicationRecord),
           "createdAt"
         );
         renderMyApplications();
         scheduleApprovalUiSync();
       },
       (error) => {
-        console.error("staff applications listener failed - app.staff-access.js:1334", error);
+        console.error("staff applications listener failed - app.staff-access.js:2300", error);
         const msg = buildListenerErrorText("ไม่สามารถโหลดคำขอสมัครได้ในขณะนี้", error);
         myTableBodyEl.innerHTML = `<tr><td colspan="4">${toSafeText(msg)}</td></tr>`;
         setMessage(appMessageEl, msg, "#b91c1c");
@@ -1847,6 +2327,7 @@ function initStaffAccessPages() {
         currentPendingApplications = sortByTimestampDesc(
           (snapshot?.docs || [])
             .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() || {}) }))
+            .filter(isStaffApplicationRecord)
             .filter((item) => normalizeApplicationStatus(item.status) === "pending"),
           "createdAt"
         );
@@ -1854,7 +2335,7 @@ function initStaffAccessPages() {
         scheduleApprovalUiSync();
       },
       (error) => {
-        console.error("staff pending listener failed - app.staff-access.js:1371", error);
+        console.error("staff pending listener failed - app.staff-access.js:2338", error);
         const code = (error?.code || "").toString();
         const msg = code === "unauthenticated"
           ? "กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้"
@@ -1887,6 +2368,7 @@ function initStaffAccessPages() {
         currentApprovedHistory = sortByTimestampDesc(
           (snapshot?.docs || [])
             .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() || {}) }))
+            .filter(isStaffApplicationRecord)
             .filter((item) => normalizeApplicationStatus(item.status) === "approved"),
           "updatedAt"
         );
@@ -1894,12 +2376,50 @@ function initStaffAccessPages() {
         scheduleApprovalUiSync();
       },
       (error) => {
-        console.error("staff approved history listener failed - app.staff-access.js:1411", error);
+        console.error("staff approved history listener failed - app.staff-access.js:2379", error);
         const code = (error?.code || "").toString();
         const msg = code === "unauthenticated"
           ? "กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้"
           : buildListenerErrorText("ไม่สามารถโหลดรายชื่อผู้ปฏิบัติงานตอนนี้ได้ในขณะนี้", error);
         approvalHistoryBodyEl.innerHTML = `<tr><td colspan="3">${toSafeText(msg)}</td></tr>`;
+      }
+    );
+  };
+
+  const startOrgRepresentativeApplicationsListener = () => {
+    if (!orgRepresentativeApprovalSectionEl) return;
+    if (!resolveStore()) {
+      scheduleDeferredBootstrap();
+      return;
+    }
+
+    if (typeof unsubscribeOrgRepresentativeApplications === "function") {
+      unsubscribeOrgRepresentativeApplications();
+      unsubscribeOrgRepresentativeApplications = null;
+    }
+
+    const q = firestore.query(
+      firestore.collection(firestore.db, COLLECTION_ORG_REPRESENTATIVES)
+    );
+
+    unsubscribeOrgRepresentativeApplications = firestore.onSnapshot(
+      q,
+      (snapshot) => {
+        currentOrgRepresentativeApplications = sortByTimestampDesc(
+          (snapshot?.docs || [])
+            .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() || {}) }))
+            .filter((item) => (item.requestType || "").toString().trim() === "organization_representative"),
+          "updatedAt"
+        );
+        renderOrgRepresentativeApplications();
+      },
+      (error) => {
+        console.error("organization representative listener failed - app.staff-access.js:2417", error);
+        const msg = buildListenerErrorText("ไม่สามารถโหลดคำขอตัวแทนองค์กรได้ในขณะนี้", error);
+        if (orgRepresentativePendingBodyEl) {
+          orgRepresentativePendingBodyEl.innerHTML = `<tr><td colspan="5">${toSafeText(msg)}</td></tr>`;
+        }
+        setMessage(orgRepresentativeMessageEl, msg, "#b91c1c");
       }
     );
   };
@@ -1977,7 +2497,7 @@ function initStaffAccessPages() {
         "#047857"
       );
     } catch (error) {
-      console.error("revoke approved application failed - app.staff-access.js:1494", error);
+      console.error("revoke approved application failed - app.staff-access.js:2500", error);
       const code = (error?.code || "unknown").toString();
       if (code === "permission-denied") {
         setMessage(approvalMessageEl, "ไม่มีสิทธิ์ยกเลิกอนุมัติ (permission-denied)", "#b91c1c");
@@ -2091,7 +2611,7 @@ function initStaffAccessPages() {
       setMessage(approvalMessageEl, "ปรับตำแหน่งเรียบร้อยแล้ว", "#047857");
       return true;
     } catch (error) {
-      console.error("update approved position failed - app.staff-access.js:1605", error);
+      console.error("update approved position failed - app.staff-access.js:2614", error);
       const code = (error?.code || "unknown").toString();
       if (error?.message === "position-code-segment-unresolved") {
         setMessage(approvalMessageEl, "ไม่สามารถสร้างรหัสตำแหน่งได้: ตรวจชื่อตำแหน่งให้ตรงหมวดที่กำหนด", "#b91c1c");
@@ -2132,7 +2652,9 @@ function initStaffAccessPages() {
   };
 
   const hasPendingApplication = () => {
-    return currentMyApplications.some((item) => (item.status || "pending") === "pending");
+    return currentMyApplications
+      .filter(isStaffApplicationRecord)
+      .some((item) => (item.status || "pending") === "pending");
   };
 
   const prefillApplicationForm = () => {
@@ -2140,6 +2662,7 @@ function initStaffAccessPages() {
   };
 
   const submitStaffApplication = async () => {
+    window.__sgcuStaffApplicationFlowActive = true;
     if (!resolveStore()) {
       setMessage(appMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน กรุณาลองใหม่อีกครั้ง", "#b91c1c");
       return;
@@ -2183,6 +2706,7 @@ function initStaffAccessPages() {
     const requestedLevelCodeZZ = profileType === "affairs" ? "04" : normalizeCode2(appLevelEl?.value || "");
 
     const payload = {
+      requestType: "staff_application",
       applicantUid: (user.uid || "").toString(),
       applicantEmail,
       applicantName,
@@ -2213,7 +2737,7 @@ function initStaffAccessPages() {
         setApplicationAvailabilityByAuth();
       }, 1800);
     } catch (error) {
-      console.error("submit staff application failed - app.staff-access.js:1712", error);
+      console.error("submit staff application failed - app.staff-access.js:2740", error);
       const debugInfo = `email=${applicantEmail || "-"} project=${firestore?.db?.app?.options?.projectId || "-"}`;
       const msg = buildActionErrorText("ส่งคำขอไม่สำเร็จ", error, debugInfo);
       setMessage(appMessageEl, msg, "#b91c1c");
@@ -2289,7 +2813,7 @@ function initStaffAccessPages() {
       renderPositionAllowedPageOptions([], "");
       setMessage(positionManageMessageEl, "เพิ่มตำแหน่งเรียบร้อยแล้ว", "#047857");
     } catch (error) {
-      console.error("add position failed - app.staff-access.js:1771", error);
+      console.error("add position failed - app.staff-access.js:2816", error);
       setMessage(positionManageMessageEl, "เพิ่มตำแหน่งไม่สำเร็จ", "#b91c1c");
     }
   };
@@ -2316,7 +2840,7 @@ function initStaffAccessPages() {
       await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_POSITIONS, safeId));
       setMessage(positionManageMessageEl, "ลบตำแหน่งเรียบร้อยแล้ว", "#047857");
     } catch (error) {
-      console.error("remove position failed - app.staff-access.js:1798", error);
+      console.error("remove position failed - app.staff-access.js:2843", error);
       setMessage(positionManageMessageEl, "ลบตำแหน่งไม่สำเร็จ", "#b91c1c");
     }
   };
@@ -2390,8 +2914,95 @@ function initStaffAccessPages() {
       setMessage(positionManageMessageEl, "อัปเดตตำแหน่งเรียบร้อยแล้ว", "#047857");
       return true;
     } catch (error) {
-      console.error("update position failed - app.staff-access.js", error);
+      console.error("update position failed - app.staff-access.js:2917", error);
       setMessage(positionManageMessageEl, "อัปเดตตำแหน่งไม่สำเร็จ", "#b91c1c");
+      return false;
+    }
+  };
+
+  const updateOrgRepresentativeStatus = async (applicationId, action) => {
+    if (!resolveStore()) {
+      setMessage(orgRepresentativeMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
+      return false;
+    }
+    if (!isSuperStaff()) {
+      setMessage(orgRepresentativeMessageEl, "หน้านี้สำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
+      return false;
+    }
+
+    const id = (applicationId || "").toString();
+    if (!id) return false;
+
+    const rowEl = [
+      ...(orgRepresentativePendingBodyEl ? Array.from(orgRepresentativePendingBodyEl.querySelectorAll("tr")) : []),
+      ...(orgRepresentativeHistoryBodyEl ? Array.from(orgRepresentativeHistoryBodyEl.querySelectorAll("tr")) : [])
+    ].find((tr) => tr.getAttribute("data-org-representative-id") === id) || null;
+    const target = currentOrgRepresentativeApplications.find((item) => (item.id || "").toString() === id);
+    if (!rowEl || !target) return false;
+
+    const currentUser = readCurrentUser();
+    const reviewerUid = (currentUser?.uid || "").toString();
+    const reviewerEmail = (currentUser?.email || "").toString().trim().toLowerCase();
+    const currentStatus = normalizeApplicationStatus(target.status);
+    const nextStatus = action === "approve" ? "approved" : action === "reject" ? "rejected" : "pending";
+    let reviewedNote = nextStatus === "approved" ? "อนุมัติเป็นตัวแทนองค์กร" : "";
+
+    if (currentStatus === "approved" && nextStatus === "pending") {
+      const applicant = getOrgRepresentativeApplicant(target);
+      const ok = window.confirm(`ยืนยันยกเลิกอนุมัติตัวแทนองค์กรของ "${applicant.displayName || applicant.email || "-"}" ?`);
+      if (!ok) return false;
+      reviewedNote = "ยกเลิกอนุมัติโดยหัวหน้าสตาฟ";
+    } else if (nextStatus === "rejected") {
+      const reason = await askStaffRejectionReason();
+      if (reason === null) {
+        setMessage(orgRepresentativeMessageEl, "ยกเลิกการไม่อนุมัติ", "#6b7280");
+        return false;
+      }
+      reviewedNote = reason ? `ไม่อนุมัติ: ${reason}` : "ไม่อนุมัติคำขอ";
+    }
+
+    const rowControls = rowEl.querySelectorAll("button, select, input");
+    rowControls.forEach((control) => {
+      control.disabled = true;
+    });
+
+    try {
+      await firestore.updateDoc(
+        firestore.doc(firestore.db, COLLECTION_ORG_REPRESENTATIVES, id),
+        {
+          status: nextStatus,
+          reviewedByUid: reviewerUid,
+          reviewedByEmail: reviewerEmail,
+          reviewedNote,
+          reviewedAt: nextStatus === "approved" ? firestore.serverTimestamp() : (target.reviewedAt || null),
+          revokedAt: nextStatus === "pending" ? firestore.serverTimestamp() : (target.revokedAt || null),
+          updatedAt: firestore.serverTimestamp()
+        }
+      );
+      const successText = nextStatus === "approved"
+        ? "อนุมัติคำขอตัวแทนองค์กรเรียบร้อยแล้ว"
+        : nextStatus === "pending"
+          ? "ยกเลิกอนุมัติและคืนเป็นรออนุมัติเรียบร้อยแล้ว"
+          : "ไม่อนุมัติคำขอตัวแทนองค์กรเรียบร้อยแล้ว";
+      setMessage(
+        orgRepresentativeMessageEl,
+        successText,
+        "#047857"
+      );
+      return true;
+    } catch (error) {
+      console.error("update organization representative status failed - app.staff-access.js:2994", error);
+      const code = (error?.code || "unknown").toString();
+      if (code === "permission-denied") {
+        setMessage(orgRepresentativeMessageEl, "ไม่มีสิทธิ์อัปเดตคำขอตัวแทนองค์กร (permission-denied)", "#b91c1c");
+      } else if (code === "unauthenticated") {
+        setMessage(orgRepresentativeMessageEl, "เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่", "#b91c1c");
+      } else {
+        setMessage(orgRepresentativeMessageEl, "อัปเดตคำขอตัวแทนองค์กรไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
+      }
+      rowControls.forEach((control) => {
+        control.disabled = false;
+      });
       return false;
     }
   };
@@ -2399,20 +3010,20 @@ function initStaffAccessPages() {
   const updateApplicationStatus = async (applicationId, action) => {
     if (!resolveStore()) {
       setMessage(approvalMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
-      return;
+      return false;
     }
     if (!isSuperStaff()) {
       setMessage(approvalMessageEl, "หน้านี้สำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
-      return;
+      return false;
     }
 
     const id = (applicationId || "").toString();
-    if (!id) return;
+    if (!id) return false;
 
     const rowEl = approvalBodyEl
       ? Array.from(approvalBodyEl.querySelectorAll("tr")).find((tr) => tr.getAttribute("data-application-id") === id)
       : null;
-    if (!rowEl) return;
+    if (!rowEl) return false;
 
     const positionInput = rowEl.querySelector(".staff-approval-position-input");
     const approvedPosition = normalizePositionText(positionInput?.value || "");
@@ -2423,20 +3034,25 @@ function initStaffAccessPages() {
 
     if (action === "approve" && !approvedPosition) {
       setMessage(approvalMessageEl, "กรุณาระบุตำแหน่งก่อนอนุมัติ", "#b91c1c");
-      return;
+      return false;
     }
 
     let reviewedNote = "";
     let approvedPositionCode = "";
     if (action === "reject") {
-      reviewedNote = (window.prompt("ระบุเหตุผลที่ไม่อนุมัติ (ไม่บังคับ)", "") || "").toString().trim();
+      const reason = await askStaffRejectionReason();
+      if (reason === null) {
+        setMessage(approvalMessageEl, "ยกเลิกการไม่อนุมัติ", "#6b7280");
+        return false;
+      }
+      reviewedNote = reason ? `ไม่อนุมัติ: ${reason}` : "ไม่อนุมัติคำขอ";
     } else {
       reviewedNote = `อนุมัติเป็น ${approvedPosition}`;
     }
 
-    const rowButtons = rowEl.querySelectorAll("button");
-    rowButtons.forEach((btn) => {
-      btn.disabled = true;
+    const rowControls = rowEl.querySelectorAll("button, select, input");
+    rowControls.forEach((control) => {
+      control.disabled = true;
     });
 
     try {
@@ -2562,8 +3178,9 @@ function initStaffAccessPages() {
         action === "approve" ? "อนุมัติคำขอเรียบร้อยแล้ว" : "ไม่อนุมัติคำขอเรียบร้อยแล้ว",
         "#047857"
       );
+      return true;
     } catch (error) {
-      console.error("update staff application status failed - app.staff-access.js:1969", error);
+      console.error("update staff application status failed - app.staff-access.js:3183", error);
       const code = (error?.code || "unknown").toString();
       if (error?.message === "position-code-segment-unresolved") {
         setMessage(approvalMessageEl, "ไม่สามารถสร้างรหัสตำแหน่งได้: ตรวจชื่อตำแหน่งให้ตรงหมวดที่กำหนด", "#b91c1c");
@@ -2574,9 +3191,10 @@ function initStaffAccessPages() {
       } else {
         setMessage(approvalMessageEl, "อัปเดตคำขอไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
       }
-      rowButtons.forEach((btn) => {
-        btn.disabled = false;
+      rowControls.forEach((control) => {
+        control.disabled = false;
       });
+      return false;
     }
   };
 
@@ -2604,6 +3222,7 @@ function initStaffAccessPages() {
     startMyApplicationsListener();
     startPendingApplicationsListener();
     startApprovedHistoryListener();
+    startOrgRepresentativeApplicationsListener();
     scheduleApprovalUiSync();
   };
 
@@ -2667,19 +3286,29 @@ function initStaffAccessPages() {
       const value = (select.value || "").toString();
       if (!id) return;
 
-      select.classList.remove("is-pending", "is-approved", "is-rejected");
-      if (value === "approved") select.classList.add("is-approved");
-      else if (value === "rejected") select.classList.add("is-rejected");
-      else select.classList.add("is-pending");
-
       if (value === "pending") {
+        select.classList.remove("is-approved", "is-rejected");
+        select.classList.add("is-pending");
         setMessage(approvalMessageEl, "สถานะยังเป็นรออนุมัติ", "#6b7280");
         return;
       }
 
       const action = value === "approved" ? "approve" : value === "rejected" ? "reject" : "";
       if (!action) return;
-      void updateApplicationStatus(id, action);
+      select.value = "pending";
+      select.classList.remove("is-approved", "is-rejected");
+      select.classList.add("is-pending");
+      void updateApplicationStatus(id, action).then((ok) => {
+        select.classList.remove("is-approved", "is-rejected");
+        if (ok) {
+          select.value = value;
+          if (value === "approved") select.classList.add("is-approved");
+          else if (value === "rejected") select.classList.add("is-rejected");
+          return;
+        }
+        select.value = "pending";
+        select.classList.add("is-pending");
+      });
     });
   }
 
@@ -2688,6 +3317,113 @@ function initStaffAccessPages() {
   }
   if (approvalShowHistoryBtnEl) {
     approvalShowHistoryBtnEl.addEventListener("click", () => setApprovalView("history"));
+  }
+
+  if (staffApprovalTypeStaffBtnEl) {
+    staffApprovalTypeStaffBtnEl.addEventListener("click", () => setApprovalType("staff"));
+  }
+  if (staffApprovalTypeOrgBtnEl) {
+    staffApprovalTypeOrgBtnEl.addEventListener("click", () => setApprovalType("org"));
+  }
+  if (orgRepresentativeShowPendingBtnEl) {
+    orgRepresentativeShowPendingBtnEl.addEventListener("click", () => setOrgRepresentativeView("pending"));
+  }
+  if (orgRepresentativeShowHistoryBtnEl) {
+    orgRepresentativeShowHistoryBtnEl.addEventListener("click", () => setOrgRepresentativeView("history"));
+  }
+
+  if (orgRepresentativePendingBodyEl) {
+    orgRepresentativePendingBodyEl.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("select, button, input, textarea, a")) return;
+      const rowEl = target.closest("tr[data-org-representative-id]");
+      if (!rowEl) return;
+      const id = (rowEl.getAttribute("data-org-representative-id") || "").toString();
+      const item = currentOrgRepresentativeApplications.find((entry) => (entry.id || "").toString() === id);
+      if (item) openOrgRepresentativeDetailModal(item);
+    });
+
+    orgRepresentativePendingBodyEl.addEventListener("change", (event) => {
+      const select = event.target;
+      if (!(select instanceof HTMLSelectElement)) return;
+      if (select.dataset.role !== "org-representative-status-select") return;
+
+      const id = (select.dataset.orgRepresentativeId || "").toString();
+      const value = (select.value || "").toString();
+      if (!id) return;
+
+      if (value === "pending") {
+        select.classList.remove("is-approved", "is-rejected");
+        select.classList.add("is-pending");
+        setMessage(orgRepresentativeMessageEl, "สถานะยังเป็นรออนุมัติ", "#6b7280");
+        return;
+      }
+
+      const action = value === "approved" ? "approve" : value === "rejected" ? "reject" : "";
+      if (!action) return;
+      select.value = "pending";
+      select.classList.remove("is-approved", "is-rejected");
+      select.classList.add("is-pending");
+      void updateOrgRepresentativeStatus(id, action).then((ok) => {
+        select.classList.remove("is-approved", "is-rejected");
+        if (ok) {
+          select.value = value;
+          if (value === "approved") select.classList.add("is-approved");
+          else if (value === "rejected") select.classList.add("is-rejected");
+          return;
+        }
+        select.value = "pending";
+        select.classList.add("is-pending");
+      });
+    });
+  }
+
+  if (orgRepresentativeHistoryBodyEl) {
+    orgRepresentativeHistoryBodyEl.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("select, button, input, textarea, a")) return;
+      const rowEl = target.closest("tr[data-org-representative-id]");
+      if (!rowEl) return;
+      const id = (rowEl.getAttribute("data-org-representative-id") || "").toString();
+      const item = currentOrgRepresentativeApplications.find((entry) => (entry.id || "").toString() === id);
+      if (item) openOrgRepresentativeDetailModal(item);
+    });
+
+    orgRepresentativeHistoryBodyEl.addEventListener("change", (event) => {
+      const select = event.target;
+      if (!(select instanceof HTMLSelectElement)) return;
+      if (select.dataset.role !== "org-representative-status-select") return;
+
+      const id = (select.dataset.orgRepresentativeId || "").toString();
+      const value = (select.value || "").toString();
+      if (!id) return;
+
+      if (value === "approved") {
+        select.classList.remove("is-pending", "is-rejected");
+        select.classList.add("is-approved");
+        setMessage(orgRepresentativeMessageEl, "สถานะยังเป็นอนุมัติแล้ว", "#6b7280");
+        return;
+      }
+
+      const action = value === "pending" ? "pending" : value === "rejected" ? "reject" : "";
+      if (!action) return;
+      select.value = "approved";
+      select.classList.remove("is-pending", "is-rejected");
+      select.classList.add("is-approved");
+      void updateOrgRepresentativeStatus(id, action).then((ok) => {
+        select.classList.remove("is-pending", "is-rejected");
+        if (ok) {
+          select.value = value;
+          if (value === "pending") select.classList.add("is-pending");
+          else if (value === "rejected") select.classList.add("is-rejected");
+          return;
+        }
+        select.value = "approved";
+        select.classList.add("is-approved");
+      });
+    });
   }
 
   if (approvalHistoryBodyEl) {
@@ -2920,7 +3656,10 @@ function initStaffAccessPages() {
   startMyApplicationsListener();
   startPendingApplicationsListener();
   startApprovedHistoryListener();
+  startOrgRepresentativeApplicationsListener();
   setApprovalView("pending");
+  setOrgRepresentativeView("pending");
+  setApprovalType("staff");
 
   window.addEventListener("beforeunload", () => {
     if (deferredBootstrapTimer) {
@@ -2935,6 +3674,7 @@ function initStaffAccessPages() {
       unsubscribeMyApplications,
       unsubscribePendingApplications,
       unsubscribeApprovalHistory,
+      unsubscribeOrgRepresentativeApplications,
       unsubscribePositionCatalog
     ].forEach((unsubscribe) => {
       if (typeof unsubscribe === "function") {
@@ -2948,6 +3688,7 @@ function initStaffAccessPages() {
     unsubscribeMyApplications = null;
     unsubscribePendingApplications = null;
     unsubscribeApprovalHistory = null;
+    unsubscribeOrgRepresentativeApplications = null;
     unsubscribePositionCatalog = null;
   });
 }

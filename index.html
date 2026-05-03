@@ -104,10 +104,11 @@
             <a href="#" data-page="financial-docs" class="nav-pill" data-visible="public">เอกสารการเงิน</a>
 
             <div class="nav-group">
-              <button class="nav-group-toggle" type="button" aria-expanded="false">การจอง</button>
+              <button class="nav-group-toggle" type="button" aria-expanded="false">คำขอ</button>
               <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="borrow-assets" data-visible="protected">ยืม-คืนพัสดุ</a>
                 <a href="#" data-page="meeting-room-booking" data-visible="protected">จองห้องประชุม</a>
+                <a href="#" data-page="budget-approval-request" data-visible="protected">ขออนุมัติงบประมาณ</a>
               </div>
             </div>
 
@@ -122,7 +123,8 @@
               <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการคำขอยืม-คืนพัสดุ</a>
                 <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม</a>
-                <a href="#" data-page="staff-approval" data-visible="protected">อนุมัติสมาชิกสตาฟ</a>
+                <a href="#" data-page="budget-approval-request" data-visible="protected">ขออนุมัติงบประมาณ</a>
+                <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
               </div>
             </div>
 
@@ -169,10 +171,11 @@
           </details>
 
           <details class="mobile-menu-group">
-            <summary>การจองและพัสดุ</summary>
+            <summary>คำขอ</summary>
             <div class="mobile-menu-links">
               <a href="#" data-page="borrow-assets" data-visible="protected">ยืม-คืนพัสดุ</a>
               <a href="#" data-page="meeting-room-booking" data-visible="protected">จองห้องประชุม</a>
+              <a href="#" data-page="budget-approval-request" data-visible="protected">ขออนุมัติงบประมาณ</a>
             </div>
           </details>
 
@@ -183,7 +186,7 @@
               <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ (Staff)</a>
               <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการยืม-คืนพัสดุ (Staff)</a>
               <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม (Staff)</a>
-              <a href="#" data-page="staff-approval" data-visible="protected">อนุมัติสมาชิกสตาฟ</a>
+              <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
             </div>
           </details>
 
@@ -976,7 +979,17 @@
               <form id="staffApplicationForm" class="staff-access-form">
                 <div id="staffApplicationProfileHint" class="section-text-sm"></div>
 
-                <div id="staffApplicationStudentFields" class="borrow-form-row is-3">
+                <div id="staffApplicationStudentFields" class="staff-application-position-grid">
+                  <div class="borrow-form-field staff-application-result-field">
+                    <label class="login-label" for="staffApplicationResolvedPosition">ตำแหน่งที่จะส่งคำขอ</label>
+                    <input
+                      id="staffApplicationResolvedPosition"
+                      class="login-input staff-position-result-input"
+                      type="text"
+                      readonly
+                      placeholder="เลือกหมวดงานและระดับตำแหน่ง"
+                    />
+                  </div>
                   <div class="borrow-form-field">
                     <label id="staffApplicationDivisionLabel" class="login-label" for="staffApplicationDivision">ฝ่าย / หมวดงาน (YY)</label>
                     <select id="staffApplicationDivision" class="login-input">
@@ -988,10 +1001,6 @@
                     <select id="staffApplicationLevel" class="login-input">
                       <option value="" selected disabled>เลือกระดับตำแหน่ง</option>
                     </select>
-                  </div>
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="staffApplicationResolvedPosition">ตำแหน่งที่ระบบจะส่งคำขอ</label>
-                    <input id="staffApplicationResolvedPosition" class="login-input" type="text" readonly />
                   </div>
                 </div>
 
@@ -1044,10 +1053,10 @@
     <script src="js/features/project/app.pie.js" defer></script>
     <script src="js/features/project/app.sorting-auth.js?v=20260430-6" defer></script>
     <script src="js/features/project/app.calendar.js" defer></script>
-    <script src="js/features/org/app.org.js?v=20260501-10" defer></script>
+    <script src="js/features/org/app.org.js?v=20260503-1" defer></script>
     <script src="js/motion/app.motion.js" defer></script>
     <script>
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260501-5";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260503-1";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",

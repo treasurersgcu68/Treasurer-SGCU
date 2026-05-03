@@ -385,6 +385,98 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 18px;
 }
 
+.budget-representative-panel {
+  margin-bottom: 18px;
+}
+
+.budget-representative-panel .panel-header {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.budget-representative-table-wrap {
+  margin-top: 10px;
+}
+
+.budget-org-overview-panel {
+  margin-bottom: 18px;
+}
+
+.budget-org-overview-panel .panel-body {
+  background: linear-gradient(180deg, #ffffff, #fff8fc);
+  border-radius: 14px;
+}
+
+.budget-org-overview {
+  display: grid;
+  gap: 12px;
+}
+
+.budget-org-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.budget-org-summary-card {
+  border: 1px solid var(--theme-pink-100);
+  border-radius: 8px;
+  background: #fff7fc;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.budget-org-summary-label {
+  display: block;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.budget-org-summary-value {
+  display: block;
+  margin-top: 4px;
+  color: #9d174d;
+  font-size: 18px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.budget-org-summary-caption {
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .budget-org-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .budget-org-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.budget-representative-modal-dialog {
+  max-width: 980px;
+}
+
+#budgetRepresentativeApplicationModal .budget-representative-modal-body {
+  max-height: min(78vh, 760px);
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+}
+
+#budgetRepresentativeApplicationModal .budget-representative-table-wrap {
+  margin-top: 0;
+}
+
+#budgetRepresentativeApplicationModal .staff-application-position-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .borrow-detail-layout {
   display: grid;
   gap: 12px;
@@ -1617,11 +1709,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   color: #475569;
 }
 
+.login-help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+
 .login-help-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-top: 12px;
+  margin-top: 0;
   text-decoration: none;
 }
 
@@ -1775,6 +1875,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-bottom: 14px;
 }
 
+.staff-approval-type-toggle {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin: 0;
+}
+
 .staff-approval-view-toggle {
   display: flex;
   gap: 10px;
@@ -1785,6 +1893,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .staff-access-form {
   display: grid;
   gap: 12px;
+}
+
+.staff-application-position-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.72fr);
+}
+
+.staff-application-result-field {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(244, 114, 182, 0.16);
+  background: rgba(255, 247, 252, 0.72);
 }
 
 .staff-access-textarea {
@@ -1830,6 +1952,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .staff-approval-history-action-select {
   min-width: 180px;
   flex: 1 1 220px;
+}
+
+.org-representative-row {
+  cursor: pointer;
+}
+
+.org-representative-row:hover {
+  background: #fff7fc;
+}
+
+.org-representative-row select {
+  cursor: pointer;
 }
 
 .staff-approval-modal-edit {
@@ -1935,6 +2069,75 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-top: 8px;
   color: #9d174d;
   line-height: 1.45;
+}
+
+.staff-rejection-reason-dialog {
+  max-width: 520px;
+}
+
+#staffRejectionReasonModal {
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+#staffRejectionReasonModal .modal-body {
+  gap: 12px;
+}
+
+.staff-rejection-reason-section {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fffafa 0%, #fff7f7 100%);
+}
+
+.staff-rejection-reason-section .login-label {
+  color: #991b1b;
+  font-weight: 700;
+}
+
+.staff-rejection-reason-input {
+  min-height: 128px;
+  resize: vertical;
+  border-color: #fecaca;
+  background: #fff;
+  line-height: 1.55;
+}
+
+.staff-rejection-reason-input:focus {
+  border-color: #fca5a5;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+.staff-rejection-reason-meta {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.staff-rejection-reason-helper {
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+.staff-rejection-reason-counter {
+  flex: 0 0 auto;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.staff-rejection-reason-error {
+  min-height: 18px;
+  margin-top: 6px;
+  color: #b91c1c;
+}
+
+.staff-rejection-reason-actions {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  gap: 8px;
 }
 
 .staff-approval-detail-layout .modal-section-grid {
@@ -2526,7 +2729,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     height: 100dvh;
     max-height: 100dvh;
     margin: 0;
+    padding: 0;
     border-radius: 0;
+    border: 0;
+    box-shadow: none;
+    background: #fff;
     transform: none !important;
     opacity: 1;
   }
@@ -2556,6 +2763,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     align-items: stretch;
   }
 
+  #staffApplicationModal .staff-application-position-grid {
+    grid-template-columns: 1fr;
+  }
+
   #staffApplicationModal #staffApplicationSubmitBtn,
   #staffApplicationModal #staffApplicationMessage {
     width: 100%;
@@ -2564,12 +2775,207 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   #staffApplicationModal .project-table-wrapper {
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
+    border: 0;
+    background: transparent;
   }
 
   #staffApplicationModal #staffApplicationMyTable {
-    min-width: 520px;
+    min-width: 0;
+    border-collapse: collapse;
+  }
+
+  #staffApplicationModal #staffApplicationMyTable tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  #staffApplicationModal #staffApplicationMyTable thead {
+    display: none;
+  }
+
+  #staffApplicationModal #staffApplicationMyTable,
+  #staffApplicationModal #staffApplicationMyTable tr,
+  #staffApplicationModal #staffApplicationMyTable td {
+    display: block;
+    width: 100%;
+  }
+
+  #staffApplicationModal #staffApplicationMyTable tr {
+    padding: 10px 12px;
+    border: 1px solid rgba(244, 114, 182, 0.16);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  #staffApplicationModal #staffApplicationMyTable td {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 4px;
+    padding: 6px 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    align-items: start;
+  }
+
+  #staffApplicationModal #staffApplicationMyTable td::before {
+    content: attr(data-label);
+    color: var(--theme-pink-700);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+    line-height: 1.35;
+  }
+
+  #staffApplicationModal #staffApplicationMyTable td[colspan] {
+    display: block;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  #staffApplicationModal #staffApplicationMyTable td[colspan]::before {
+    content: none;
+  }
+
+  #budgetRepresentativeApplicationModal {
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  #budgetRepresentativeApplicationModal .budget-representative-modal-dialog {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+    background: #fff;
+    transform: none !important;
+    opacity: 1;
+  }
+
+  #budgetRepresentativeApplicationModal .modal-header {
+    padding: 14px 12px 10px;
+  }
+
+  #budgetRepresentativeApplicationModal .budget-representative-modal-body {
+    max-height: calc(100dvh - 84px);
+    padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    gap: 10px;
+    overflow-x: hidden;
+  }
+
+  #budgetRepresentativeApplicationModal .staff-application-position-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #budgetRepresentativeApplicationModal .staff-access-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #budgetRepresentativeApplicationModal .staff-access-actions .btn-primary,
+  #budgetRepresentativeApplicationModal .staff-access-actions .btn-ghost,
+  #budgetRepresentativeApplicationModal #budgetRepresentativeApplicationMessage {
+    width: 100%;
+  }
+
+  #budgetRepresentativeApplicationModal .project-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable {
+    min-width: 0;
+    border-collapse: collapse;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable thead {
+    display: none;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable,
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable tr,
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable td {
+    display: block;
+    width: 100%;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable tr {
+    padding: 10px 12px;
+    border: 1px solid rgba(244, 114, 182, 0.16);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable td {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 4px;
+    padding: 6px 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    align-items: start;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable td::before {
+    content: attr(data-label);
+    color: var(--theme-pink-700);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+    line-height: 1.35;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable .budget-representative-history-value {
+    display: block;
+    min-width: 0;
+    text-align: left;
+    justify-self: stretch;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable .section-text-sm {
+    display: inline-block;
+    margin-top: 2px;
+    white-space: normal;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable .badge {
+    width: fit-content;
+    max-width: 100%;
+    justify-self: start;
+    text-align: left;
+    white-space: normal;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable td[colspan] {
+    display: block;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  #budgetRepresentativeApplicationModal #budgetRepresentativeMyApplicationsTable td[colspan]::before {
+    content: none;
   }
 }
 
@@ -6908,6 +7314,85 @@ th.sortable.sort-desc::after {
 
   #staffApprovalDetailModal .staff-approval-manage-actions .staff-approval-manage-btn {
     width: 100%;
+  }
+
+  #staffRejectionReasonModal {
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .staff-rejection-reason-dialog {
+    width: calc(100vw - 20px);
+    max-width: 420px;
+    height: auto;
+    max-height: calc(100dvh - 20px);
+    margin: auto;
+    padding: 14px 14px 12px;
+    border-radius: 18px;
+    overflow: auto;
+  }
+
+  #staffRejectionReasonModal .modal-header {
+    position: static;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(254, 202, 202, 0.82);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 22px rgba(185, 28, 28, 0.10);
+  }
+
+  #staffRejectionReasonModal .modal-title {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  #staffRejectionReasonModal .modal-subtitle {
+    line-height: 1.45;
+  }
+
+  #staffRejectionReasonModal .modal-body {
+    flex: 0 1 auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .staff-rejection-reason-section {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .staff-rejection-reason-input {
+    min-height: 170px;
+    max-height: 34dvh;
+    font-size: 16px;
+  }
+
+  .staff-rejection-reason-meta {
+    display: grid;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .staff-rejection-reason-helper {
+    line-height: 1.45;
+  }
+
+  .staff-rejection-reason-actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .staff-rejection-reason-counter {
+    justify-self: end;
+  }
+
+  .staff-rejection-reason-actions .btn-ghost,
+  .staff-rejection-reason-actions .btn-primary {
+    width: 100%;
+    min-height: 44px;
   }
 }
 

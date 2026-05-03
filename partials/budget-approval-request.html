@@ -14,12 +14,6 @@
 
           <div class="section-appear section-delay-1">
             <div class="budget-org-overview-panel">
-              <div class="page-header-flex" style="margin-bottom:10px;">
-                <div>
-                  <h3 class="page-title" style="font-size:1.05rem;">องค์กรตัวแทนที่ใช้ยื่นของบ</h3>
-                  <p class="page-subtitle" style="margin:2px 0 0;">ระบบกำหนดตามสิทธิ์ตัวแทนองค์กรที่ได้รับอนุมัติแล้ว</p>
-                </div>
-              </div>
               <div class="budget-org-overview">
                 <div class="cards budget-org-floating-cards" aria-label="สรุปการขออนุมัติงบประมาณขององค์กร">
                   <article class="card card-hover budget-org-floating-card">
@@ -38,6 +32,15 @@
                     <div class="card-title">งบรวมที่ขอ</div>
                     <div id="budgetOrgSummaryTotalExpense" class="card-value">0.00 บาท</div>
                   </article>
+                  <article class="card card-hover budget-org-floating-card">
+                    <div class="card-title">งบรวมที่ผ่าน</div>
+                    <div id="budgetOrgSummaryApprovedExpense" class="card-value">0.00 บาท</div>
+                  </article>
+                  <article class="card card-hover budget-org-floating-card">
+                    <div class="card-title">กำหนดส่งคำของบ</div>
+                    <div id="budgetRequestDeadlineDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่กำหนด</div>
+                    <div id="budgetRequestDeadlineCaption" class="section-text-sm budget-request-deadline-caption">กำลังโหลดกำหนดการ...</div>
+                  </article>
                 </div>
                 <div id="budgetOrgSummaryCaption" class="borrow-detail-section-caption budget-org-summary-caption">ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว</div>
               </div>
@@ -51,7 +54,7 @@
                     <div class="panel-caption">ตรวจสอบความครบถ้วนของข้อมูลก่อนกดยื่นคำขอ</div>
                   </div>
                 </div>
-                <div class="panel-body">
+                <div class="panel-body budget-request-panel-body">
                   <div class="borrow-form-row">
                     <div class="borrow-form-field" style="display:none;">
                       <label class="login-label" for="budgetOrgType">ประเภทองค์กร</label>
@@ -67,99 +70,127 @@
                     </div>
                   </div>
 
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetProjectName">ชื่อโครงการ</label>
-                      <input
-                        id="budgetProjectName"
-                        class="login-input"
-                        type="text"
-                        maxlength="200"
-                        placeholder="เช่น โครงการค่ายอาสา SGCU"
-                        required
-                      />
+                  <div class="budget-request-form-main">
+                    <div class="budget-request-form-section">
+                      <div class="budget-request-form-section-title">ข้อมูลโครงการ</div>
+                      <div class="borrow-form-row">
+                        <div class="borrow-form-field budget-request-field-wide">
+                          <label class="login-label" for="budgetProjectName">ชื่อโครงการ</label>
+                          <input
+                            id="budgetProjectName"
+                            class="login-input"
+                            type="text"
+                            maxlength="200"
+                            placeholder="เช่น โครงการค่ายอาสา SGCU"
+                            autocomplete="off"
+                            required
+                          />
+                        </div>
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="budgetActivityLocation">สถานที่ที่ทำกิจกรรม</label>
+                          <input
+                            id="budgetActivityLocation"
+                            class="login-input"
+                            type="text"
+                            maxlength="200"
+                            placeholder="เช่น อาคารจามจุรี 9 / พื้นที่ชุมชน..."
+                            autocomplete="off"
+                            required
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetActivityLocation">สถานที่ที่ทำกิจกรรม</label>
-                      <input
-                        id="budgetActivityLocation"
-                        class="login-input"
-                        type="text"
-                        maxlength="200"
-                        placeholder="เช่น อาคารจามจุรี 9 / พื้นที่ชุมชน..."
-                        required
-                      />
+
+                    <div class="budget-request-form-section">
+                      <div class="budget-request-form-section-title">ระยะเวลาและผู้เข้าร่วม</div>
+                      <div class="borrow-form-row">
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="budgetPrepStartDate">วันเริ่มเตรียมงาน</label>
+                          <input id="budgetPrepStartDate" class="login-input" type="date" required />
+                          <p class="section-text-sm budget-request-field-hint">ใช้วันแรกที่เริ่มมีค่าใช้จ่ายหรือเริ่มเตรียมกิจกรรม</p>
+                        </div>
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="budgetOperationEndDate">วันสุดท้ายปฏิบัติงาน</label>
+                          <input id="budgetOperationEndDate" class="login-input" type="date" required />
+                          <p class="section-text-sm budget-request-field-hint">ต้องไม่ก่อนวันเริ่มเตรียมงาน</p>
+                        </div>
+                      </div>
+
+                      <div class="borrow-form-row is-3">
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="budgetStudentOperators">นิสิตผู้ปฏิบัติงาน</label>
+                          <input
+                            id="budgetStudentOperators"
+                            class="login-input"
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="เช่น 25"
+                            inputmode="numeric"
+                            required
+                          />
+                        </div>
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="budgetStudentParticipants">นิสิตผู้เข้าร่วมงาน</label>
+                          <input
+                            id="budgetStudentParticipants"
+                            class="login-input"
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="เช่น 180"
+                            inputmode="numeric"
+                            required
+                          />
+                        </div>
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="budgetEstimatedExpense">ประมาณการรายจ่าย</label>
+                          <input
+                            id="budgetEstimatedExpense"
+                            class="login-input"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="เช่น 35000"
+                            inputmode="decimal"
+                            required
+                          />
+                          <p class="section-text-sm budget-request-field-hint">หน่วยบาท</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="budget-request-form-section">
+                      <div class="budget-request-form-section-title">คำอธิบายประกอบคำขอ</div>
+                      <div class="borrow-form-row">
+                        <div class="borrow-form-field budget-request-field-full">
+                          <label class="login-label" for="budgetProjectDescription">คำอธิบาย</label>
+                          <textarea
+                            id="budgetProjectDescription"
+                            class="login-input"
+                            rows="6"
+                            maxlength="3000"
+                            placeholder="อธิบายเป้าหมาย รูปแบบกิจกรรม เหตุผลการใช้งบ และผลลัพธ์ที่คาดหวัง"
+                            required
+                          ></textarea>
+                          <div class="budget-request-description-meta">
+                            <span class="section-text-sm budget-request-field-hint">เขียนให้พอเข้าใจบริบทโครงการและเหตุผลของยอดงบ</span>
+                            <span id="budgetProjectDescriptionCounter" class="section-text-sm budget-request-counter">0/3000</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetPrepStartDate">วันเริ่มเตรียมงาน</label>
-                      <input id="budgetPrepStartDate" class="login-input" type="date" required />
+                  <div class="meeting-form-actions budget-request-actions">
+                    <div class="budget-request-actions-message">
+                      <span id="budgetApprovalMessage" class="section-text-sm" aria-live="polite"></span>
                     </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetOperationEndDate">วันสุดท้ายปฏิบัติงาน</label>
-                      <input id="budgetOperationEndDate" class="login-input" type="date" required />
+                    <div class="budget-request-actions-group">
+                      <button id="budgetApprovalSubmitBtn" type="submit" class="btn-primary">ยื่นคำขออนุมัติงบประมาณ</button>
+                      <button id="budgetApprovalCancelEditBtn" type="button" class="btn-ghost" hidden>ยกเลิกการแก้ไข</button>
+                      <button id="budgetApprovalCancelRequestBtn" type="button" class="btn-ghost budget-request-cancel-request-btn" hidden>ลดรายการนี้</button>
                     </div>
-                  </div>
-
-                  <div class="borrow-form-row is-3">
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetStudentOperators">จำนวนนิสิตผู้ปฏิบัติงาน</label>
-                      <input
-                        id="budgetStudentOperators"
-                        class="login-input"
-                        type="number"
-                        min="0"
-                        step="1"
-                        placeholder="เช่น 25"
-                        required
-                      />
-                    </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetStudentParticipants">จำนวนนิสิตผู้เข้าร่วมงาน</label>
-                      <input
-                        id="budgetStudentParticipants"
-                        class="login-input"
-                        type="number"
-                        min="0"
-                        step="1"
-                        placeholder="เช่น 180"
-                        required
-                      />
-                    </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetEstimatedExpense">ประมาณการรายจ่าย (บาท)</label>
-                      <input
-                        id="budgetEstimatedExpense"
-                        class="login-input"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="เช่น 35000"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div class="borrow-form-row">
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetProjectDescription">คำอธิบาย</label>
-                      <textarea
-                        id="budgetProjectDescription"
-                        class="login-input"
-                        rows="5"
-                        maxlength="3000"
-                        placeholder="อธิบายเป้าหมาย รูปแบบกิจกรรม และเหตุผลการใช้งบ"
-                        required
-                      ></textarea>
-                    </div>
-                  </div>
-
-                  <div class="meeting-form-actions">
-                    <button id="budgetApprovalSubmitBtn" type="submit" class="btn-primary">ยื่นคำขออนุมัติงบประมาณ</button>
-                    <button id="budgetApprovalCancelEditBtn" type="button" class="btn-ghost" hidden>ยกเลิกการแก้ไข</button>
-                    <span id="budgetApprovalMessage" class="section-text-sm" aria-live="polite"></span>
                   </div>
                 </div>
               </div>
@@ -176,18 +207,16 @@
                 <table>
                   <thead>
                     <tr>
-                      <th style="text-align:center;">วันที่ยื่นคำขอ</th>
-                      <th style="text-align:center;">ฝ่าย / ประเภทองค์กร</th>
-                      <th style="text-align:center;">ชื่อโครงการ</th>
-                      <th style="text-align:center;">ช่วงปฏิบัติงาน</th>
-                      <th style="text-align:right;">ประมาณการรายจ่าย</th>
+                      <th style="text-align:center;">รหัสโครงการ</th>
+                      <th style="text-align:left;">รายการโครงการ</th>
+                      <th style="text-align:right;">ยอดขอ</th>
+                      <th style="text-align:right;">ยอดอนุมัติ</th>
                       <th style="text-align:center;">สถานะ</th>
-                      <th style="text-align:center;">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody id="budgetApprovalMyRequestsTableBody">
                     <tr>
-                      <td colspan="7" style="text-align:center; color:#6b7280;">กำลังโหลดข้อมูล...</td>
+                      <td colspan="5" style="text-align:center; color:#6b7280;">กำลังโหลดข้อมูล...</td>
                     </tr>
                   </tbody>
                 </table>

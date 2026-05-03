@@ -14,6 +14,8 @@
   const orgSummaryCaptionEl = document.getElementById("budgetStaffOrgSummaryCaption");
   const orgSummaryGroupEl = document.getElementById("budgetStaffOrgSummaryGroup");
   const orgSummaryOrgEl = document.getElementById("budgetStaffOrgSummaryOrg");
+  const reviewGroupEl = document.getElementById("budgetStaffReviewGroup");
+  const reviewOrgEl = document.getElementById("budgetStaffReviewOrg");
   const chartCanvasEl = document.getElementById("budgetStaffOrgChart");
   const tabBtnEls = Array.from(document.querySelectorAll("[data-budget-staff-tab]"));
   const tabPanelEls = Array.from(document.querySelectorAll("[data-budget-staff-panel]"));
@@ -21,6 +23,7 @@
   const deadlineInputEl = document.getElementById("budgetRequestDeadlineInput");
   const ceilingInputEl = document.getElementById("budgetCeilingInput");
   const groupCeilingListEl = document.getElementById("budgetGroupCeilingList");
+  const groupCeilingToggleBtnEl = document.getElementById("budgetGroupCeilingToggleBtn");
   const deadlineStatusEl = document.getElementById("budgetRequestDeadlineStatus");
   const deadlineSaveBtnEl = document.getElementById("budgetRequestDeadlineSaveBtn");
   const runCodeBtnEl = document.getElementById("budgetRunProjectCodeBtn");
@@ -58,12 +61,15 @@
     !orgSummaryCaptionEl ||
     !orgSummaryGroupEl ||
     !orgSummaryOrgEl ||
+    !reviewGroupEl ||
+    !reviewOrgEl ||
     !chartCanvasEl ||
     !tabBtnEls.length ||
     !tabPanelEls.length ||
     !deadlineInputEl ||
     !ceilingInputEl ||
     !groupCeilingListEl ||
+    !groupCeilingToggleBtnEl ||
     !deadlineStatusEl ||
     !deadlineSaveBtnEl ||
     !runCodeBtnEl ||
@@ -95,6 +101,7 @@
   const SETTINGS_DOC_ID = "global";
   const LOCAL_BUDGET_CEILING_KEY = "sgcuBudgetStaffBudgetCeiling";
   const LOCAL_BUDGET_GROUP_CEILINGS_KEY = "sgcuBudgetStaffBudgetGroupCeilings";
+  const LOCAL_BUDGET_GROUP_CEILING_OPEN_KEY = "sgcuBudgetStaffBudgetGroupCeilingOpen";
 
   let unsubscribeRequests = null;
   let requestRows = [];
@@ -102,6 +109,7 @@
   let chartInstance = null;
   let budgetCeiling = 0;
   let budgetGroupCeilings = {};
+  let isGroupCeilingOpen = true;
 
   const formatMoney = (value) => {
     const num = Number(value || 0);
@@ -172,6 +180,26 @@
         window.localStorage?.removeItem(LOCAL_BUDGET_GROUP_CEILINGS_KEY);
       }
     } catch (_) {}
+  };
+
+  const readLocalGroupCeilingOpen = () => {
+    try {
+      return window.localStorage?.getItem(LOCAL_BUDGET_GROUP_CEILING_OPEN_KEY) !== "false";
+    } catch (_) {
+      return true;
+    }
+  };
+
+  const writeLocalGroupCeilingOpen = (value) => {
+    try {
+      window.localStorage?.setItem(LOCAL_BUDGET_GROUP_CEILING_OPEN_KEY, value ? "true" : "false");
+    } catch (_) {}
+  };
+
+  const syncGroupCeilingVisibility = () => {
+    groupCeilingListEl.hidden = !isGroupCeilingOpen;
+    groupCeilingToggleBtnEl.textContent = isGroupCeilingOpen ? "ซ่อน" : "แสดง";
+    groupCeilingToggleBtnEl.setAttribute("aria-expanded", isGroupCeilingOpen ? "true" : "false");
   };
 
   const escapeHtml = (value) =>
@@ -278,6 +306,43 @@
     orgSummaryOrgEl.value = Array.from(orgSummaryOrgEl.options).some((opt) => opt.value === selected) ? selected : "all";
   };
 
+  const populateReviewGroupOptions = () => {
+    const selected = resetSelectOptions(reviewGroupEl, "ทุกประเภทองค์กร");
+    const filterRows = getOrgFilterRows();
+    const groups = filterRows.length
+      ? filterRows.map((item) => normalizeText(item?.group)).filter(Boolean)
+      : requestRows.map((item) => normalizeText(item.organizationType)).filter(Boolean);
+    Array.from(new Set(groups)).sort((a, b) => a.localeCompare(b, "th")).forEach((group) => {
+      const opt = document.createElement("option");
+      opt.value = group;
+      opt.textContent = group;
+      reviewGroupEl.appendChild(opt);
+    });
+    reviewGroupEl.value = Array.from(reviewGroupEl.options).some((opt) => opt.value === selected) ? selected : "all";
+  };
+
+  const populateReviewOrgOptions = () => {
+    const selected = resetSelectOptions(reviewOrgEl, "ทุกฝ่าย / ทุกชมรม");
+    const group = normalizeText(reviewGroupEl.value) || "all";
+    const filterRows = getOrgFilterRows();
+    const names = filterRows.length
+      ? filterRows
+        .filter((item) => group === "all" || normalizeText(item?.group) === group)
+        .map((item) => normalizeText(item?.name))
+        .filter(Boolean)
+      : requestRows
+        .filter((item) => group === "all" || normalizeText(item.organizationType) === group)
+        .map((item) => normalizeText(item.organizationName))
+        .filter(Boolean);
+    Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th")).forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      reviewOrgEl.appendChild(opt);
+    });
+    reviewOrgEl.value = Array.from(reviewOrgEl.options).some((opt) => opt.value === selected) ? selected : "all";
+  };
+
   const getBudgetGroupNames = () => {
     const filterRows = getOrgFilterRows();
     const groups = filterRows.length
@@ -374,6 +439,8 @@
     }
     populateOrgSummaryGroupOptions();
     populateOrgSummaryOrgOptions();
+    populateReviewGroupOptions();
+    populateReviewOrgOptions();
     renderBudgetGroupCeilingInputs();
     updateSummary();
     void renderOrgSummaryChart();
@@ -519,6 +586,20 @@
   const getOverviewFilteredRows = () => {
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
+    const orgGroupMap = getOrgGroupMap();
+    return requestRows.filter((item) => {
+      if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
+      const orgName = normalizeText(item.organizationName) || "-";
+      const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
+      if (groupFilter !== "all" && group !== groupFilter) return false;
+      if (orgFilter !== "all" && orgName !== orgFilter) return false;
+      return true;
+    });
+  };
+
+  const getReviewFilteredRows = () => {
+    const groupFilter = normalizeText(reviewGroupEl.value) || "all";
+    const orgFilter = normalizeText(reviewOrgEl.value) || "all";
     const orgGroupMap = getOrgGroupMap();
     return requestRows.filter((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
@@ -714,13 +795,21 @@
 
   const renderRows = () => {
     if (!requestRows.length) {
-      tableBodyEl.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#6b7280;">ยังไม่มีรายการคำของบ</td></tr>';
+      tableBodyEl.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6b7280;">ยังไม่มีรายการคำของบ</td></tr>';
       updateSummary();
       void renderOrgSummaryChart();
       return;
     }
 
-    tableBodyEl.innerHTML = sortForDisplay(requestRows).map((item) => {
+    const rows = getReviewFilteredRows();
+    if (!rows.length) {
+      tableBodyEl.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6b7280;">ไม่พบรายการตามตัวกรอง</td></tr>';
+      updateSummary();
+      void renderOrgSummaryChart();
+      return;
+    }
+
+    tableBodyEl.innerHTML = sortForDisplay(rows).map((item) => {
       const id = escapeHtml(item.id || "");
       const orgName = escapeHtml(item.organizationName || "-");
       const requested = Number(item.estimatedExpense || 0);
@@ -728,24 +817,17 @@
       const status = normalizeText(item.status || "pending").toLowerCase();
       const approvedText = status === "pending" && !approved ? "-" : formatMoney(approved);
       return `
-        <tr class="budget-staff-request-row">
-          <td class="col-code" data-label="รหัสโครงการ"><code>${escapeHtml(item.projectCodeGenerated || "-")}</code></td>
+        <tr class="budget-request-history-row budget-staff-request-row is-editable" data-budget-staff-edit-id="${id}" tabindex="0" title="คลิกเพื่อแก้ไขรายการ">
+          <td class="col-code" data-label="รหัสโครงการ"><code class="budget-request-project-code">${escapeHtml(item.projectCodeGenerated || "-")}</code></td>
           <td class="col-project" data-label="รายการโครงการ">
-            <div class="budget-staff-project-name">${escapeHtml(item.projectName || "-")}</div>
-            <div class="budget-staff-project-meta">
+            <div class="budget-request-history-project-name budget-staff-project-name">${escapeHtml(item.projectName || "-")}</div>
+            <div class="section-text-sm budget-request-history-project-meta budget-staff-project-meta">
               <span class="budget-staff-org-name">${orgName}</span>
             </div>
           </td>
-          <td class="col-date" data-label="วันสุดท้ายปฏิบัติงาน">${escapeHtml(formatDate(item.operationEndDate || ""))}</td>
           <td class="col-money" data-label="ยอดขอ">${formatMoney(requested)}</td>
           <td class="col-money" data-label="ยอดอนุมัติ">${approvedText}</td>
           <td class="col-status" data-label="สถานะ">${statusBadge(item.status)}</td>
-          <td class="col-actions" data-label="จัดการ">
-            <div class="budget-staff-row-actions">
-              <button type="button" class="btn-ghost" data-budget-staff-edit="${id}">แก้ไข</button>
-              <button type="button" class="btn-ghost" data-budget-staff-cancel="${id}">ยกเลิก</button>
-            </div>
-          </td>
         </tr>
       `;
     }).join("");
@@ -763,7 +845,7 @@
     const firestore = getFirestore();
     const canRead = !!(firestore.db && firestore.collection && firestore.query && firestore.orderBy && firestore.onSnapshot);
     if (!canRead) {
-      tableBodyEl.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#6b7280;">ระบบฐานข้อมูลยังไม่พร้อมใช้งาน</td></tr>';
+      tableBodyEl.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6b7280;">ระบบฐานข้อมูลยังไม่พร้อมใช้งาน</td></tr>';
       return;
     }
 
@@ -783,7 +865,7 @@
       void refreshOrgSummaryFilters();
       renderRows();
     }, () => {
-      tableBodyEl.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#b91c1c;">โหลดรายการไม่สำเร็จ</td></tr>';
+      tableBodyEl.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#b91c1c;">โหลดรายการไม่สำเร็จ</td></tr>';
     });
   };
 
@@ -1126,24 +1208,24 @@
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (!target) return;
 
-    const editBtn = target.closest("[data-budget-staff-edit]");
-    if (editBtn) {
-      const id = normalizeText(editBtn.getAttribute("data-budget-staff-edit"));
-      const row = requestRows.find((item) => item.id === id);
-      if (!row) return;
-      fillFormForEdit(row);
-      return;
-    }
+    const editRow = target.closest("[data-budget-staff-edit-id]");
+    if (!editRow) return;
+    const id = normalizeText(editRow.getAttribute("data-budget-staff-edit-id"));
+    const row = requestRows.find((item) => item.id === id);
+    if (!row) return;
+    fillFormForEdit(row);
+  });
 
-    const cancelBtn = target.closest("[data-budget-staff-cancel]");
-    if (cancelBtn) {
-      const id = normalizeText(cancelBtn.getAttribute("data-budget-staff-cancel"));
-      const row = requestRows.find((item) => item.id === id);
-      if (!row) return;
-      const ok = window.confirm(`ยืนยันลดรายการ "${row.projectName || "-"}" ?`);
-      if (!ok) return;
-      void cancelRow(id);
-    }
+  tableBodyEl.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const editRow = target?.closest("[data-budget-staff-edit-id]");
+    if (!editRow) return;
+    event.preventDefault();
+    const id = normalizeText(editRow.getAttribute("data-budget-staff-edit-id"));
+    const row = requestRows.find((item) => item.id === id);
+    if (!row) return;
+    fillFormForEdit(row);
   });
 
   cancelEditBtnEl.addEventListener("click", resetForm);
@@ -1151,6 +1233,11 @@
   deadlineSaveBtnEl.addEventListener("click", () => { void saveDeadline(); });
   runCodeBtnEl.addEventListener("click", () => { void runProjectCodes(); });
   clearCodeBtnEl.addEventListener("click", () => { void clearProjectCodes(); });
+  groupCeilingToggleBtnEl.addEventListener("click", () => {
+    isGroupCeilingOpen = !isGroupCeilingOpen;
+    writeLocalGroupCeilingOpen(isGroupCeilingOpen);
+    syncGroupCeilingVisibility();
+  });
   ceilingInputEl.addEventListener("input", () => {
     const groupCeilingsResult = readBudgetGroupCeilingsFromInputs();
     if (groupCeilingsResult.ok) budgetGroupCeilings = groupCeilingsResult.value;
@@ -1168,6 +1255,11 @@
     updateSummary();
     void renderOrgSummaryChart();
   });
+  reviewGroupEl.addEventListener("change", () => {
+    populateReviewOrgOptions();
+    renderRows();
+  });
+  reviewOrgEl.addEventListener("change", renderRows);
   tabBtnEls.forEach((btn) => {
     btn.addEventListener("click", () => {
       setActiveTab(btn.getAttribute("data-budget-staff-tab") || "overview");
@@ -1175,6 +1267,8 @@
   });
 
   resetForm();
+  isGroupCeilingOpen = readLocalGroupCeilingOpen();
+  syncGroupCeilingVisibility();
   setActiveTab("overview");
   void refreshOrgSummaryFilters();
   subscribeRequests();

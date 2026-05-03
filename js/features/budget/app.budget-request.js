@@ -6,6 +6,7 @@ function initBudgetApprovalRequestPage() {
   const formEl = document.getElementById("budgetApprovalForm");
   const submitBtnEl = document.getElementById("budgetApprovalSubmitBtn");
   const cancelEditBtnEl = document.getElementById("budgetApprovalCancelEditBtn");
+  const cancelRequestBtnEl = document.getElementById("budgetApprovalCancelRequestBtn");
   const messageEl = document.getElementById("budgetApprovalMessage");
   const myRequestsTableBodyEl = document.getElementById("budgetApprovalMyRequestsTableBody");
   const myRequestsCaptionEl = document.getElementById("budgetApprovalListCaption");
@@ -15,7 +16,10 @@ function initBudgetApprovalRequestPage() {
   const orgDeptDisplayEl = document.getElementById("budgetOrgDeptDisplay");
   const orgSummaryProjectCountEl = document.getElementById("budgetOrgSummaryProjectCount");
   const orgSummaryTotalExpenseEl = document.getElementById("budgetOrgSummaryTotalExpense");
+  const orgSummaryApprovedExpenseEl = document.getElementById("budgetOrgSummaryApprovedExpense");
   const orgSummaryCaptionEl = document.getElementById("budgetOrgSummaryCaption");
+  const requestDeadlineDisplayEl = document.getElementById("budgetRequestDeadlineDisplay");
+  const requestDeadlineCaptionEl = document.getElementById("budgetRequestDeadlineCaption");
   const projectNameEl = document.getElementById("budgetProjectName");
   const descriptionEl = document.getElementById("budgetProjectDescription");
   const locationEl = document.getElementById("budgetActivityLocation");
@@ -24,6 +28,7 @@ function initBudgetApprovalRequestPage() {
   const studentOperatorsEl = document.getElementById("budgetStudentOperators");
   const studentParticipantsEl = document.getElementById("budgetStudentParticipants");
   const estimatedExpenseEl = document.getElementById("budgetEstimatedExpense");
+  const descriptionCounterEl = document.getElementById("budgetProjectDescriptionCounter");
   const representativeApplyBtnEl = document.getElementById("budgetRepresentativeApplyBtn");
   const representativeStatusCaptionEl = document.getElementById("budgetRepresentativeStatusCaption");
   const representativeMessageEl = document.getElementById("budgetRepresentativeMessage");
@@ -74,6 +79,7 @@ function initBudgetApprovalRequestPage() {
   let representativeApplicationsLoaded = false;
   let editingRequestId = "";
   let latestMyBudgetRequests = [];
+  let latestBudgetRequestRows = [];
   let budgetRequestDeadline = "";
   let isBudgetRequestClosed = false;
 
@@ -137,6 +143,10 @@ function initBudgetApprovalRequestPage() {
     ) || null;
   };
 
+  const hasApprovedRepresentativeForRequest = (item) => {
+    return !!findApprovedRepresentativeForOrg(item?.organizationType, item?.organizationName);
+  };
+
   const getPrimaryApprovedRepresentative = () => {
     const options = getApprovedRepresentativeOptions();
     if (!options.length) return null;
@@ -175,11 +185,13 @@ function initBudgetApprovalRequestPage() {
       )
       : [];
     const totalExpense = matchedRows.reduce((sum, item) => sum + toBudgetAmount(item.estimatedExpense), 0);
+    const approvedExpense = matchedRows.reduce((sum, item) => sum + toBudgetAmount(item.approvedAmount), 0);
     if (orgSummaryProjectCountEl) orgSummaryProjectCountEl.textContent = String(matchedRows.length);
     if (orgSummaryTotalExpenseEl) orgSummaryTotalExpenseEl.textContent = `${formatCurrency(totalExpense)} บาท`;
+    if (orgSummaryApprovedExpenseEl) orgSummaryApprovedExpenseEl.textContent = `${formatCurrency(approvedExpense)} บาท`;
     if (orgSummaryCaptionEl) {
       orgSummaryCaptionEl.textContent = orgType && orgName
-        ? `สรุปรายการของ ${orgName} / ${orgType} จากคำขอที่บัญชีนี้ยื่นไว้`
+        ? `สรุปรายการของ ${orgName} / ${orgType} ตามสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว`
         : "ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว";
     }
   };
@@ -189,6 +201,12 @@ function initBudgetApprovalRequestPage() {
     setDisplayText(orgTypeDisplayEl, representative?.organizationType || "");
     setDisplayText(orgDeptDisplayEl, representative?.organizationName || "");
     updateBudgetOrgSummary();
+    if (!isBudgetRequestClosed && representativeApplicationsLoaded) {
+      setFormEnabled(!!representative);
+      if (!representative) {
+        setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลดรายการ หรือเพิ่มคำของบขององค์กรได้", "#b91c1c");
+      }
+    }
   };
 
   const populateBudgetOrgTypeOptions = () => {
@@ -285,12 +303,28 @@ function initBudgetApprovalRequestPage() {
 
   const setBudgetRequestCloseState = (deadlineDateText = "") => {
     budgetRequestDeadline = (deadlineDateText || "").toString().trim();
+    if (requestDeadlineDisplayEl) {
+      requestDeadlineDisplayEl.textContent = budgetRequestDeadline
+        ? formatDateDisplay(budgetRequestDeadline)
+        : "ยังไม่กำหนด";
+      requestDeadlineDisplayEl.classList.toggle("is-empty", !budgetRequestDeadline);
+    }
     if (!budgetRequestDeadline) {
       isBudgetRequestClosed = false;
+      if (requestDeadlineCaptionEl) {
+        requestDeadlineCaptionEl.textContent = "ยังไม่กำหนดวันสิ้นสุดการเปิดรับคำของบ";
+        requestDeadlineCaptionEl.style.color = "#6b7280";
+      }
       return;
     }
     const endDate = new Date(`${budgetRequestDeadline}T23:59:59`);
     isBudgetRequestClosed = Number.isFinite(endDate.getTime()) && Date.now() > endDate.getTime();
+    if (requestDeadlineCaptionEl) {
+      requestDeadlineCaptionEl.textContent = isBudgetRequestClosed
+        ? "หมดเขตรับคำของบแล้ว"
+        : "ยังเปิดรับคำของบอยู่";
+      requestDeadlineCaptionEl.style.color = isBudgetRequestClosed ? "#b91c1c" : "#047857";
+    }
   };
 
   const escapeHtml = (value) =>
@@ -331,6 +365,12 @@ function initBudgetApprovalRequestPage() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+  };
+
+  const updateBudgetDescriptionCounter = () => {
+    if (descriptionCounterEl) {
+      descriptionCounterEl.textContent = `${descriptionEl.value.length}/3000`;
+    }
   };
 
   const statusBadgeHtml = (status) => {
@@ -495,12 +535,28 @@ function initBudgetApprovalRequestPage() {
     (window.sgcuAuth?.auth?.currentUser?.email || "").toString().trim().toLowerCase();
 
   const renderMyRequestsRows = (rows) => {
-    const items = Array.isArray(rows) ? rows : [];
+    const sourceRows = Array.isArray(rows) ? rows : [];
+    const representativeOptions = getApprovedRepresentativeOptions();
+    const items = representativeOptions.length
+      ? sourceRows.filter((item) => hasApprovedRepresentativeForRequest(item))
+      : [];
     latestMyBudgetRequests = items;
+    if (!representativeOptions.length) {
+      myRequestsTableBodyEl.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; color:#6b7280;">ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงยังไม่สามารถดูรายการคำของบขององค์กรได้</td>
+        </tr>
+      `;
+      myRequestsCaptionEl.textContent = representativeApplicationsLoaded
+        ? "ต้องมีสิทธิ์ตัวแทนองค์กรก่อน"
+        : "กำลังตรวจสอบสิทธิ์ตัวแทนองค์กร...";
+      updateBudgetOrgSummary();
+      return;
+    }
     if (!items.length) {
       myRequestsTableBodyEl.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align:center; color:#6b7280;">ยังไม่มีรายการคำขออนุมัติงบประมาณ</td>
+          <td colspan="5" style="text-align:center; color:#6b7280;">ยังไม่มีรายการคำขออนุมัติงบประมาณ</td>
         </tr>
       `;
       myRequestsCaptionEl.textContent = "ยังไม่มีรายการ";
@@ -509,32 +565,27 @@ function initBudgetApprovalRequestPage() {
     }
 
     myRequestsTableBodyEl.innerHTML = items.map((item) => {
-      const orgType = escapeHtml(item.organizationType || "-");
       const orgName = escapeHtml(item.organizationName || "-");
       const projectName = escapeHtml(item.projectName || "-");
-      const startDate = formatDateDisplay(item.prepStartDate);
-      const endDate = formatDateDisplay(item.operationEndDate);
+      const projectCode = escapeHtml(item.projectCodeGenerated || "-");
       const status = (item.status || "pending").toString().trim().toLowerCase();
+      const requestedAmount = Number(item.estimatedExpense || 0);
+      const approvedAmount = Number(item.approvedAmount || 0);
+      const approvedText = status === "pending" && !approvedAmount ? "-" : formatCurrency(approvedAmount);
       const canEdit = status === "pending" && !isBudgetRequestClosed;
-      const actionsHtml = canEdit
-        ? `
-          <button type="button" class="btn-ghost budget-request-edit-btn" data-budget-edit-id="${escapeHtml(item.id || "")}">
-            แก้ไข
-          </button>
-          <button type="button" class="btn-ghost budget-request-cancel-btn" data-budget-cancel-id="${escapeHtml(item.id || "")}">
-            ลดรายการ
-          </button>
-        `
-        : '<span class="section-text-sm" style="color:#9ca3af;">-</span>';
+      const rowEditAttrs = canEdit
+        ? ` data-budget-edit-id="${escapeHtml(item.id || "")}" tabindex="0" title="คลิกเพื่อแก้ไขรายการ"`
+        : "";
       return `
-        <tr>
-          <td style="text-align:center;">${formatTimestampDisplay(item.createdAt)}</td>
-          <td style="text-align:left;">${orgName}<br><span class="section-text-sm">${orgType}</span></td>
-          <td style="text-align:left;">${projectName}</td>
-          <td style="text-align:center;">${startDate} - ${endDate}</td>
-          <td style="text-align:right;">${formatCurrency(item.estimatedExpense)}</td>
-          <td style="text-align:center;">${statusBadgeHtml(item.status)}</td>
-          <td style="text-align:center; white-space:nowrap;">${actionsHtml}</td>
+        <tr class="budget-request-history-row${canEdit ? " is-editable" : ""}"${rowEditAttrs}>
+          <td style="text-align:center;" data-label="รหัสโครงการ"><code class="budget-request-project-code">${projectCode}</code></td>
+          <td style="text-align:left;" data-label="รายการโครงการ">
+            <div class="budget-request-history-project-name">${projectName}</div>
+            <div class="section-text-sm budget-request-history-project-meta">${orgName}</div>
+          </td>
+          <td style="text-align:right;" data-label="ยอดขอ">${formatCurrency(requestedAmount)}</td>
+          <td style="text-align:right;" data-label="ยอดอนุมัติ">${approvedText}</td>
+          <td style="text-align:center;" data-label="สถานะ">${statusBadgeHtml(item.status)}</td>
         </tr>
       `;
     }).join("");
@@ -556,7 +607,7 @@ function initBudgetApprovalRequestPage() {
     if (!email) {
       myRequestsTableBodyEl.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align:center; color:#6b7280;">กรุณาเข้าสู่ระบบเพื่อดูรายการที่ขอไปทั้งหมด</td>
+          <td colspan="5" style="text-align:center; color:#6b7280;">กรุณาเข้าสู่ระบบเพื่อดูรายการที่ขอไปทั้งหมด</td>
         </tr>
       `;
       myRequestsCaptionEl.textContent = "ต้องเข้าสู่ระบบก่อน";
@@ -574,9 +625,10 @@ function initBudgetApprovalRequestPage() {
       firestore.orderBy
     );
     if (!canRead) {
+      setBudgetRequestCloseState("");
       myRequestsTableBodyEl.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align:center; color:#6b7280;">ระบบฐานข้อมูลยังไม่พร้อมใช้งาน</td>
+          <td colspan="5" style="text-align:center; color:#6b7280;">ระบบฐานข้อมูลยังไม่พร้อมใช้งาน</td>
         </tr>
       `;
       myRequestsCaptionEl.textContent = "ไม่สามารถโหลดรายการได้";
@@ -596,24 +648,24 @@ function initBudgetApprovalRequestPage() {
         const rows = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data() || {};
-          const requesterEmail = (data?.requester?.email || "").toString().trim().toLowerCase();
           if ((data?.requestType || "budget_approval").toString().trim() !== "budget_approval") return;
-          if (requesterEmail !== email) return;
           rows.push({
             id: docSnap.id,
             ...data
           });
         });
-        renderMyRequestsRows(rows);
+        latestBudgetRequestRows = rows;
+        renderMyRequestsRows(latestBudgetRequestRows);
       },
       () => {
         myRequestsTableBodyEl.innerHTML = `
           <tr>
-            <td colspan="7" style="text-align:center; color:#b91c1c;">ไม่สามารถโหลดรายการได้ กรุณาลองใหม่อีกครั้ง</td>
+            <td colspan="5" style="text-align:center; color:#b91c1c;">ไม่สามารถโหลดรายการได้ กรุณาลองใหม่อีกครั้ง</td>
           </tr>
         `;
         myRequestsCaptionEl.textContent = "โหลดรายการไม่สำเร็จ";
         latestMyBudgetRequests = [];
+        latestBudgetRequestRows = [];
       }
     );
   };
@@ -634,7 +686,10 @@ function initBudgetApprovalRequestPage() {
       firestore.doc &&
       firestore.onSnapshot
     );
-    if (!canRead) return;
+    if (!canRead) {
+      setBudgetRequestCloseState("");
+      return;
+    }
 
     const docRef = firestore.doc(firestore.db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
     unsubscribeBudgetSettings = firestore.onSnapshot(docRef, (snap) => {
@@ -644,9 +699,13 @@ function initBudgetApprovalRequestPage() {
         setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) สามารถดูผลได้เท่านั้น`, "#b91c1c");
         setFormEnabled(false);
       } else {
-        setFormEnabled(true);
+        const hasRepresentative = !!getPrimaryApprovedRepresentative();
+        setFormEnabled(hasRepresentative);
+        if (!hasRepresentative && representativeApplicationsLoaded) {
+          setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลดรายการ หรือเพิ่มคำของบขององค์กรได้", "#b91c1c");
+        }
       }
-      renderMyRequestsRows(latestMyBudgetRequests);
+      renderMyRequestsRows(latestBudgetRequestRows);
     });
   };
 
@@ -678,6 +737,7 @@ function initBudgetApprovalRequestPage() {
       setRepresentativeMessage("เข้าสู่ระบบแล้วกรอกข้อมูลผู้ใช้ให้ครบก่อนสมัครเป็นตัวแทนองค์กร", "#6b7280");
       populateBudgetOrgTypeOptions();
       populateBudgetOrgDeptOptions();
+      renderMyRequestsRows(latestBudgetRequestRows);
       return;
     }
 
@@ -700,6 +760,7 @@ function initBudgetApprovalRequestPage() {
       }
       if (representativeStatusCaptionEl) representativeStatusCaptionEl.textContent = "ไม่สามารถโหลดสิทธิ์ตัวแทนได้";
       setRepresentativeMessage("ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b45309");
+      renderMyRequestsRows(latestBudgetRequestRows);
       return;
     }
 
@@ -733,6 +794,14 @@ function initBudgetApprovalRequestPage() {
         }
         populateBudgetOrgTypeOptions();
         populateBudgetOrgDeptOptions();
+        renderMyRequestsRows(latestBudgetRequestRows);
+        if (editingRequestId) {
+          const editingItem = latestBudgetRequestRows.find((item) => item.id === editingRequestId);
+          if (!editingItem || !hasApprovedRepresentativeForRequest(editingItem)) {
+            clearFormForCreate();
+            setFormMessage("สิทธิ์ตัวแทนองค์กรของรายการที่กำลังแก้ไขถูกเปลี่ยนแปลง จึงออกจากโหมดแก้ไขแล้ว", "#b45309");
+          }
+        }
       },
       () => {
         currentRepresentativeApplications = [];
@@ -747,6 +816,7 @@ function initBudgetApprovalRequestPage() {
         }
         if (representativeStatusCaptionEl) representativeStatusCaptionEl.textContent = "โหลดสิทธิ์ตัวแทนไม่สำเร็จ";
         setRepresentativeMessage("ไม่สามารถโหลดสิทธิ์ตัวแทนองค์กรได้ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
+        renderMyRequestsRows(latestBudgetRequestRows);
       }
     );
   };
@@ -794,8 +864,15 @@ function initBudgetApprovalRequestPage() {
     const user = readCurrentUser();
     const email = (user?.email || "").toString().trim().toLowerCase();
     const profile = readLocalLoginProfileByEmail(email);
-    const organizationType = getBudgetOrgTypeValueForSubmit();
-    const organizationName = getBudgetOrgDeptValueForSubmit();
+    const editingItem = editingRequestId
+      ? latestBudgetRequestRows.find((item) => item.id === editingRequestId)
+      : null;
+    const organizationType = editingItem
+      ? normalizeOrgText(editingItem.organizationType)
+      : getBudgetOrgTypeValueForSubmit();
+    const organizationName = editingItem
+      ? normalizeOrgText(editingItem.organizationName)
+      : getBudgetOrgDeptValueForSubmit();
     const approvedRepresentative = findApprovedRepresentativeForOrg(organizationType, organizationName);
 
     return {
@@ -848,6 +925,15 @@ function initBudgetApprovalRequestPage() {
     if (!primaryRepresentative) {
       setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงยังไม่สามารถยื่นของบได้", "#b91c1c");
       return false;
+    }
+    if (editingRequestId) {
+      const editingItem = latestBudgetRequestRows.find((item) => item.id === editingRequestId);
+      if (!editingItem || !hasApprovedRepresentativeForRequest(editingItem)) {
+        setFormMessage("บัญชีนี้ไม่มีสิทธิ์ตัวแทนองค์กรของรายการนี้แล้ว จึงไม่สามารถบันทึกการแก้ไขได้", "#b91c1c");
+        clearFormForCreate();
+        renderMyRequestsRows(latestBudgetRequestRows);
+        return false;
+      }
     }
 
     const controls = [
@@ -1036,6 +1122,7 @@ function initBudgetApprovalRequestPage() {
     const isEditing = !!editingRequestId;
     submitBtnEl.textContent = isEditing ? "บันทึกการแก้ไขคำขอ" : "ยื่นคำขออนุมัติงบประมาณ";
     if (cancelEditBtnEl) cancelEditBtnEl.hidden = !isEditing;
+    if (cancelRequestBtnEl) cancelRequestBtnEl.hidden = !isEditing;
   };
 
   const fillFormFromRequest = (item) => {
@@ -1049,6 +1136,7 @@ function initBudgetApprovalRequestPage() {
     studentParticipantsEl.value = Number(item.studentParticipants || 0).toString();
     estimatedExpenseEl.value = Number(item.estimatedExpense || 0).toString();
     setFormMessage("กำลังแก้ไขคำขอที่ส่งไปแล้ว เมื่อเสร็จให้กดบันทึกการแก้ไข", "#1d4ed8");
+    updateBudgetDescriptionCounter();
   };
 
   const clearFormForCreate = () => {
@@ -1057,9 +1145,20 @@ function initBudgetApprovalRequestPage() {
     populateBudgetOrgDeptOptions();
     setEditMode("");
     setFormMessage("");
+    updateBudgetDescriptionCounter();
   };
-  prepStartDateEl.addEventListener("change", () => setFormMessage(""));
-  operationEndDateEl.addEventListener("change", () => setFormMessage(""));
+  [projectNameEl, locationEl, estimatedExpenseEl, descriptionEl].forEach((inputEl) => {
+    inputEl.addEventListener("input", () => {
+      setFormMessage("");
+      updateBudgetDescriptionCounter();
+    });
+  });
+  prepStartDateEl.addEventListener("change", () => {
+    setFormMessage("");
+  });
+  operationEndDateEl.addEventListener("change", () => {
+    setFormMessage("");
+  });
   [studentOperatorsEl, studentParticipantsEl].forEach((inputEl) => {
     inputEl.addEventListener("input", () => {
       inputEl.setCustomValidity("");
@@ -1086,36 +1185,55 @@ function initBudgetApprovalRequestPage() {
       setRepresentativeApplicationMessage("กรุณาเข้าสู่ระบบก่อนสมัครเป็นตัวแทนองค์กร", "#b91c1c");
     }
   });
-  myRequestsTableBodyEl.addEventListener("click", async (event) => {
+  const startEditRequest = (requestId = "") => {
+    const id = (requestId || "").toString().trim();
+    if (!id) return;
     if (isBudgetRequestClosed) {
       setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) ไม่สามารถแก้ไขหรือลดรายการได้`, "#b91c1c");
       return;
     }
-    const target = event.target instanceof HTMLElement ? event.target : null;
-    if (!target) return;
-    const editBtn = target.closest("[data-budget-edit-id]");
-    const cancelBtn = target.closest("[data-budget-cancel-id]");
-
-    if (editBtn) {
-      const requestId = (editBtn.getAttribute("data-budget-edit-id") || "").toString().trim();
-      if (!requestId) return;
-      const item = latestMyBudgetRequests.find((row) => row.id === requestId);
-      if (!item) {
-        setFormMessage("ไม่พบรายการที่ต้องการแก้ไข", "#b91c1c");
-        return;
-      }
-      setEditMode(requestId);
-      fillFormFromRequest(item);
-      formEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    const item = latestMyBudgetRequests.find((row) => row.id === id);
+    if (!item) {
+      setFormMessage("ไม่พบรายการที่ต้องการแก้ไข", "#b91c1c");
       return;
     }
+    if (!hasApprovedRepresentativeForRequest(item)) {
+      setFormMessage("บัญชีนี้ไม่มีสิทธิ์ตัวแทนองค์กรของรายการนี้แล้ว จึงไม่สามารถแก้ไขได้", "#b91c1c");
+      clearFormForCreate();
+      renderMyRequestsRows(latestBudgetRequestRows);
+      return;
+    }
+    const status = (item.status || "pending").toString().trim().toLowerCase();
+    if (status !== "pending") {
+      setFormMessage("แก้ไขได้เฉพาะรายการที่ยังรออนุมัติ", "#b91c1c");
+      return;
+    }
+    setEditMode(id);
+    fillFormFromRequest(item);
+    formEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
-    if (!cancelBtn) return;
-    const requestId = (cancelBtn.getAttribute("data-budget-cancel-id") || "").toString().trim();
-    if (!requestId) return;
-    const item = latestMyBudgetRequests.find((row) => row.id === requestId);
+  const cancelBudgetRequest = async (requestId = "") => {
+    const id = (requestId || "").toString().trim();
+    if (!id) return;
+    if (isBudgetRequestClosed) {
+      setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) ไม่สามารถแก้ไขหรือลดรายการได้`, "#b91c1c");
+      return;
+    }
+    const item = latestMyBudgetRequests.find((row) => row.id === id);
     if (!item) {
       setFormMessage("ไม่พบรายการที่ต้องการลดรายการ", "#b91c1c");
+      return;
+    }
+    if (!hasApprovedRepresentativeForRequest(item)) {
+      setFormMessage("บัญชีนี้ไม่มีสิทธิ์ตัวแทนองค์กรของรายการนี้แล้ว จึงไม่สามารถลดรายการได้", "#b91c1c");
+      clearFormForCreate();
+      renderMyRequestsRows(latestBudgetRequestRows);
+      return;
+    }
+    const status = (item.status || "pending").toString().trim().toLowerCase();
+    if (status !== "pending") {
+      setFormMessage("ลดรายการได้เฉพาะรายการที่ยังรออนุมัติ", "#b91c1c");
       return;
     }
     const ok = window.confirm(`ยืนยันลดรายการงบ "${item.projectName || "-"}" ?`);
@@ -1135,14 +1253,14 @@ function initBudgetApprovalRequestPage() {
     setFormMessage("กำลังลดรายการ...", "#1d4ed8");
     try {
       await firestore.updateDoc(
-        firestore.doc(firestore.db, REQUEST_COLLECTION, requestId),
+        firestore.doc(firestore.db, REQUEST_COLLECTION, id),
         {
           status: "cancelled",
           updatedAt: firestore.serverTimestamp(),
           cancelledAt: firestore.serverTimestamp()
         }
       );
-      if (editingRequestId === requestId) {
+      if (editingRequestId === id) {
         clearFormForCreate();
       }
       setFormMessage("ลดรายการเรียบร้อยแล้ว", "#047857");
@@ -1150,9 +1268,29 @@ function initBudgetApprovalRequestPage() {
       console.error("cancel budget approval request failed - app.budget-request.js", error);
       setFormMessage("ลดรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
     }
+  };
+
+  myRequestsTableBodyEl.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) return;
+    const editRow = target.closest("[data-budget-edit-id]");
+    if (!editRow) return;
+    startEditRequest(editRow.getAttribute("data-budget-edit-id") || "");
+  });
+
+  myRequestsTableBodyEl.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const editRow = target?.closest("[data-budget-edit-id]");
+    if (!editRow) return;
+    event.preventDefault();
+    startEditRequest(editRow.getAttribute("data-budget-edit-id") || "");
   });
   cancelEditBtnEl?.addEventListener("click", () => {
     clearFormForCreate();
+  });
+  cancelRequestBtnEl?.addEventListener("click", () => {
+    void cancelBudgetRequest(editingRequestId);
   });
   representativeModalCloseEl?.addEventListener("click", closeRepresentativeModal);
   representativeCancelBtnEl?.addEventListener("click", closeRepresentativeModal);
@@ -1245,6 +1383,7 @@ function initBudgetApprovalRequestPage() {
   subscribeMyRequests();
   subscribeRepresentativeApplications();
   subscribeBudgetSettings();
+  updateBudgetDescriptionCounter();
 
   if (window.sgcuAuth?.auth && typeof window.sgcuAuth.onAuthStateChanged === "function") {
     window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {

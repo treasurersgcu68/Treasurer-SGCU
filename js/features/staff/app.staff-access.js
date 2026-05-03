@@ -126,7 +126,7 @@ function initStaffAccessPages() {
     { id: "project-status-staff", label: "กำกับสถานะโครงการ" },
     { id: "borrow-assets-staff", label: "อนุมัติยืมทรัพย์สิน" },
     { id: "meeting-room-staff", label: "อนุมัติห้องประชุม" },
-    { id: "budget-approval-request", label: "ขออนุมัติงบประมาณ" },
+    { id: "budget-approval-staff", label: "จัดการคำของบ" },
     { id: "staff-approval", label: "อนุมัติสมาชิกสตาฟ" },
     { id: "login", label: "หน้าเข้าสู่ระบบ" }
   ];
@@ -775,7 +775,7 @@ function initStaffAccessPages() {
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
-      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-request", "staff-approval", "login"];
+      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "staff-approval", "login"];
     }
     return ["login"];
   };

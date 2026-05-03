@@ -35,6 +35,13 @@ function initBorrowAssetsApp() {
   const borrowAssetsCountStaff = document.getElementById("borrowAssetsCountStaff");
 
   const myRequestsTableBody = document.getElementById("myBorrowRequestsTableBody");
+  const myRequestsTableWrapper = myRequestsTableBody ? myRequestsTableBody.closest(".table-wrapper") : null;
+  const myRequestsCardsEl = document.getElementById("myBorrowRequestsCards");
+  const myRequestsTableEl = myRequestsTableBody ? myRequestsTableBody.closest("table") : null;
+  if (myRequestsTableEl) {
+    if (!myRequestsTableEl.id) myRequestsTableEl.id = "myBorrowRequestsTable";
+    myRequestsTableEl.classList.add("borrow-my-requests-table");
+  }
   const borrowOverviewCards = document.getElementById("borrowOverviewCards");
   const borrowFollowupTableBody = document.getElementById("borrowFollowupTableBody");
   const staffQueueTableBody =
@@ -1315,12 +1322,25 @@ function initBorrowAssetsApp() {
 
   const renderMyRequests = () => {
     if (!myRequestsTableBody) return;
+    const isCompactMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 840px)").matches;
+    if (myRequestsTableWrapper) {
+      myRequestsTableWrapper.style.display = isCompactMobile ? "none" : "";
+    }
+    if (myRequestsCardsEl) {
+      myRequestsCardsEl.hidden = !isCompactMobile;
+      myRequestsCardsEl.innerHTML = "";
+    }
     if (!currentUserEmail) {
       myRequestsTableBody.innerHTML = `
         <tr>
           <td colspan="4">กรุณาเข้าสู่ระบบด้วยอีเมลจุฬาฯ เพื่อดูสถานะคำขอของตนเอง</td>
         </tr>
       `;
+      if (myRequestsCardsEl && isCompactMobile) {
+        myRequestsCardsEl.innerHTML = `<article class="borrow-my-request-card-empty">กรุณาเข้าสู่ระบบด้วยอีเมลจุฬาฯ เพื่อดูสถานะคำขอของตนเอง</article>`;
+      }
       return;
     }
     const list = borrowRequests
@@ -1333,7 +1353,44 @@ function initBorrowAssetsApp() {
           <td colspan="4">ยังไม่มีคำขอยืมพัสดุ</td>
         </tr>
       `;
+      if (myRequestsCardsEl && isCompactMobile) {
+        myRequestsCardsEl.innerHTML = `<article class="borrow-my-request-card-empty">ยังไม่มีคำขอยืมพัสดุ</article>`;
+      }
       return;
+    }
+    if (myRequestsCardsEl && isCompactMobile) {
+      myRequestsCardsEl.innerHTML = list.map((item) => {
+        const itemsText = (item.assets || [])
+          .map((asset) => `${safeEscape(asset.name || asset.code || "-")} ${safeEscape(asset.qty || 0)} ${safeEscape(asset.unit || "")}`.trim())
+          .join("<br />");
+        const noteText =
+          (item.status === STATUS_APPROVED && !item.staffNote)
+            ? "รับพัสดุตามเวลาที่ระบุในระบบ"
+            : (item.status === STATUS_RECEIVED && !item.staffNote)
+              ? "รับพัสดุเรียบร้อยแล้ว"
+            : (item.status === STATUS_CANCELLED && !item.staffNote)
+              ? "ยกเลิกคำขอโดยเจ้าหน้าที่"
+            : (item.status === STATUS_RETURNED && !item.staffNote)
+              ? "ส่งคืนพัสดุเรียบร้อยแล้ว"
+            : (item.status === STATUS_PENDING && !item.staffNote)
+              ? "เจ้าหน้าที่กำลังตรวจสอบคำขอ"
+              : (item.staffNote || "-");
+        return `
+          <article
+            class="borrow-my-request-row-mobile"
+            data-request-id="${safeEscape(item.id || "")}"
+            data-request-source="${safeEscape(item.sourceCollection || "")}"
+            tabindex="0"
+            role="button"
+            aria-label="ดูรายละเอียดคำขอ ${safeEscape(item.id || "-")}"
+          >
+            <div><span class="borrow-my-cell-label">รายการ</span><span class="borrow-my-cell-value">${itemsText}</span></div>
+            <div><span class="borrow-my-cell-label">ช่วงเวลา</span><span class="borrow-my-cell-value">${safeEscape(formatDateRange(item.pickupDate, item.returnDate))}</span></div>
+            <div><span class="borrow-my-cell-label">สถานะ</span><span class="borrow-my-cell-value">${statusBadge(item.status)}</span></div>
+            <div><span class="borrow-my-cell-label">หมายเหตุ</span><span class="borrow-my-cell-value">${safeEscape(noteText)}</span></div>
+          </article>
+        `;
+      }).join("");
     }
     myRequestsTableBody.innerHTML = list.map((item) => {
       const itemsText = (item.assets || [])
@@ -2876,12 +2933,12 @@ function initBorrowAssetsApp() {
     });
   }
 
-  if (myRequestsTableBody) {
-    myRequestsTableBody.addEventListener("click", (event) => {
+  if (myRequestsCardsEl) {
+    myRequestsCardsEl.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
       if (target.closest("button, select, option, input, textarea, a")) return;
-      const row = target.closest("tr[data-request-id]");
+      const row = target.closest("[data-request-id]");
       if (!row) return;
       const requestId = row.getAttribute("data-request-id") || "";
       const sourceCollection = row.getAttribute("data-request-source") || "";
@@ -2890,10 +2947,10 @@ function initBorrowAssetsApp() {
       if (item) openBorrowDetailModal(item);
     });
 
-    myRequestsTableBody.addEventListener("keydown", (event) => {
+    myRequestsCardsEl.addEventListener("keydown", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const row = target.closest("tr[data-request-id]");
+      const row = target.closest("[data-request-id]");
       if (!row) return;
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();

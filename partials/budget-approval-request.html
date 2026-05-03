@@ -13,49 +13,37 @@
           <div class="separator-gradient"></div>
 
           <div class="section-appear section-delay-1">
-            <div class="panel panel-hover budget-org-overview-panel">
-              <div class="panel-header">
+            <div class="budget-org-overview-panel">
+              <div class="page-header-flex" style="margin-bottom:10px;">
                 <div>
-                  <div class="panel-title">องค์กรตัวแทนที่ใช้ยื่นของบ</div>
-                  <div class="panel-caption">ระบบกำหนดตามสิทธิ์ตัวแทนองค์กรที่ได้รับอนุมัติแล้ว</div>
+                  <h3 class="page-title" style="font-size:1.05rem;">องค์กรตัวแทนที่ใช้ยื่นของบ</h3>
+                  <p class="page-subtitle" style="margin:2px 0 0;">ระบบกำหนดตามสิทธิ์ตัวแทนองค์กรที่ได้รับอนุมัติแล้ว</p>
                 </div>
               </div>
-              <div class="panel-body">
-                <div class="budget-org-overview">
-                  <div class="borrow-profile-grid budget-org-display-grid">
-                    <div class="borrow-profile-item">
-                      <span class="borrow-profile-label">ฝ่าย / ชมรม</span>
-                      <p id="budgetOrgDeptDisplay" class="borrow-profile-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</p>
-                    </div>
-                    <div class="borrow-profile-item">
-                      <span class="borrow-profile-label">ประเภทองค์กร</span>
-                      <p id="budgetOrgTypeDisplay" class="borrow-profile-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</p>
-                    </div>
-                  </div>
-                  <div class="budget-org-summary" aria-label="สรุปการขออนุมัติงบประมาณขององค์กร">
-                    <div class="budget-org-summary-card">
-                      <span class="budget-org-summary-label">โครงการที่ขอไป</span>
-                      <strong id="budgetOrgSummaryProjectCount" class="budget-org-summary-value">0</strong>
-                    </div>
-                    <div class="budget-org-summary-card">
-                      <span class="budget-org-summary-label">งบรวมที่ขอ</span>
-                      <strong id="budgetOrgSummaryTotalExpense" class="budget-org-summary-value">0.00 บาท</strong>
-                    </div>
-                    <div class="budget-org-summary-card">
-                      <span class="budget-org-summary-label">รอพิจารณา</span>
-                      <strong id="budgetOrgSummaryPendingCount" class="budget-org-summary-value">0</strong>
-                    </div>
-                    <div class="budget-org-summary-card">
-                      <span class="budget-org-summary-label">อนุมัติแล้ว</span>
-                      <strong id="budgetOrgSummaryApprovedCount" class="budget-org-summary-value">0</strong>
-                    </div>
-                  </div>
-                  <div id="budgetOrgSummaryCaption" class="borrow-detail-section-caption budget-org-summary-caption">ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว</div>
+              <div class="budget-org-overview">
+                <div class="cards budget-org-floating-cards" aria-label="สรุปการขออนุมัติงบประมาณขององค์กร">
+                  <article class="card card-hover budget-org-floating-card">
+                    <div class="card-title">ฝ่าย / ชมรม</div>
+                    <div id="budgetOrgDeptDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</div>
+                  </article>
+                  <article class="card card-hover budget-org-floating-card">
+                    <div class="card-title">ประเภทองค์กร</div>
+                    <div id="budgetOrgTypeDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</div>
+                  </article>
+                  <article class="card card-hover budget-org-floating-card">
+                    <div class="card-title">โครงการที่ขอไป</div>
+                    <div id="budgetOrgSummaryProjectCount" class="card-value">0</div>
+                  </article>
+                  <article class="card card-hover budget-org-floating-card">
+                    <div class="card-title">งบรวมที่ขอ</div>
+                    <div id="budgetOrgSummaryTotalExpense" class="card-value">0.00 บาท</div>
+                  </article>
                 </div>
+                <div id="budgetOrgSummaryCaption" class="borrow-detail-section-caption budget-org-summary-caption">ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว</div>
               </div>
             </div>
 
-            <form id="budgetApprovalForm" class="borrow-request-form" aria-label="แบบฟอร์มขออนุมัติงบประมาณ">
+            <form id="budgetApprovalForm" class="borrow-request-form budget-request-form" aria-label="แบบฟอร์มขออนุมัติงบประมาณ">
               <div class="panel panel-hover">
                 <div class="panel-header">
                   <div>

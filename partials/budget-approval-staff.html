@@ -1,0 +1,273 @@
+      <!-- ============ BUDGET APPROVAL STAFF ============ -->
+      <section class="page-view" data-page="budget-approval-staff">
+        <div class="page">
+          <div class="page-header-flex">
+            <div>
+              <h1 class="page-title">จัดการคำขออนุมัติงบประมาณ</h1>
+              <p class="page-subtitle">ภาพรวมคำของบ กำหนดเส้นตาย และอนุมัติยอดโครงการ</p>
+            </div>
+            <div class="tabs budget-staff-tabs" role="tablist" aria-label="เลือกมุมมองคำขออนุมัติงบประมาณ">
+              <button class="tab-btn view-toggle-btn is-active" type="button" data-budget-staff-tab="overview" role="tab" aria-selected="true">
+                ภาพรวมคำขอ
+              </button>
+              <button class="tab-btn view-toggle-btn" type="button" data-budget-staff-tab="review" role="tab" aria-selected="false">
+                พิจารณารายการโครงการ
+              </button>
+            </div>
+          </div>
+
+          <div class="budget-staff-layout">
+            <div class="budget-staff-tab-panel is-active" data-budget-staff-panel="overview">
+              <section class="budget-staff-summary-panel">
+                <div class="panel-header budget-staff-overview-header">
+                  <div>
+                    <h3 class="panel-title">ภาพรวมคำขอ</h3>
+                    <p id="budgetStaffSummaryCaption" class="panel-caption">กำลังโหลดข้อมูล...</p>
+                  </div>
+                </div>
+                <div class="budget-staff-overview-filters">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="budgetStaffOrgSummaryGroup">ประเภทองค์กร</label>
+                    <select id="budgetStaffOrgSummaryGroup" class="login-input">
+                      <option value="all">ทุกประเภทองค์กร</option>
+                    </select>
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="budgetStaffOrgSummaryOrg">ฝ่าย / ชมรม</label>
+                    <select id="budgetStaffOrgSummaryOrg" class="login-input">
+                      <option value="all">ทุกฝ่าย / ทุกชมรม</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="cards budget-staff-summary-cards">
+                  <article class="card card-hover budget-staff-summary-card is-count">
+                    <div class="card-title">จำนวนองค์กรที่ยื่นขอ</div>
+                    <div id="budgetStaffOrgCount" class="card-value">0</div>
+                  </article>
+                  <article class="card card-hover budget-staff-summary-card is-count">
+                    <div class="card-title">จำนวนโครงการที่ยื่นขอ</div>
+                    <div id="budgetStaffProjectCount" class="card-value">0</div>
+                  </article>
+                  <article class="card card-hover budget-staff-summary-card is-money">
+                    <div class="card-title">ยอดของบรวม</div>
+                    <div id="budgetStaffRequestedTotal" class="card-value">0.00</div>
+                  </article>
+                  <article class="card card-hover budget-staff-summary-card is-money">
+                    <div class="card-title">ยอดอนุมัติรวม</div>
+                    <div id="budgetStaffApprovedTotal" class="card-value">0.00</div>
+                  </article>
+                  <article class="card card-hover budget-staff-summary-card is-ceiling">
+                    <div class="card-title">เพดานงบประมาณ</div>
+                    <div id="budgetStaffCeilingTotal" class="card-value">ยังไม่กำหนด</div>
+                  </article>
+                  <article class="card card-hover budget-staff-summary-card is-reduction">
+                    <div class="card-title">ควรพิจารณาลดอีก</div>
+                    <div id="budgetStaffReductionNeeded" class="card-value">0.00</div>
+                    <div id="budgetStaffReductionCaption" class="card-caption">-</div>
+                  </article>
+                </div>
+              </section>
+
+              <div class="budget-staff-top-grid">
+                <section class="panel panel-hover staff-access-panel budget-staff-org-summary-panel">
+                  <div class="panel-header">
+                    <div>
+                      <h3 class="panel-title">ยอดของบแยกตามองค์กร</h3>
+                      <p id="budgetStaffOrgSummaryCaption" class="panel-caption">กำลังโหลดข้อมูล...</p>
+                    </div>
+                  </div>
+                  <div class="chart-card budget-staff-chart-card">
+                    <div class="chart-inner">
+                      <canvas id="budgetStaffOrgChart"></canvas>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section class="panel panel-hover staff-access-panel budget-staff-settings-panel">
+                <div class="panel-header">
+                  <div>
+                    <h3 class="panel-title">ตั้งค่าการรับคำขอและรหัสโครงการ</h3>
+                    <p class="panel-caption">กำหนดเส้นตาย ล้างรหัสเดิม และรันรหัสใหม่</p>
+                  </div>
+                </div>
+                <div class="budget-staff-controls">
+                  <div class="budget-staff-settings-grid">
+                    <div class="budget-staff-setting-block budget-staff-deadline-block">
+                      <div class="budget-staff-setting-heading">
+                        <div class="card-title">การรับคำขอ</div>
+                        <div class="card-caption">กำหนดวันสิ้นสุดและดูสถานะเปิดรับ</div>
+                      </div>
+                      <div class="borrow-form-row">
+                        <div class="borrow-form-field">
+                          <label class="login-label" for="budgetRequestDeadlineInput">วันสิ้นสุดการเปิดรับคำของบ</label>
+                          <input id="budgetRequestDeadlineInput" class="login-input" type="date" />
+                        </div>
+                        <div class="borrow-form-field">
+                          <label class="login-label">สถานะปัจจุบัน</label>
+                          <div id="budgetRequestDeadlineStatus" class="section-text-sm budget-staff-status-line">-</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="budget-staff-setting-block budget-staff-budget-block">
+                      <div class="budget-staff-setting-heading">
+                        <div class="card-title">เพดานงบประมาณ</div>
+                        <div class="card-caption">กำหนดเพดานรวมและเพดานย่อยตามฝ่ายใหญ่</div>
+                      </div>
+                      <div class="borrow-form-field">
+                        <label class="login-label" for="budgetCeilingInput">เพดานงบประมาณรวม (บาท)</label>
+                        <input id="budgetCeilingInput" class="login-input" type="number" min="0" step="0.01" placeholder="เช่น 2500000" />
+                      </div>
+                      <div class="budget-staff-group-ceilings">
+                        <div class="budget-staff-group-ceilings-header">
+                          <div class="card-title">เพดานย่อยตามฝ่ายใหญ่</div>
+                          <div class="card-caption">ใช้เมื่อเลือกประเภทองค์กรหรือองค์กรในภาพรวมคำขอ</div>
+                        </div>
+                        <div id="budgetGroupCeilingList" class="budget-staff-group-ceiling-list"></div>
+                      </div>
+                    </div>
+
+                    <div class="budget-staff-setting-block budget-staff-code-block">
+                      <div class="budget-staff-setting-heading">
+                        <div class="card-title">รหัสโครงการ</div>
+                        <div class="card-caption">ล้างรหัสเดิมหรือรันรหัสใหม่ตามลำดับรายการ</div>
+                      </div>
+                      <div class="staff-access-actions budget-staff-control-actions">
+                        <button id="budgetRunProjectCodeBtn" class="btn-ghost" type="button">รันรหัสโครงการ</button>
+                        <button id="budgetClearProjectCodeBtn" class="btn-ghost" type="button">ยกเลิกรหัสที่รันแล้ว</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="staff-access-actions budget-staff-settings-actions">
+                    <button id="budgetRequestDeadlineSaveBtn" class="btn-primary" type="button">บันทึกการตั้งค่า</button>
+                    <div id="budgetStaffActionMessage" class="section-text-sm budget-staff-action-message" aria-live="polite"></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="budget-staff-tab-panel" data-budget-staff-panel="review" hidden>
+              <section class="panel panel-hover staff-access-panel budget-staff-form-panel">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">เพิ่มหรือแก้ไขรายการคำขอ</h3>
+                  <p class="panel-caption">ใช้สำหรับเพิ่มรายการแทนผู้ยื่น หรือแก้ไขยอดอนุมัติและสถานะ</p>
+                </div>
+              </div>
+              <form id="budgetStaffManageForm" class="staff-access-form" aria-label="ฟอร์มจัดการคำของบ">
+                <div class="budget-staff-form-section">
+                  <div class="budget-staff-form-section-title">ข้อมูลโครงการ</div>
+                  <div class="staff-application-position-grid budget-staff-form-grid">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffOrgTypeInput">ประเภทองค์กร</label>
+                      <input id="budgetStaffOrgTypeInput" class="login-input" type="text" maxlength="120" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffOrgNameInput">ฝ่าย / ชมรม</label>
+                      <input id="budgetStaffOrgNameInput" class="login-input" type="text" maxlength="180" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffProjectNameInput">ชื่อโครงการ</label>
+                      <input id="budgetStaffProjectNameInput" class="login-input" type="text" maxlength="200" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffActivityLocationInput">สถานที่ที่ทำกิจกรรม</label>
+                      <input id="budgetStaffActivityLocationInput" class="login-input" type="text" maxlength="200" required />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="budget-staff-form-section">
+                  <div class="budget-staff-form-section-title">ระยะเวลาและผู้เข้าร่วม</div>
+                  <div class="staff-application-position-grid budget-staff-form-grid">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffPrepStartDateInput">วันเริ่มเตรียมงาน</label>
+                      <input id="budgetStaffPrepStartDateInput" class="login-input" type="date" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffOperationEndDateInput">วันสุดท้ายปฏิบัติงาน</label>
+                      <input id="budgetStaffOperationEndDateInput" class="login-input" type="date" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffStudentOperatorsInput">จำนวนนิสิตผู้ปฏิบัติงาน</label>
+                      <input id="budgetStaffStudentOperatorsInput" class="login-input" type="number" min="0" step="1" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffStudentParticipantsInput">จำนวนนิสิตผู้เข้าร่วมงาน</label>
+                      <input id="budgetStaffStudentParticipantsInput" class="login-input" type="number" min="0" step="1" required />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="budget-staff-form-section">
+                  <div class="budget-staff-form-section-title">งบประมาณและสถานะ</div>
+                  <div class="staff-application-position-grid budget-staff-form-grid">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffRequestedAmountInput">ยอดที่ขอ (บาท)</label>
+                      <input id="budgetStaffRequestedAmountInput" class="login-input" type="number" min="0" step="0.01" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffApprovedAmountInput">ยอดอนุมัติ (บาท)</label>
+                      <input id="budgetStaffApprovedAmountInput" class="login-input" type="number" min="0" step="0.01" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffStatusInput">สถานะ</label>
+                      <select id="budgetStaffStatusInput" class="login-input" required>
+                        <option value="pending">รออนุมัติ</option>
+                        <option value="approved">ผ่านที่ประชุมนายกหรืออนุกรรมการ</option>
+                        <option value="rejected">ไม่อนุมัติ</option>
+                        <option value="cancelled">ยกเลิกหรือเลื่อนไปผ่านครั้งอื่น</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="budget-staff-form-section">
+                  <div class="budget-staff-form-section-title">คำอธิบาย</div>
+                  <div class="staff-application-position-grid budget-staff-form-grid">
+                    <div class="borrow-form-field budget-staff-form-field-full">
+                      <label class="login-label" for="budgetStaffDescriptionInput">คำอธิบาย</label>
+                      <textarea id="budgetStaffDescriptionInput" class="login-input" rows="5" maxlength="3000" required></textarea>
+                    </div>
+                  </div>
+                </div>
+                <div class="staff-access-actions budget-staff-form-actions">
+                  <button id="budgetStaffManageSaveBtn" class="btn-primary" type="submit">เพิ่มรายการ</button>
+                  <button id="budgetStaffManageCancelEditBtn" class="btn-ghost" type="button" hidden>ยกเลิกแก้ไข</button>
+                  <div id="budgetStaffManageMessage" class="section-text-sm" aria-live="polite"></div>
+                </div>
+              </form>
+            </section>
+
+            <section class="panel panel-hover staff-access-panel budget-staff-list-panel">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">รายการคำขออนุมัติงบประมาณ</h3>
+                  <p class="panel-caption">ตรวจสอบรหัสโครงการ ยอดเงิน และสถานะของแต่ละคำขอ</p>
+                </div>
+              </div>
+              <div class="project-table-wrapper budget-staff-table-wrapper">
+                <table id="budgetStaffRequestsTable" class="budget-staff-requests-table">
+                  <thead>
+                    <tr>
+                      <th class="col-code">รหัสโครงการ</th>
+                      <th class="col-project">รายการโครงการ</th>
+                      <th class="col-date">วันสุดท้ายปฏิบัติงาน</th>
+                      <th class="col-money">ยอดขอ</th>
+                      <th class="col-money">ยอดอนุมัติ</th>
+                      <th class="col-status">สถานะ</th>
+                      <th class="col-actions">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="budgetStaffRequestsBody">
+                    <tr><td colspan="7">กำลังโหลดข้อมูล...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            </div>
+          </div>
+        </div>
+      </section>

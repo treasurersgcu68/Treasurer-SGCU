@@ -412,6 +412,381 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 12px;
 }
 
+.budget-request-form .panel-body {
+  display: grid;
+  gap: 14px;
+}
+
+.budget-request-form .borrow-form-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.budget-request-form .borrow-form-row.is-3 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.budget-request-form .borrow-form-field {
+  min-width: 0;
+}
+
+.budget-request-form .meeting-form-actions {
+  margin-top: 2px;
+  justify-content: flex-end;
+}
+
+.budget-staff-panel .panel-body {
+  display: grid;
+  gap: 14px;
+}
+
+.budget-staff-layout {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.budget-staff-tab-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.budget-staff-tab-panel[hidden] {
+  display: none;
+}
+
+.budget-staff-layout .staff-access-panel {
+  margin-top: 0;
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.budget-staff-summary-panel {
+  margin-top: 18px;
+  min-width: 0;
+}
+
+.budget-staff-overview-header {
+  margin-bottom: 12px;
+}
+
+.budget-staff-overview-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+  width: 100%;
+  max-width: none;
+}
+
+.budget-staff-overview-filters .borrow-form-field,
+.budget-staff-overview-filters .login-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.cards.budget-staff-summary-cards {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.budget-staff-summary-card {
+  min-width: 0;
+}
+
+.budget-staff-summary-card.is-money,
+.budget-staff-summary-card.is-count,
+.budget-staff-summary-card.is-reduction,
+.budget-staff-summary-card.is-ceiling {
+  grid-column: auto;
+}
+
+.budget-staff-summary-card .card-value {
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.budget-staff-summary-card.is-reduction {
+  background: #fff7ed;
+  border-color: rgba(251, 146, 60, 0.26);
+}
+
+.budget-staff-summary-card.is-ceiling {
+  background: #f8fbff;
+  border-color: rgba(96, 165, 250, 0.22);
+}
+
+.budget-staff-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.budget-staff-chart-panel,
+.budget-staff-settings-panel,
+.budget-staff-form-panel,
+.budget-staff-list-panel {
+  min-width: 0;
+}
+
+.budget-staff-chart-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.budget-staff-chart-card {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-height: 420px;
+  border: 1px solid rgba(244, 114, 182, 0.14);
+  border-radius: 18px;
+  box-shadow: none;
+  background: #ffffff;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.budget-staff-chart-card .chart-inner {
+  height: 100%;
+  min-height: 400px;
+}
+
+.budget-staff-org-summary-panel {
+  min-width: 0;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.budget-staff-org-summary-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.budget-staff-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid rgba(244, 114, 182, 0.16);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.budget-staff-requests-table {
+  min-width: 860px;
+}
+
+.budget-staff-requests-table th,
+.budget-staff-requests-table td {
+  vertical-align: top;
+}
+
+.budget-staff-requests-table .col-code {
+  min-width: 112px;
+  text-align: center;
+}
+
+.budget-staff-requests-table .col-project {
+  min-width: 300px;
+  white-space: normal;
+}
+
+.budget-staff-requests-table .col-date,
+.budget-staff-requests-table .col-status {
+  min-width: 132px;
+  text-align: center;
+}
+
+.budget-staff-requests-table .col-money {
+  min-width: 124px;
+  text-align: right;
+}
+
+.budget-staff-requests-table .col-actions {
+  min-width: 148px;
+  text-align: center;
+}
+
+.budget-staff-project-name {
+  color: #111827;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.budget-staff-project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 6px;
+}
+
+.budget-staff-org-name {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.budget-staff-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.budget-staff-controls {
+  border: 1px solid rgba(244, 114, 182, 0.16);
+  border-radius: 16px;
+  padding: 14px;
+  background: #ffffff;
+  display: grid;
+  gap: 12px;
+}
+
+.budget-staff-settings-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.35fr) minmax(220px, 0.85fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.budget-staff-setting-block {
+  min-width: 0;
+  border: 1px solid rgba(244, 114, 182, 0.14);
+  border-radius: 14px;
+  background: #fffafd;
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.budget-staff-setting-heading {
+  display: grid;
+  gap: 2px;
+}
+
+.budget-staff-deadline-block .borrow-form-row {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.budget-staff-group-ceilings {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid rgba(244, 114, 182, 0.16);
+  padding-top: 12px;
+}
+
+.budget-staff-group-ceilings-header {
+  display: grid;
+  gap: 2px;
+}
+
+.budget-staff-group-ceiling-list {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.budget-staff-group-ceiling-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 0.62fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.budget-staff-status-line {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(244, 114, 182, 0.18);
+  background: #ffffff;
+  padding: 9px 11px;
+}
+
+.budget-staff-control-actions,
+.budget-staff-settings-actions,
+.budget-staff-form-actions {
+  align-items: stretch;
+}
+
+.budget-staff-code-block .budget-staff-control-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.budget-staff-code-block .btn-ghost {
+  justify-content: center;
+}
+
+.budget-staff-settings-actions {
+  display: grid;
+  grid-template-columns: minmax(160px, max-content) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.budget-staff-control-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.budget-staff-control-actions .btn-primary,
+.budget-staff-control-actions .btn-ghost {
+  width: 100%;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+}
+
+.budget-staff-action-message {
+  flex-basis: 100%;
+}
+
+.staff-application-position-grid.budget-staff-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.budget-staff-form-section {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(244, 114, 182, 0.16);
+  border-radius: 14px;
+  background: #fffafd;
+}
+
+.budget-staff-form-section-title {
+  color: #9d174d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.budget-staff-form-field-full {
+  grid-column: 1 / -1;
+}
+
+.budget-staff-form-field-full textarea {
+  resize: vertical;
+}
+
+.budget-staff-list-panel .panel-header {
+  margin-bottom: 12px;
+}
+
 .budget-org-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -446,14 +821,132 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-top: 8px;
 }
 
+.budget-org-overview .budget-org-floating-cards {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.budget-org-floating-card {
+  border: none;
+  background: linear-gradient(180deg, #ffffff 0%, #fff9fc 100%);
+  box-shadow: 0 12px 28px rgba(236, 72, 153, 0.12);
+}
+
+.budget-org-floating-value {
+  font-size: 20px;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.budget-org-floating-value.is-empty {
+  color: #9ca3af;
+  font-size: 16px;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .budget-org-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .budget-request-form .borrow-form-row,
+  .budget-request-form .borrow-form-row.is-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .budget-request-form .meeting-form-actions {
+    justify-content: stretch;
+  }
+
+  .budget-staff-top-grid,
+  .staff-application-position-grid.budget-staff-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-form-field-full {
+    grid-column: auto;
+  }
+
+  .budget-staff-chart-card,
+  .budget-staff-chart-card .chart-inner {
+    min-height: 260px;
+  }
+
+  .budget-staff-overview-filters,
+  .budget-staff-org-summary-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cards.budget-staff-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .budget-staff-summary-card.is-money,
+  .budget-staff-summary-card.is-reduction,
+  .budget-staff-summary-card.is-count,
+  .budget-staff-summary-card.is-ceiling {
+    grid-column: auto;
+  }
+
+  .budget-staff-settings-grid,
+  .budget-staff-controls .borrow-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-controls .staff-access-actions,
+  .budget-staff-settings-actions {
+    align-items: stretch;
+  }
+
+  .budget-staff-controls .staff-access-actions .btn-primary,
+  .budget-staff-controls .staff-access-actions .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .budget-staff-group-ceiling-row {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-settings-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .budget-staff-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cards.budget-staff-summary-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .budget-staff-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-form-field-full {
+    grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 480px) {
   .budget-org-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .cards.budget-staff-summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-overview-header {
+    align-items: stretch;
+  }
+
+  .budget-staff-overview-filters,
+  .budget-staff-org-summary-tools {
     grid-template-columns: 1fr;
   }
 }
@@ -8040,6 +8533,119 @@ th.sortable.sort-desc::after {
     overflow-wrap: anywhere;
   }
 
+  .budget-staff-table-wrapper {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .budget-staff-requests-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .budget-staff-requests-table thead {
+    display: none;
+  }
+
+  .budget-staff-requests-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .budget-staff-requests-table .budget-staff-request-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(148, 163, 184, 0.16);
+  }
+
+  .budget-staff-requests-table .budget-staff-request-row:hover {
+    background: #ffffff;
+  }
+
+  .budget-staff-requests-table td {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    text-align: right;
+    white-space: normal;
+  }
+
+  .budget-staff-requests-table td::before {
+    content: attr(data-label);
+    flex: 0 0 106px;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  .budget-staff-requests-table td.col-code {
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+    color: #9f1239;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left;
+  }
+
+  .budget-staff-requests-table td.col-code::before,
+  .budget-staff-requests-table td.col-status::before,
+  .budget-staff-requests-table td.col-project::before {
+    display: none;
+  }
+
+  .budget-staff-requests-table td.col-status {
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+  }
+
+  .budget-staff-requests-table td.col-project {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    text-align: left;
+  }
+
+  .budget-staff-requests-table td.col-date,
+  .budget-staff-requests-table td.col-money,
+  .budget-staff-requests-table td.col-actions {
+    min-width: 0;
+  }
+
+  .budget-staff-requests-table td.col-actions {
+    align-items: stretch;
+  }
+
+  .budget-staff-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    white-space: normal;
+  }
+
+  .budget-staff-row-actions .btn-ghost {
+    justify-content: center;
+    width: 100%;
+  }
+
   .meeting-secondary-actions,
   .modal-actions,
   .borrow-request-detail-actions,
@@ -9292,6 +9898,64 @@ th.sortable.sort-desc::after {
   background: rgba(252, 231, 243, 0.62);
 }
 
+.borrow-my-requests-cards {
+  display: none;
+}
+
+.borrow-my-request-card-empty {
+  margin: 0;
+  padding: 12px 10px;
+  border: 1px dashed rgba(236, 72, 153, 0.2);
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+  color: #6b7280;
+}
+
+@media (max-width: 840px) {
+  .borrow-my-requests-cards .borrow-my-request-row-mobile {
+    display: grid !important;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(148, 163, 184, 0.14);
+  }
+
+  .borrow-my-requests-cards .borrow-my-request-row-mobile > div {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .borrow-my-requests-cards .borrow-my-cell-label {
+    flex: 0 0 84px;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: left;
+  }
+
+  .borrow-my-requests-cards .borrow-my-cell-value {
+    min-width: 0;
+    flex: 1 1 auto;
+    text-align: right;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .borrow-my-requests-cards .borrow-my-cell-value .badge {
+    margin-left: auto;
+    white-space: nowrap;
+  }
+}
+
 .borrow-staff-row td {
   vertical-align: top;
 }
@@ -10227,6 +10891,14 @@ th.sortable.sort-desc::after {
 
 .meeting-calendar-title-link:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 840px) {
+  .borrow-my-requests-cards {
+    display: grid;
+    gap: 10px;
+    margin-top: 2px;
+  }
 }
 
 @media (max-width: 640px) {

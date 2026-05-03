@@ -19,12 +19,7 @@
           <div class="budget-staff-layout">
             <div class="budget-staff-tab-panel is-active" data-budget-staff-panel="overview">
               <section class="budget-staff-summary-panel">
-                <div class="panel-header budget-staff-overview-header">
-                  <div>
-                    <h3 class="panel-title">ภาพรวมคำขอ</h3>
-                    <p id="budgetStaffSummaryCaption" class="panel-caption">กำลังโหลดข้อมูล...</p>
-                  </div>
-                </div>
+                <p id="budgetStaffSummaryCaption" class="panel-caption budget-staff-summary-caption" hidden>กำลังโหลดข้อมูล...</p>
                 <div class="budget-staff-overview-filters">
                   <div class="borrow-form-field">
                     <label class="login-label" for="budgetStaffOrgSummaryGroup">ประเภทองค์กร</label>
@@ -93,56 +88,73 @@
                 </div>
                 <div class="budget-staff-controls">
                   <div class="budget-staff-settings-grid">
-                    <div class="budget-staff-setting-block budget-staff-deadline-block">
-                      <div class="budget-staff-setting-heading">
-                        <div class="card-title">การรับคำขอ</div>
-                        <div class="card-caption">กำหนดวันสิ้นสุดและดูสถานะเปิดรับ</div>
+                    <div class="budget-staff-settings-main">
+                      <div class="budget-staff-setting-block budget-staff-deadline-block">
+                        <div class="budget-staff-setting-heading">
+                          <div class="card-title">การรับคำขอ</div>
+                          <div class="card-caption">กำหนดวันสิ้นสุดและดูสถานะเปิดรับ</div>
+                        </div>
+                        <div class="budget-staff-deadline-grid">
+                          <div class="borrow-form-field">
+                            <label class="login-label" for="budgetRequestDeadlineInput">วันสิ้นสุดการเปิดรับคำของบ</label>
+                            <input id="budgetRequestDeadlineInput" class="login-input" type="date" />
+                          </div>
+                          <div class="borrow-form-field">
+                            <label class="login-label">สถานะปัจจุบัน</label>
+                            <div id="budgetRequestDeadlineStatus" class="section-text-sm budget-staff-status-line">-</div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="borrow-form-row">
-                        <div class="borrow-form-field">
-                          <label class="login-label" for="budgetRequestDeadlineInput">วันสิ้นสุดการเปิดรับคำของบ</label>
-                          <input id="budgetRequestDeadlineInput" class="login-input" type="date" />
+
+                      <div class="budget-staff-setting-block budget-staff-budget-block">
+                        <div class="budget-staff-setting-heading">
+                          <div class="card-title">เพดานงบประมาณ</div>
+                          <div class="card-caption">กำหนดเพดานรวมและเพดานย่อยตามฝ่ายใหญ่</div>
                         </div>
                         <div class="borrow-form-field">
-                          <label class="login-label">สถานะปัจจุบัน</label>
-                          <div id="budgetRequestDeadlineStatus" class="section-text-sm budget-staff-status-line">-</div>
+                          <label class="login-label" for="budgetCeilingInput">เพดานงบประมาณรวม (บาท)</label>
+                          <input id="budgetCeilingInput" class="login-input" type="number" min="0" step="0.01" placeholder="เช่น 2500000" />
+                        </div>
+                        <div class="budget-staff-group-ceilings">
+                          <div class="budget-staff-group-ceilings-header">
+                            <div>
+                              <div class="card-title">เพดานย่อยตามฝ่ายใหญ่</div>
+                              <div class="card-caption">ใช้เมื่อเลือกประเภทองค์กรหรือองค์กรในภาพรวมคำขอ</div>
+                            </div>
+                            <button
+                              id="budgetGroupCeilingToggleBtn"
+                              class="btn-ghost budget-staff-section-toggle"
+                              type="button"
+                              aria-expanded="true"
+                              aria-controls="budgetGroupCeilingList"
+                            >ซ่อน</button>
+                          </div>
+                          <div id="budgetGroupCeilingList" class="budget-staff-group-ceiling-list"></div>
                         </div>
                       </div>
                     </div>
 
-                    <div class="budget-staff-setting-block budget-staff-budget-block">
-                      <div class="budget-staff-setting-heading">
-                        <div class="card-title">เพดานงบประมาณ</div>
-                        <div class="card-caption">กำหนดเพดานรวมและเพดานย่อยตามฝ่ายใหญ่</div>
-                      </div>
-                      <div class="borrow-form-field">
-                        <label class="login-label" for="budgetCeilingInput">เพดานงบประมาณรวม (บาท)</label>
-                        <input id="budgetCeilingInput" class="login-input" type="number" min="0" step="0.01" placeholder="เช่น 2500000" />
-                      </div>
-                      <div class="budget-staff-group-ceilings">
-                        <div class="budget-staff-group-ceilings-header">
-                          <div class="card-title">เพดานย่อยตามฝ่ายใหญ่</div>
-                          <div class="card-caption">ใช้เมื่อเลือกประเภทองค์กรหรือองค์กรในภาพรวมคำขอ</div>
+                    <div class="budget-staff-settings-side">
+                      <div class="budget-staff-setting-block budget-staff-save-block">
+                        <div class="budget-staff-setting-heading">
+                          <div class="card-title">บันทึกการตั้งค่า</div>
+                          <div class="card-caption">ใช้กับเส้นตายและเพดานงบประมาณ</div>
                         </div>
-                        <div id="budgetGroupCeilingList" class="budget-staff-group-ceiling-list"></div>
+                        <button id="budgetRequestDeadlineSaveBtn" class="btn-primary" type="button">บันทึกการตั้งค่า</button>
+                        <div id="budgetStaffActionMessage" class="section-text-sm budget-staff-action-message" aria-live="polite"></div>
+                      </div>
+
+                      <div class="budget-staff-setting-block budget-staff-code-block">
+                        <div class="budget-staff-setting-heading">
+                          <div class="card-title">รหัสโครงการ</div>
+                          <div class="card-caption">ล้างรหัสเดิมหรือรันรหัสใหม่ตามลำดับรายการ</div>
+                        </div>
+                        <div class="staff-access-actions budget-staff-control-actions">
+                          <button id="budgetRunProjectCodeBtn" class="btn-ghost" type="button">รันรหัสโครงการ</button>
+                          <button id="budgetClearProjectCodeBtn" class="btn-ghost" type="button">ยกเลิกรหัสที่รันแล้ว</button>
+                        </div>
                       </div>
                     </div>
-
-                    <div class="budget-staff-setting-block budget-staff-code-block">
-                      <div class="budget-staff-setting-heading">
-                        <div class="card-title">รหัสโครงการ</div>
-                        <div class="card-caption">ล้างรหัสเดิมหรือรันรหัสใหม่ตามลำดับรายการ</div>
-                      </div>
-                      <div class="staff-access-actions budget-staff-control-actions">
-                        <button id="budgetRunProjectCodeBtn" class="btn-ghost" type="button">รันรหัสโครงการ</button>
-                        <button id="budgetClearProjectCodeBtn" class="btn-ghost" type="button">ยกเลิกรหัสที่รันแล้ว</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="staff-access-actions budget-staff-settings-actions">
-                    <button id="budgetRequestDeadlineSaveBtn" class="btn-primary" type="button">บันทึกการตั้งค่า</button>
-                    <div id="budgetStaffActionMessage" class="section-text-sm budget-staff-action-message" aria-live="polite"></div>
                   </div>
                 </div>
               </section>
@@ -248,21 +260,33 @@
                   <p class="panel-caption">ตรวจสอบรหัสโครงการ ยอดเงิน และสถานะของแต่ละคำขอ</p>
                 </div>
               </div>
+              <div class="budget-staff-review-filters">
+                <div class="borrow-form-field">
+                  <label class="login-label" for="budgetStaffReviewGroup">ประเภทองค์กร</label>
+                  <select id="budgetStaffReviewGroup" class="login-input">
+                    <option value="all">ทุกประเภทองค์กร</option>
+                  </select>
+                </div>
+                <div class="borrow-form-field">
+                  <label class="login-label" for="budgetStaffReviewOrg">ฝ่าย / ชมรม</label>
+                  <select id="budgetStaffReviewOrg" class="login-input">
+                    <option value="all">ทุกฝ่าย / ทุกชมรม</option>
+                  </select>
+                </div>
+              </div>
               <div class="project-table-wrapper budget-staff-table-wrapper">
                 <table id="budgetStaffRequestsTable" class="budget-staff-requests-table">
                   <thead>
                     <tr>
                       <th class="col-code">รหัสโครงการ</th>
                       <th class="col-project">รายการโครงการ</th>
-                      <th class="col-date">วันสุดท้ายปฏิบัติงาน</th>
                       <th class="col-money">ยอดขอ</th>
                       <th class="col-money">ยอดอนุมัติ</th>
                       <th class="col-status">สถานะ</th>
-                      <th class="col-actions">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody id="budgetStaffRequestsBody">
-                    <tr><td colspan="7">กำลังโหลดข้อมูล...</td></tr>
+                    <tr><td colspan="5">กำลังโหลดข้อมูล...</td></tr>
                   </tbody>
                 </table>
               </div>

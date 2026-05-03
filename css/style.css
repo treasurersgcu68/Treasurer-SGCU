@@ -417,6 +417,32 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 14px;
 }
 
+.budget-request-panel-body {
+  align-items: start;
+}
+
+.budget-request-form-main {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.budget-request-form-section {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(244, 114, 182, 0.16);
+  border-radius: 14px;
+  background: #fffafd;
+}
+
+.budget-request-form-section-title {
+  color: #9d174d;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .budget-request-form .borrow-form-row {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
@@ -430,9 +456,102 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   min-width: 0;
 }
 
+.budget-request-field-full {
+  grid-column: 1 / -1;
+}
+
+.budget-request-field-full textarea {
+  resize: vertical;
+}
+
+.budget-request-field-hint {
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+.budget-request-description-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.budget-request-counter {
+  flex: 0 0 auto;
+  color: #9d174d;
+  font-weight: 700;
+}
+
 .budget-request-form .meeting-form-actions {
   margin-top: 2px;
   justify-content: flex-end;
+}
+
+.meeting-form-actions.budget-request-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.budget-request-actions-message {
+  min-width: 0;
+}
+
+.budget-request-actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.budget-request-project-code {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(236, 72, 153, 0.2);
+  border-radius: 999px;
+  background: #fff7fc;
+  padding: 4px 10px;
+  color: #9d174d;
+  font-family: Kanit, var(--font-body);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.budget-request-history-project-name {
+  color: #111827;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.budget-request-history-project-meta {
+  margin-top: 3px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.budget-request-history-row.is-editable {
+  cursor: pointer;
+}
+
+.budget-request-history-row.is-editable:hover {
+  background: #fff7fc;
+}
+
+.budget-request-history-row.is-editable:focus-visible {
+  outline: 3px solid rgba(236, 72, 153, 0.28);
+  outline-offset: -3px;
+}
+
+.budget-request-cancel-request-btn {
+  border-color: #fecaca;
+  color: #b91c1c;
+  background: #fff7f7;
 }
 
 .budget-staff-panel .panel-body {
@@ -482,6 +601,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .budget-staff-overview-filters .borrow-form-field,
 .budget-staff-overview-filters .login-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.budget-staff-review-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.budget-staff-review-filters .borrow-form-field,
+.budget-staff-review-filters .login-input {
   width: 100%;
   min-width: 0;
 }
@@ -575,7 +707,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .budget-staff-requests-table {
-  min-width: 860px;
+  min-width: 720px;
 }
 
 .budget-staff-requests-table th,
@@ -588,12 +720,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   text-align: center;
 }
 
+.budget-staff-requests-table .col-code code {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  color: #9f1239;
+  line-height: 1.25;
+}
+
+.budget-staff-requests-table .col-code .budget-request-project-code {
+  font-family: Kanit, var(--font-body);
+  letter-spacing: 0;
+}
+
 .budget-staff-requests-table .col-project {
   min-width: 300px;
   white-space: normal;
 }
 
-.budget-staff-requests-table .col-date,
 .budget-staff-requests-table .col-status {
   min-width: 132px;
   text-align: center;
@@ -604,14 +748,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   text-align: right;
 }
 
-.budget-staff-requests-table .col-actions {
-  min-width: 148px;
-  text-align: center;
-}
-
 .budget-staff-project-name {
   color: #111827;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -620,8 +759,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
-  margin-top: 6px;
+  gap: 4px 8px;
 }
 
 .budget-staff-org-name {
@@ -651,9 +789,21 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .budget-staff-settings-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.35fr) minmax(220px, 0.85fr);
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.34fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.budget-staff-settings-main,
+.budget-staff-settings-side {
+  display: grid;
   gap: 12px;
-  align-items: stretch;
+  min-width: 0;
+}
+
+.budget-staff-settings-side {
+  position: sticky;
+  top: 92px;
 }
 
 .budget-staff-setting-block {
@@ -677,6 +827,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 10px;
 }
 
+.budget-staff-deadline-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .budget-staff-group-ceilings {
   display: grid;
   gap: 10px;
@@ -685,8 +841,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .budget-staff-group-ceilings-header {
-  display: grid;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 2px;
+}
+
+.budget-staff-section-toggle {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
 }
 
 .budget-staff-group-ceiling-list {
@@ -695,6 +861,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   max-height: 260px;
   overflow: auto;
   padding-right: 2px;
+}
+
+.budget-staff-group-ceiling-list[hidden] {
+  display: none;
 }
 
 .budget-staff-group-ceiling-row {
@@ -725,6 +895,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 8px;
 }
 
+.budget-staff-save-block {
+  background: #f8fbff;
+  border-color: rgba(96, 165, 250, 0.2);
+}
+
+.budget-staff-save-block .btn-primary {
+  width: 100%;
+  justify-content: center;
+}
+
 .budget-staff-code-block .btn-ghost {
   justify-content: center;
 }
@@ -752,6 +932,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .budget-staff-action-message {
   flex-basis: 100%;
+  min-height: 20px;
 }
 
 .staff-application-position-grid.budget-staff-form-grid {
@@ -822,7 +1003,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .budget-org-overview .budget-org-floating-cards {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   align-items: stretch;
   width: 100%;
@@ -850,6 +1031,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .budget-org-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .budget-org-overview .budget-org-floating-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .budget-request-form .borrow-form-row,
   .budget-request-form .borrow-form-row.is-3 {
     grid-template-columns: 1fr;
@@ -857,6 +1041,26 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
   .budget-request-form .meeting-form-actions {
     justify-content: stretch;
+  }
+  .meeting-form-actions.budget-request-actions {
+    grid-template-columns: 1fr;
+  }
+  .budget-request-actions-group {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  .budget-request-actions-group .btn-primary,
+  .budget-request-actions-group .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+  .budget-request-description-meta {
+    display: grid;
+    gap: 4px;
+  }
+  .budget-request-counter {
+    justify-self: end;
   }
 
   .budget-staff-top-grid,
@@ -874,6 +1078,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   .budget-staff-overview-filters,
+  .budget-staff-review-filters,
   .budget-staff-org-summary-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -890,8 +1095,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   .budget-staff-settings-grid,
+  .budget-staff-deadline-grid,
   .budget-staff-controls .borrow-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .budget-staff-settings-side {
+    position: static;
   }
 
   .budget-staff-controls .staff-access-actions,
@@ -927,6 +1137,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     grid-template-columns: 1fr;
   }
 
+  .budget-staff-settings-side {
+    position: static;
+  }
+
   .budget-staff-form-field-full {
     grid-column: 1 / -1;
   }
@@ -934,6 +1148,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 @media (max-width: 480px) {
   .budget-org-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-org-overview .budget-org-floating-cards {
     grid-template-columns: 1fr;
   }
 
@@ -946,6 +1164,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   .budget-staff-overview-filters,
+  .budget-staff-review-filters,
   .budget-staff-org-summary-tools {
     grid-template-columns: 1fr;
   }
@@ -8534,6 +8753,8 @@ th.sortable.sort-desc::after {
   }
 
   .budget-staff-table-wrapper {
+    width: 100%;
+    max-width: 100%;
     max-height: none;
     overflow: visible;
     border: 0;
@@ -8544,6 +8765,7 @@ th.sortable.sort-desc::after {
     display: block;
     min-width: 0;
     width: 100%;
+    max-width: 100%;
   }
 
   .budget-staff-requests-table thead {
@@ -8553,13 +8775,18 @@ th.sortable.sort-desc::after {
   .budget-staff-requests-table tbody {
     display: grid;
     gap: 10px;
+    width: 100%;
+    max-width: 100%;
   }
 
   .budget-staff-requests-table .budget-staff-request-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     padding: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     border: 1px solid rgba(236, 72, 153, 0.18);
     border-radius: 14px;
     background: #ffffff;
@@ -8576,11 +8803,14 @@ th.sortable.sort-desc::after {
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
     padding: 0;
     border: 0;
     text-align: right;
     white-space: normal;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .budget-staff-requests-table td::before {
@@ -8595,12 +8825,28 @@ th.sortable.sort-desc::after {
 
   .budget-staff-requests-table td.col-code {
     display: block;
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 1;
     color: #9f1239;
     font-size: 12px;
     font-weight: 800;
     text-align: left;
+    overflow-wrap: anywhere;
+    width: 100%;
+  }
+
+  .budget-staff-requests-table td.col-code code {
+    display: inline-flex;
+    max-width: 100%;
+    border-radius: 999px;
+    background: #fff7fb;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    padding: 4px 9px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .budget-staff-requests-table td.col-code::before,
@@ -8611,9 +8857,17 @@ th.sortable.sort-desc::after {
 
   .budget-staff-requests-table td.col-status {
     display: block;
-    grid-column: 2;
-    grid-row: 1;
-    text-align: right;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    text-align: left;
+    width: 100%;
+  }
+
+  .budget-staff-requests-table td.col-status .badge {
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.35;
   }
 
   .budget-staff-requests-table td.col-project {
@@ -8621,16 +8875,30 @@ th.sortable.sort-desc::after {
     grid-column: 1 / -1;
     grid-row: 2;
     text-align: left;
+    width: 100%;
   }
 
-  .budget-staff-requests-table td.col-date,
-  .budget-staff-requests-table td.col-money,
-  .budget-staff-requests-table td.col-actions {
+  .budget-staff-requests-table td.col-money {
     min-width: 0;
   }
 
-  .budget-staff-requests-table td.col-actions {
-    align-items: stretch;
+  .budget-staff-requests-table td.col-money {
+    display: grid;
+    align-content: start;
+    justify-content: stretch;
+    gap: 4px;
+    grid-column: auto;
+    grid-row: 4;
+    padding: 10px;
+    border-radius: 12px;
+    background: #f8fafc;
+    text-align: left;
+  }
+
+  .budget-staff-requests-table td.col-money::before {
+    flex: none;
+    color: #64748b;
+    font-size: 11px;
   }
 
   .budget-staff-row-actions {
@@ -10980,5 +11248,75 @@ th.sortable.sort-desc::after {
 
   #meetingPublicBookingDayModal .modal-table {
     min-width: 620px;
+  }
+}
+
+@media (max-width: 768px) {
+  .budget-staff-list-panel,
+  .budget-staff-list-panel .panel-header,
+  .budget-staff-table-wrapper,
+  .budget-staff-requests-table,
+  .budget-staff-requests-table tbody,
+  .budget-staff-requests-table .budget-staff-request-row {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .budget-staff-table-wrapper {
+    overflow: visible !important;
+  }
+
+  .budget-staff-requests-table {
+    display: block !important;
+    table-layout: fixed !important;
+  }
+
+  .budget-staff-requests-table thead {
+    display: none !important;
+  }
+
+  .budget-staff-requests-table tbody {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  .budget-staff-requests-table .budget-staff-request-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+  }
+
+  .budget-staff-requests-table td {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: auto !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .budget-staff-requests-table td.col-code,
+  .budget-staff-requests-table td.col-project,
+  .budget-staff-requests-table td.col-status {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  .budget-staff-requests-table td.col-money {
+    grid-column: auto !important;
+    width: auto !important;
+  }
+
+  .budget-staff-requests-table td.col-money::before {
+    flex: none !important;
+  }
+
+  .budget-staff-row-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }

@@ -26,9 +26,9 @@
       "staff-application": "js/features/staff/app.staff-access.js?v=20260430-7",
       "staff-approval": [
         "js/features/staff/app.staff-access.js?v=20260430-7",
-        "js/features/budget/app.budget-staff.js?v=20260503-2"
+        "js/features/budget/app.budget-staff.js?v=20260504-2"
       ],
-      "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260503-2"
+      "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260504-2"
     },
     idlePrefetchPages: [
       "home",

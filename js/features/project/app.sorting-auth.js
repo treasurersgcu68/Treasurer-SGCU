@@ -381,7 +381,6 @@ function getAllowedPagesForCurrentState() {
     "borrow-assets",
     "meeting-room-booking",
     "budget-approval-request",
-    "budget-approval-staff",
     "staff-application"
   ];
   protectedAllowed.forEach((page) => allowed.add(page));

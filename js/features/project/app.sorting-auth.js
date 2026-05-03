@@ -213,7 +213,7 @@ const STAFF_PAGE_OPTIONS = [
   "project-status-staff",
   "borrow-assets-staff",
   "meeting-room-staff",
-  "budget-approval-request",
+  "budget-approval-staff",
   "staff-approval",
   "login"
 ];
@@ -320,7 +320,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-request", "staff-approval", "login"]);
+    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "staff-approval", "login"]);
   }
   return new Set(["login"]);
 }
@@ -381,6 +381,7 @@ function getAllowedPagesForCurrentState() {
     "borrow-assets",
     "meeting-room-booking",
     "budget-approval-request",
+    "budget-approval-staff",
     "staff-application"
   ];
   protectedAllowed.forEach((page) => allowed.add(page));
@@ -391,7 +392,7 @@ function getAllowedPagesForCurrentState() {
 
   if (staffAuthUser && staffViewMode === "staff") {
     const yyAllowed = getAllowedStaffPagesByProfile(staffAuthUser);
-    yyAllowed.add("budget-approval-request");
+    yyAllowed.add("budget-approval-staff");
     if (isAffairsProfile) {
       yyAllowed.delete("borrow-assets");
       yyAllowed.delete("borrow-assets-staff");

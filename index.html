@@ -41,7 +41,7 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css?v=20260502-1" />
+    <link rel="stylesheet" href="css/style.css?v=20260503-13" />
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
     <script type="module" src="js/integrations/app.firebase-bootstrap.js?v=20260423-1"></script>
   </head>
@@ -123,7 +123,7 @@
               <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการคำขอยืม-คืนพัสดุ</a>
                 <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม</a>
-                <a href="#" data-page="budget-approval-request" data-visible="protected">ขออนุมัติงบประมาณ</a>
+                <a href="#" data-page="budget-approval-staff" data-visible="protected">จัดการคำของบ</a>
                 <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
               </div>
             </div>
@@ -186,6 +186,7 @@
               <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ (Staff)</a>
               <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการยืม-คืนพัสดุ (Staff)</a>
               <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม (Staff)</a>
+              <a href="#" data-page="budget-approval-staff" data-visible="protected">จัดการคำของบ</a>
               <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
             </div>
           </details>
@@ -238,6 +239,8 @@
       <!-- @include partials/news.html -->
 
       <!-- @include partials/staff-approval.html -->
+
+      <!-- @include partials/budget-approval-staff.html -->
 
       <!-- @include partials/login.html -->
 
@@ -1051,12 +1054,12 @@
     <script src="js/features/project/app.project-modal.js" defer></script>
     <script src="js/features/project/app.charts.js" defer></script>
     <script src="js/features/project/app.pie.js" defer></script>
-    <script src="js/features/project/app.sorting-auth.js?v=20260430-6" defer></script>
+    <script src="js/features/project/app.sorting-auth.js?v=20260503-1" defer></script>
     <script src="js/features/project/app.calendar.js" defer></script>
     <script src="js/features/org/app.org.js?v=20260503-1" defer></script>
     <script src="js/motion/app.motion.js" defer></script>
     <script>
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260503-1";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260503-15";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",
@@ -1064,7 +1067,7 @@
       };
     </script>
     <script src="js/integrations/app.web-push.js" defer></script>
-    <script src="js/core/app.feature-loader.js?v=20260501-2" defer></script>
+    <script src="js/core/app.feature-loader.js?v=20260503-8" defer></script>
     <script src="js/core/app.init.js?v=20260430-1" defer></script>
   </body>
 </html>

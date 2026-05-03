@@ -1144,6 +1144,86 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .budget-staff-form-field-full {
     grid-column: 1 / -1;
   }
+  .budget-request-form .borrow-form-row,
+  .budget-request-form .borrow-form-row.is-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .budget-request-form .meeting-form-actions {
+    justify-content: stretch;
+  }
+
+  .budget-staff-top-grid,
+  .staff-application-position-grid.budget-staff-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-form-field-full {
+    grid-column: auto;
+  }
+
+  .budget-staff-chart-card,
+  .budget-staff-chart-card .chart-inner {
+    min-height: 260px;
+  }
+
+  .budget-staff-overview-filters,
+  .budget-staff-org-summary-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cards.budget-staff-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .budget-staff-summary-card.is-money,
+  .budget-staff-summary-card.is-reduction,
+  .budget-staff-summary-card.is-count,
+  .budget-staff-summary-card.is-ceiling {
+    grid-column: auto;
+  }
+
+  .budget-staff-settings-grid,
+  .budget-staff-controls .borrow-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-controls .staff-access-actions,
+  .budget-staff-settings-actions {
+    align-items: stretch;
+  }
+
+  .budget-staff-controls .staff-access-actions .btn-primary,
+  .budget-staff-controls .staff-access-actions .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .budget-staff-group-ceiling-row {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-settings-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .budget-staff-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cards.budget-staff-summary-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .budget-staff-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-staff-form-field-full {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 480px) {

@@ -173,7 +173,18 @@ function syncDesktopNavGroupVisibility() {
 
 function syncMobileNavGroupVisibility() {
   const mobileGroups = Array.from(document.querySelectorAll(".mobile-menu .mobile-menu-group"));
+  const isStaffMode = !!staffAuthUser && staffViewMode === "staff";
   mobileGroups.forEach((group) => {
+    const navRole = group.dataset.mobileNav || "common";
+    const roleHidden =
+      (navRole === "general" && isStaffMode) ||
+      (navRole === "staff" && !isStaffMode);
+    if (roleHidden) {
+      group.style.display = "none";
+      group.removeAttribute("open");
+      return;
+    }
+
     const links = Array.from(group.querySelectorAll("a[data-page]"));
     const hasVisibleLinks = links.some((link) => link.style.display !== "none");
     group.style.display = hasVisibleLinks ? "" : "none";

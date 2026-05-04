@@ -660,7 +660,9 @@ function initAuthUI() {
   const AUTH_SESSION_KEY = "sgcu_auth_session_started_at";
   const LOGIN_PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
   const LEGACY_LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
-  const USER_PROFILE_COLLECTION = "userProfiles";
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const firestoreCollections = appConfig.firestore?.collections || {};
+  const USER_PROFILE_COLLECTION = firestoreCollections.userProfiles || "userProfiles";
   const sessionMaxAgeMs =
     typeof AUTH_SESSION_MAX_AGE_MS === "number" &&
     Number.isFinite(AUTH_SESSION_MAX_AGE_MS) &&
@@ -748,7 +750,7 @@ function initAuthUI() {
   };
 
   const profileStore = window.sgcuFirestore || {};
-  const STAFF_PROFILE_COLLECTION = "staffProfiles";
+  const STAFF_PROFILE_COLLECTION = firestoreCollections.staffProfiles || "staffProfiles";
   const remoteStaffProfileLoadingEmails = new Set();
 
   function canUseRemoteProfileStore() {

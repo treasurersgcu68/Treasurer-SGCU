@@ -17,9 +17,11 @@
 
   if (!calendarPanel || !calendarTitle || !stateEl) return;
 
-  const BOOKING_COLLECTION_NAME = "meetingRoomBookings";
-  const ROOM_COLLECTION_NAME = "meetingRooms";
-  const HOLIDAY_COLLECTION_NAME = "meetingRoomHolidays";
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const firestoreCollections = appConfig.firestore?.collections || {};
+  const BOOKING_COLLECTION_NAME = firestoreCollections.meetingRoomBookings || "meetingRoomBookings";
+  const ROOM_COLLECTION_NAME = firestoreCollections.meetingRooms || "meetingRooms";
+  const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
   const DEFAULT_MEETING_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2" },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2" },

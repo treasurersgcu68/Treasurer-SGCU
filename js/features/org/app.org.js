@@ -188,6 +188,7 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
   };
 
   const AVATAR_BASE_PATH = "img/org/";
+  const DEFAULT_AVATAR_URL = "img/logo_treasurur jpg.png";
 
   function extractGoogleDriveFileId(value) {
     const raw = (value || "").toString().trim();
@@ -232,28 +233,29 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
   }
 
   function avatarHTML(r, size) {
-    const url = buildAvatarUrlFromCell(r[STRUCT_COL_PHOTO]);
-    const fallbackUrl = buildAvatarFallbackUrlFromCell(r[STRUCT_COL_PHOTO]);
+    const photoUrl = buildAvatarUrlFromCell(r[STRUCT_COL_PHOTO]);
+    const url = photoUrl || DEFAULT_AVATAR_URL;
+    const driveFallbackUrl = buildAvatarFallbackUrlFromCell(r[STRUCT_COL_PHOTO]);
+    const fallbackUrl = driveFallbackUrl || (url !== DEFAULT_AVATAR_URL ? DEFAULT_AVATAR_URL : "");
     const cls = size === "sm" ? "org-node-circle sm" : "org-node-circle";
+    const logoClass = url === DEFAULT_AVATAR_URL ? " is-logo" : "";
     const fallbackInitials = initials(r, { first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST });
-    if (url) {
-      return `
-        <div class="${cls}" data-initials="${esc(fallbackInitials)}">
-          <img
-            src="${esc(url)}"
-            alt="${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}"
-            loading="lazy"
-            decoding="async"
-            fetchpriority="low"
-            referrerpolicy="no-referrer"
-            ${fallbackUrl && fallbackUrl !== url ? `data-fallback-src="${esc(fallbackUrl)}"` : ""}
-            width="128"
-            height="128"
-          >
-        </div>
-      `;
-    }
-    return `<div class="${cls}">${esc(fallbackInitials)}</div>`;
+    return `
+      <div class="${cls}${logoClass}" data-initials="${esc(fallbackInitials)}">
+        <img
+          src="${esc(url)}"
+          alt="${esc(fullName(r, { prefix: STRUCT_COL_PREFIX, first: STRUCT_COL_FIRST, last: STRUCT_COL_LAST }))}"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+          referrerpolicy="no-referrer"
+          ${fallbackUrl && fallbackUrl !== url ? `data-fallback-src="${esc(fallbackUrl)}"` : ""}
+          data-logo-src="${esc(DEFAULT_AVATAR_URL)}"
+          width="128"
+          height="128"
+        >
+      </div>
+    `;
   }
 
   const contactCols = {
@@ -281,7 +283,8 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
       line: (r[contactCols.line] || "").toString().trim(),
       faculty: (r[contactCols.fac] || "").toString().trim(),
       year: (r[contactCols.year] || "").toString().trim(),
-      avatarUrl
+      avatarUrl: avatarUrl || DEFAULT_AVATAR_URL,
+      avatarIsLogo: !avatarUrl
     };
   };
 
@@ -560,12 +563,22 @@ function initOrgImageFallbacks() {
       const fallbackSrc = img.getAttribute("data-fallback-src");
       if (fallbackSrc && img.src !== fallbackSrc) {
         img.removeAttribute("data-fallback-src");
+        if (fallbackSrc === "img/logo_treasurur jpg.png" || fallbackSrc.endsWith("/img/logo_treasurur%20jpg.png")) {
+          img.closest(".org-node-circle")?.classList.add("is-logo");
+        }
         img.src = fallbackSrc;
         return;
       }
 
       const avatar = img.closest(".org-node-circle");
       if (!avatar) return;
+      const logoSrc = img.getAttribute("data-logo-src");
+      if (logoSrc && !img.src.includes("logo_treasurur%20jpg.png")) {
+        avatar.classList.add("is-logo");
+        img.removeAttribute("data-logo-src");
+        img.src = logoSrc;
+        return;
+      }
       avatar.textContent = avatar.dataset.initials || "SG";
     });
   });
@@ -574,7 +587,6 @@ function initOrgImageFallbacks() {
 function syncOrgTermLabels(termLabel) {
   const safeLabel = termLabel || "SGCU68";
   [
-    "aboutTreasurerTeamLabel",
     "aboutBudgetTeamLabel",
     "aboutOrgStructureTitleLabel"
   ].forEach((id) => {
@@ -645,12 +657,19 @@ function initOrgPersonPopup() {
 
     // avatar
     avatarEl.innerHTML = "";
+    avatarEl.classList.toggle("is-logo", !!info.avatarIsLogo);
     if (info.avatarUrl) {
       const img = document.createElement("img");
       img.src = info.avatarUrl;
       img.alt = info.fullName || key;
+      img.addEventListener("error", () => {
+        if (img.src.includes("logo_treasurur%20jpg.png")) return;
+        avatarEl.classList.add("is-logo");
+        img.src = "img/logo_treasurur jpg.png";
+      });
       avatarEl.appendChild(img);
     } else {
+      avatarEl.classList.remove("is-logo");
       const initials = (info.fullName || "SG")
         .split(" ")
         .map((s) => s.charAt(0))

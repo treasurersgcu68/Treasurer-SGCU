@@ -12,7 +12,37 @@ const SGCU_APP_CONFIG = {
     news:
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLaBypwNGVEZHCjCxQDSLn8s7tTx1EKAIKuYjL7oIx7_fmssMnAcq9hpLyC4N5TvwIhrzwtZxxCAe0/pub?output=csv",
     orgFilters:
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3mW8GVPRgbiURGAx59WyB3TZT5GbKoXJxHxmgpU2LRd_jgow9JBwXVjtjJRvfIgYYL5MKLLuZEddd/pub?output=csv"
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3mW8GVPRgbiURGAx59WyB3TZT5GbKoXJxHxmgpU2LRd_jgow9JBwXVjtjJRvfIgYYL5MKLLuZEddd/pub?output=csv",
+    borrowAssets:
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcx0zotyWntFscUtgXHg4dkJQ6xI16Xrasy58sQfr-29iwgdpujpuvLC7poHH3TG4KR6P36A-bLyZR/pub?gid=0&single=true&output=csv"
+  },
+  firestore: {
+    collections: {
+      auditLogs: "auditLogs",
+      borrowAssetRequests: "borrowAssetRequests",
+      borrowAssetRequestsFallback: "borrowAssetsRequests",
+      borrowAssetStockReservations: "borrowAssetStockReservations",
+      budgetApprovalRequests: "budgetApprovalRequests",
+      budgetApprovalSettings: "budgetApprovalSettings",
+      meetingRoomBookings: "meetingRoomBookings",
+      meetingRoomHolidays: "meetingRoomHolidays",
+      meetingRooms: "meetingRooms",
+      organizationRepresentativeApplications: "organizationRepresentativeApplications",
+      staffApplications: "staffApplications",
+      staffPositionCatalog: "staffPositionCatalog",
+      staffPositionCodeCounters: "staffPositionCodeCounters",
+      staffProfiles: "staffProfiles",
+      userProfiles: "userProfiles"
+    },
+    docs: {
+      budgetApprovalSettings: "global"
+    }
+  },
+  features: {
+    borrowAssets: {
+      useCsvAssetCatalog: true,
+      enableAssetAvailabilityCheck: false
+    }
   },
   org: {
     defaultBaseGroups: [

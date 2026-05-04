@@ -68,11 +68,13 @@ function initMeetingRoomBookingApp() {
   const LOCAL_MIGRATED_KEY = "meetingRoomBookingsMigratedToFirestore-v1";
   const PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
   const LEGACY_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
-  const USER_PROFILE_COLLECTION = "userProfiles";
-  const BOOKING_COLLECTION_NAME = "meetingRoomBookings";
-  const ROOM_COLLECTION_NAME = "meetingRooms";
-  const HOLIDAY_COLLECTION_NAME = "meetingRoomHolidays";
-  const AUDIT_COLLECTION_NAME = "auditLogs";
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const firestoreCollections = appConfig.firestore?.collections || {};
+  const USER_PROFILE_COLLECTION = firestoreCollections.userProfiles || "userProfiles";
+  const BOOKING_COLLECTION_NAME = firestoreCollections.meetingRoomBookings || "meetingRoomBookings";
+  const ROOM_COLLECTION_NAME = firestoreCollections.meetingRooms || "meetingRooms";
+  const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
+  const AUDIT_COLLECTION_NAME = firestoreCollections.auditLogs || "auditLogs";
   const DEFAULT_MEETING_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public" },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public" },

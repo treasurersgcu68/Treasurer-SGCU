@@ -1923,6 +1923,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   overflow-wrap: anywhere;
 }
 
+#staffMeetingAll .table-wrapper {
+  max-height: min(68vh, 640px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+#staffMeetingAll table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #ffffff;
+}
+
 @media (max-width: 768px) {
   .meeting-room-page #meetingRoomTableBody td:nth-child(5),
   #meetingRoomAllTableBody td:nth-child(5) {
@@ -3576,6 +3590,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   .login-hero-title {
     font-size: 24px;
+  }
+
+  .login-hero-list {
+    display: none;
   }
 
   .login-staff-mode-toggle {
@@ -6964,6 +6982,12 @@ th.sortable.sort-desc::after {
   object-fit: cover;
 }
 
+.org-node-circle.is-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .org-node-role {
   margin-top: 6px;
   font-weight: 600;
@@ -7520,6 +7544,12 @@ th.sortable.sort-desc::after {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.person-modal-avatar.is-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .person-modal-position {
@@ -8670,6 +8700,164 @@ th.sortable.sort-desc::after {
 
 /* Mobile usability refinements */
 @media (max-width: 640px) {
+  .page-view[data-page="meeting-room-staff"],
+  .page-view[data-page="meeting-room-staff"] .page,
+  .page-view[data-page="meeting-room-staff"] .panel,
+  .page-view[data-page="meeting-room-staff"] .panel-body,
+  .page-view[data-page="meeting-room-staff"] .panel-header {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .page-view[data-page="meeting-room-staff"] .panel-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch;
+  }
+
+  .page-view[data-page="meeting-room-staff"] .panel-header > *,
+  .page-view[data-page="meeting-room-staff"] .panel-header > div,
+  .page-view[data-page="meeting-room-staff"] .tabs,
+  .page-view[data-page="meeting-room-staff"] .filter-group,
+  .page-view[data-page="meeting-room-staff"] .search-box {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .page-view[data-page="meeting-room-staff"] .tabs.panel-header-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 1 / -1;
+    overflow: visible;
+  }
+
+  .page-view[data-page="meeting-room-staff"] .tabs.panel-header-tabs .tab-btn {
+    min-width: 0;
+    width: 100%;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  #meetingRoomExportCsvBtn {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  #meetingRoomHistorySearchWrap,
+  .meeting-history-filter-bar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .meeting-history-filter-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .meeting-history-filter-bar input,
+  .meeting-history-filter-bar select,
+  .meeting-history-filter-bar .search-box input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #meetingRoomStaffCalendarPanel .meeting-calendar-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
+    justify-content: stretch;
+  }
+
+  #meetingRoomStaffCalendarPanel .meeting-calendar-toolbar .btn-ghost {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  #meetingRoomStaffCalendarPanel .calendar-grid-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  #meetingRoomStaffCalendarPanel .calendar-weekday-row,
+  #meetingRoomStaffCalendarPanel .calendar-grid {
+    min-width: 520px;
+  }
+
+  .meeting-room-manage-row,
+  .meeting-room-holiday-panel .meeting-room-manage-row,
+  .meeting-room-manage-item,
+  .meeting-room-manage-actions,
+  .meeting-room-manage-edit-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .meeting-room-manage-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .meeting-room-manage-actions .btn-primary,
+  .meeting-room-manage-actions .btn-ghost,
+  .meeting-room-manage-btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  .meeting-room-manage-name,
+  .meeting-room-manage-access-pill,
+  .meeting-row-meta {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #staffMeetingAll table td {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  #staffMeetingAll table td > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #staffMeetingAll table td[data-label="วัตถุประสงค์"] {
+    align-items: start;
+  }
+
+  #staffMeetingAll .meeting-staff-purpose-cell {
+    max-height: 96px;
+    max-width: 100%;
+    overflow: auto;
+    color: #374151;
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #staffMeetingAll .meeting-staff-purpose-cell .meeting-row-meta {
+    margin-top: 6px;
+  }
+
+  #staffMeetingAll .staff-status-select {
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+
   .page {
     padding-top: 4px;
   }
@@ -9159,6 +9347,259 @@ th.sortable.sort-desc::after {
   .budget-staff-row-actions .btn-ghost {
     justify-content: center;
     width: 100%;
+  }
+
+  #staffMeetingAll .table-wrapper,
+  #staffApprovalPendingPanel .project-table-wrapper,
+  #orgRepresentativeApprovalSection .project-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  #staffMeetingAll .table-wrapper {
+    max-height: min(62vh, 520px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  #staffMeetingAll table,
+  #staffApprovalPendingTable,
+  #staffApprovalHistoryTable,
+  #orgRepresentativePendingTable,
+  #orgRepresentativeHistoryTable,
+  #budgetApprovalRequestsTable {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  #staffMeetingAll table thead,
+  #staffApprovalPendingTable thead,
+  #staffApprovalHistoryTable thead,
+  #orgRepresentativePendingTable thead,
+  #orgRepresentativeHistoryTable thead,
+  #budgetApprovalRequestsTable thead {
+    display: none;
+  }
+
+  #staffMeetingAll table tbody,
+  #staffApprovalPendingTable tbody,
+  #staffApprovalHistoryTable tbody,
+  #orgRepresentativePendingTable tbody,
+  #orgRepresentativeHistoryTable tbody,
+  #budgetApprovalRequestsTable tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  #staffMeetingAll table tr,
+  #staffApprovalPendingTable tr,
+  #staffApprovalHistoryTable tr,
+  #orgRepresentativePendingTable tr,
+  #orgRepresentativeHistoryTable tr,
+  #budgetApprovalRequestsTable tr {
+    display: block;
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(148, 163, 184, 0.16);
+  }
+
+  #staffMeetingAll table td,
+  #staffApprovalPendingTable td,
+  #staffApprovalHistoryTable td,
+  #orgRepresentativePendingTable td,
+  #orgRepresentativeHistoryTable td,
+  #budgetApprovalRequestsTable td {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 6px 12px;
+    width: 100%;
+    padding: 7px 0;
+    border: 0;
+    text-align: left !important;
+    white-space: normal;
+    align-items: start;
+    overflow-wrap: anywhere;
+  }
+
+  #staffMeetingAll table td::before,
+  #staffApprovalPendingTable td::before,
+  #staffApprovalHistoryTable td::before,
+  #orgRepresentativePendingTable td::before,
+  #orgRepresentativeHistoryTable td::before,
+  #budgetApprovalRequestsTable td::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  #staffMeetingAll table td[colspan],
+  #staffApprovalPendingTable td[colspan],
+  #staffApprovalHistoryTable td[colspan],
+  #orgRepresentativePendingTable td[colspan],
+  #orgRepresentativeHistoryTable td[colspan],
+  #budgetApprovalRequestsTable td[colspan] {
+    display: block;
+    text-align: center !important;
+  }
+
+  #staffMeetingAll table td[colspan]::before,
+  #staffApprovalPendingTable td[colspan]::before,
+  #staffApprovalHistoryTable td[colspan]::before,
+  #orgRepresentativePendingTable td[colspan]::before,
+  #orgRepresentativeHistoryTable td[colspan]::before,
+  #budgetApprovalRequestsTable td[colspan]::before {
+    content: none;
+  }
+
+  #staffMeetingAll .staff-status-select,
+  #staffApprovalPendingTable .staff-status-select,
+  #orgRepresentativePendingTable .staff-status-select,
+  #orgRepresentativeHistoryTable .staff-status-select,
+  #staffApprovalPendingTable .login-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #budgetApprovalRequestsTable .budget-request-history-row.is-editable {
+    cursor: pointer;
+  }
+
+  #budgetApprovalRequestsTable td[data-label="รายการโครงการ"] > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .page-view[data-page="staff-approval"] .project-table-wrapper {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  #staffApprovalPendingTable tbody,
+  #staffApprovalHistoryTable tbody,
+  #orgRepresentativePendingTable tbody,
+  #orgRepresentativeHistoryTable tbody {
+    gap: 12px;
+  }
+
+  #staffApprovalPendingTable tr,
+  #staffApprovalHistoryTable tr,
+  #orgRepresentativePendingTable tr,
+  #orgRepresentativeHistoryTable tr {
+    padding: 14px;
+    border-color: rgba(148, 163, 184, 0.24);
+    border-radius: 12px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  #staffApprovalPendingTable td,
+  #staffApprovalHistoryTable td,
+  #orgRepresentativePendingTable td,
+  #orgRepresentativeHistoryTable td {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 4px 10px;
+    padding: 8px 0;
+    line-height: 1.45;
+  }
+
+  #staffApprovalPendingTable td:first-child,
+  #staffApprovalHistoryTable td:first-child,
+  #orgRepresentativePendingTable td:first-child,
+  #orgRepresentativeHistoryTable td:first-child {
+    display: block;
+    padding: 0 0 10px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  #staffApprovalPendingTable td:first-child::before,
+  #staffApprovalHistoryTable td:first-child::before,
+  #orgRepresentativePendingTable td:first-child::before,
+  #orgRepresentativeHistoryTable td:first-child::before {
+    content: none;
+  }
+
+  #staffApprovalPendingTable td:first-child > div:first-child,
+  #staffApprovalHistoryTable td:first-child > div:first-child,
+  #orgRepresentativePendingTable td:first-child > div:first-child,
+  #orgRepresentativeHistoryTable td:first-child > div:first-child {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  #staffApprovalPendingTable .section-text-sm,
+  #staffApprovalHistoryTable .section-text-sm,
+  #orgRepresentativePendingTable .section-text-sm,
+  #orgRepresentativeHistoryTable .section-text-sm {
+    margin-top: 2px;
+    color: #64748b;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #staffApprovalPendingTable td[data-label="ตำแหน่งที่ขอ"],
+  #staffApprovalPendingTable td[data-label="จัดการคำขอ"],
+  #orgRepresentativePendingTable td[data-label="จัดการคำขอ"],
+  #orgRepresentativeHistoryTable td[data-label="จัดการสิทธิ์"] {
+    display: block;
+    padding-top: 10px;
+  }
+
+  #staffApprovalPendingTable td[data-label="ตำแหน่งที่ขอ"]::before,
+  #staffApprovalPendingTable td[data-label="จัดการคำขอ"]::before,
+  #orgRepresentativePendingTable td[data-label="จัดการคำขอ"]::before,
+  #orgRepresentativeHistoryTable td[data-label="จัดการสิทธิ์"]::before {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  #orgRepresentativePendingTable td[data-label="องค์กร"] > div,
+  #orgRepresentativeHistoryTable td[data-label="องค์กร"] > div {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  #orgRepresentativePendingTable td[data-label="องค์กร"] > div:first-child,
+  #orgRepresentativeHistoryTable td[data-label="องค์กร"] > div:first-child {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #orgRepresentativePendingTable td[data-label="องค์กร"] .section-text-sm,
+  #orgRepresentativeHistoryTable td[data-label="องค์กร"] .section-text-sm {
+    display: block;
+    max-width: 100%;
+    margin-top: 2px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  #staffApprovalPendingTable .staff-approval-position-input,
+  #staffApprovalPendingTable .staff-status-select,
+  #orgRepresentativePendingTable .staff-status-select,
+  #orgRepresentativeHistoryTable .staff-status-select {
+    width: 100%;
+    min-width: 0;
   }
 
   .meeting-secondary-actions,

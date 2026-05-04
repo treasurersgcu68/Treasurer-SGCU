@@ -58,6 +58,31 @@ function sortProjects(projects, key, direction) {
   return sorted;
 }
 
+function getVisibleProjectsForContext(ctxKey = activeProjectStatusContext) {
+  setActiveProjectStatusContext(ctxKey);
+  let filtered = filterProjects();
+
+  if (currentSort && currentSort.key) {
+    filtered = sortProjects(filtered, currentSort.key, currentSort.direction);
+  }
+
+  return filtered;
+}
+
+function syncProjectSortIndicators(ctxKey = activeProjectStatusContext) {
+  const ctx = projectStatusContexts[ctxKey] || {};
+  const ths = ctx.tableBodyEl?.closest("table")?.querySelectorAll("th.sortable") || [];
+  ths.forEach((th) => {
+    const isActive = currentSort?.key === th.dataset.sort;
+    th.classList.toggle("sort-asc", isActive && currentSort.direction === "asc");
+    th.classList.toggle("sort-desc", isActive && currentSort.direction === "desc");
+    th.setAttribute(
+      "aria-sort",
+      isActive ? (currentSort.direction === "asc" ? "ascending" : "descending") : "none"
+    );
+  });
+}
+
 function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   if (!Array.isArray(projects)) return;
 
@@ -67,16 +92,12 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
     lastProjectStatusRefreshSignatureByContext[ctxKey] === signature &&
     lastProjectStatusProjectsRefByContext[ctxKey] === projects
   ) {
+    syncProjectSortIndicators(ctxKey);
     syncChartsToContext(ctxKey);
     return;
   }
 
-  let filtered = filterProjects();
-
-  if (currentSort && currentSort.key) {
-    filtered = sortProjects(filtered, currentSort.key, currentSort.direction);
-  }
-
+  const filtered = getVisibleProjectsForContext(ctxKey);
   const summary = updateSummaryCards(filtered);
   updateDashboardInsights(filtered, summary);
   updateTable(filtered);
@@ -90,10 +111,76 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   if (tableCaptionEl) {
     tableCaptionEl.textContent = `แสดง ${filtered.length} โครงการ`;
   }
+  if (projectStatusContexts[ctxKey]?.projectExportCsvBtn) {
+    projectStatusContexts[ctxKey].projectExportCsvBtn.disabled = filtered.length === 0 || !isUserAuthenticated;
+  }
 
   lastProjectStatusRefreshSignatureByContext[ctxKey] = signature;
   lastProjectStatusProjectsRefByContext[ctxKey] = projects;
+  syncProjectSortIndicators(ctxKey);
   syncChartsToContext(ctxKey);
+}
+
+function resetProjectFilters(ctxKey = activeProjectStatusContext) {
+  setActiveProjectStatusContext(ctxKey);
+  if (yearSelect) {
+    const defaultYear = selectedProjectSourceYear || activeProjectSourceConfig?.year || "";
+    const hasDefaultYear = Array.from(yearSelect.options || []).some((option) => option.value === defaultYear);
+    yearSelect.value =
+      defaultYear && hasDefaultYear
+        ? defaultYear
+        : yearSelect.options[0]?.value || "all";
+  }
+  if (orgTypeSelect) orgTypeSelect.value = "all";
+  initOrgOptions();
+  if (orgSelect) orgSelect.value = "all";
+  if (projectSearchInput) projectSearchInput.value = "";
+  if (currentSort) {
+    currentSort.key = null;
+    currentSort.direction = "asc";
+  }
+  lastProjectStatusRefreshSignatureByContext[ctxKey] = "";
+  lastProjectStatusProjectsRefByContext[ctxKey] = null;
+  syncProjectSortIndicators(ctxKey);
+  refreshProjectStatus(ctxKey);
+}
+
+function exportVisibleProjectsCsv(ctxKey = activeProjectStatusContext) {
+  if (!isUserAuthenticated) return;
+  const visibleProjects = getVisibleProjectsForContext(ctxKey);
+  if (!visibleProjects.length || !window.sgcuCsvExport?.download) return;
+
+  const headers = [
+    "รหัสโครงการ",
+    "ชื่อโครงการ",
+    "ประเภทองค์กร",
+    "ฝ่าย/ชมรม",
+    "สถานะ",
+    "งบประมาณ",
+    "แหล่งเงิน",
+    "วันสิ้นสุดการปฏิบัติงาน",
+    "กำหนดปิดโครงการ"
+  ];
+  const rows = visibleProjects.map((project) => {
+    const displayStatus = getDisplayStatusForList(project);
+    return {
+      "รหัสโครงการ": project.code || "",
+      "ชื่อโครงการ": project.name || "",
+      "ประเภทองค์กร": project.orgGroup || "",
+      "ฝ่าย/ชมรม": project.orgName || "",
+      "สถานะ": displayStatus.text || project.statusMain || project.status || "",
+      "งบประมาณ": project.budget || 0,
+      "แหล่งเงิน": project.fundSource || "",
+      "วันสิ้นสุดการปฏิบัติงาน": project.lastWorkDate || "",
+      "กำหนดปิดโครงการ": project.closeDueDate || ""
+    };
+  });
+
+  window.sgcuCsvExport.download({
+    headers,
+    rows,
+    fileName: ctxKey === "staff" ? "sgcu-project-status-staff" : "sgcu-project-status"
+  });
 }
 
 
@@ -118,6 +205,29 @@ function setLoading(isLoading, ctxKey = activeProjectStatusContext) {
   if (ctx.calendarContainerEl) ctx.calendarContainerEl.style.visibility = isLoading ? "hidden" : "visible";
 }
 
+function setProjectDataLoadState(type = "", message = "", options = {}) {
+  Object.values(projectStatusContexts || {}).forEach((ctx) => {
+    const stateEl = ctx?.projectDataLoadStateEl;
+    if (!stateEl) return;
+    const safeType = (type || "").toString().trim();
+    const text = (message || "").toString().trim();
+    if (!safeType || !text) {
+      stateEl.hidden = true;
+      stateEl.replaceChildren();
+      return;
+    }
+
+    stateEl.hidden = false;
+    renderLoadState(stateEl, safeType, text, {
+      className: `load-state load-state-${safeType}`,
+      captionClassName: "load-state-caption",
+      retryButtonId: options.retryButtonId || `projectDataRetryButton${ctx.suffix || ""}`,
+      onRetry: typeof options.onRetry === "function" ? options.onRetry : null,
+      retryLabel: options.retryLabel || "ลองโหลดข้อมูลใหม่"
+    });
+  });
+}
+
 function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatusContext) {
   const ctx = projectStatusContexts[ctxKey] || {};
   if (ctx.projectTableAreaEl) {
@@ -125,6 +235,9 @@ function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatus
   }
   if (ctx.projectTableLockEl) {
     ctx.projectTableLockEl.style.display = isAuthenticated ? "none" : "block";
+  }
+  if (ctx.projectExportCsvBtn) {
+    ctx.projectExportCsvBtn.disabled = !isAuthenticated;
   }
 }
 
@@ -226,6 +339,7 @@ const STAFF_PAGE_OPTIONS = [
   "meeting-room-staff",
   "budget-approval-staff",
   "staff-approval",
+  "system-settings",
   "login"
 ];
 let unsubscribeCurrentStaffApproval = null;
@@ -331,7 +445,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "staff-approval", "login"]);
+    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "staff-approval", "system-settings", "login"]);
   }
   return new Set(["login"]);
 }
@@ -404,6 +518,10 @@ function getAllowedPagesForCurrentState() {
   if (staffAuthUser && staffViewMode === "staff") {
     const yyAllowed = getAllowedStaffPagesByProfile(staffAuthUser);
     yyAllowed.add("budget-approval-staff");
+    if (!isHeadStaffProfile(staffAuthUser)) {
+      yyAllowed.delete("staff-approval");
+      yyAllowed.delete("system-settings");
+    }
     if (isAffairsProfile) {
       yyAllowed.delete("borrow-assets");
       yyAllowed.delete("borrow-assets-staff");
@@ -1580,6 +1698,9 @@ function initAuthUI() {
       } else if (permission === "granted") {
         enableBtn.disabled = true;
         enableBtn.textContent = "อนุญาตแจ้งเตือนแล้ว";
+      } else if (permission === "denied") {
+        enableBtn.disabled = true;
+        enableBtn.textContent = "แจ้งเตือนถูกบล็อก";
       } else {
         enableBtn.disabled = false;
         enableBtn.textContent = "อนุญาตแจ้งเตือน";

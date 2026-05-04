@@ -1,4 +1,5 @@
 /* Scoreboard: SGCU-10.001 */
+const SCOREBOARD_BASE_SCORE = 100;
 
 function initScoreboard() {
   const podiumEl = document.getElementById("scorePodium");
@@ -14,60 +15,36 @@ function initScoreboard() {
   runnersEl.classList.remove("score-animate-in");
   renderScoreSkeleton(podiumEl, runnersEl);
 
-  const cached = getCache(CACHE_KEYS.SCOREBOARD, CACHE_TTL_MS);
-  if (cached && Array.isArray(cached) && cached.length) {
-    const podium = cached.slice(0, 3);
-    const runners = cached.slice(3, 8);
-    renderScorePodium(podiumEl, podium);
-    renderScoreRunners(runnersEl, runners);
-    if (typeof markLoaderStep === "function") {
-      markLoaderStep("scoreboard");
-    }
-    return;
-  }
-
-  Promise.resolve(window.sgcuVendorLoader?.ensurePapa?.())
-    .then(() => fetchTextWithProgress(SCORE_SHEET, (ratio) => {
+  Promise.resolve()
+    .then(async () => {
       if (typeof updateLoaderProgress === "function") {
-        updateLoaderProgress("scoreboard", ratio);
+        updateLoaderProgress("scoreboard", 0.15);
       }
-    }))
-    .then((csvText) => {
-      const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: true });
-      const rows = parsed.data || [];
-      if (rows.length < 2) {
-        renderLoadState(podiumEl, "empty", "ยังไม่มีข้อมูลคะแนน");
-        runnersEl.innerHTML = "";
-        return;
+      if (typeof ensureProjectDataLoaded === "function") {
+        await ensureProjectDataLoaded();
+      }
+      if (typeof updateLoaderProgress === "function") {
+        updateLoaderProgress("scoreboard", 0.75);
       }
 
-      const headerRow = rows[0] || [];
-      const headerOrgIdx = getHeaderIndex(headerRow, [/องค์กร/i, /org/i, /ฝ่าย/i, /ชมรม/i]);
-      const headerScoreIdx = getHeaderIndex(headerRow, [/คะแนน/i, /score/i]);
-      const useFallback = headerOrgIdx == null || headerScoreIdx == null;
-      const orgColIndex = useFallback ? 13 : headerOrgIdx;
-      const scoreColIndex = useFallback ? 14 : headerScoreIdx;
-
-      const items = [];
-      for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row) continue;
-
-        const org = normalizeScoreOrgName(row[orgColIndex]); // org name
-        const scoreVal = parseFloat(row[scoreColIndex]); // score
-
-        if (!org || Number.isNaN(scoreVal)) continue;
-        items.push({ org, score: scoreVal });
+      const scoreCacheKey = getScoreboardCacheKey();
+      const cached = getCache(scoreCacheKey, CACHE_TTL_MS);
+      if (cached && Array.isArray(cached) && cached.length) {
+        return cached;
       }
 
+      const items = buildScoreboardFromProjects(projects || []);
+      if (items.length) {
+        setCache(scoreCacheKey, items);
+      }
+      return items;
+    })
+    .then((items) => {
       if (!items.length) {
         renderLoadState(podiumEl, "empty", "ยังไม่มีข้อมูลคะแนน");
         runnersEl.innerHTML = "";
         return;
       }
-
-      items.sort((a, b) => b.score - a.score);
-      setCache(CACHE_KEYS.SCOREBOARD, items);
 
       const podium = items.slice(0, 3);
       const runners = items.slice(3, 8);
@@ -76,7 +53,7 @@ function initScoreboard() {
       renderScoreRunners(runnersEl, runners);
     })
     .catch((err) => {
-      console.error("Error loading SCORE_SHEET - app.js:4641", err);
+      console.error("Error calculating project scoreboard - app.scoreboard.js", err);
       recordLoadError("scoreboard", "โหลดคะแนนไม่สำเร็จ", { showRetry: true });
       if (podiumEl) {
         setInlineError(podiumEl, "ไม่สามารถโหลดผลคะแนนได้ในขณะนี้", {
@@ -93,6 +70,98 @@ function initScoreboard() {
         markLoaderStep("scoreboard");
       }
     });
+}
+
+function getScoreboardCacheKey() {
+  const year = (typeof selectedProjectSourceYear === "string" ? selectedProjectSourceYear : "").trim();
+  return `${CACHE_KEYS.SCOREBOARD}:project-derived:v1:${year || "active"}`;
+}
+
+function buildScoreboardFromProjects(projectList) {
+  const grouped = new Map();
+  const list = Array.isArray(projectList) ? projectList : [];
+
+  list.forEach((project) => {
+    const code = normalizeScoreOrgName(project?.code);
+    if (!code) return;
+    if (!isScoreboardEligibleProject(project)) return;
+
+    const org = normalizeScoreOrgName(project?.orgName || project?.orgGroup);
+    if (!org) return;
+
+    const score = calculateProjectScore(project);
+    if (!Number.isFinite(score)) return;
+
+    const current = grouped.get(org) || { org, score: SCOREBOARD_BASE_SCORE, projectCount: 0 };
+    current.score += score;
+    current.projectCount += 1;
+    grouped.set(org, current);
+  });
+
+  return Array.from(grouped.values())
+    .map((item) => ({
+      ...item,
+      score: Math.round(item.score * 100) / 100
+    }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.org.localeCompare(b.org, "th");
+    });
+}
+
+function calculateProjectScore(project) {
+  const budget = Number(project?.approvedBudget100 ?? project?.budget ?? 0);
+  if (!Number.isFinite(budget)) return 0;
+
+  const days = resolveProjectCloseDurationDays(project);
+  if (!Number.isFinite(days)) return 0;
+
+  const earlyMultiplier = getScoreEarlyMultiplier(budget);
+  const lateMultiplier = getScoreLateMultiplier(budget);
+  const earlyScore = days <= 14 ? (14 - days) * earlyMultiplier : 0;
+  const latePenalty = days >= 15 ? 2 * (days - 14) * lateMultiplier : 0;
+
+  return earlyScore - latePenalty;
+}
+
+function isScoreboardEligibleProject(project) {
+  return (project?.statusClose || "").toString().trim() === "ส่งกิจการนิสิตเรียบร้อย";
+}
+
+function resolveProjectCloseDurationDays(project) {
+  const rawDuration = project?.closeDurationText ?? project?.closeDuration ?? "";
+  const durationText = (rawDuration ?? "").toString().trim();
+  if (durationText !== "") {
+    const duration = parseFloat(durationText.replace(/,/g, "").replace(/[^\d.-]/g, ""));
+    return Number.isFinite(duration) ? duration : null;
+  }
+
+  const dueDate =
+    project?.closeDueDateObj instanceof Date
+      ? project.closeDueDateObj
+      : (typeof parseProjectDate === "function" ? parseProjectDate(project?.closeDueDate) : null);
+  if (!(dueDate instanceof Date) || Number.isNaN(dueDate.getTime())) return null;
+
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const dueStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+  return Math.floor((todayStart.getTime() - dueStart.getTime()) / 86400000);
+}
+
+function getScoreEarlyMultiplier(budget) {
+  if (budget < 10000) return 1.125;
+  if (budget < 25000) return 1.25;
+  if (budget < 150000) return 1.5;
+  if (budget < 1000000) return 2;
+  return 4;
+}
+
+function getScoreLateMultiplier(budget) {
+  if (budget < 10000) return 4;
+  if (budget < 25000) return 2;
+  if (budget < 150000) return 1.5;
+  if (budget < 1000000) return 1.25;
+  return 1.125;
 }
 
 function renderScoreSkeleton(podiumEl, runnersEl) {

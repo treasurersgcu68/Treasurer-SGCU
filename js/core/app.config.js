@@ -7,8 +7,6 @@ const SGCU_APP_CONFIG = {
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vSiGgrustQXlqTrRlPj2sY7pkI7slLhTFSIKjPDHenzt0ddhhoQA6VHbffoiT29J2Hk1ndxYGKVSZ4B/pub?output=csv",
     downloads:
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vTburYaUshqF-DOvbwOEinWik0KXNwqqJLfO6frlxUn1iEsLu5RzkNoum4KgnWeSwBdo4--B1eScRD5/pub?output=csv",
-    scoreboard:
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_oiV1Ntv0x8UuRBKyvl9tTaUxrKkvImEmyFUU4oPp0pSKnLHOjJIz574Te4l25Y2IKFbLMaFlp3UW/pub?gid=676554954&single=true&output=csv",
     news:
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLaBypwNGVEZHCjCxQDSLn8s7tTx1EKAIKuYjL7oIx7_fmssMnAcq9hpLyC4N5TvwIhrzwtZxxCAe0/pub?output=csv",
     orgFilters:
@@ -16,9 +14,23 @@ const SGCU_APP_CONFIG = {
     borrowAssets:
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcx0zotyWntFscUtgXHg4dkJQ6xI16Xrasy58sQfr-29iwgdpujpuvLC7poHH3TG4KR6P36A-bLyZR/pub?gid=0&single=true&output=csv"
   },
+  managementLinks: {
+    projectSources:
+      "https://docs.google.com/spreadsheets/d/1YmrHUdwdCGErwuMOlm9ohEFDvJkeeSq8AKNUu4h6c8c/edit?usp=sharing",
+    orgStructure:
+      "https://docs.google.com/spreadsheets/d/1vWD8BwJm_gk8Jrww8gwKEdRHc6lu6xSzJHDR7b5_4KY/edit?usp=sharing",
+    news:
+      "https://docs.google.com/spreadsheets/d/1QrlqwCsSg-vZZtFIESdLSAaFekHX5HoIS6oyl9v-LWk/edit?usp=sharing",
+    downloads:
+      "https://docs.google.com/spreadsheets/d/17-Gh5J6heNjjHlxSAoFy_pDmXY7aTIQQUB4VzdWQSp4/edit?usp=sharing",
+    orgFilters:
+      "https://docs.google.com/spreadsheets/d/19ncbNPEVXoTMGXQeKAvY88Dsr4a-Xy35-VyekQj8xdk/edit?usp=sharing",
+    borrowAssets: ""
+  },
   firestore: {
     collections: {
       auditLogs: "auditLogs",
+      appSettings: "appSettings",
       borrowAssetRequests: "borrowAssetRequests",
       borrowAssetRequestsFallback: "borrowAssetsRequests",
       borrowAssetStockReservations: "borrowAssetStockReservations",
@@ -70,3 +82,5 @@ const SGCU_APP_CONFIG = {
     }
   }
 };
+
+globalThis.SGCU_APP_CONFIG = SGCU_APP_CONFIG;

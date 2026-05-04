@@ -143,61 +143,167 @@ function isTruthySheetValue(value) {
   return ["true", "yes", "y", "1", "active", "ใช่", "เปิด"].includes(normalized);
 }
 
-function parseProjectSourceRows(rows) {
-  if (!Array.isArray(rows) || rows.length < 2) return null;
-  const dataRows = rows.slice(1).filter((row) => {
-    const year = (row[0] || "").toString().trim();
-    const projectUrl = (row[1] || "").toString().trim();
-    return year || projectUrl;
-  });
-  if (!dataRows.length) return null;
+let projectSourceConfigs = [];
+let activeProjectSourceConfig = null;
+let projectSourceLoadPromise = null;
+let selectedProjectSourceYear = "";
 
-  const activeRow =
-    dataRows.find((row) => isTruthySheetValue(row[3])) ||
-    dataRows[dataRows.length - 1];
-  const projectUrl = (activeRow[1] || "").toString().trim();
-  if (!projectUrl) return null;
-
-  return {
-    year: (activeRow[0] || "").toString().trim(),
-    projectUrl,
-    contactUrl: (activeRow[2] || "").toString().trim()
-  };
+function parseProjectSourceList(rows) {
+  if (!Array.isArray(rows) || rows.length < 2) return [];
+  return rows
+    .slice(1)
+    .map((row) => ({
+      year: (row[0] || "").toString().trim(),
+      projectUrl: (row[1] || "").toString().trim(),
+      contactUrl: (row[2] || "").toString().trim(),
+      isActive: isTruthySheetValue(row[3])
+    }))
+    .filter((source) => source.year || source.projectUrl)
+    .filter((source) => source.projectUrl);
 }
 
-async function resolveProjectSourceConfig() {
+function getActiveProjectSourceConfig(sources = projectSourceConfigs) {
+  if (!Array.isArray(sources) || !sources.length) return null;
+  return sources.find((source) => source.isActive) || sources[sources.length - 1];
+}
+
+function parseProjectSourceRows(rows) {
+  if (!Array.isArray(rows) || rows.length < 2) return null;
+  return getActiveProjectSourceConfig(parseProjectSourceList(rows));
+}
+
+function getProjectCacheKey(sourceConfig = activeProjectSourceConfig) {
+  const year = (sourceConfig?.year || "").toString().trim();
+  if (year) return `${CACHE_KEYS.PROJECTS}:${year}`;
+  const url = (sourceConfig?.projectUrl || SHEET_CSV_URL || "").toString().trim();
+  return `${CACHE_KEYS.PROJECTS}:${url || "default"}`;
+}
+
+function applySourceYearToProjects(list, sourceYear = selectedProjectSourceYear) {
+  const year = (sourceYear || "").toString().trim();
+  if (!year || !Array.isArray(list)) return list;
+  list.forEach((project) => {
+    if (project && typeof project === "object") {
+      project.year = year;
+    }
+  });
+  return list;
+}
+
+function fillProjectYearSelect(selectEl, selectedYear = selectedProjectSourceYear) {
+  if (!selectEl) return;
+  const sources = Array.isArray(projectSourceConfigs) ? projectSourceConfigs : [];
+  const years = sources.map((source) => source.year).filter(Boolean);
+  const fallbackYears = years.length
+    ? []
+    : Array.from(new Set((projects || []).map((project) => project.year).filter(Boolean))).sort();
+  const optionYears = years.length ? years : fallbackYears;
+  const nextValue =
+    selectedYear ||
+    activeProjectSourceConfig?.year ||
+    optionYears[0] ||
+    selectEl.value ||
+    "all";
+
+  selectEl.replaceChildren();
+  if (!optionYears.length) {
+    const opt = document.createElement("option");
+    opt.value = "all";
+    opt.textContent = "ทุกปีการศึกษา";
+    selectEl.appendChild(opt);
+    selectEl.value = "all";
+    return;
+  }
+
+  optionYears.forEach((year) => {
+    const opt = document.createElement("option");
+    opt.value = year;
+    opt.textContent = year;
+    selectEl.appendChild(opt);
+  });
+  selectEl.value = optionYears.includes(nextValue) ? nextValue : optionYears[0];
+}
+
+function syncProjectYearSelects(selectedYear = selectedProjectSourceYear) {
+  Object.values(projectStatusContexts || {}).forEach((ctx) => {
+    fillProjectYearSelect(ctx?.yearSelect, selectedYear);
+  });
+}
+
+async function loadProjectSourceConfigs() {
+  if (projectSourceLoadPromise) return projectSourceLoadPromise;
+
+  projectSourceLoadPromise = (async () => {
+    const fallbackSource = {
+      year: "",
+      projectUrl: SHEET_CSV_URL,
+      contactUrl: PROJECT_CONTACTS_CSV_URL,
+      isActive: true
+    };
+    const sourceUrl = (PROJECT_SOURCES_CSV_URL || "").toString().trim();
+    if (!sourceUrl) {
+      projectSourceConfigs = fallbackSource.projectUrl ? [fallbackSource] : [];
+      activeProjectSourceConfig = getActiveProjectSourceConfig(projectSourceConfigs);
+      return projectSourceConfigs;
+    }
+
+    try {
+      await window.sgcuVendorLoader?.ensurePapa?.();
+      const csvText = await fetchTextWithProgress(sourceUrl);
+      const parsed = Papa.parse(csvText, {
+        header: false,
+        skipEmptyLines: false
+      });
+      projectSourceConfigs = parseProjectSourceList(parsed.data || []);
+      if (!projectSourceConfigs.length && fallbackSource.projectUrl) {
+        projectSourceConfigs = [fallbackSource];
+      }
+      activeProjectSourceConfig = getActiveProjectSourceConfig(projectSourceConfigs);
+      return projectSourceConfigs;
+    } catch (err) {
+      console.error("โหลด projectSources ไม่สำเร็จ ใช้ config fallback - app.data.js", err);
+      projectSourceConfigs = fallbackSource.projectUrl ? [fallbackSource] : [];
+      activeProjectSourceConfig = getActiveProjectSourceConfig(projectSourceConfigs);
+      return projectSourceConfigs;
+    }
+  })();
+
+  return projectSourceLoadPromise;
+}
+
+async function resolveProjectSourceConfig(year = selectedProjectSourceYear) {
   const fallback = {
     year: "",
     projectUrl: SHEET_CSV_URL,
-    contactUrl: PROJECT_CONTACTS_CSV_URL
+    contactUrl: PROJECT_CONTACTS_CSV_URL,
+    isActive: true
   };
-  const sourceUrl = (PROJECT_SOURCES_CSV_URL || "").toString().trim();
-  if (!sourceUrl) return fallback;
-
-  try {
-    await window.sgcuVendorLoader?.ensurePapa?.();
-    const csvText = await fetchTextWithProgress(sourceUrl);
-    const parsed = Papa.parse(csvText, {
-      header: false,
-      skipEmptyLines: false
-    });
-    return parseProjectSourceRows(parsed.data || []) || fallback;
-  } catch (err) {
-    console.error("โหลด projectSources ไม่สำเร็จ ใช้ config fallback - app.data.js", err);
-    return fallback;
-  }
+  const sources = await loadProjectSourceConfigs();
+  const normalizedYear = (year || "").toString().trim();
+  return (
+    (normalizedYear && sources.find((source) => source.year === normalizedYear)) ||
+    activeProjectSourceConfig ||
+    fallback
+  );
 }
 
-async function loadProjectsFromSheet() {
+async function loadProjectsFromSheet(sourceConfigOverride = null) {
   try {
-    const sourceConfig = await resolveProjectSourceConfig();
+    const sourceConfig = sourceConfigOverride || await resolveProjectSourceConfig();
+    activeProjectSourceConfig = sourceConfig || activeProjectSourceConfig;
+    selectedProjectSourceYear = (sourceConfig?.year || selectedProjectSourceYear || "").toString().trim();
+    syncProjectYearSelects(selectedProjectSourceYear);
+
     const projectUrl = sourceConfig.projectUrl || SHEET_CSV_URL;
     const contactUrl = sourceConfig.contactUrl || PROJECT_CONTACTS_CSV_URL;
     const isPublishedHtml = isPublishedHtmlSheetUrl(projectUrl);
-    const cached = getCache(CACHE_KEYS.PROJECTS, CACHE_TTL_MS);
+    const projectCacheKey = getProjectCacheKey(sourceConfig);
+    const cached = getCache(projectCacheKey, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
-      projects = cached;
+      projects = applySourceYearToProjects(cached, selectedProjectSourceYear);
       hydrateProjectsCache(projects);
+      clearLoadError("projects");
+      setProjectDataLoadState();
       if (isPublishedHtml) {
         try {
           await loadProjectContactsFromPublishedHtml(projectUrl);
@@ -212,8 +318,11 @@ async function loadProjectsFromSheet() {
         }
       }
       console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:891");
-      const cacheTs = getCacheTimestamp(CACHE_KEYS.PROJECTS);
-      updateProjectsLastUpdatedDisplay(cacheTs || "ใช้ข้อมูลแคช");
+      const cacheTs = getCacheTimestamp(projectCacheKey);
+      const cacheLabel = cacheTs
+        ? `ใช้ข้อมูลแคชปี ${selectedProjectSourceYear || "-"} ล่าสุดเมื่อ ${formatLastUpdated(cacheTs)}`
+        : `ใช้ข้อมูลแคชปี ${selectedProjectSourceYear || "-"}`;
+      updateProjectsLastUpdatedDisplay(cacheLabel);
       return;
     }
 
@@ -252,9 +361,14 @@ async function loadProjectsFromSheet() {
     } else {
       const headerRow = rows[1] || [];
       const dataRows = rows.slice(2);
-      projects = extractProjectsFromRows(dataRows, headerRow);
+      projects = applySourceYearToProjects(
+        extractProjectsFromRows(dataRows, headerRow, selectedProjectSourceYear),
+        selectedProjectSourceYear
+      );
     }
-    setCache(CACHE_KEYS.PROJECTS, projects);
+    setCache(projectCacheKey, projects);
+    clearLoadError("projects");
+    setProjectDataLoadState();
     updateProjectsLastUpdatedDisplay(Date.now());
   } catch (err) {
     console.error("โหลดข้อมูลจากชีตไม่ได้ ใช้ข้อมูลจำลองแทน - app.js:917", err);
@@ -265,10 +379,113 @@ async function loadProjectsFromSheet() {
     );
     updateProjectsLastUpdatedDisplay("ไม่สามารถอัปเดตได้");
     projects = getFallbackProjects();
+    setProjectDataLoadState(
+      "error",
+      "ไม่สามารถโหลดข้อมูลโครงการจาก Google Sheets ได้ ขณะนี้กำลังแสดงข้อมูลสำรองเพื่อให้หน้าเว็บยังใช้งานได้",
+      { onRetry: () => void retryProjectDataLoad() }
+    );
   } finally {
     if (typeof markLoaderStep === "function") {
       markLoaderStep("projects");
     }
+  }
+}
+
+function refreshProjectCalendarForContext(ctxKey) {
+  const ctx = projectStatusContexts[ctxKey];
+  if (!ctx || !ctx.isInitialized) return;
+  setActiveProjectStatusContext(ctxKey);
+  buildCalendarEventsFromProjects();
+  initCalendarFilters();
+  generateCalendar();
+}
+
+function refreshProjectFiltersForContext(ctxKey, selectedYear = selectedProjectSourceYear) {
+  const ctx = projectStatusContexts[ctxKey];
+  if (!ctx) return;
+  setActiveProjectStatusContext(ctxKey);
+  fillProjectYearSelect(yearSelect, selectedYear);
+  if (orgTypeSelect) orgTypeSelect.value = "all";
+  initOrgTypeOptions();
+  initOrgOptions();
+  if (orgSelect) orgSelect.value = "all";
+  lastProjectStatusRefreshSignatureByContext[ctxKey] = "";
+  lastProjectStatusProjectsRefByContext[ctxKey] = null;
+}
+
+async function switchProjectSourceYear(year) {
+  const selectedYear = (year || "").toString().trim();
+  if (!selectedYear || selectedYear === selectedProjectSourceYear) {
+    syncProjectYearSelects(selectedProjectSourceYear);
+    return;
+  }
+
+  const sourceConfig = await resolveProjectSourceConfig(selectedYear);
+  if (!sourceConfig?.projectUrl) {
+    throw new Error(`ไม่พบลิงก์ CSV ของปี ${selectedYear}`);
+  }
+
+  setLoading(true, "public");
+  setLoading(true, "staff");
+  setProjectDataLoadState("info", `กำลังโหลดข้อมูลปีการศึกษา ${selectedYear}...`);
+  try {
+    await loadProjectsFromSheet(sourceConfig);
+    if (!projects || projects.length === 0) {
+      projects = getFallbackProjects();
+    }
+    selectedProjectSourceYear = sourceConfig.year || selectedYear;
+    syncProjectYearSelects(selectedProjectSourceYear);
+
+    ["public", "staff"].forEach((ctxKey) => {
+      refreshProjectFiltersForContext(ctxKey, selectedProjectSourceYear);
+      refreshProjectStatus(ctxKey);
+      refreshProjectCalendarForContext(ctxKey);
+    });
+    renderHomeKpis();
+  } catch (err) {
+    console.error("เปลี่ยนปี Project Status ไม่สำเร็จ - app.data.js", err);
+    recordLoadError("projects", `โหลดข้อมูลปีการศึกษา ${selectedYear} ไม่สำเร็จ`, { showRetry: true });
+    setProjectDataLoadState(
+      "error",
+      `ยังไม่สามารถโหลดข้อมูลปีการศึกษา ${selectedYear} ได้`,
+      { onRetry: () => void switchProjectSourceYear(selectedYear) }
+    );
+    syncProjectYearSelects(selectedProjectSourceYear);
+  } finally {
+    setLoading(false, "public");
+    setLoading(false, "staff");
+  }
+}
+
+async function retryProjectDataLoad() {
+  clearLoadError("projects");
+  clearLoadError("orgFilters");
+  setProjectDataLoadState("info", "กำลังโหลดข้อมูลโครงการใหม่...");
+  projectsLoaded = false;
+  projectsLoadPromise = null;
+  projectSourceLoadPromise = null;
+  Object.values(projectStatusContexts || {}).forEach((ctx) => {
+    if (ctx) ctx.isInitialized = false;
+  });
+  lastProjectStatusRefreshSignatureByContext.public = "";
+  lastProjectStatusRefreshSignatureByContext.staff = "";
+  lastProjectStatusProjectsRefByContext.public = null;
+  lastProjectStatusProjectsRefByContext.staff = null;
+
+  try {
+    await ensureProjectDataLoaded();
+    ensureProjectStatusInitialized("public");
+    ensureProjectStatusInitialized("staff");
+    refreshProjectStatus("public");
+    refreshProjectStatus("staff");
+  } catch (err) {
+    console.error("ลองโหลดข้อมูลโครงการใหม่ไม่สำเร็จ - app.data.js", err);
+    recordLoadError("projects", "โหลดข้อมูลโครงการไม่สำเร็จ กำลังใช้ข้อมูลสำรอง", { showRetry: true });
+    setProjectDataLoadState(
+      "error",
+      "ยังไม่สามารถโหลดข้อมูลโครงการได้ กรุณาลองใหม่อีกครั้งภายหลัง",
+      { onRetry: () => void retryProjectDataLoad() }
+    );
   }
 }
 
@@ -349,6 +566,7 @@ async function loadOrgFilters() {
       .filter((r) => r.group !== "" && r.name !== "");
 
     setCache(CACHE_KEYS.ORG_FILTERS, orgFilters);
+    clearLoadError("orgFilters");
   } catch (err) {
     console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:955", err);
     recordLoadError(

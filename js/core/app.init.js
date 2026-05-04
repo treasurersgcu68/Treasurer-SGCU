@@ -62,6 +62,13 @@ async function initDailyVisitorCounter() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  if (window.sgcuRuntimeConfigReady) {
+    await window.sgcuRuntimeConfigReady;
+    if (typeof window.applyRuntimeConfigAliases === "function") {
+      window.applyRuntimeConfigAliases();
+    }
+  }
+
   // ===== 1) เก็บ DOM element ที่ใช้ซ้ำ =====
   yearSelect = document.getElementById("yearSelect");
   orgTypeSelect = document.getElementById("orgTypeSelect");
@@ -977,8 +984,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!ctx) return;
 
     if (ctx.yearSelect) {
-      ctx.yearSelect.addEventListener("change", () => {
+      ctx.yearSelect.addEventListener("change", async () => {
         setActiveProjectStatusContext(key);
+        const selectedYear = ctx.yearSelect.value;
+        if (typeof switchProjectSourceYear === "function" && selectedYear && selectedYear !== "all") {
+          await switchProjectSourceYear(selectedYear);
+          return;
+        }
         refreshProjectStatus(key);
       });
     }
@@ -1004,10 +1016,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     if (ctx.projectSearchClearBtn && ctx.projectSearchInput) {
       ctx.projectSearchClearBtn.addEventListener("click", () => {
-        setActiveProjectStatusContext(key);
-        ctx.projectSearchInput.value = "";
-        refreshProjectStatus(key);
+        resetProjectFilters(key);
         ctx.projectSearchInput.focus();
+      });
+    }
+    if (ctx.projectExportCsvBtn) {
+      ctx.projectExportCsvBtn.addEventListener("click", () => {
+        exportVisibleProjectsCsv(key);
       });
     }
     if (ctx.longestOpenAssistantFilterEl) {
@@ -1045,11 +1060,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           currentSort.direction = "asc";
         }
 
-        ths.forEach((x) => x.classList.remove("sort-asc", "sort-desc"));
-        th.classList.add(
-          currentSort.direction === "asc" ? "sort-asc" : "sort-desc"
-        );
-
+        syncProjectSortIndicators(key);
         refreshProjectStatus(key);
       });
     });

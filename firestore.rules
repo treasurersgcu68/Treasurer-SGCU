@@ -236,6 +236,11 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /appSettings/{settingsId} {
+      allow read: if true;
+      allow create, update, delete: if isHeadStaff();
+    }
+
     function validVisitorCounterWrite(counterPath) {
       return request.resource.data.keys().hasOnly(["total", "updatedAt"]) &&
         request.resource.data.total is int &&

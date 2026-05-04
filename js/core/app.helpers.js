@@ -387,7 +387,7 @@ function resolveProjectCode(row, idxCode) {
   return candidate;
 }
 
-function extractProjectsFromRows(dataRows, headerRow) {
+function extractProjectsFromRows(dataRows, headerRow, sourceYear = "") {
   if (!dataRows || dataRows.length === 0) return [];
 
   const idxCode = findColIndex(headerRow, [
@@ -451,7 +451,7 @@ function extractProjectsFromRows(dataRows, headerRow) {
     })
     .map((row) => {
       const name = (idxName >= 0 ? row[idxName] : "").toString();
-      const year = "2568";
+      const year = (sourceYear || "").toString().trim() || "2568";
       const code = resolveProjectCode(row, idxCode);
 
       const orgName = (row[COL_ORG_NAME] || "").toString();

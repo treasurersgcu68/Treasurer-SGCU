@@ -62,13 +62,15 @@
                     type="search"
                     placeholder="พิมพ์คำค้น เช่น SGCU-01 หรือ ชมรมกีฬา"
                   />
-                  <button id="projectSearchClearStaff" class="search-clear" type="button" aria-label="เคลียร์คำค้น">
+                  <button id="projectSearchClearStaff" class="search-clear" type="button" aria-label="ล้างตัวกรองทั้งหมด">
                     ✕
                   </button>
                 </div>
               </div>
             </div>
           </div>
+
+          <div id="projectDataLoadStateStaff" class="project-data-load-state" hidden></div>
 
           <!-- ================= STATUS VIEW ================= -->
           <div id="statusViewStaff">
@@ -132,6 +134,7 @@
                 <div>
                   <h3 class="panel-title">รายการโครงการ</h3>
                 </div>
+                <button id="projectExportCsvStaff" class="btn-ghost csv-export-btn" type="button" disabled>Export CSV</button>
               </header>
 
               <div class="table-wrapper" id="projectTableAreaStaff">
@@ -142,9 +145,6 @@
                       <tr>
                         <th style="text-align:center;">รหัสโครงการ</th>
                         <th style="text-align:center;">ชื่อโครงการ</th>
-                        <th class="sortable" data-sort="year" style="text-align:center;">
-                          ปีการศึกษา
-                        </th>
                         <th class="sortable" data-sort="status" style="text-align:center;">
                           สถานะ
                         </th>
@@ -168,7 +168,7 @@
                   กรุณาล็อกอินเพื่อดูรายละเอียดโครงการ
                 </p>
                 <div style="margin-top:10px;">
-                  <button class="btn-primary" type="button" data-goto-page="login">ไปที่หน้า Sign in</button>
+                  <button class="btn-primary" type="button" data-goto-page="login">ไปที่หน้าเข้าสู่ระบบ</button>
                 </div>
               </div>
             </section>

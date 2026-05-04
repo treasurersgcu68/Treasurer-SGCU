@@ -132,6 +132,7 @@ function initStaffAccessPages() {
     { id: "meeting-room-staff", label: "อนุมัติห้องประชุม" },
     { id: "budget-approval-staff", label: "จัดการคำของบ" },
     { id: "staff-approval", label: "อนุมัติสมาชิกสตาฟ" },
+    { id: "system-settings", label: "ตั้งค่าระบบ" },
     { id: "login", label: "หน้าเข้าสู่ระบบ" }
   ];
 
@@ -779,7 +780,7 @@ function initStaffAccessPages() {
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
-      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "staff-approval", "login"];
+      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "staff-approval", "system-settings", "login"];
     }
     return ["login"];
   };

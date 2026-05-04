@@ -20,10 +20,16 @@
             <div class="budget-staff-tab-panel is-active" data-budget-staff-panel="overview">
               <section class="budget-staff-summary-panel">
                 <p id="budgetStaffSummaryCaption" class="panel-caption budget-staff-summary-caption" hidden>กำลังโหลดข้อมูล...</p>
-                <div class="budget-staff-overview-filters">
+                  <div class="budget-staff-overview-filters">
                   <div class="borrow-form-field">
-                    <label class="login-label" for="budgetStaffOrgSummaryGroup">ประเภทองค์กร</label>
-                    <select id="budgetStaffOrgSummaryGroup" class="login-input">
+                    <label class="login-label" for="budgetStaffOrgSummaryRound">รอบรับคำขอ</label>
+                    <select id="budgetStaffOrgSummaryRound" class="login-input">
+                      <option value="all">ทุกรอบ</option>
+                    </select>
+                  </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffOrgSummaryGroup">ประเภทองค์กร</label>
+                      <select id="budgetStaffOrgSummaryGroup" class="login-input">
                       <option value="all">ทุกประเภทองค์กร</option>
                     </select>
                   </div>
@@ -83,7 +89,7 @@
                 <div class="panel-header">
                   <div>
                     <h3 class="panel-title">ตั้งค่าการรับคำขอและรหัสโครงการ</h3>
-                    <p class="panel-caption">กำหนดเส้นตาย ล้างรหัสเดิม และรันรหัสใหม่</p>
+                    <p class="panel-caption">จัดการรอบรับคำขอ เพดานงบของรอบ และการรันรหัสโครงการ</p>
                   </div>
                 </div>
                 <div class="budget-staff-controls">
@@ -91,25 +97,40 @@
                     <div class="budget-staff-settings-main">
                       <div class="budget-staff-setting-block budget-staff-deadline-block">
                         <div class="budget-staff-setting-heading">
-                          <div class="card-title">การรับคำขอ</div>
-                          <div class="card-caption">กำหนดวันสิ้นสุดและดูสถานะเปิดรับ</div>
-                        </div>
-                        <div class="budget-staff-deadline-grid">
-                          <div class="borrow-form-field">
-                            <label class="login-label" for="budgetRequestDeadlineInput">วันสิ้นสุดการเปิดรับคำของบ</label>
-                            <input id="budgetRequestDeadlineInput" class="login-input" type="date" />
+                          <div>
+                            <div class="card-title">รอบรับคำขอ</div>
+                            <div class="card-caption">เพิ่มรอบใหม่หรือเลือกแก้ไขรอบเดิม แต่ละรอบมีเส้นตายและเพดานงบของตัวเอง</div>
                           </div>
-                          <div class="borrow-form-field">
-                            <label class="login-label">สถานะปัจจุบัน</label>
-                            <div id="budgetRequestDeadlineStatus" class="section-text-sm budget-staff-status-line">-</div>
+                          <div id="budgetRequestDeadlineStatus" class="section-text-sm budget-staff-status-line">-</div>
+                        </div>
+                        <div class="budget-staff-round-editor">
+                          <div class="budget-staff-deadline-grid">
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="budgetRoundYearInput">ปีงบประมาณ</label>
+                              <input id="budgetRoundYearInput" class="login-input" type="number" min="1" step="1" placeholder="เช่น 69" />
+                            </div>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="budgetRoundNoInput">รอบที่</label>
+                              <input id="budgetRoundNoInput" class="login-input" type="text" maxlength="80" placeholder="เช่น 1 หรือ ครุภัณฑ์" />
+                            </div>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="budgetRequestDeadlineInput">วันสิ้นสุดการเปิดรับคำของบ</label>
+                              <input id="budgetRequestDeadlineInput" class="login-input" type="date" />
+                            </div>
+                            <div class="borrow-form-field budget-staff-round-action-field">
+                              <label class="login-label">&nbsp;</label>
+                              <button id="budgetRoundAddBtn" class="btn-primary" type="button">บันทึกรอบนี้</button>
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       <div class="budget-staff-setting-block budget-staff-budget-block">
                         <div class="budget-staff-setting-heading">
-                          <div class="card-title">เพดานงบประมาณ</div>
-                          <div class="card-caption">กำหนดเพดานรวมและเพดานย่อยตามฝ่ายใหญ่</div>
+                          <div>
+                            <div class="card-title">เพดานงบประมาณของรอบ</div>
+                            <div class="card-caption">ค่าที่กรอกจะผูกกับรอบที่กำลังเพิ่มหรือแก้ไขอยู่</div>
+                          </div>
                         </div>
                         <div class="borrow-form-field">
                           <label class="login-label" for="budgetCeilingInput">เพดานงบประมาณรวม (บาท)</label>
@@ -135,19 +156,23 @@
                     </div>
 
                     <div class="budget-staff-settings-side">
-                      <div class="budget-staff-setting-block budget-staff-save-block">
+                      <div class="budget-staff-setting-block budget-staff-round-list-block">
                         <div class="budget-staff-setting-heading">
-                          <div class="card-title">บันทึกการตั้งค่า</div>
-                          <div class="card-caption">ใช้กับเส้นตายและเพดานงบประมาณ</div>
+                          <div>
+                            <div class="card-title">รอบที่เปิดรับ</div>
+                            <div class="card-caption">กดแก้ไขเพื่อโหลดเส้นตายและเพดานงบของรอบนั้น</div>
+                          </div>
                         </div>
-                        <button id="budgetRequestDeadlineSaveBtn" class="btn-primary" type="button">บันทึกการตั้งค่า</button>
-                        <div id="budgetStaffActionMessage" class="section-text-sm budget-staff-action-message" aria-live="polite"></div>
+                        <div id="budgetActiveRoundList" class="budget-active-round-list"></div>
                       </div>
+
+                      <button id="budgetRequestDeadlineSaveBtn" class="budget-staff-hidden-save" type="button" hidden tabindex="-1">บันทึกการตั้งค่า</button>
+                      <div id="budgetStaffActionMessage" class="section-text-sm budget-staff-action-message budget-staff-action-message-panel" aria-live="polite"></div>
 
                       <div class="budget-staff-setting-block budget-staff-code-block">
                         <div class="budget-staff-setting-heading">
                           <div class="card-title">รหัสโครงการ</div>
-                          <div class="card-caption">ล้างรหัสเดิมหรือรันรหัสใหม่ตามลำดับรายการ</div>
+                          <div class="card-caption">ล้างรหัสเดิมหรือรันใหม่ตามลำดับรายการ</div>
                         </div>
                         <div class="staff-access-actions budget-staff-control-actions">
                           <button id="budgetRunProjectCodeBtn" class="btn-ghost" type="button">รันรหัสโครงการ</button>
@@ -258,6 +283,27 @@
                 <div>
                   <h3 class="panel-title">รายการคำขออนุมัติงบประมาณ</h3>
                   <p class="panel-caption">ตรวจสอบรหัสโครงการ ยอดเงิน และสถานะของแต่ละคำขอ</p>
+                </div>
+                <button id="budgetStaffExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
+              </div>
+              <div class="budget-staff-review-filters">
+                <div class="borrow-form-field">
+                  <label class="login-label" for="budgetStaffReviewRound">รอบรับคำขอ</label>
+                  <select id="budgetStaffReviewRound" class="login-input">
+                    <option value="all">ทุกรอบ</option>
+                  </select>
+                </div>
+                <div class="borrow-form-field">
+                  <label class="login-label" for="budgetStaffReviewGroup">ประเภทองค์กร</label>
+                  <select id="budgetStaffReviewGroup" class="login-input">
+                    <option value="all">ทุกประเภทองค์กร</option>
+                  </select>
+                </div>
+                <div class="borrow-form-field">
+                  <label class="login-label" for="budgetStaffReviewOrg">ฝ่าย / ชมรม</label>
+                  <select id="budgetStaffReviewOrg" class="login-input">
+                    <option value="all">ทุกฝ่าย / ทุกชมรม</option>
+                  </select>
                 </div>
               </div>
               <div class="budget-staff-review-filters">

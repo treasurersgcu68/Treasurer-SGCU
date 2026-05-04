@@ -25,6 +25,16 @@
                     <div id="budgetOrgTypeDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</div>
                   </article>
                   <article class="card card-hover budget-org-floating-card">
+                    <div class="card-title">รอบรับคำขอ</div>
+                    <div id="budgetRequestRoundDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่กำหนด</div>
+                    <div id="budgetRequestRoundCaption" class="section-text-sm budget-request-deadline-caption">กำลังโหลดรอบ...</div>
+                  </article>
+                  <article class="card card-hover budget-org-floating-card">
+                    <div class="card-title">กำหนดส่งคำของบ</div>
+                    <div id="budgetRequestDeadlineDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่กำหนด</div>
+                    <div id="budgetRequestDeadlineCaption" class="section-text-sm budget-request-deadline-caption">กำลังโหลดกำหนดการ...</div>
+                  </article>
+                  <article class="card card-hover budget-org-floating-card">
                     <div class="card-title">โครงการที่ขอไป</div>
                     <div id="budgetOrgSummaryProjectCount" class="card-value">0</div>
                   </article>
@@ -35,11 +45,6 @@
                   <article class="card card-hover budget-org-floating-card">
                     <div class="card-title">งบรวมที่ผ่าน</div>
                     <div id="budgetOrgSummaryApprovedExpense" class="card-value">0.00 บาท</div>
-                  </article>
-                  <article class="card card-hover budget-org-floating-card">
-                    <div class="card-title">กำหนดส่งคำของบ</div>
-                    <div id="budgetRequestDeadlineDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่กำหนด</div>
-                    <div id="budgetRequestDeadlineCaption" class="section-text-sm budget-request-deadline-caption">กำลังโหลดกำหนดการ...</div>
                   </article>
                 </div>
                 <div id="budgetOrgSummaryCaption" class="borrow-detail-section-caption budget-org-summary-caption">ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว</div>
@@ -73,6 +78,15 @@
                   <div class="budget-request-form-main">
                     <div class="budget-request-form-section">
                       <div class="budget-request-form-section-title">ข้อมูลโครงการ</div>
+                      <div class="borrow-form-row">
+                        <div class="borrow-form-field budget-request-field-full">
+                          <label class="login-label" for="budgetRequestRoundSelect">รอบรับคำขอ</label>
+                          <select id="budgetRequestRoundSelect" class="login-input" required>
+                            <option value="" selected disabled>กำลังโหลดรอบรับคำขอ...</option>
+                          </select>
+                          <p class="section-text-sm budget-request-field-hint">เลือกให้ตรงกับประเภทงบที่จะขอ เช่น รอบทั่วไปหรือรอบครุภัณฑ์</p>
+                        </div>
+                      </div>
                       <div class="borrow-form-row">
                         <div class="borrow-form-field budget-request-field-wide">
                           <label class="login-label" for="budgetProjectName">ชื่อโครงการ</label>
@@ -202,6 +216,7 @@
                   <div class="panel-title">รายการที่ขอไปทั้งหมด</div>
                   <div class="panel-caption" id="budgetApprovalListCaption">กำลังโหลดรายการ...</div>
                 </div>
+                <button id="budgetApprovalExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
               </div>
               <div class="table-wrapper">
                 <table>

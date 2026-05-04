@@ -3,18 +3,17 @@
 const APP_CONFIG = SGCU_APP_CONFIG;
 
 /* Backward-compatible config aliases */
-const PROJECT_SOURCES_CSV_URL = APP_CONFIG.sheets.projectSources || "";
-const SHEET_CSV_URL = APP_CONFIG.sheets.projects;
-const PROJECT_CONTACTS_CSV_URL = APP_CONFIG.sheets.projectContacts || "";
-const ORG_STRUCTURE_SHEET_CSV = APP_CONFIG.sheets.orgStructure;
-const DOWNLOAD_SHEET = APP_CONFIG.sheets.downloads;
-const SCORE_SHEET = APP_CONFIG.sheets.scoreboard;
-const NEWS_SHEET_CSV = APP_CONFIG.sheets.news;
-const ORG_FILTER_CSV_URL = APP_CONFIG.sheets.orgFilters;
-const DEFAULT_BASE_GROUPS = APP_CONFIG.org.defaultBaseGroups;
+let PROJECT_SOURCES_CSV_URL = "";
+let SHEET_CSV_URL = "";
+let PROJECT_CONTACTS_CSV_URL = "";
+let ORG_STRUCTURE_SHEET_CSV = "";
+let DOWNLOAD_SHEET = "";
+let NEWS_SHEET_CSV = "";
+let ORG_FILTER_CSV_URL = "";
+let DEFAULT_BASE_GROUPS = [];
 
 // Auth/session defaults (can be overridden from global config before scripts run)
-const AUTH_SESSION_MAX_AGE_MS =
+let AUTH_SESSION_MAX_AGE_MS =
   typeof globalThis.AUTH_SESSION_MAX_AGE_MS === "number" &&
   Number.isFinite(globalThis.AUTH_SESSION_MAX_AGE_MS) &&
   globalThis.AUTH_SESSION_MAX_AGE_MS > 0
@@ -22,15 +21,42 @@ const AUTH_SESSION_MAX_AGE_MS =
     : APP_CONFIG.auth.sessionMaxAgeMs;
 
 // Backward-compat for legacy auth sheet column mapping
-const COL_STAFF_EMAIL_LEGACY =
+let COL_STAFF_EMAIL_LEGACY =
   typeof globalThis.COL_STAFF_EMAIL_LEGACY === "number" &&
   Number.isFinite(globalThis.COL_STAFF_EMAIL_LEGACY)
     ? globalThis.COL_STAFF_EMAIL_LEGACY
     : APP_CONFIG.auth.staffEmailLegacyColumn;
 
 // Cache
-const CACHE_TTL_MS = APP_CONFIG.cache.ttlMs;
-const CACHE_KEYS = APP_CONFIG.cache.keys;
+let CACHE_TTL_MS = APP_CONFIG.cache.ttlMs;
+let CACHE_KEYS = APP_CONFIG.cache.keys;
+
+function applyRuntimeConfigAliases() {
+  PROJECT_SOURCES_CSV_URL = APP_CONFIG.sheets.projectSources || "";
+  SHEET_CSV_URL = APP_CONFIG.sheets.projects;
+  PROJECT_CONTACTS_CSV_URL = APP_CONFIG.sheets.projectContacts || "";
+  ORG_STRUCTURE_SHEET_CSV = APP_CONFIG.sheets.orgStructure;
+  DOWNLOAD_SHEET = APP_CONFIG.sheets.downloads;
+  NEWS_SHEET_CSV = APP_CONFIG.sheets.news;
+  ORG_FILTER_CSV_URL = APP_CONFIG.sheets.orgFilters;
+  DEFAULT_BASE_GROUPS = APP_CONFIG.org.defaultBaseGroups;
+  AUTH_SESSION_MAX_AGE_MS =
+    typeof globalThis.AUTH_SESSION_MAX_AGE_MS === "number" &&
+    Number.isFinite(globalThis.AUTH_SESSION_MAX_AGE_MS) &&
+    globalThis.AUTH_SESSION_MAX_AGE_MS > 0
+      ? globalThis.AUTH_SESSION_MAX_AGE_MS
+      : APP_CONFIG.auth.sessionMaxAgeMs;
+  COL_STAFF_EMAIL_LEGACY =
+    typeof globalThis.COL_STAFF_EMAIL_LEGACY === "number" &&
+    Number.isFinite(globalThis.COL_STAFF_EMAIL_LEGACY)
+      ? globalThis.COL_STAFF_EMAIL_LEGACY
+      : APP_CONFIG.auth.staffEmailLegacyColumn;
+  CACHE_TTL_MS = APP_CONFIG.cache.ttlMs;
+  CACHE_KEYS = APP_CONFIG.cache.keys;
+}
+
+applyRuntimeConfigAliases();
+window.applyRuntimeConfigAliases = applyRuntimeConfigAliases;
 
 /* Globals: shared state */
 let projects = [];
@@ -236,6 +262,7 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     orgSelect: get("orgSelect"),
     projectSearchInput: get("projectSearchInput"),
     projectSearchClearBtn: get("projectSearchClear"),
+    projectExportCsvBtn: get("projectExportCsv"),
     filterBarEl: get("filterBar"),
     totalProjectsEl: get("totalProjects"),
     pendingProjectsEl: get("pendingProjects"),
@@ -269,6 +296,7 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     budgetChartSkeletonEl: get("budgetChartSkeleton"),
     statusPieSkeletonEl: get("statusPieSkeleton"),
     projectTableSkeletonEl: get("projectTableSkeleton"),
+    projectDataLoadStateEl: get("projectDataLoadState"),
     calendarSkeletonEl: get("calendarSkeleton"),
     projectTableAreaEl: get("projectTableArea"),
     projectTableLockEl: get("projectTableLock"),

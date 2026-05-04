@@ -131,6 +131,7 @@
               <button class="nav-group-toggle" type="button" aria-expanded="false">ผู้ใช้งาน</button>
               <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
+                <a href="#" data-page="system-settings" data-visible="protected">ตั้งค่าระบบ</a>
               </div>
             </div>
 
@@ -206,6 +207,7 @@
             <summary>ผู้ใช้งาน</summary>
             <div class="mobile-menu-links">
               <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
+              <a href="#" data-page="system-settings" data-visible="protected">ตั้งค่าระบบ</a>
             </div>
           </details>
 
@@ -257,6 +259,8 @@
       <!-- @include partials/news.html -->
 
       <!-- @include partials/staff-approval.html -->
+
+      <!-- @include partials/system-settings.html -->
 
       <!-- @include partials/budget-approval-staff.html -->
 
@@ -1063,6 +1067,7 @@
     </div>
 
     <script src="js/core/app.config.js?v=20260504-1" defer></script>
+    <script src="js/integrations/app.runtime-config.js?v=20260504-1" defer></script>
     <script src="js/core/app.core.js" defer></script>
     <script src="js/core/app.csv-export.js?v=20260504-1" defer></script>
     <script src="js/core/app.dialog.js?v=20260501-1" defer></script>

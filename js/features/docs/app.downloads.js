@@ -153,6 +153,7 @@ async function loadDownloadDocuments() {
     const cached = getCache(CACHE_KEYS.DOWNLOADS, CACHE_TTL_MS);
     if (cached && typeof cached === "string" && cached.trim()) {
       listEl.innerHTML = cached;
+      clearLoadError("downloads");
       initDownloadCategoryFilter(listEl);
       if (categorySelectEl) categorySelectEl.disabled = false;
       return;
@@ -234,6 +235,7 @@ async function loadDownloadDocuments() {
 
     // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
     setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
+    clearLoadError("downloads");
     if (categorySelectEl) categorySelectEl.disabled = false;
   } catch (err) {
     console.error("โหลดชีตดาวน์โหลดเอกสารไม่ได้ - app.js:4572", err);

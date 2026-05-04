@@ -6,6 +6,7 @@ const APP_SHELL_URLS = [
   "./index.html",
   "./css/style.css?v=20260504-24",
   "./js/core/app.config.js?v=20260504-1",
+  "./js/integrations/app.runtime-config.js?v=20260504-1",
   "./js/core/app.core.js",
   "./js/core/app.csv-export.js?v=20260504-1",
   "./js/core/app.dialog.js?v=20260501-1",

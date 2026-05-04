@@ -35,6 +35,7 @@ async function loadNewsFromSheet() {
     const cached = getCache(CACHE_KEYS.NEWS, CACHE_TTL_MS);
     if (cached && Array.isArray(cached) && cached.length) {
       newsItems = cached;
+      clearLoadError("news");
       renderNewsList();
       return;
     }
@@ -102,13 +103,20 @@ async function loadNewsFromSheet() {
     });
 
     setCache(CACHE_KEYS.NEWS, newsItems);
+    clearLoadError("news");
     renderNewsList();
   } catch (err) {
     console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:4229", err);
     recordLoadError("news", "โหลดข่าว/ประกาศไม่สำเร็จ", { showRetry: true });
     newsItems = [];
-    setInlineError(newsListEl, "ไม่สามารถโหลดข่าว/ประกาศได้ในขณะนี้");
-    setInlineError(document.getElementById("homeNewsPreview"), "ไม่สามารถโหลดข่าว/ประกาศได้ในขณะนี้");
+    setInlineError(newsListEl, "ไม่สามารถโหลดข่าว/ประกาศได้ในขณะนี้", {
+      onRetry: () => void loadNewsFromSheet(),
+      retryLabel: "ลองโหลดข่าวใหม่"
+    });
+    setInlineError(document.getElementById("homeNewsPreview"), "ไม่สามารถโหลดข่าว/ประกาศได้ในขณะนี้", {
+      onRetry: () => void loadNewsFromSheet(),
+      retryLabel: "ลองโหลดข่าวใหม่"
+    });
   } finally {
     toggleNewsSkeleton(false);
     if (typeof markLoaderStep === "function") {

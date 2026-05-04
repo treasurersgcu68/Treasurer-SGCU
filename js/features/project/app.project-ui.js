@@ -554,8 +554,13 @@ function renderHomeHeatmap(sourceProjects = projects, container = homeHeatmapEl,
   if (!sourceProjects || !sourceProjects.length) return;
 
   const today = new Date();
+  const selectedYearBE = Number(selectedProjectSourceYear);
   const currentMonth = today.getMonth();
-  const startYear = currentMonth >= 5 ? today.getFullYear() : today.getFullYear() - 1;
+  const startYear = Number.isFinite(selectedYearBE) && selectedYearBE >= 2400
+    ? selectedYearBE - 543
+    : currentMonth >= 5
+      ? today.getFullYear()
+      : today.getFullYear() - 1;
   const endYear = startYear + 1;
   const monthNames = ["มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค."];
 
@@ -1026,7 +1031,6 @@ function updateTable(filteredProjects) {
           <div class="project-name">${p.name || ""}</div>
           ${orgMarkup}
         </td>
-        <td class="col-year">${p.year || ""}</td>
         <td class="col-status">${statusBadge}</td>
         <td class="col-budget" style="${budgetColor}">${budgetText}</td>
       </tr>

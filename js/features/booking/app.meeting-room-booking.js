@@ -2554,7 +2554,7 @@ function initMeetingRoomBookingApp() {
     }
     currentUserEmail = readCurrentUserEmail();
     if (!currentUserEmail) {
-      setCancelMessage("กรุณา Sign in ก่อนยกเลิกคำขอ", "#b91c1c");
+      setCancelMessage("กรุณาเข้าสู่ระบบก่อนยกเลิกคำขอ", "#b91c1c");
       return;
     }
     if (!hasFirestore) {
@@ -2658,7 +2658,7 @@ function initMeetingRoomBookingApp() {
     }
     currentUserEmail = readCurrentUserEmail();
     if (!currentUserEmail) {
-      setRescheduleMessage("กรุณา Sign in ก่อนส่งคำขอเปลี่ยนเวลา", "#b91c1c");
+      setRescheduleMessage("กรุณาเข้าสู่ระบบก่อนส่งคำขอเปลี่ยนเวลา", "#b91c1c");
       return;
     }
     if (!hasFirestore) {

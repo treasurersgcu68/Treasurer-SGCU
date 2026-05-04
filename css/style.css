@@ -592,7 +592,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .budget-staff-overview-filters {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 12px;
   width: 100%;
@@ -607,7 +607,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .budget-staff-review-filters {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -619,7 +619,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .cards.budget-staff-summary-cards {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -789,8 +789,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .budget-staff-settings-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.34fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.36fr);
+  gap: 16px;
   align-items: start;
 }
 
@@ -809,17 +809,32 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .budget-staff-setting-block {
   min-width: 0;
   border: 1px solid rgba(244, 114, 182, 0.14);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fffafd;
-  padding: 12px;
+  padding: 14px;
   display: grid;
   gap: 12px;
   align-content: start;
 }
 
 .budget-staff-setting-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.budget-staff-setting-subhead {
   display: grid;
   gap: 2px;
+}
+
+.budget-staff-round-editor {
+  min-width: 0;
+}
+
+.budget-staff-round-list-block {
+  background: #ffffff;
 }
 
 .budget-staff-deadline-block .borrow-form-row {
@@ -831,6 +846,89 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.budget-staff-round-action-field .btn-ghost {
+  width: 100%;
+  justify-content: center;
+}
+
+.budget-staff-round-action-field .btn-primary {
+  width: 100%;
+  justify-content: center;
+}
+
+.budget-active-round-list {
+  display: grid;
+  gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.budget-active-round-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid rgba(244, 114, 182, 0.16);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.budget-active-round-item.is-active {
+  border-color: rgba(236, 72, 153, 0.42);
+  background: #fff7fc;
+  box-shadow: 0 10px 24px rgba(236, 72, 153, 0.08);
+}
+
+.budget-active-round-item.is-empty {
+  background: #ffffff;
+  color: #6b7280;
+}
+
+.budget-active-round-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.budget-active-round-state {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #fdf2f8;
+  color: #be185d;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.budget-active-round-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.budget-active-round-actions .btn-ghost {
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.budget-active-round-title {
+  color: #111827;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.budget-active-round-meta {
+  margin-top: 2px;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .budget-staff-group-ceilings {
@@ -875,7 +973,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .budget-staff-status-line {
-  min-height: 38px;
+  flex: 0 0 auto;
+  min-width: 150px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   border-radius: 12px;
@@ -893,16 +993,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .budget-staff-code-block .budget-staff-control-actions {
   display: grid;
   gap: 8px;
-}
-
-.budget-staff-save-block {
-  background: #f8fbff;
-  border-color: rgba(96, 165, 250, 0.2);
-}
-
-.budget-staff-save-block .btn-primary {
-  width: 100%;
-  justify-content: center;
 }
 
 .budget-staff-code-block .btn-ghost {
@@ -933,6 +1023,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .budget-staff-action-message {
   flex-basis: 100%;
   min-height: 20px;
+}
+
+.budget-staff-action-message-panel {
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 10px 12px;
 }
 
 .staff-application-position-grid.budget-staff-form-grid {
@@ -1003,16 +1100,21 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .budget-org-overview .budget-org-floating-cards {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 12px;
   align-items: stretch;
   width: 100%;
 }
 
 .budget-org-floating-card {
+  grid-column: span 3;
   border: none;
   background: linear-gradient(180deg, #ffffff 0%, #fff9fc 100%);
   box-shadow: 0 12px 28px rgba(236, 72, 153, 0.12);
+}
+
+.budget-org-floating-card:nth-child(n + 5) {
+  grid-column: span 4;
 }
 
 .budget-org-floating-value {
@@ -1033,6 +1135,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
   .budget-org-overview .budget-org-floating-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .budget-org-floating-card,
+  .budget-org-floating-card:nth-child(n + 5) {
+    grid-column: auto;
   }
   .budget-request-form .borrow-form-row,
   .budget-request-form .borrow-form-row.is-3 {
@@ -1077,10 +1183,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     min-height: 260px;
   }
 
-  .budget-staff-overview-filters,
-  .budget-staff-review-filters,
   .budget-staff-org-summary-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .budget-staff-overview-filters,
+  .budget-staff-review-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .cards.budget-staff-summary-cards {
@@ -1098,6 +1207,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .budget-staff-deadline-grid,
   .budget-staff-controls .borrow-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .budget-staff-setting-heading {
+    display: grid;
+  }
+
+  .budget-staff-status-line {
+    width: 100%;
   }
 
   .budget-staff-settings-side {
@@ -1167,9 +1284,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     min-height: 260px;
   }
 
-  .budget-staff-overview-filters,
   .budget-staff-org-summary-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .budget-staff-overview-filters,
+  .budget-staff-review-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .cards.budget-staff-summary-cards {
@@ -4596,6 +4717,16 @@ body.home-fixed-shell .main {
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.panel-header .csv-export-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.panel-header-tabs {
+  max-width: 100%;
 }
 
 .panel-title {
@@ -8535,13 +8666,38 @@ th.sortable.sort-desc::after {
 
   .page-header-flex,
   .panel-header {
+    flex-direction: column;
+    align-items: stretch;
     gap: 10px;
+  }
+
+  .panel-header:has(> .panel-header-tabs) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .panel-header:has(> .csv-export-btn):not(:has(> .panel-header-tabs)) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .panel-header:has(> .panel-header-tabs) > .panel-header-tabs {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
   }
 
   .page-header-flex > *,
   .panel-header > * {
     min-width: 0;
     width: 100%;
+  }
+
+  .panel-header > .csv-export-btn {
+    width: auto;
+    margin-left: auto;
   }
 
   .page-title {
@@ -8559,6 +8715,7 @@ th.sortable.sort-desc::after {
   .tabs {
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
     justify-content: flex-start;
     border-radius: 16px;

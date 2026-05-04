@@ -12,15 +12,21 @@
   const reductionNeededEl = document.getElementById("budgetStaffReductionNeeded");
   const reductionCaptionEl = document.getElementById("budgetStaffReductionCaption");
   const orgSummaryCaptionEl = document.getElementById("budgetStaffOrgSummaryCaption");
+  const orgSummaryRoundEl = document.getElementById("budgetStaffOrgSummaryRound");
   const orgSummaryGroupEl = document.getElementById("budgetStaffOrgSummaryGroup");
   const orgSummaryOrgEl = document.getElementById("budgetStaffOrgSummaryOrg");
+  const reviewRoundEl = document.getElementById("budgetStaffReviewRound");
   const reviewGroupEl = document.getElementById("budgetStaffReviewGroup");
   const reviewOrgEl = document.getElementById("budgetStaffReviewOrg");
   const chartCanvasEl = document.getElementById("budgetStaffOrgChart");
   const tabBtnEls = Array.from(document.querySelectorAll("[data-budget-staff-tab]"));
   const tabPanelEls = Array.from(document.querySelectorAll("[data-budget-staff-panel]"));
 
+  const roundYearInputEl = document.getElementById("budgetRoundYearInput");
+  const roundNoInputEl = document.getElementById("budgetRoundNoInput");
   const deadlineInputEl = document.getElementById("budgetRequestDeadlineInput");
+  const roundAddBtnEl = document.getElementById("budgetRoundAddBtn");
+  const activeRoundListEl = document.getElementById("budgetActiveRoundList");
   const ceilingInputEl = document.getElementById("budgetCeilingInput");
   const groupCeilingListEl = document.getElementById("budgetGroupCeilingList");
   const groupCeilingToggleBtnEl = document.getElementById("budgetGroupCeilingToggleBtn");
@@ -48,6 +54,7 @@
   const descriptionInputEl = document.getElementById("budgetStaffDescriptionInput");
 
   const tableBodyEl = document.getElementById("budgetStaffRequestsBody");
+  const exportCsvBtnEl = document.getElementById("budgetStaffExportCsvBtn");
 
   if (
     !summaryCaptionEl ||
@@ -59,14 +66,20 @@
     !reductionNeededEl ||
     !reductionCaptionEl ||
     !orgSummaryCaptionEl ||
+    !orgSummaryRoundEl ||
     !orgSummaryGroupEl ||
     !orgSummaryOrgEl ||
+    !reviewRoundEl ||
     !reviewGroupEl ||
     !reviewOrgEl ||
     !chartCanvasEl ||
     !tabBtnEls.length ||
     !tabPanelEls.length ||
+    !roundYearInputEl ||
+    !roundNoInputEl ||
     !deadlineInputEl ||
+    !roundAddBtnEl ||
+    !activeRoundListEl ||
     !ceilingInputEl ||
     !groupCeilingListEl ||
     !groupCeilingToggleBtnEl ||
@@ -110,6 +123,9 @@
   let budgetCeiling = 0;
   let budgetGroupCeilings = {};
   let isGroupCeilingOpen = true;
+  let budgetRoundYear = "";
+  let budgetRoundNo = "";
+  let budgetActiveRounds = [];
 
   const formatMoney = (value) => {
     const num = Number(value || 0);
@@ -118,6 +134,63 @@
   };
 
   const normalizeText = (value) => (value || "").toString().trim();
+
+  const normalizePositiveIntegerText = (value) => {
+    const num = Number(normalizeText(value));
+    return Number.isInteger(num) && num > 0 ? String(num) : "";
+  };
+
+  const normalizeRoundName = (value) => normalizeText(value).replace(/\s+/g, " ");
+
+  const buildBudgetRoundId = (year, roundNo) => {
+    const y = normalizePositiveIntegerText(year);
+    const r = normalizeRoundName(roundNo);
+    return y && r ? `${y}-${r}` : "";
+  };
+
+  const formatBudgetRoundLabel = (year, roundNo) => {
+    const y = normalizePositiveIntegerText(year);
+    const r = normalizeRoundName(roundNo);
+    return y && r ? `ปี ${y} รอบ ${r}` : "";
+  };
+
+  const normalizeBudgetActiveRounds = (value, fallback = {}) => {
+    const rows = (Array.isArray(value) ? value : [])
+      .map((item) => {
+        const year = normalizePositiveIntegerText(item?.year || item?.budgetRoundYear);
+        const roundNo = normalizeRoundName(item?.roundNo || item?.budgetRoundNo);
+        const deadline = toDateOnlyText(item?.deadline || item?.budgetRequestDeadline);
+        const id = normalizeText(item?.id) || buildBudgetRoundId(year, roundNo);
+        if (!id || !year || !roundNo || !deadline) return null;
+        const ceiling = readMoneyInput(item?.budgetCeiling);
+        return {
+          id,
+          year,
+          roundNo,
+          deadline,
+          label: formatBudgetRoundLabel(year, roundNo),
+          budgetCeiling: Number.isFinite(ceiling) && ceiling > 0 ? ceiling : 0,
+          budgetGroupCeilings: normalizeBudgetGroupCeilings(item?.budgetGroupCeilings)
+        };
+      })
+      .filter(Boolean);
+    if (rows.length) return rows;
+    const year = normalizePositiveIntegerText(fallback.budgetRoundYear);
+    const roundNo = normalizeRoundName(fallback.budgetRoundNo);
+    const deadline = toDateOnlyText(fallback.budgetRequestDeadline);
+    const id = normalizeText(fallback.currentBudgetRoundId) || buildBudgetRoundId(year, roundNo);
+    return id && year && roundNo && deadline
+      ? [{
+        id,
+        year,
+        roundNo,
+        deadline,
+        label: formatBudgetRoundLabel(year, roundNo),
+        budgetCeiling: readMoneyInput(fallback.budgetCeiling),
+        budgetGroupCeilings: normalizeBudgetGroupCeilings(fallback.budgetGroupCeilings)
+      }]
+      : [];
+  };
 
   const readMoneyInput = (value) => {
     const normalized = normalizeText(value).replaceAll(",", "");
@@ -210,6 +283,56 @@
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
 
+  const renderActiveRoundList = () => {
+    if (!budgetActiveRounds.length) {
+      activeRoundListEl.innerHTML = `
+        <div class="budget-active-round-item is-empty">
+          <div>
+            <div class="budget-active-round-title">ยังไม่มีรอบที่เปิดรับ</div>
+            <div class="budget-active-round-meta">กรอกข้อมูลทางซ้ายแล้วกดบันทึกรอบนี้</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    const editingRoundId = buildBudgetRoundId(roundYearInputEl.value, roundNoInputEl.value);
+    activeRoundListEl.innerHTML = budgetActiveRounds.map((round) => {
+      const endTime = new Date(`${round.deadline}T23:59:59`).getTime();
+      const isPast = Number.isFinite(endTime) && Date.now() > endTime;
+      const isActive = editingRoundId && round.id === editingRoundId;
+      return `
+        <div class="budget-active-round-item${isActive ? " is-active" : ""}">
+          <div>
+            <div class="budget-active-round-title-row">
+              <div class="budget-active-round-title">${escapeHtml(round.label)}</div>
+              ${isActive ? '<span class="budget-active-round-state">กำลังแก้ไข</span>' : ""}
+            </div>
+            <div class="budget-active-round-meta">${isPast ? "หมดเขตแล้ว" : "เปิดรับอยู่"} • ถึง ${escapeHtml(round.deadline)} • เพดาน ${round.budgetCeiling > 0 ? formatMoney(round.budgetCeiling) : "ยังไม่กำหนด"}</div>
+          </div>
+          <div class="budget-active-round-actions">
+            <button class="btn-ghost" type="button" data-budget-round-edit="${escapeHtml(round.id)}">แก้ไข</button>
+            <button class="btn-ghost" type="button" data-budget-round-remove="${escapeHtml(round.id)}">ลบ</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  };
+
+  const syncRoundStatus = () => {
+    renderActiveRoundList();
+    const openRounds = budgetActiveRounds.filter((round) => {
+      const endTime = new Date(`${round.deadline}T23:59:59`).getTime();
+      return Number.isFinite(endTime) && Date.now() <= endTime;
+    });
+    if (!budgetActiveRounds.length) {
+      setMessage(deadlineStatusEl, "ยังไม่มีรอบที่เปิดรับ", "#6b7280");
+    } else if (!openRounds.length) {
+      setMessage(deadlineStatusEl, `หมดเขตรับคำขอแล้วทุก ${budgetActiveRounds.length} รอบ`, "#b91c1c");
+    } else {
+      setMessage(deadlineStatusEl, `เปิดรับ ${openRounds.length} รอบ`, "#047857");
+    }
+  };
+
   const statusLabel = (status) => {
     const normalized = normalizeText(status).toLowerCase() || "pending";
     if (normalized === "approved") return "ผ่านที่ประชุมนายกหรืออนุกรรมการ";
@@ -235,6 +358,45 @@
       day: "2-digit",
       month: "short",
       year: "numeric"
+    });
+  };
+
+  const exportBudgetStaffCsv = () => {
+    const rows = sortForDisplay(getReviewFilteredRows()).map((item) => ({
+      "รหัสโครงการ": item.projectCodeGenerated || "",
+      "รอบรับคำขอ": formatBudgetRoundLabel(item.budgetRoundYear, item.budgetRoundNo) || normalizeText(item.budgetRoundId) || "",
+      "ประเภทองค์กร": item.organizationType || "",
+      "ฝ่าย / ชมรม": item.organizationName || "",
+      "ชื่อโครงการ": item.projectName || "",
+      "สถานที่": item.activityLocation || "",
+      "วันเริ่มเตรียมงาน": item.prepStartDate || "",
+      "วันสุดท้ายปฏิบัติงาน": item.operationEndDate || "",
+      "นิสิตผู้ปฏิบัติงาน": item.studentOperators || "",
+      "นิสิตผู้เข้าร่วม": item.studentParticipants || "",
+      "ยอดขอ": Number(item.estimatedExpense || 0),
+      "ยอดอนุมัติ": Number(item.approvedAmount || 0),
+      "สถานะ": statusLabel(item.status),
+      "คำอธิบาย": item.projectDescription || item.description || ""
+    }));
+    window.sgcuCsvExport?.download({
+      fileName: "budget-staff-requests",
+      headers: [
+        "รหัสโครงการ",
+        "รอบรับคำขอ",
+        "ประเภทองค์กร",
+        "ฝ่าย / ชมรม",
+        "ชื่อโครงการ",
+        "สถานที่",
+        "วันเริ่มเตรียมงาน",
+        "วันสุดท้ายปฏิบัติงาน",
+        "นิสิตผู้ปฏิบัติงาน",
+        "นิสิตผู้เข้าร่วม",
+        "ยอดขอ",
+        "ยอดอนุมัติ",
+        "สถานะ",
+        "คำอธิบาย"
+      ],
+      rows
     });
   };
 
@@ -267,6 +429,29 @@
     first.textContent = firstLabel;
     selectEl.appendChild(first);
     return selected;
+  };
+
+  const getRoundLabelById = (roundId = "") => {
+    const id = normalizeText(roundId);
+    const round = budgetActiveRounds.find((item) => item.id === id);
+    if (round?.label) return round.label;
+    const row = requestRows.find((item) => normalizeText(item.budgetRoundId) === id);
+    return formatBudgetRoundLabel(row?.budgetRoundYear, row?.budgetRoundNo) || id || "ไม่ระบุรอบ";
+  };
+
+  const populateRoundOptions = (selectEl, { includeRequestRows = true } = {}) => {
+    const selected = resetSelectOptions(selectEl, "ทุกรอบ");
+    const roundIds = [
+      ...budgetActiveRounds.map((round) => round.id),
+      ...(includeRequestRows ? requestRows.map((item) => normalizeText(item.budgetRoundId)).filter(Boolean) : [])
+    ];
+    Array.from(new Set(roundIds)).forEach((roundId) => {
+      const opt = document.createElement("option");
+      opt.value = roundId;
+      opt.textContent = getRoundLabelById(roundId);
+      selectEl.appendChild(opt);
+    });
+    selectEl.value = Array.from(selectEl.options).some((opt) => opt.value === selected) ? selected : "all";
   };
 
   const populateOrgSummaryGroupOptions = () => {
@@ -354,8 +539,10 @@
   const getBudgetGroupRecommendationMap = () => {
     const orgGroupMap = getOrgGroupMap();
     const groupTotals = new Map();
+    const editingRoundId = buildBudgetRoundId(roundYearInputEl.value, roundNoInputEl.value);
     requestRows.forEach((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return;
+      if (editingRoundId && normalizeText(item.budgetRoundId) !== editingRoundId) return;
       const orgName = normalizeText(item.organizationName) || "-";
       const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
       if (!group) return;
@@ -437,6 +624,8 @@
     if (typeof loadOrgFilters === "function") {
       try { await loadOrgFilters(); } catch (_) {}
     }
+    populateRoundOptions(orgSummaryRoundEl, { includeRequestRows: false });
+    populateRoundOptions(reviewRoundEl);
     populateOrgSummaryGroupOptions();
     populateOrgSummaryOrgOptions();
     populateReviewGroupOptions();
@@ -562,6 +751,11 @@
       return false;
     }
 
+    if (!editingId && !buildBudgetRoundId(budgetRoundYear, budgetRoundNo)) {
+      setMessage(formMessageEl, "กรุณาเพิ่มหรือเลือกแก้ไขรอบรับคำขอก่อนเพิ่มรายการ", "#b91c1c");
+      return false;
+    }
+
     const startTime = getDateOnlyTime(prepStartDateInputEl.value, Number.NaN);
     const endTime = getDateOnlyTime(operationEndDateInputEl.value, Number.NaN);
     if (Number.isNaN(startTime) || Number.isNaN(endTime) || endTime < startTime) {
@@ -584,11 +778,13 @@
   };
 
   const getOverviewFilteredRows = () => {
+    const roundFilter = normalizeText(orgSummaryRoundEl.value) || "all";
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
     const orgGroupMap = getOrgGroupMap();
     return requestRows.filter((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
+      if (roundFilter !== "all" && normalizeText(item.budgetRoundId) !== roundFilter) return false;
       const orgName = normalizeText(item.organizationName) || "-";
       const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
       if (groupFilter !== "all" && group !== groupFilter) return false;
@@ -598,11 +794,13 @@
   };
 
   const getReviewFilteredRows = () => {
+    const roundFilter = normalizeText(reviewRoundEl.value) || "all";
     const groupFilter = normalizeText(reviewGroupEl.value) || "all";
     const orgFilter = normalizeText(reviewOrgEl.value) || "all";
     const orgGroupMap = getOrgGroupMap();
     return requestRows.filter((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
+      if (roundFilter !== "all" && normalizeText(item.budgetRoundId) !== roundFilter) return false;
       const orgName = normalizeText(item.organizationName) || "-";
       const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
       if (groupFilter !== "all" && group !== groupFilter) return false;
@@ -624,7 +822,27 @@
   };
 
   const getSelectedOverviewCeiling = () => {
+    const roundFilter = normalizeText(orgSummaryRoundEl.value) || "all";
     const selectedGroup = getSelectedOverviewGroup();
+    const selectedRounds = roundFilter === "all"
+      ? budgetActiveRounds
+      : budgetActiveRounds.filter((round) => round.id === roundFilter);
+    if (selectedRounds.length) {
+      if (selectedGroup) {
+        const groupAmount = selectedRounds.reduce((sum, round) => sum + Number(round.budgetGroupCeilings?.[selectedGroup] || 0), 0);
+        if (groupAmount > 0) {
+          return {
+            amount: groupAmount,
+            label: `${roundFilter === "all" ? "เพดานย่อยรวมทุกรอบ" : "เพดานย่อย"} ${selectedGroup}`
+          };
+        }
+      }
+      const roundAmount = selectedRounds.reduce((sum, round) => sum + Number(round.budgetCeiling || 0), 0);
+      return {
+        amount: roundAmount,
+        label: roundFilter === "all" ? "เพดานรวมทุกรอบ" : `เพดาน ${selectedRounds[0]?.label || ""}`.trim()
+      };
+    }
     if (selectedGroup && Number(budgetGroupCeilings[selectedGroup] || 0) > 0) {
       return {
         amount: Number(budgetGroupCeilings[selectedGroup] || 0),
@@ -663,14 +881,16 @@
     }
 
     const pendingCount = activeRows.filter((item) => normalizeText(item.status || "pending").toLowerCase() === "pending").length;
+    const roundFilter = normalizeText(orgSummaryRoundEl.value) || "all";
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
-    const filterText = orgFilter !== "all"
+    const orgFilterText = orgFilter !== "all"
       ? orgFilter
       : groupFilter !== "all"
         ? groupFilter
         : "ทุกประเภทองค์กร";
-    summaryCaptionEl.textContent = `แสดง ${activeRows.length} โครงการ • รออนุมัติ ${pendingCount} โครงการ • ${filterText}`;
+    const roundText = roundFilter !== "all" ? getRoundLabelById(roundFilter) : "ทุกรอบ";
+    summaryCaptionEl.textContent = `แสดง ${activeRows.length} โครงการ • รออนุมัติ ${pendingCount} โครงการ • ${roundText} • ${orgFilterText}`;
   };
 
   const buildOrgSummaryRows = () => {
@@ -812,6 +1032,7 @@
     tableBodyEl.innerHTML = sortForDisplay(rows).map((item) => {
       const id = escapeHtml(item.id || "");
       const orgName = escapeHtml(item.organizationName || "-");
+      const roundLabel = formatBudgetRoundLabel(item.budgetRoundYear, item.budgetRoundNo) || normalizeText(item.budgetRoundId) || "ไม่ระบุรอบ";
       const requested = Number(item.estimatedExpense || 0);
       const approved = Number(item.approvedAmount || 0);
       const status = normalizeText(item.status || "pending").toLowerCase();
@@ -823,6 +1044,7 @@
             <div class="budget-request-history-project-name budget-staff-project-name">${escapeHtml(item.projectName || "-")}</div>
             <div class="section-text-sm budget-request-history-project-meta budget-staff-project-meta">
               <span class="budget-staff-org-name">${orgName}</span>
+              <span>• ${escapeHtml(roundLabel)}</span>
             </div>
           </td>
           <td class="col-money" data-label="ยอดขอ">${formatMoney(requested)}</td>
@@ -880,29 +1102,39 @@
       const snap = await firestore.getDoc(firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID));
       const data = snap.exists() ? (snap.data() || {}) : {};
       const deadline = toDateOnlyText(data.budgetRequestDeadline || "");
+      budgetRoundYear = normalizePositiveIntegerText(data.budgetRoundYear);
+      budgetRoundNo = normalizeRoundName(data.budgetRoundNo);
+      budgetActiveRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);
       budgetCeiling = readMoneyInput(data.budgetCeiling);
       if (!Number.isFinite(budgetCeiling) || budgetCeiling < 0) budgetCeiling = 0;
       if (budgetCeiling <= 0) budgetCeiling = readLocalBudgetCeiling();
       budgetGroupCeilings = normalizeBudgetGroupCeilings(data.budgetGroupCeilings);
       if (!Object.keys(budgetGroupCeilings).length) budgetGroupCeilings = readLocalBudgetGroupCeilings();
+      const selectedRound = budgetActiveRounds.find((round) => round.id === normalizeText(data.currentBudgetRoundId)) || budgetActiveRounds[0];
+      if (selectedRound) {
+        budgetRoundYear = selectedRound.year;
+        budgetRoundNo = selectedRound.roundNo;
+        budgetCeiling = Number(selectedRound.budgetCeiling || 0) > 0 ? Number(selectedRound.budgetCeiling || 0) : budgetCeiling;
+        if (Object.keys(selectedRound.budgetGroupCeilings || {}).length) budgetGroupCeilings = selectedRound.budgetGroupCeilings;
+      }
+      roundYearInputEl.value = budgetRoundYear;
+      roundNoInputEl.value = budgetRoundNo;
       deadlineInputEl.value = deadline;
       ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
+      populateRoundOptions(orgSummaryRoundEl, { includeRequestRows: false });
+      populateRoundOptions(reviewRoundEl);
       renderBudgetGroupCeilingInputs();
       updateSummary();
-      if (!deadline) {
-        setMessage(deadlineStatusEl, "ยังไม่กำหนดเส้นตาย", "#6b7280");
-      } else {
-        const today = new Date();
-        const end = new Date(`${deadline}T23:59:59`);
-        const isOpen = today.getTime() <= end.getTime();
-        setMessage(deadlineStatusEl, isOpen ? `เปิดรับถึง ${deadline}` : `หมดเขตรับคำขอแล้ว (${deadline})`, isOpen ? "#047857" : "#b91c1c");
-      }
+      renderRows();
+      void renderOrgSummaryChart();
+      syncRoundStatus();
     } catch (_) {
       budgetCeiling = readLocalBudgetCeiling();
       budgetGroupCeilings = readLocalBudgetGroupCeilings();
       ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
       renderBudgetGroupCeilingInputs();
       updateSummary();
+      syncRoundStatus();
       setMessage(deadlineStatusEl, "โหลดการตั้งค่าไม่สำเร็จ", "#b91c1c");
     }
   };
@@ -912,6 +1144,13 @@
     const canWrite = !!(firestore.db && firestore.doc && firestore.setDoc && firestore.serverTimestamp);
     if (!canWrite) {
       setMessage(actionMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
+      return;
+    }
+    const year = normalizePositiveIntegerText(roundYearInputEl.value);
+    const roundNo = normalizeRoundName(roundNoInputEl.value);
+    const roundId = buildBudgetRoundId(year, roundNo);
+    if (!roundId) {
+      setMessage(actionMessageEl, "กรุณาระบุปีงบประมาณและชื่อรอบ", "#b91c1c");
       return;
     }
     const deadline = toDateOnlyText(deadlineInputEl.value);
@@ -936,12 +1175,20 @@
       setMessage(actionMessageEl, groupTotalValidation.message, "#b91c1c");
       return;
     }
+    const nextActiveRounds = [
+      ...budgetActiveRounds.filter((round) => round.id !== roundId),
+      { id: roundId, year, roundNo, deadline, label: formatBudgetRoundLabel(year, roundNo), budgetCeiling: ceiling, budgetGroupCeilings: groupCeilings }
+    ].sort((a, b) => a.year.localeCompare(b.year, "th", { numeric: true }) || a.roundNo.localeCompare(b.roundNo, "th", { numeric: true }));
     setMessage(actionMessageEl, "กำลังบันทึกการตั้งค่า...", "#1d4ed8");
     try {
       await firestore.setDoc(
         firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID),
         {
           budgetRequestDeadline: deadline,
+          budgetRoundYear: year,
+          budgetRoundNo: roundNo,
+          currentBudgetRoundId: roundId,
+          budgetActiveRounds: nextActiveRounds,
           budgetCeiling: ceiling,
           budgetGroupCeilings: groupCeilings,
           updatedAt: firestore.serverTimestamp()
@@ -950,6 +1197,9 @@
       );
       budgetCeiling = ceiling;
       budgetGroupCeilings = groupCeilings;
+      budgetRoundYear = year;
+      budgetRoundNo = roundNo;
+      budgetActiveRounds = nextActiveRounds;
       writeLocalBudgetCeiling(ceiling);
       writeLocalBudgetGroupCeilings(groupCeilings);
       updateSummary();
@@ -961,12 +1211,19 @@
           firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID),
           {
             budgetRequestDeadline: deadline,
+            budgetRoundYear: year,
+            budgetRoundNo: roundNo,
+            currentBudgetRoundId: roundId,
+            budgetActiveRounds: nextActiveRounds,
             updatedAt: firestore.serverTimestamp()
           },
           { merge: true }
         );
         budgetCeiling = ceiling;
         budgetGroupCeilings = groupCeilings;
+        budgetRoundYear = year;
+        budgetRoundNo = roundNo;
+        budgetActiveRounds = nextActiveRounds;
         writeLocalBudgetCeiling(ceiling);
         writeLocalBudgetGroupCeilings(groupCeilings);
         updateSummary();
@@ -977,6 +1234,9 @@
       } catch (fallbackError) {
         budgetCeiling = ceiling;
         budgetGroupCeilings = groupCeilings;
+        budgetRoundYear = year;
+        budgetRoundNo = roundNo;
+        budgetActiveRounds = nextActiveRounds;
         writeLocalBudgetCeiling(ceiling);
         writeLocalBudgetGroupCeilings(groupCeilings);
         updateSummary();
@@ -985,6 +1245,69 @@
         setMessage(actionMessageEl, `บันทึกเพดานงบเฉพาะเครื่องนี้แล้ว แต่บันทึกเส้นตายไม่สำเร็จ${detail}`, "#b45309");
       }
     }
+  };
+
+  const removeBudgetRound = async (roundId = "") => {
+    const id = normalizeText(roundId);
+    if (!id) return;
+    const round = budgetActiveRounds.find((item) => item.id === id);
+    if (!round) return;
+    const ok = window.confirm(`ยืนยันลบ ${round.label} ? คนทั่วไปจะไม่สามารถยื่นหรือแก้ไขรายการในรอบนี้ได้`);
+    if (!ok) return;
+    const nextActiveRounds = budgetActiveRounds.filter((item) => item.id !== id);
+    const nextCurrent = nextActiveRounds[0] || {};
+    const firestore = getFirestore();
+    const canWrite = !!(firestore.db && firestore.doc && firestore.setDoc && firestore.serverTimestamp);
+    if (!canWrite) {
+      budgetActiveRounds = nextActiveRounds;
+      syncRoundStatus();
+      setMessage(actionMessageEl, "ลบรอบเฉพาะเครื่องนี้แล้ว แต่ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b45309");
+      return;
+    }
+    setMessage(actionMessageEl, "กำลังลบรอบ...", "#1d4ed8");
+    try {
+      await firestore.setDoc(
+        firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID),
+        {
+          budgetActiveRounds: nextActiveRounds,
+          budgetRoundYear: nextCurrent.year || "",
+          budgetRoundNo: nextCurrent.roundNo || "",
+          currentBudgetRoundId: nextCurrent.id || "",
+          budgetRequestDeadline: nextCurrent.deadline || "",
+          updatedAt: firestore.serverTimestamp()
+        },
+        { merge: true }
+      );
+      budgetActiveRounds = nextActiveRounds;
+      budgetRoundYear = nextCurrent.year || "";
+      budgetRoundNo = nextCurrent.roundNo || "";
+      roundYearInputEl.value = budgetRoundYear;
+      roundNoInputEl.value = budgetRoundNo;
+      deadlineInputEl.value = nextCurrent.deadline || "";
+      syncRoundStatus();
+      setMessage(actionMessageEl, "ลบรอบเรียบร้อย", "#047857");
+    } catch (error) {
+      const code = normalizeText(error?.code);
+      const detail = code ? ` (${code})` : "";
+      setMessage(actionMessageEl, `ลบรอบไม่สำเร็จ${detail}`, "#b91c1c");
+    }
+  };
+
+  const fillRoundSettings = (roundId = "") => {
+    const round = budgetActiveRounds.find((item) => item.id === normalizeText(roundId));
+    if (!round) return;
+    budgetRoundYear = round.year;
+    budgetRoundNo = round.roundNo;
+    budgetCeiling = Number(round.budgetCeiling || 0);
+    budgetGroupCeilings = normalizeBudgetGroupCeilings(round.budgetGroupCeilings);
+    roundYearInputEl.value = budgetRoundYear;
+    roundNoInputEl.value = budgetRoundNo;
+    deadlineInputEl.value = round.deadline;
+    ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
+    renderBudgetGroupCeilingInputs();
+    syncRoundStatus();
+    updateSummary();
+    setMessage(actionMessageEl, `กำลังแก้ไข ${round.label}`, "#1d4ed8");
   };
 
   const getOrgCodeMap = async () => {
@@ -1122,6 +1445,8 @@
     approvedAmountInputEl.value = Number(row.approvedAmount || 0).toString();
     statusInputEl.value = normalizeText(row.status || "pending").toLowerCase() || "pending";
     descriptionInputEl.value = normalizeText(row.description);
+    const round = budgetActiveRounds.find((item) => item.id === normalizeText(row.budgetRoundId));
+    if (round) fillRoundSettings(round.id);
     setFormMode(row.id);
     setMessage(formMessageEl, "กำลังแก้ไขรายการ", "#1d4ed8");
     formEl.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1160,6 +1485,9 @@
           {
             requestType: "budget_approval",
             ...payload,
+            budgetRoundYear,
+            budgetRoundNo,
+            budgetRoundId: buildBudgetRoundId(budgetRoundYear, budgetRoundNo),
             projectCodeGenerated: "",
             requester: {
               email: "staff-manual@system",
@@ -1231,6 +1559,18 @@
   cancelEditBtnEl.addEventListener("click", resetForm);
   formEl.addEventListener("submit", saveForm);
   deadlineSaveBtnEl.addEventListener("click", () => { void saveDeadline(); });
+  roundAddBtnEl.addEventListener("click", () => { void saveDeadline(); });
+  activeRoundListEl.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const editBtn = target?.closest("[data-budget-round-edit]");
+    if (editBtn) {
+      fillRoundSettings(editBtn.getAttribute("data-budget-round-edit") || "");
+      return;
+    }
+    const btn = target?.closest("[data-budget-round-remove]");
+    if (!btn) return;
+    void removeBudgetRound(btn.getAttribute("data-budget-round-remove") || "");
+  });
   runCodeBtnEl.addEventListener("click", () => { void runProjectCodes(); });
   clearCodeBtnEl.addEventListener("click", () => { void clearProjectCodes(); });
   groupCeilingToggleBtnEl.addEventListener("click", () => {
@@ -1246,6 +1586,18 @@
     renderBudgetGroupCeilingInputs();
     updateSummary();
   });
+  roundYearInputEl.addEventListener("input", () => {
+    renderBudgetGroupCeilingInputs();
+    syncRoundStatus();
+  });
+  roundNoInputEl.addEventListener("input", () => {
+    renderBudgetGroupCeilingInputs();
+    syncRoundStatus();
+  });
+  orgSummaryRoundEl.addEventListener("change", () => {
+    updateSummary();
+    void renderOrgSummaryChart();
+  });
   orgSummaryGroupEl.addEventListener("change", () => {
     populateOrgSummaryOrgOptions();
     updateSummary();
@@ -1259,7 +1611,9 @@
     populateReviewOrgOptions();
     renderRows();
   });
+  reviewRoundEl.addEventListener("change", renderRows);
   reviewOrgEl.addEventListener("change", renderRows);
+  exportCsvBtnEl?.addEventListener("click", exportBudgetStaffCsv);
   tabBtnEls.forEach((btn) => {
     btn.addEventListener("click", () => {
       setActiveTab(btn.getAttribute("data-budget-staff-tab") || "overview");

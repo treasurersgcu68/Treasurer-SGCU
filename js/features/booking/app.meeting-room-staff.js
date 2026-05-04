@@ -17,6 +17,7 @@ function initMeetingRoomStaffApproval() {
   const historyRoomSelectEl = document.getElementById("meetingRoomHistoryRoomSelect");
   const historySearchInputEl = document.getElementById("meetingRoomHistorySearchInput");
   const historySearchClearEl = document.getElementById("meetingRoomHistorySearchClear");
+  const exportCsvBtnEl = document.getElementById("meetingRoomExportCsvBtn");
   const roomManageForm = document.getElementById("meetingRoomManageForm");
   const roomManageInput = document.getElementById("meetingRoomManageInput");
   const roomManageMessage = document.getElementById("meetingRoomManageMessage");
@@ -1506,6 +1507,65 @@ function initMeetingRoomStaffApproval() {
       .map((value) => (value || "").toString().trim().toLowerCase())
       .join(" ");
 
+  const getDisplayRowsForActiveTab = (source = []) => {
+    const rowsForTab = getVisibleRowsForActiveTab(source);
+    if (activeTab !== "history") return rowsForTab;
+    return rowsForTab.filter((booking) => {
+      if (historyDateFilter && booking.date !== historyDateFilter) return false;
+      if (historyRoomFilter !== "all") {
+        const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName).trim();
+        if (roomName !== historyRoomFilter) return false;
+      }
+      if (historySearchQuery && !buildSearchText(booking).includes(historySearchQuery)) return false;
+      return true;
+    });
+  };
+
+  const exportMeetingRoomCsv = () => {
+    const rows = getDisplayRowsForActiveTab(sortBookingRows(bookings)).map((booking) => ({
+      "ห้อง": normalizeRoomDisplay(booking.roomId, booking.roomName),
+      "วันที่": booking.date || "",
+      "เวลาเริ่ม": booking.startTime || "",
+      "เวลาสิ้นสุด": booking.endTime || "",
+      "ผู้ขอ": booking.requester || "",
+      "อีเมล": booking.requesterEmail || booking.email || "",
+      "เบอร์โทร": booking.contactPhone || booking.phone || "",
+      "ช่องทางติดต่อ": booking.contactInfo || booking.lineId || "",
+      "วัตถุประสงค์": booking.purpose || "",
+      "รูปแบบโครงการ": booking.projectMode || "",
+      "รหัสโครงการ": booking.projectCode || "",
+      "สถานะ": statusText(booking.status),
+      "เหตุผลไม่อนุมัติ": booking.rejectionReason || "",
+      "วันที่ขอเปลี่ยน": booking.rescheduleRequestedDate || "",
+      "เวลาเริ่มที่ขอเปลี่ยน": booking.rescheduleRequestedStartTime || "",
+      "เวลาสิ้นสุดที่ขอเปลี่ยน": booking.rescheduleRequestedEndTime || "",
+      "เหตุผลขอเปลี่ยน": booking.rescheduleRequestReason || ""
+    }));
+    window.sgcuCsvExport?.download({
+      fileName: activeTab === "history" ? "meeting-room-history" : "meeting-room-requests",
+      headers: [
+        "ห้อง",
+        "วันที่",
+        "เวลาเริ่ม",
+        "เวลาสิ้นสุด",
+        "ผู้ขอ",
+        "อีเมล",
+        "เบอร์โทร",
+        "ช่องทางติดต่อ",
+        "วัตถุประสงค์",
+        "รูปแบบโครงการ",
+        "รหัสโครงการ",
+        "สถานะ",
+        "เหตุผลไม่อนุมัติ",
+        "วันที่ขอเปลี่ยน",
+        "เวลาเริ่มที่ขอเปลี่ยน",
+        "เวลาสิ้นสุดที่ขอเปลี่ยน",
+        "เหตุผลขอเปลี่ยน"
+      ],
+      rows
+    });
+  };
+
   const syncHistoryRoomFilterOptions = () => {
     if (!historyRoomSelectEl) return;
     const currentValue = (historyRoomSelectEl.value || historyRoomFilter || "all").toString();
@@ -1576,6 +1636,9 @@ function initMeetingRoomStaffApproval() {
       const isToday = dateKey === todayKey;
       const holidayName = getHolidayName(date, dateKey);
       const isHoliday = !!holidayName;
+      const todayBadge = isToday
+        ? `<span class="calendar-today-pill">วันนี้</span>`
+        : "";
       const holidayBadge = isHoliday
         ? `<span class="calendar-holiday-pill" title="${escapeText(holidayName)}">วันหยุด</span>`
         : "";
@@ -1601,7 +1664,7 @@ function initMeetingRoomStaffApproval() {
 
       cells.push(`
         <div class="${className.join(" ")}" data-date="${dateKey}">
-          <div class="calendar-day-header">${day}${holidayBadge}</div>
+          <div class="calendar-day-header">${day}${todayBadge}${holidayBadge}</div>
           ${eventRows}
           ${moreText}
         </div>
@@ -2151,6 +2214,8 @@ function initMeetingRoomStaffApproval() {
       render();
     });
   }
+
+  exportCsvBtnEl?.addEventListener("click", exportMeetingRoomCsv);
 
   if (historyDateInputEl) {
     historyDateInputEl.addEventListener("change", () => {

@@ -35,6 +35,7 @@ function initBorrowAssetsApp() {
   const borrowAssetsCountStaff = document.getElementById("borrowAssetsCountStaff");
 
   const myRequestsTableBody = document.getElementById("myBorrowRequestsTableBody");
+  const myRequestsExportCsvBtn = document.getElementById("borrowMyRequestsExportCsvBtn");
   const myRequestsTableWrapper = myRequestsTableBody ? myRequestsTableBody.closest(".table-wrapper") : null;
   const myRequestsCardsEl = document.getElementById("myBorrowRequestsCards");
   const myRequestsTableEl = myRequestsTableBody ? myRequestsTableBody.closest("table") : null;
@@ -50,6 +51,7 @@ function initBorrowAssetsApp() {
   const staffBorrowOverviewCards = document.getElementById("staffBorrowOverviewCards");
   const staffBorrowFollowupTableBody = document.getElementById("staffBorrowFollowupTableBody");
   const staffHistoryTableBody = document.getElementById("staffBorrowHistoryTableBody");
+  const staffBorrowExportCsvBtn = document.getElementById("staffBorrowExportCsvBtn");
   const staffRequestPanelTitleEl = document.getElementById("staffRequestPanelTitle");
   const staffRequestPanelCaptionEl = document.getElementById("staffRequestPanelCaption");
   const staffSummaryCards = Array.from(
@@ -916,6 +918,90 @@ function initBorrowAssetsApp() {
     }
     return '<span class="badge badge-pending">รออนุมัติ</span>';
   };
+
+  const statusText = (status) => {
+    if (status === STATUS_APPROVED) return "อนุมัติแล้ว";
+    if (status === STATUS_RECEIVED) return "รับของแล้ว";
+    if (status === STATUS_REJECTED) return "ไม่อนุมัติ";
+    if (status === STATUS_CANCELLED) return "ยกเลิก";
+    if (status === STATUS_RETURNED) return "คืนแล้ว";
+    return "รออนุมัติ";
+  };
+
+  const getAssetsCsvText = (assets = []) =>
+    (Array.isArray(assets) ? assets : [])
+      .map((asset) => {
+        const name = asset?.name || asset?.code || "-";
+        const code = asset?.code ? ` (${asset.code})` : "";
+        const qty = Number(asset?.qty || 0);
+        const qtyText = Number.isFinite(qty) ? String(qty) : "0";
+        return `${name}${code} ${qtyText} ${asset?.unit || ""}`.trim();
+      })
+      .join(" | ");
+
+  const toBorrowCsvRow = (item) => ({
+    "เลขคำขอ": item.requestNo || item.id || "",
+    "วันที่ยื่น": item.createdDate || "",
+    "ชื่อผู้ขอ": [item.firstName, item.lastName].filter(Boolean).join(" ").trim(),
+    "ชื่อเล่น": item.nickname || "",
+    "อีเมล": item.requesterEmail || "",
+    "รหัสนิสิต": item.studentId || "",
+    "คณะ": item.faculty || "",
+    "ชั้นปี": item.year || "",
+    "เบอร์โทร": item.phone || "",
+    "Line ID": item.lineId || "",
+    "ประเภทองค์กร": item.projectName || "",
+    "ฝ่าย / ชมรม": item.projectDept || "",
+    "กิจกรรม": item.projectDetail || "",
+    "รายการพัสดุ": getAssetsCsvText(item.assets),
+    "วันที่รับ": item.pickupDate || "",
+    "วันที่คืน": item.returnDate || "",
+    "สถานะ": statusText(item.status),
+    "หมายเหตุเจ้าหน้าที่": item.staffNote || ""
+  });
+
+  const exportBorrowRowsCsv = (rows = [], fileName = "borrow-asset-requests") => {
+    window.sgcuCsvExport?.download({
+      fileName,
+      headers: [
+        "เลขคำขอ",
+        "วันที่ยื่น",
+        "ชื่อผู้ขอ",
+        "ชื่อเล่น",
+        "อีเมล",
+        "รหัสนิสิต",
+        "คณะ",
+        "ชั้นปี",
+        "เบอร์โทร",
+        "Line ID",
+        "ประเภทองค์กร",
+        "ฝ่าย / ชมรม",
+        "กิจกรรม",
+        "รายการพัสดุ",
+        "วันที่รับ",
+        "วันที่คืน",
+        "สถานะ",
+        "หมายเหตุเจ้าหน้าที่"
+      ],
+      rows: rows.map(toBorrowCsvRow)
+    });
+  };
+
+  const getMyBorrowRequestRows = () =>
+    borrowRequests
+      .filter((item) => !item.isDeleted)
+      .filter((item) => currentUserEmail && (item.requesterEmail || "") === currentUserEmail)
+      .sort((a, b) => (b.submittedAtMs || 0) - (a.submittedAtMs || 0));
+
+  const getStaffBorrowVisibleRows = () =>
+    [...borrowRequests]
+      .filter((item) => !item.isDeleted)
+      .filter((item) => staffRequestTabMode === "history"
+        ? STAFF_HISTORY_TAB_STATUSES.has(item.status)
+        : STAFF_REQUEST_TAB_STATUSES.has(item.status))
+      .sort((a, b) => (staffRequestTabMode === "history"
+        ? (b.updatedAtMs || 0) - (a.updatedAtMs || 0)
+        : (b.submittedAtMs || 0) - (a.submittedAtMs || 0)));
 
   const buildSearchText = (row) => {
     if (row.searchText) return row.searchText;
@@ -2961,6 +3047,14 @@ function initBorrowAssetsApp() {
       if (item) openBorrowDetailModal(item);
     });
   }
+
+  myRequestsExportCsvBtn?.addEventListener("click", () => {
+    exportBorrowRowsCsv(getMyBorrowRequestRows(), "borrow-my-requests");
+  });
+  staffBorrowExportCsvBtn?.addEventListener("click", () => {
+    const name = staffRequestTabMode === "history" ? "borrow-staff-history" : "borrow-staff-queue";
+    exportBorrowRowsCsv(getStaffBorrowVisibleRows(), name);
+  });
 
   loadBorrowAssets();
 

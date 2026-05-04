@@ -2420,10 +2420,31 @@ function initBorrowAssetsApp() {
       collectionSnapshotErrors.set(name, "");
     });
 
+    const currentEmail = readCurrentUserEmail();
+    const shouldReadAllRequests = !!(
+      typeof staffAuthUser !== "undefined" &&
+      staffAuthUser &&
+      currentEmail
+    );
+
+    if (!currentEmail && !shouldReadAllRequests) {
+      borrowRequests = [];
+      renderBorrowRequests();
+      setStaffQueueStatusMessage("กรุณาเข้าสู่ระบบก่อนดูคิวคำขอ");
+      return;
+    }
+
     BORROW_REQUEST_COLLECTIONS.forEach((collectionName) => {
       const colRef = firestore.collection(firestore.db, collectionName);
+      const requestQuery = shouldReadAllRequests
+        ? colRef
+        : (
+          currentEmail && firestore.query && firestore.where
+            ? firestore.query(colRef, firestore.where("requesterEmail", "==", currentEmail))
+            : colRef
+        );
       const unsubscribe = firestore.onSnapshot(
-        colRef,
+        requestQuery,
         (snapshot) => {
           collectionSnapshotErrors.set(collectionName, "");
           collectionSnapshotCounts.set(collectionName, Number(snapshot.size || 0));

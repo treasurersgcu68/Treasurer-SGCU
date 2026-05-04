@@ -1,0 +1,269 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userEmail() {
+      return signedIn() && request.auth.token.email is string
+        ? request.auth.token.email
+        : "";
+    }
+
+    function userUid() {
+      return signedIn() ? request.auth.uid : "";
+    }
+
+    function isBootstrapHeadStaff() {
+      return userEmail() in [
+        "tuwanon.kimchiang@gmail.com"
+      ];
+    }
+
+    function staffProfilePath() {
+      return /databases/$(database)/documents/staffProfiles/$(userEmail());
+    }
+
+    function hasStaffProfile() {
+      return signedIn() && exists(staffProfilePath());
+    }
+
+    function staffProfile() {
+      return get(staffProfilePath()).data;
+    }
+
+    function isStaff() {
+      return isBootstrapHeadStaff() ||
+        (
+          hasStaffProfile() &&
+          (
+            staffProfile().role is string ||
+            staffProfile().positionCodeYY is string ||
+            staffProfile().divisionCodeYY is string ||
+            staffProfile().positions is list
+          )
+        );
+    }
+
+    function isHeadStaff() {
+      return isBootstrapHeadStaff() ||
+        (
+          hasStaffProfile() &&
+          (
+            staffProfile().role == "0" ||
+            staffProfile().positionCodeYY == "00" ||
+            staffProfile().divisionCodeYY == "00"
+          )
+        );
+    }
+
+    function isOwnerByUid(uid) {
+      return signedIn() && uid == userUid();
+    }
+
+    function isOwnerByEmail(email) {
+      return signedIn() && email == userEmail();
+    }
+
+    function unchanged(field) {
+      return !(field in request.resource.data) ||
+        (field in resource.data && request.resource.data[field] == resource.data[field]);
+    }
+
+    function onlyChanged(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    match /userProfiles/{uid} {
+      allow read: if isOwnerByUid(uid) || isStaff();
+      allow create, update: if isOwnerByUid(uid) &&
+        request.resource.data.uid == userUid() &&
+        request.resource.data.email == userEmail();
+      allow delete: if false;
+    }
+
+    match /staffProfiles/{email} {
+      allow read: if isStaff() || isOwnerByEmail(email);
+      allow create, update, delete: if isHeadStaff();
+    }
+
+    match /staffApplications/{applicationId} {
+      allow create: if signedIn() &&
+        request.resource.data.applicantUid == userUid() &&
+        request.resource.data.applicantEmail == userEmail() &&
+        request.resource.data.status == "pending";
+      allow read: if isStaff() ||
+        isOwnerByUid(resource.data.applicantUid) ||
+        isOwnerByEmail(resource.data.applicantEmail);
+      allow update, delete: if isHeadStaff();
+    }
+
+    match /organizationRepresentativeApplications/{applicationId} {
+      allow create: if signedIn() &&
+        request.resource.data.applicantUid == userUid() &&
+        request.resource.data.applicantEmail == userEmail() &&
+        request.resource.data.status == "pending";
+      allow read: if isStaff() ||
+        isOwnerByUid(resource.data.applicantUid) ||
+        isOwnerByEmail(resource.data.applicantEmail);
+      allow update, delete: if isHeadStaff();
+    }
+
+    match /staffPositionCatalog/{positionId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isHeadStaff();
+    }
+
+    match /staffPositionCodeCounters/{counterId} {
+      allow read, create, update: if isHeadStaff();
+      allow delete: if false;
+    }
+
+    function validBorrowStatus(status) {
+      return status in ["pending", "approved", "received", "rejected", "cancelled", "returned"];
+    }
+
+    function canCreateBorrowRequest() {
+      return signedIn() &&
+        request.resource.data.requesterEmail == userEmail() &&
+        request.resource.data.status == "pending" &&
+        validBorrowStatus(request.resource.data.status);
+    }
+
+    function canReadBorrowRequest() {
+      return isStaff() || isOwnerByEmail(resource.data.requesterEmail);
+    }
+
+    function canUserCancelBorrowRequest() {
+      return isOwnerByEmail(resource.data.requesterEmail) &&
+        resource.data.status == "pending" &&
+        request.resource.data.status == "cancelled" &&
+        unchanged("requesterEmail") &&
+        onlyChanged(["status", "updatedAt"]);
+    }
+
+    function canStaffUpdateBorrowRequest() {
+      return isStaff() &&
+        validBorrowStatus(request.resource.data.status) &&
+        unchanged("requesterEmail");
+    }
+
+    match /borrowAssetRequests/{requestId} {
+      allow create: if canCreateBorrowRequest();
+      allow get: if canReadBorrowRequest();
+      allow list: if canReadBorrowRequest();
+      allow update: if canStaffUpdateBorrowRequest() || canUserCancelBorrowRequest();
+      allow delete: if false;
+    }
+
+    match /borrowAssetsRequests/{requestId} {
+      allow create: if canCreateBorrowRequest();
+      allow get: if canReadBorrowRequest();
+      allow list: if canReadBorrowRequest();
+      allow update: if canStaffUpdateBorrowRequest() || canUserCancelBorrowRequest();
+      allow delete: if false;
+    }
+
+    match /borrowAssetStockReservations/{assetCode} {
+      allow read: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if false;
+    }
+
+    function validBudgetStatus(status) {
+      return status in ["pending", "approved", "rejected", "cancelled"];
+    }
+
+    match /budgetApprovalRequests/{requestId} {
+      allow create: if signedIn() &&
+        (
+          request.resource.data.requester.email == userEmail() ||
+          request.resource.data.requesterEmail == userEmail() ||
+          isStaff()
+        ) &&
+        validBudgetStatus(request.resource.data.status);
+      allow read: if isStaff() ||
+        isOwnerByEmail(resource.data.requester.email) ||
+        isOwnerByEmail(resource.data.requesterEmail);
+      allow update: if isStaff() ||
+        (
+          (
+            isOwnerByEmail(resource.data.requester.email) ||
+            isOwnerByEmail(resource.data.requesterEmail)
+          ) &&
+          resource.data.status == "pending" &&
+          validBudgetStatus(request.resource.data.status) &&
+          unchanged("requester") &&
+          unchanged("requesterEmail")
+        );
+      allow delete: if false;
+    }
+
+    match /budgetApprovalSettings/{settingsId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isStaff();
+    }
+
+    match /meetingRoomBookings/{bookingId} {
+      allow read: if true;
+      allow create: if signedIn() &&
+        request.resource.data.requesterEmail == userEmail() &&
+        request.resource.data.status == "pending";
+      allow update: if isStaff() ||
+        (
+          isOwnerByEmail(resource.data.requesterEmail) &&
+          unchanged("requesterEmail") &&
+          request.resource.data.status in ["rejected", "cancel_requested", "reschedule_requested"]
+        );
+      allow delete: if isStaff();
+    }
+
+    match /meetingRooms/{roomId} {
+      allow read: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    match /meetingRoomHolidays/{holidayId} {
+      allow read: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    match /auditLogs/{logId} {
+      allow create: if signedIn();
+      allow read: if isStaff();
+      allow update, delete: if false;
+    }
+
+    function validVisitorCounterWrite(counterPath) {
+      return request.resource.data.keys().hasOnly(["total", "updatedAt"]) &&
+        request.resource.data.total is int &&
+        request.resource.data.total >= 1 &&
+        (
+          !exists(counterPath) ||
+          request.resource.data.total == resource.data.total + 1
+        );
+    }
+
+    match /site_daily_visitors/{dateId} {
+      allow read: if true;
+      allow create, update: if validVisitorCounterWrite(
+        /databases/$(database)/documents/site_daily_visitors/$(dateId)
+      );
+      allow delete: if false;
+    }
+
+    match /site_stats/{statId} {
+      allow read: if true;
+      allow create, update: if validVisitorCounterWrite(
+        /databases/$(database)/documents/site_stats/$(statId)
+      );
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

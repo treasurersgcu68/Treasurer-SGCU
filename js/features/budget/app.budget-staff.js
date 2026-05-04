@@ -109,9 +109,12 @@
     return;
   }
 
-  const COLLECTION_REQUESTS = "budgetApprovalRequests";
-  const COLLECTION_SETTINGS = "budgetApprovalSettings";
-  const SETTINGS_DOC_ID = "global";
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const firestoreCollections = appConfig.firestore?.collections || {};
+  const firestoreDocs = appConfig.firestore?.docs || {};
+  const COLLECTION_REQUESTS = firestoreCollections.budgetApprovalRequests || "budgetApprovalRequests";
+  const COLLECTION_SETTINGS = firestoreCollections.budgetApprovalSettings || "budgetApprovalSettings";
+  const SETTINGS_DOC_ID = firestoreDocs.budgetApprovalSettings || "global";
   const LOCAL_BUDGET_CEILING_KEY = "sgcuBudgetStaffBudgetCeiling";
   const LOCAL_BUDGET_GROUP_CEILINGS_KEY = "sgcuBudgetStaffBudgetGroupCeilings";
   const LOCAL_BUDGET_GROUP_CEILING_OPEN_KEY = "sgcuBudgetStaffBudgetGroupCeilingOpen";
@@ -801,20 +804,6 @@
     return requestRows.filter((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
       if (roundFilter !== "all" && normalizeText(item.budgetRoundId) !== roundFilter) return false;
-      const orgName = normalizeText(item.organizationName) || "-";
-      const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
-      if (groupFilter !== "all" && group !== groupFilter) return false;
-      if (orgFilter !== "all" && orgName !== orgFilter) return false;
-      return true;
-    });
-  };
-
-  const getReviewFilteredRows = () => {
-    const groupFilter = normalizeText(reviewGroupEl.value) || "all";
-    const orgFilter = normalizeText(reviewOrgEl.value) || "all";
-    const orgGroupMap = getOrgGroupMap();
-    return requestRows.filter((item) => {
-      if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
       const orgName = normalizeText(item.organizationName) || "-";
       const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
       if (groupFilter !== "all" && group !== groupFilter) return false;

@@ -14,21 +14,21 @@
       ],
       news: "js/features/news/app.news.js?v=20260417-1",
       "financial-docs": "js/features/docs/app.downloads.js?v=20260501-1",
-      "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260504-2",
-      "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260504-2",
-      "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260415-15",
-      "meeting-room-staff": "js/features/booking/app.meeting-room-staff.js?v=20260504-1",
-      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260504-3",
+      "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260504-3",
+      "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260504-3",
+      "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
+      "meeting-room-staff": "js/features/booking/app.meeting-room-staff.js?v=20260504-5",
+      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260504-8",
       login: [
-        "js/features/staff/app.staff-access.js?v=20260430-7",
-        "js/features/budget/app.budget-request.js?v=20260504-3"
+        "js/features/staff/app.staff-access.js?v=20260504-1",
+        "js/features/budget/app.budget-request.js?v=20260504-8"
       ],
-      "staff-application": "js/features/staff/app.staff-access.js?v=20260430-7",
+      "staff-application": "js/features/staff/app.staff-access.js?v=20260504-1",
       "staff-approval": [
-        "js/features/staff/app.staff-access.js?v=20260430-7",
-        "js/features/budget/app.budget-staff.js?v=20260504-10"
+        "js/features/staff/app.staff-access.js?v=20260504-1",
+        "js/features/budget/app.budget-staff.js?v=20260504-11"
       ],
-      "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260504-10"
+      "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260504-11"
     },
     idlePrefetchPages: [
       "home",

@@ -243,7 +243,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return `SGCU${String(academicYearBE).slice(-2)}`;
   })();
   [
-    "aboutTreasurerTeamLabel",
     "aboutBudgetTeamLabel",
     "aboutOrgStructureTitleLabel"
   ].forEach((id) => {

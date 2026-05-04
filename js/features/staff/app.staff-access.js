@@ -73,14 +73,18 @@ function initStaffAccessPages() {
   const divisionCodeOptionsDatalistEl = document.getElementById("staffDivisionCodeOptionsList");
   const divisionNameOptionsDatalistEl = document.getElementById("staffDivisionNameOptionsList");
 
-  const COLLECTION_APPLICATIONS = "staffApplications";
-  const COLLECTION_ORG_REPRESENTATIVES = "organizationRepresentativeApplications";
-  const COLLECTION_PROFILES = "staffProfiles";
-  const COLLECTION_USER_PROFILES = "userProfiles";
-  const COLLECTION_POSITIONS = "staffPositionCatalog";
-  const COLLECTION_POSITION_CODE_COUNTERS = "staffPositionCodeCounters";
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const firestoreCollections = appConfig.firestore?.collections || {};
+  const COLLECTION_APPLICATIONS = firestoreCollections.staffApplications || "staffApplications";
+  const COLLECTION_ORG_REPRESENTATIVES =
+    firestoreCollections.organizationRepresentativeApplications || "organizationRepresentativeApplications";
+  const COLLECTION_PROFILES = firestoreCollections.staffProfiles || "staffProfiles";
+  const COLLECTION_USER_PROFILES = firestoreCollections.userProfiles || "userProfiles";
+  const COLLECTION_POSITIONS = firestoreCollections.staffPositionCatalog || "staffPositionCatalog";
+  const COLLECTION_POSITION_CODE_COUNTERS =
+    firestoreCollections.staffPositionCodeCounters || "staffPositionCodeCounters";
   const STAFF_HEAD_EMAIL_OVERRIDES = new Set([
-    "6534324223@student.chula.ac.th"
+    "tuwanon.kimchiang@gmail.com"
   ]);
   const LOGIN_PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
   const LEGACY_LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
@@ -1646,12 +1650,12 @@ function initStaffAccessPages() {
               data-applicant-name="${toSafeText(applicantName)}"
               data-applicant-nick="${toSafeText(applicantNick)}"
             >
-              <td>
+              <td data-label="ผู้สมัคร">
                 <div>${toSafeText(applicantName)}</div>
                 <div class="section-text-sm">${toSafeText(applicantEmail || "-")}</div>
               </td>
-              <td>${toSafeText(createdAtText)}</td>
-              <td>
+              <td data-label="เวลายื่นคำขอ">${toSafeText(createdAtText)}</td>
+              <td data-label="ตำแหน่งที่ขอ">
                 <input
                   type="text"
                   class="login-input staff-approval-position-input"
@@ -1661,7 +1665,7 @@ function initStaffAccessPages() {
                   placeholder="ตำแหน่งที่อนุมัติ"
                 />
               </td>
-              <td>
+              <td data-label="จัดการคำขอ">
                 <select
                   class="staff-status-select is-pending staff-approval-action-select"
                   data-role="status-select"
@@ -1790,12 +1794,12 @@ function initStaffAccessPages() {
             : `<span class="staff-approval-history-code">-</span>`;
           return `
             <tr class="staff-approval-history-row" data-application-id="${toSafeText(id)}" data-staff-key="${toSafeText(item.key || "")}">
-              <td>
+              <td data-label="ผู้ที่ถูกอนุมัติ">
                 <div>${toSafeText(applicantName)}</div>
                 <div class="section-text-sm">${toSafeText(applicantEmail)}</div>
               </td>
-              <td>${toSafeText(approvedPosition)}</td>
-              <td>${approvedPositionCode}</td>
+              <td data-label="ตำแหน่ง">${toSafeText(approvedPosition)}</td>
+              <td data-label="รหัสตำแหน่ง">${approvedPositionCode}</td>
             </tr>
           `;
         })
@@ -1856,18 +1860,18 @@ function initStaffAccessPages() {
       const evidence = (item.evidenceNote || "-").toString();
       return `
         <tr class="org-representative-row" data-org-representative-id="${toSafeText(id)}">
-          <td>
+          <td data-label="ผู้สมัคร">
             <div>${toSafeText(applicant.displayName)}</div>
             <div class="section-text-sm">${toSafeText(applicant.email || "-")}</div>
             <div class="section-text-sm">${toSafeText([applicant.phone, applicant.lineId].filter(Boolean).join(" / ") || "")}</div>
           </td>
-          <td>
+          <td data-label="องค์กร">
             <div>${toSafeText(orgName)}</div>
             <div class="section-text-sm">${toSafeText(orgType)}</div>
           </td>
-          <td>${toSafeText(role)}</td>
-          <td>${toSafeText(evidence)}</td>
-          <td>
+          <td data-label="ตำแหน่ง">${toSafeText(role)}</td>
+          <td data-label="ข้อมูลยืนยัน">${toSafeText(evidence)}</td>
+          <td data-label="จัดการคำขอ">
             <select
               class="staff-status-select is-pending org-representative-action-select"
               data-role="org-representative-status-select"
@@ -1905,17 +1909,17 @@ function initStaffAccessPages() {
       const id = (item.id || "").toString();
       return `
         <tr class="org-representative-row" data-org-representative-id="${toSafeText(id)}">
-          <td>
+          <td data-label="ตัวแทน">
             <div>${toSafeText(applicant.displayName)}</div>
             <div class="section-text-sm">${toSafeText(applicant.email || "-")}</div>
           </td>
-          <td>
+          <td data-label="องค์กร">
             <div>${toSafeText(orgName)}</div>
             <div class="section-text-sm">${toSafeText(orgType)}</div>
           </td>
-          <td>${toSafeText(role)}</td>
-          <td>${toSafeText(formatDateTime(item.reviewedAt || item.updatedAt || item.createdAt))}</td>
-          <td>
+          <td data-label="ตำแหน่ง">${toSafeText(role)}</td>
+          <td data-label="เวลาที่อนุมัติ">${toSafeText(formatDateTime(item.reviewedAt || item.updatedAt || item.createdAt))}</td>
+          <td data-label="จัดการสิทธิ์">
             <select
               class="staff-status-select is-approved org-representative-history-action-select"
               data-role="org-representative-status-select"

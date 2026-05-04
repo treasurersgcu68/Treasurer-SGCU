@@ -50,10 +50,12 @@ function initMeetingRoomStaffApproval() {
     return false;
   }
 
-  const COLLECTION_NAME = "meetingRoomBookings";
-  const ROOM_COLLECTION_NAME = "meetingRooms";
-  const HOLIDAY_COLLECTION_NAME = "meetingRoomHolidays";
-  const AUDIT_COLLECTION_NAME = "auditLogs";
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const firestoreCollections = appConfig.firestore?.collections || {};
+  const COLLECTION_NAME = firestoreCollections.meetingRoomBookings || "meetingRoomBookings";
+  const ROOM_COLLECTION_NAME = firestoreCollections.meetingRooms || "meetingRooms";
+  const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
+  const AUDIT_COLLECTION_NAME = firestoreCollections.auditLogs || "auditLogs";
   const STAFF_REQUEST_STATUSES = new Set(["pending", "cancel_requested", "reschedule_requested"]);
   const DEFAULT_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public", isDefault: true },
@@ -1714,13 +1716,15 @@ function initMeetingRoomStaffApproval() {
               : "";
             return `
               <tr data-booking-id="${escapeText(booking.id)}">
-                <td>${escapeText(roomName)}</td>
-                <td>${escapeText(dateText)}</td>
-                <td>${escapeText(timeText)}</td>
-                <td>${escapeText(booking.requester || "-")}</td>
-                <td>${escapeText(booking.purpose || "-")}${rescheduleLine}${rejectedLine}</td>
-                <td>${statusLabel(booking.status)}</td>
-                <td>
+                <td data-label="ห้อง">${escapeText(roomName)}</td>
+                <td data-label="วันที่">${escapeText(dateText)}</td>
+                <td data-label="เวลา">${escapeText(timeText)}</td>
+                <td data-label="ผู้ขอ">${escapeText(booking.requester || "-")}</td>
+                <td data-label="วัตถุประสงค์">
+                  <div class="meeting-staff-purpose-cell">${escapeText(booking.purpose || "-")}${rescheduleLine}${rejectedLine}</div>
+                </td>
+                <td data-label="สถานะ">${statusLabel(booking.status)}</td>
+                <td data-label="จัดการ">
                   ${getStatusDropdown(booking, "คิวรออนุมัติ")}
                 </td>
               </tr>
@@ -1770,12 +1774,14 @@ function initMeetingRoomStaffApproval() {
               : "";
             return `
               <tr data-booking-id="${escapeText(booking.id)}">
-                <td>${escapeText(roomName)}</td>
-                <td>${escapeText(dateText)}</td>
-                <td>${escapeText(timeText)}</td>
-                <td>${escapeText(booking.requester || "-")}</td>
-                <td>${escapeText(booking.purpose || "-")}${rescheduleLine}${rejectedLine}</td>
-                <td>
+                <td data-label="ห้อง">${escapeText(roomName)}</td>
+                <td data-label="วันที่">${escapeText(dateText)}</td>
+                <td data-label="เวลา">${escapeText(timeText)}</td>
+                <td data-label="ผู้ขอ">${escapeText(booking.requester || "-")}</td>
+                <td data-label="วัตถุประสงค์">
+                  <div class="meeting-staff-purpose-cell">${escapeText(booking.purpose || "-")}${rescheduleLine}${rejectedLine}</div>
+                </td>
+                <td data-label="สถานะ">
                   ${getStatusDropdown(booking, activeTab === "history" ? "ประวัติการขอ" : "รายการคำขอ")}
                 </td>
               </tr>

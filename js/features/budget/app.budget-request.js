@@ -72,10 +72,14 @@ function initBudgetApprovalRequestPage() {
 
   const LOGIN_PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
   const LEGACY_LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
-  const REQUEST_COLLECTION = "budgetApprovalRequests";
-  const REPRESENTATIVE_APPLICATION_COLLECTION = "organizationRepresentativeApplications";
-  const SETTINGS_COLLECTION = "budgetApprovalSettings";
-  const SETTINGS_DOC_ID = "global";
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const firestoreCollections = appConfig.firestore?.collections || {};
+  const firestoreDocs = appConfig.firestore?.docs || {};
+  const REQUEST_COLLECTION = firestoreCollections.budgetApprovalRequests || "budgetApprovalRequests";
+  const REPRESENTATIVE_APPLICATION_COLLECTION =
+    firestoreCollections.organizationRepresentativeApplications || "organizationRepresentativeApplications";
+  const SETTINGS_COLLECTION = firestoreCollections.budgetApprovalSettings || "budgetApprovalSettings";
+  const SETTINGS_DOC_ID = firestoreDocs.budgetApprovalSettings || "global";
   let unsubscribeMyRequests = null;
   let unsubscribeRepresentativeApplications = null;
   let unsubscribeBudgetSettings = null;
@@ -474,6 +478,12 @@ function initBudgetApprovalRequestPage() {
     });
   };
 
+  const timestampMillis = (value) => {
+    if (!value) return 0;
+    const date = typeof value?.toDate === "function" ? value.toDate() : new Date(value);
+    return date instanceof Date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+  };
+
   const formatCurrency = (value) => {
     const num = Number(value || 0);
     if (!Number.isFinite(num)) return "-";
@@ -499,6 +509,20 @@ function initBudgetApprovalRequestPage() {
     }
     if (normalized === "cancelled") {
       return '<span class="badge badge-warning">ยกเลิกหรือเลื่อนไปผ่านครั้งอื่น</span>';
+    }
+    return '<span class="badge badge-pending">รออนุมัติ</span>';
+  };
+
+  const representativeStatusBadgeHtml = (status) => {
+    const normalized = (status || "pending").toString().trim().toLowerCase();
+    if (normalized === "approved") {
+      return '<span class="badge badge-approved">อนุมัติแล้ว</span>';
+    }
+    if (normalized === "rejected") {
+      return '<span class="badge badge-rejected">ไม่อนุมัติ</span>';
+    }
+    if (normalized === "cancelled") {
+      return '<span class="badge badge-warning">ยกเลิก</span>';
     }
     return '<span class="badge badge-pending">รออนุมัติ</span>';
   };
@@ -587,7 +611,7 @@ function initBudgetApprovalRequestPage() {
           <td data-label="เวลายื่นคำขอ"><span class="budget-representative-history-value">${formatTimestampDisplay(item.createdAt)}</span></td>
           <td data-label="องค์กร"><span class="budget-representative-history-value">${orgName}<br><span class="section-text-sm">${orgType}</span></span></td>
           <td data-label="ตำแหน่ง"><span class="budget-representative-history-value">${role}</span></td>
-          <td data-label="สถานะ"><span class="budget-representative-history-value">${statusBadgeHtml(item.status)}</span></td>
+          <td data-label="สถานะ"><span class="budget-representative-history-value">${representativeStatusBadgeHtml(item.status)}</span></td>
         </tr>
       `;
     }).join("");
@@ -786,7 +810,7 @@ function initBudgetApprovalRequestPage() {
       firestore.collection &&
       firestore.onSnapshot &&
       firestore.query &&
-      firestore.orderBy
+      firestore.where
     );
     if (!canRead) {
       setBudgetRequestCloseState("");
@@ -804,7 +828,7 @@ function initBudgetApprovalRequestPage() {
     myRequestsCaptionEl.textContent = "กำลังโหลดรายการ...";
     const listQuery = firestore.query(
       firestore.collection(firestore.db, REQUEST_COLLECTION),
-      firestore.orderBy("createdAt", "desc")
+      firestore.where("requester.email", "==", email)
     );
     unsubscribeMyRequests = firestore.onSnapshot(
       listQuery,
@@ -818,7 +842,7 @@ function initBudgetApprovalRequestPage() {
             ...data
           });
         });
-        latestBudgetRequestRows = rows;
+        latestBudgetRequestRows = rows.sort((a, b) => timestampMillis(b.createdAt) - timestampMillis(a.createdAt));
         renderMyRequestsRows(latestBudgetRequestRows);
       },
       () => {
@@ -934,7 +958,7 @@ function initBudgetApprovalRequestPage() {
     if (representativeStatusCaptionEl) representativeStatusCaptionEl.textContent = "กำลังโหลดสิทธิ์ตัวแทนองค์กร...";
     const listQuery = firestore.query(
       firestore.collection(firestore.db, REPRESENTATIVE_APPLICATION_COLLECTION),
-      firestore.orderBy("createdAt", "desc")
+      firestore.where("applicantEmail", "==", email)
     );
     unsubscribeRepresentativeApplications = firestore.onSnapshot(
       listQuery,
@@ -950,12 +974,13 @@ function initBudgetApprovalRequestPage() {
             ...data
           });
         });
-        currentRepresentativeApplications = rows;
-        currentApprovedRepresentatives = rows.filter((item) =>
+        const sortedRows = rows.sort((a, b) => timestampMillis(b.createdAt) - timestampMillis(a.createdAt));
+        currentRepresentativeApplications = sortedRows;
+        currentApprovedRepresentatives = sortedRows.filter((item) =>
           (item.status || "").toString().trim().toLowerCase() === "approved"
         );
         representativeApplicationsLoaded = true;
-        renderRepresentativeRows(rows);
+        renderRepresentativeRows(sortedRows);
         if (hasApprovedRepresentativeApplication() && representativeModalEl?.getAttribute("aria-hidden") === "false") {
           setRepresentativeApplicationMessage("บัญชีนี้ได้รับอนุมัติเป็นตัวแทนองค์กรแล้ว หากส่งคำขอเพิ่มระบบจะไม่รับคำขอซ้ำ", "#b45309");
         }
@@ -1085,7 +1110,8 @@ function initBudgetApprovalRequestPage() {
         year: (profile?.year || "").toString(),
         phone: (profile?.phone || "").toString(),
         lineId: (profile?.lineId || "").toString()
-      }
+      },
+      requesterEmail: email
     };
   };
 

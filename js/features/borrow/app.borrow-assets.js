@@ -59,20 +59,27 @@ function initBorrowAssetsApp() {
   );
 
   const hasBorrowFormSection = !!(borrowAssetList && addBorrowAssetRow);
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const firestoreCollections = appConfig.firestore?.collections || {};
+  const borrowAssetConfig = appConfig.features?.borrowAssets || {};
   const BORROW_PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
   const LEGACY_BORROW_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
-  const USER_PROFILE_COLLECTION = "userProfiles";
+  const USER_PROFILE_COLLECTION = firestoreCollections.userProfiles || "userProfiles";
 
-  const USE_CSV_ASSET_CATALOG = true;
+  const USE_CSV_ASSET_CATALOG =
+    typeof borrowAssetConfig.useCsvAssetCatalog === "boolean"
+      ? borrowAssetConfig.useCsvAssetCatalog
+      : true;
   const ENABLE_ASSET_AVAILABILITY_CHECK =
     typeof globalThis.ENABLE_ASSET_AVAILABILITY_CHECK === "boolean"
       ? globalThis.ENABLE_ASSET_AVAILABILITY_CHECK
-      : false;
-  const BORROW_ASSETS_CSV_URL =
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcx0zotyWntFscUtgXHg4dkJQ6xI16Xrasy58sQfr-29iwgdpujpuvLC7poHH3TG4KR6P36A-bLyZR/pub?gid=0&single=true&output=csv";
-  const BORROW_REQUEST_COLLECTION = "borrowAssetRequests";
-  const BORROW_REQUEST_COLLECTION_FALLBACK = "borrowAssetsRequests";
-  const BORROW_ASSET_STOCK_COLLECTION = "borrowAssetStockReservations";
+      : !!borrowAssetConfig.enableAssetAvailabilityCheck;
+  const BORROW_ASSETS_CSV_URL = appConfig.sheets?.borrowAssets || "";
+  const BORROW_REQUEST_COLLECTION = firestoreCollections.borrowAssetRequests || "borrowAssetRequests";
+  const BORROW_REQUEST_COLLECTION_FALLBACK =
+    firestoreCollections.borrowAssetRequestsFallback || "borrowAssetsRequests";
+  const BORROW_ASSET_STOCK_COLLECTION =
+    firestoreCollections.borrowAssetStockReservations || "borrowAssetStockReservations";
   const BORROW_REQUEST_COLLECTIONS = [
     BORROW_REQUEST_COLLECTION,
     BORROW_REQUEST_COLLECTION_FALLBACK
@@ -1155,7 +1162,7 @@ function initBorrowAssetsApp() {
       return;
     }
     await window.sgcuVendorLoader?.ensurePapa?.();
-    if (!window.Papa || !window.fetch) return;
+    if (!window.Papa || !window.fetch || !BORROW_ASSETS_CSV_URL) return;
     fetch(BORROW_ASSETS_CSV_URL)
       .then((res) => res.text())
       .then((csvText) => {

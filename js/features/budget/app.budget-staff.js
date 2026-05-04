@@ -809,6 +809,20 @@
     });
   };
 
+  const getReviewFilteredRows = () => {
+    const groupFilter = normalizeText(reviewGroupEl.value) || "all";
+    const orgFilter = normalizeText(reviewOrgEl.value) || "all";
+    const orgGroupMap = getOrgGroupMap();
+    return requestRows.filter((item) => {
+      if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
+      const orgName = normalizeText(item.organizationName) || "-";
+      const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
+      if (groupFilter !== "all" && group !== groupFilter) return false;
+      if (orgFilter !== "all" && orgName !== orgFilter) return false;
+      return true;
+    });
+  };
+
   const getSelectedOverviewGroup = () => {
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";

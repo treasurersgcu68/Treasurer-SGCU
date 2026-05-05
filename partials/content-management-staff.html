@@ -35,7 +35,7 @@
               <div class="management-link-copy">
                 <span class="management-link-kicker">คู่มือและแบบฟอร์ม</span>
                 <h3>เอกสารการเงิน</h3>
-                <p>อัปเดตรายการเอกสารที่หน้า Financial Documents ใช้แสดง เช่น คู่มือ แบบฟอร์ม ระเบียบ และลิงก์ดาวน์โหลดจาก Google Drive</p>
+                <p>อัปเดตรายการเอกสารที่หน้าแบบฟอร์มการเงินใช้แสดง เช่น คู่มือ แบบฟอร์ม ระเบียบ และลิงก์ดาวน์โหลดจาก Google Drive</p>
               </div>
               <ol class="content-management-checklist">
                 <li>เพิ่มเอกสารหรือแก้ข้อมูลเอกสารใน Sheet ดาวน์โหลด</li>
@@ -54,11 +54,159 @@
             </section>
           </div>
 
+          <section class="sheet-guide-section section-appear section-delay-2" aria-label="คู่มือกรอกข้อมูล Google Sheet">
+            <div class="sheet-guide-header">
+              <div>
+                <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
+                <h3>เริ่มจากชีตข่าวสารและเอกสารการเงิน</h3>
+              </div>
+              <p>ห้ามลบแถวหัวตารางหรือสลับคอลัมน์ เพราะระบบอ่านข้อมูลตามตำแหน่งคอลัมน์โดยตรง ถ้าต้องลบรายการ ให้ลบทั้งแถวของรายการนั้นแทน</p>
+            </div>
+
+            <div class="sheet-guide-legend" aria-label="คำอธิบายสีแถว">
+              <span><i class="is-required"></i><strong>จำเป็น</strong> ถ้าว่างรายการจะไม่แสดงหรือข้อมูลหลักหาย</span>
+              <span><i class="is-recommended"></i><strong>ควรกรอก</strong> ไม่บังคับ แต่ช่วยให้หน้าเว็บอ่านง่ายและเรียง/จัดกลุ่มถูก</span>
+              <span><i class="is-optional"></i><strong>ไม่จำเป็น</strong> เว้นว่างได้ ระบบยังทำงาน แต่ห้ามลบหรือย้ายคอลัมน์</span>
+            </div>
+
+            <div class="sheet-guide-grid">
+              <article class="sheet-guide-card">
+                <div class="sheet-guide-card-head">
+                  <h4>ข่าวสาร</h4>
+                  <span>อ่านคอลัมน์ B-J</span>
+                </div>
+                <div class="sheet-guide-table-wrap">
+                  <table class="sheet-guide-table">
+                    <thead>
+                      <tr>
+                        <th>คอลัมน์</th>
+                        <th>หัวข้อ</th>
+                        <th>คำอธิบาย</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="is-optional">
+                        <td>A</td>
+                        <td>เลขรันเอกสาร</td>
+                        <td>เอาไว้อ้างอิง ติดตามเอกสาร (ถ้ามี)</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>B</td>
+                        <td>วันที่ประกาศ</td>
+                        <td>ใช้แสดงและเรียงข่าวล่าสุด</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>C</td>
+                        <td>ปีการศึกษา</td>
+                        <td>ใช้เป็นตัวกรอง เช่น 2568</td>
+                      </tr>
+                      <tr class="is-required">
+                        <td>D</td>
+                        <td>ชื่อข่าว</td>
+                        <td>จำเป็น ถ้าว่างทั้งแถวจะไม่แสดง</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>E</td>
+                        <td>สรุปข่าว</td>
+                        <td>แสดงบนการ์ดและในรายละเอียดข่าว</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>F</td>
+                        <td>ลิงก์แนบ</td>
+                        <td>ใส่ Google Drive, Docs, Sheets, Slides หรือไฟล์ที่เปิดได้</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>G</td>
+                        <td>หมวดข่าว</td>
+                        <td>ใช้เป็นตัวกรองหมวด</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>H</td>
+                        <td>กลุ่มเป้าหมาย</td>
+                        <td>ใช้เป็นตัวกรองกลุ่มผู้ชม</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>I</td>
+                        <td>วันหมดอายุ</td>
+                        <td>บันทึกไว้ได้ แต่ตอนนี้ยังไม่ซ่อนข่าวอัตโนมัติ</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>J</td>
+                        <td>ปักหมุด</td>
+                        <td>ติ๊กเพื่อปักหมุดข่าว</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="sheet-guide-card">
+                <div class="sheet-guide-card-head">
+                  <h4>เอกสารการเงิน</h4>
+                  <span>อ่านคอลัมน์ A-H</span>
+                </div>
+                <div class="sheet-guide-table-wrap">
+                  <table class="sheet-guide-table">
+                    <thead>
+                      <tr>
+                        <th>คอลัมน์</th>
+                        <th>หัวข้อ</th>
+                        <th>คำอธิบาย</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="is-required">
+                        <td>A</td>
+                        <td>ชื่อเอกสาร</td>
+                        <td>จำเป็น ถ้าว่างทั้งแถวจะไม่แสดง</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>B</td>
+                        <td>รายละเอียด</td>
+                        <td>แสดงเป็นคำอธิบายใต้ชื่อเอกสาร</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>C</td>
+                        <td>องค์กร</td>
+                        <td>ถ้ามี ระบบจะแสดงต่อท้ายชื่อเอกสารในวงเล็บ</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>D</td>
+                        <td>ลิงก์ EX</td>
+                        <td>ลิงก์ตัวอย่างหรือไฟล์ประกอบ ใส่ - ได้ถ้าไม่มี</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>E</td>
+                        <td>ลิงก์ PDF</td>
+                        <td>ปุ่ม PDF จะแสดงเมื่อมีลิงก์</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>F</td>
+                        <td>ลิงก์ DOCX</td>
+                        <td>ปุ่ม DOCX จะแสดงเมื่อมีลิงก์</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>G</td>
+                        <td>ลิงก์ XLSX</td>
+                        <td>ปุ่ม XLSX จะแสดงเมื่อมีลิงก์</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>H</td>
+                        <td>หมวดหมู่</td>
+                        <td>ใช้จัดกลุ่มและตัวกรอง ถ้าว่างจะเป็น อื่น ๆ</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </section>
+
           <section class="settings-handoff-card content-management-handoff section-appear section-delay-2">
             <h3>หลังแก้ข้อมูล</h3>
             <ol>
               <li>รีเฟรชหน้าเว็บเพื่อให้แคชโหลดข้อมูลใหม่</li>
-              <li>ตรวจหน้า ข่าวสาร และ Financial Documents ว่ารายการใหม่แสดงถูกต้อง</li>
+              <li>ตรวจหน้า ข่าวสาร และแบบฟอร์มการเงินว่ารายการใหม่แสดงถูกต้อง</li>
               <li>ถ้าลิงก์ไม่ขึ้น ให้เช็กสิทธิ์แชร์ของไฟล์หรือ Sheet ต้นทางก่อนแก้โค้ด</li>
             </ol>
           </section>

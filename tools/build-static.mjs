@@ -171,6 +171,87 @@ async function applyTextTransforms() {
   }
 }
 
+function getHashRoutes(html) {
+  const routes = new Set();
+  const pageRe = /\bdata-page=["']([^"']+)["']/g;
+  let match;
+  while ((match = pageRe.exec(html)) !== null) {
+    const route = (match[1] || "").trim();
+    if (/^[a-z0-9-]+$/i.test(route) && route !== "home") {
+      routes.add(route);
+    }
+  }
+  return Array.from(routes).sort();
+}
+
+function buildRouteRedirectHtml(route) {
+  const safeRoute = JSON.stringify(route);
+  return `<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content="0; url=../#${route}" />
+    <title>กำลังเปิดหน้า...</title>
+    <script>
+      const route = ${safeRoute};
+      const cleanPath = window.location.pathname.replace(/\\/$/, "");
+      let basePath = cleanPath.endsWith("/" + route)
+        ? cleanPath.slice(0, -(route.length + 1)) || "/"
+        : "../";
+      if (basePath !== "/" && !basePath.endsWith("/")) basePath += "/";
+      window.location.replace(basePath + "#" + route);
+    </script>
+  </head>
+  <body>
+    <a href="../#${route}">เปิดหน้านี้</a>
+  </body>
+</html>
+`;
+}
+
+function build404RedirectHtml(routes) {
+  const safeRoutes = JSON.stringify(routes);
+  return `<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>กำลังเปิดหน้า...</title>
+    <script>
+      const routes = new Set(${safeRoutes});
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const route = parts[parts.length - 1] || "";
+      if (routes.has(route)) {
+        const baseParts = parts.slice(0, -1);
+        const basePath = "/" + (baseParts.length ? baseParts.join("/") + "/" : "");
+        window.location.replace(basePath + "#" + route);
+      } else {
+        window.location.replace("./");
+      }
+    </script>
+  </head>
+  <body>
+    <a href="./">กลับหน้าแรก</a>
+  </body>
+</html>
+`;
+}
+
+async function createHashRouteRedirects() {
+  const indexPath = path.join(distDir, "index.html");
+  if (!(await exists(indexPath))) return;
+
+  const html = await fs.readFile(indexPath, "utf8");
+  const routes = getHashRoutes(html);
+  for (const route of routes) {
+    const routeDir = path.join(distDir, route);
+    await fs.mkdir(routeDir, { recursive: true });
+    await fs.writeFile(path.join(routeDir, "index.html"), buildRouteRedirectHtml(route));
+  }
+  await fs.writeFile(path.join(distDir, "404.html"), build404RedirectHtml(routes));
+}
+
 function getLocalAssetRefs(html) {
   const refs = [];
   const attrRe = /\b(?:src|href)=["']([^"']+)["']/g;
@@ -223,6 +304,7 @@ async function build() {
   await fs.rm(distDir, { recursive: true, force: true });
   await copyRecursive(rootDir, distDir);
   await applyTextTransforms();
+  await createHashRouteRedirects();
   await validateLocalAssetRefs();
 }
 

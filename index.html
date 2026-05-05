@@ -92,23 +92,23 @@
         <nav class="desktop-nav">
           <div id="desktopNavGeneral" class="desktop-nav-role" data-role-nav="general">
             <div class="nav-group">
-              <button class="nav-group-toggle" type="button" aria-expanded="false">ข้อมูลทั่วไป</button>
+              <button class="nav-group-toggle" type="button" aria-expanded="false">เกี่ยวกับ</button>
               <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="home" class="active" data-visible="public">หน้าแรก</a>
-                <a href="#" data-page="about" data-visible="public">เกี่ยวกับ</a>
+                <a href="#" data-page="about" data-visible="public">เกี่ยวกับฝ่ายเหรัญญิก</a>
                 <a href="#" data-page="news" data-visible="public">ข่าวสาร</a>
               </div>
             </div>
 
-            <a href="#" data-page="project-status" class="nav-pill" data-visible="public">ติดตามสถานะโครงการ</a>
-            <a href="#" data-page="financial-docs" class="nav-pill" data-visible="public">เอกสารการเงิน</a>
+            <a href="#" data-page="project-status" class="nav-pill" data-visible="public">สถานะโครงการ</a>
+            <a href="#" data-page="financial-docs" class="nav-pill" data-visible="public">แบบฟอร์มการเงิน</a>
 
             <div class="nav-group">
-              <button class="nav-group-toggle" type="button" aria-expanded="false">คำขอ</button>
+              <button class="nav-group-toggle" type="button" aria-expanded="false">ยื่นคำขอ</button>
               <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="borrow-assets" data-visible="protected">ยืม-คืนพัสดุ</a>
                 <a href="#" data-page="meeting-room-booking" data-visible="protected">จองห้องประชุม</a>
-                <a href="#" data-page="budget-approval-request" data-visible="protected">ขออนุมัติงบประมาณ</a>
+                <a href="#" data-page="budget-approval-request" data-visible="protected">ยื่นของบประมาณ</a>
               </div>
             </div>
 
@@ -119,7 +119,7 @@
             <div class="nav-group">
               <button class="nav-group-toggle" type="button" aria-expanded="false">ภาพรวม</button>
               <div class="nav-group-menu" aria-hidden="true">
-                <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวม</a>
+                <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมและสารบัญโครงการ</a>
                 <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ</a>
               </div>
             </div>
@@ -173,10 +173,10 @@
       <div id="mobileMenu" class="mobile-menu" aria-hidden="true">
         <nav>
           <details class="mobile-menu-group" data-mobile-nav="general" open>
-            <summary>ข้อมูลทั่วไป</summary>
+            <summary>เกี่ยวกับ</summary>
             <div class="mobile-menu-links">
               <a href="#" data-page="home" data-visible="public">หน้าแรก</a>
-              <a href="#" data-page="about" data-visible="public">เกี่ยวกับ</a>
+              <a href="#" data-page="about" data-visible="public">เกี่ยวกับฝ่ายเหรัญญิก</a>
               <a href="#" data-page="news" data-visible="public">ข่าวสาร</a>
             </div>
           </details>
@@ -184,24 +184,24 @@
           <details class="mobile-menu-group" data-mobile-nav="general">
             <summary>โครงการและเอกสาร</summary>
             <div class="mobile-menu-links">
-              <a href="#" data-page="project-status" data-visible="public">ติดตามสถานะโครงการ</a>
-              <a href="#" data-page="financial-docs" data-visible="public">เอกสารการเงิน</a>
+              <a href="#" data-page="project-status" data-visible="public">สถานะโครงการ</a>
+              <a href="#" data-page="financial-docs" data-visible="public">แบบฟอร์มการเงิน</a>
             </div>
           </details>
 
           <details class="mobile-menu-group" data-mobile-nav="general">
-            <summary>คำขอ</summary>
+            <summary>ยื่นคำขอ</summary>
             <div class="mobile-menu-links">
               <a href="#" data-page="borrow-assets" data-visible="protected">ยืม-คืนพัสดุ</a>
               <a href="#" data-page="meeting-room-booking" data-visible="protected">จองห้องประชุม</a>
-              <a href="#" data-page="budget-approval-request" data-visible="protected">ขออนุมัติงบประมาณ</a>
+              <a href="#" data-page="budget-approval-request" data-visible="protected">ยื่นของบประมาณ</a>
             </div>
           </details>
 
           <details class="mobile-menu-group" data-mobile-nav="staff">
             <summary>ภาพรวม</summary>
             <div class="mobile-menu-links">
-              <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวม</a>
+              <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมและสารบัญโครงการ</a>
               <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ</a>
             </div>
           </details>
@@ -984,7 +984,7 @@
     <script src="js/motion/app.motion.js" defer></script>
     <script>
       window.sgcuAssetVersion = "20260505-1";
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260504-27";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260505-1";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",

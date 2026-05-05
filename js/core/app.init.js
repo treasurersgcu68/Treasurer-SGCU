@@ -1108,6 +1108,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
 
+  // ===== Dashboard Staff: Overview / Project Sources =====
+  const dashboardStaffMainOverviewTabEl = document.getElementById("dashboardStaffMainOverviewTab");
+  const dashboardStaffMainSourcesTabEl = document.getElementById("dashboardStaffMainSourcesTab");
+  const dashboardStaffOverviewPanelEl = document.getElementById("dashboardStaffOverviewPanel");
+  const dashboardStaffSourcesPanelEl = document.getElementById("dashboardStaffSourcesPanel");
+  const setDashboardStaffMainTab = (tab = "overview") => {
+    const showOverview = tab !== "sources";
+    if (dashboardStaffOverviewPanelEl) dashboardStaffOverviewPanelEl.hidden = !showOverview;
+    if (dashboardStaffSourcesPanelEl) dashboardStaffSourcesPanelEl.hidden = showOverview;
+    if (dashboardStaffMainOverviewTabEl) {
+      dashboardStaffMainOverviewTabEl.classList.toggle("is-active", showOverview);
+      dashboardStaffMainOverviewTabEl.setAttribute("aria-selected", showOverview ? "true" : "false");
+    }
+    if (dashboardStaffMainSourcesTabEl) {
+      dashboardStaffMainSourcesTabEl.classList.toggle("is-active", !showOverview);
+      dashboardStaffMainSourcesTabEl.setAttribute("aria-selected", showOverview ? "false" : "true");
+    }
+  };
+
+  if (dashboardStaffMainOverviewTabEl) {
+    dashboardStaffMainOverviewTabEl.addEventListener("click", () => setDashboardStaffMainTab("overview"));
+  }
+  if (dashboardStaffMainSourcesTabEl) {
+    dashboardStaffMainSourcesTabEl.addEventListener("click", () => setDashboardStaffMainTab("sources"));
+  }
+  setDashboardStaffMainTab("overview");
+
+
   // ===== 10) Tabs Borrow & Return Assets =====
   const assetTabBtns = document.querySelectorAll(".tab-btn[data-assets-tab]");
   const assetsOverview = document.getElementById("assetsOverview");

@@ -6,13 +6,36 @@
               <h1 class="page-title">จัดการสมาชิกสตาฟ</h1>
               <p class="page-subtitle">ตรวจคำขอสมาชิกสตาฟ จัดการตำแหน่ง และกำหนดสิทธิ์เข้าหน้าฝั่ง Staff</p>
             </div>
+            <div class="tabs staff-approval-main-tabs" role="tablist" aria-label="เลือกส่วนงานสมาชิกสตาฟ">
+              <button
+                id="staffApprovalMainApprovalTab"
+                class="tab-btn view-toggle-btn is-active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="staffApprovalMainPanel"
+              >
+                อนุมัติสมาชิกสตาฟ
+              </button>
+              <button
+                id="staffApprovalMainStructureTab"
+                class="tab-btn view-toggle-btn"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="staffStructurePanel"
+              >
+                ทำเนียบรุ่น
+              </button>
+            </div>
           </div>
 
           <div id="staffApprovalStaffSection">
+          <div id="staffStructurePanel" class="staff-approval-main-panel" role="tabpanel" aria-labelledby="staffApprovalMainStructureTab" hidden>
           <section class="management-link-panel management-link-panel-slim" data-management-visibility="staff" hidden>
             <div class="management-link-copy">
               <span class="management-link-kicker">ข้อมูลประกอบสมาชิกสตาฟ</span>
-              <h3>โครงสร้างทีม</h3>
+              <h3>ทำเนียบรุ่น</h3>
               <p>แก้รายชื่อ บทบาท ตำแหน่ง และข้อมูลที่ใช้แสดงหน้าเกี่ยวกับ ก่อนตรวจสิทธิ์หรือส่งต่อรายชื่อให้รุ่นถัดไป</p>
             </div>
             <a
@@ -22,10 +45,151 @@
               rel="noopener noreferrer"
               data-management-link="managementLinks.orgStructure"
             >
-              เปิด Sheet โครงสร้างทีม
+              เปิด Sheet ทำเนียบรุ่น
             </a>
           </section>
 
+          <section class="sheet-guide-section section-appear section-delay-1" aria-label="คู่มือกรอกข้อมูล Sheet ทำเนียบรุ่น">
+            <div class="sheet-guide-header">
+              <div>
+                <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
+                <h3>ทำเนียบรุ่น</h3>
+              </div>
+              <p>เว็บอ่านข้อมูลจาก Sheet ทำเนียบรุ่นเพื่อแสดงแผนผังทีมเหรัญญิกและข้อมูลติดต่อบนหน้าเกี่ยวกับ เพิ่มหรือลบได้เฉพาะแถวข้อมูล ห้ามลบหรือย้ายคอลัมน์</p>
+            </div>
+
+            <div class="sheet-guide-legend" aria-label="คำอธิบายสีแถว">
+              <span><i class="is-required"></i><strong>จำเป็น</strong> ถ้าว่างข้อมูลหลักของบุคคลนั้นจะแสดงไม่ครบ</span>
+              <span><i class="is-recommended"></i><strong>ควรกรอก</strong> ช่วยให้แผนผังและข้อมูลติดต่อสมบูรณ์</span>
+              <span><i class="is-optional"></i><strong>ไม่จำเป็น</strong> เว้นว่างได้ ระบบยังทำงาน แต่ห้ามลบหรือย้ายคอลัมน์</span>
+            </div>
+
+            <div class="sheet-guide-grid sheet-guide-grid-single">
+              <article class="sheet-guide-card">
+                <div class="sheet-guide-card-head">
+                  <h4>ทำเนียบรุ่น</h4>
+                  <span>อ่านคอลัมน์ A-M</span>
+                </div>
+                <div class="sheet-guide-table-wrap">
+                  <table class="sheet-guide-table">
+                    <thead>
+                      <tr>
+                        <th>คอลัมน์</th>
+                        <th>หัวข้อ</th>
+                        <th>คำอธิบาย</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="is-required">
+                        <td>A</td>
+                        <td>รหัสตำแหน่ง</td>
+                        <td>
+                          <div class="sheet-guide-code-note">
+                            <p>จำเป็นสำหรับจัดวางบุคคลในแผนผัง ถ้าว่างระบบจะไม่รู้ว่าคนนั้นอยู่ฝ่ายไหน ตำแหน่งอะไร และควรเรียงตรงไหน</p>
+                            <code>SGCUXX.10.YY.ZZ-AAA</code>
+                            <div class="sheet-guide-code-grid">
+                              <span><strong>XX</strong> ปีวาระ</span>
+                              <span><strong>YY</strong> ฝ่าย/หน่วยงาน</span>
+                              <span><strong>ZZ</strong> ตำแหน่ง</span>
+                            </div>
+                            <div class="sheet-guide-code-lists">
+                              <div class="sheet-guide-code-list-highlight">
+                                <div class="sheet-guide-code-list-head">
+                                  <strong>YY ฝ่าย/หน่วยงาน</strong>
+                                  <em>เพิ่ม/ลดได้</em>
+                                </div>
+                                <p>รายการ YY เป็นรหัสหมวดฝ่าย สามารถเพิ่ม ลด หรือปรับชื่อให้ตรงกับโครงสร้างทีมในปีนั้นได้ แต่ควรใช้เลข 2 หลักและไม่ซ้ำกัน</p>
+                                <ul>
+                                  <li>00 เหรัญญิก</li>
+                                  <li>01 ผู้ช่วยเหรัญญิก</li>
+                                  <li>02 บริหารงบ</li>
+                                  <li>03 หาทุน</li>
+                                  <li>04 กายภาพ</li>
+                                  <li>05 การตลาด</li>
+                                </ul>
+                              </div>
+                              <div>
+                                <strong>ZZ ตำแหน่ง</strong>
+                                <ul>
+                                  <li>01 ประธานฝ่าย</li>
+                                  <li>02 รองประธานฝ่าย</li>
+                                  <li>03 เลขานุการฝ่าย</li>
+                                  <li>04 ผู้ช่วยฝ่าย</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr class="is-required">
+                        <td>B</td>
+                        <td>ตำแหน่ง</td>
+                        <td>ใช้แสดงบทบาทในแผนผังและการ์ดรายละเอียดบุคคล</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>C</td>
+                        <td>คำนำ</td>
+                        <td>ใช้ประกอบชื่อเต็ม เช่น นาย นางสาว</td>
+                      </tr>
+                      <tr class="is-required">
+                        <td>D</td>
+                        <td>ชื่อ</td>
+                        <td>ใช้แสดงชื่อเต็ม ถ้าว่างข้อมูลบุคคลจะอ่านยากและรูป fallback จะไม่สมบูรณ์</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>E</td>
+                        <td>สกุล</td>
+                        <td>ใช้แสดงชื่อเต็มในแผนผังและรายละเอียดบุคคล</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>F</td>
+                        <td>ชื่อเล่น</td>
+                        <td>ใช้เป็นชื่อย่อ/ชื่อเรียกในแผนผังและข้อมูลติดต่อ</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>G</td>
+                        <td>รหัสนิสิต</td>
+                        <td>ใช้ระบุตัวบุคคลและช่วยตรวจสอบข้อมูลสมาชิกในทำเนียบรุ่น</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>H</td>
+                        <td>ชั้นปี</td>
+                        <td>ใช้แสดงข้อมูลประกอบในรายละเอียดบุคคล</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>I</td>
+                        <td>คณะ</td>
+                        <td>ใช้แสดงข้อมูลประกอบในรายละเอียดบุคคล</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>J</td>
+                        <td>อีเมลที่ใช้ประจำ</td>
+                        <td>ใช้เป็นช่องทางติดต่อและอ้างอิงผู้ปฏิบัติงานในระบบ</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>K</td>
+                        <td>Line ID</td>
+                        <td>ใช้แสดงช่องทางติดต่อในรายละเอียดบุคคล</td>
+                      </tr>
+                      <tr class="is-recommended">
+                        <td>L</td>
+                        <td>เบอร์โทรศัพท์</td>
+                        <td>ใช้แสดงช่องทางติดต่อในรายละเอียดบุคคล</td>
+                      </tr>
+                      <tr class="is-optional">
+                        <td>M</td>
+                        <td>PIC</td>
+                        <td>ใส่ลิงก์รูปหรือ Google Drive ได้ ถ้าว่างระบบจะแสดงตัวอักษรย่อแทน</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </section>
+          </div>
+
+          <div id="staffApprovalMainPanel" class="staff-approval-main-panel" role="tabpanel" aria-labelledby="staffApprovalMainApprovalTab">
           <div id="staffApprovalPendingPanel" class="panel panel-hover staff-access-panel">
             <div class="panel-header">
               <div>
@@ -76,6 +240,7 @@
                 </table>
               </div>
             </div>
+          </div>
           </div>
           </div>
 

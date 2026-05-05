@@ -106,7 +106,7 @@ async function loadNewsFromSheet() {
     clearLoadError("news");
     renderNewsList();
   } catch (err) {
-    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS - app.js:4229", err);
+    console.error("โหลดข่าว/ประกาศจากชีตไม่ได้  NEWS  app.js:4229 - app.news.js:109", err);
     recordLoadError("news", "โหลดข่าว/ประกาศไม่สำเร็จ", { showRetry: true });
     newsItems = [];
     setInlineError(newsListEl, "ไม่สามารถโหลดข่าว/ประกาศได้ในขณะนี้", {

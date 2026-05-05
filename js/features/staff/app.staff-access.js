@@ -44,6 +44,10 @@ function initStaffAccessPages() {
   const staffApprovalTypeStaffBtnEl = document.getElementById("staffApprovalTypeStaffBtn");
   const staffApprovalTypeOrgBtnEl = document.getElementById("staffApprovalTypeOrgBtn");
   const staffApprovalStaffSectionEl = document.getElementById("staffApprovalStaffSection");
+  const staffApprovalMainApprovalTabEl = document.getElementById("staffApprovalMainApprovalTab");
+  const staffApprovalMainStructureTabEl = document.getElementById("staffApprovalMainStructureTab");
+  const staffApprovalMainPanelEl = document.getElementById("staffApprovalMainPanel");
+  const staffStructurePanelEl = document.getElementById("staffStructurePanel");
   const orgRepresentativeApprovalSectionEl = document.getElementById("orgRepresentativeApprovalSection");
   const orgRepresentativePanelTitleEl = document.getElementById("orgRepresentativeApprovalPanelTitle");
   const orgRepresentativePanelCaptionEl = document.getElementById("orgRepresentativeApprovalPanelCaption");
@@ -67,6 +71,10 @@ function initStaffAccessPages() {
   const orgRepresentativeCompleteOrgCountEl = document.getElementById("orgRepresentativeCompleteOrgCount");
   const orgRepresentativeIncompleteOrgCountEl = document.getElementById("orgRepresentativeIncompleteOrgCount");
   const orgRepresentativeApprovedTotalCountEl = document.getElementById("orgRepresentativeApprovedTotalCount");
+  const orgRepresentativeMainOverviewTabEl = document.getElementById("orgRepresentativeMainOverviewTab");
+  const orgRepresentativeMainFilterTabEl = document.getElementById("orgRepresentativeMainFilterTab");
+  const orgRepresentativeOverviewPanelEl = document.getElementById("orgRepresentativeOverviewPanel");
+  const orgRepresentativeFilterPanelEl = document.getElementById("orgRepresentativeFilterPanel");
 
   if (approvalDetailModalEl && approvalDetailModalEl.parentElement !== document.body) {
     document.body.appendChild(approvalDetailModalEl);
@@ -138,7 +146,7 @@ function initStaffAccessPages() {
     { name: "เจ้าหน้าที่สำนักบริหารกิจการนิสิต", divisionCodeYY: "09", levelCodeZZ: "04" }
   ];
   const STAFF_PAGE_OPTIONS = [
-    { id: "dashboard-staff", label: "ภาพรวมสตาฟ" },
+    { id: "dashboard-staff", label: "ภาพรวมและสารบัญโครงการ" },
     { id: "project-status-staff", label: "กำกับสถานะโครงการ" },
     { id: "borrow-assets-staff", label: "อนุมัติยืมทรัพย์สิน" },
     { id: "meeting-room-staff", label: "อนุมัติห้องประชุม" },
@@ -178,6 +186,7 @@ function initStaffAccessPages() {
   let appFormStatusLocked = false;
   let currentApprovalView = "pending";
   let currentApprovalType = "staff";
+  let currentStaffApprovalMainTab = "approval";
   let currentOrgRepresentativeView = "overview";
   let currentApprovalDetailRequestKey = "";
   let lastKnownAuthState = {
@@ -217,6 +226,29 @@ function initStaffAccessPages() {
     }
   };
 
+  const syncStaffPositionPanelVisibility = () => {
+    if (!positionManagePanelEl) return;
+    const showOrg = currentApprovalType === "org";
+    const showStructure = currentStaffApprovalMainTab === "structure";
+    positionManagePanelEl.style.display = showOrg || showStructure ? "none" : "";
+  };
+
+  const setStaffApprovalMainTab = (tab = "approval") => {
+    currentStaffApprovalMainTab = tab === "structure" ? "structure" : "approval";
+    const showApproval = currentStaffApprovalMainTab === "approval";
+    if (staffApprovalMainPanelEl) staffApprovalMainPanelEl.hidden = !showApproval;
+    if (staffStructurePanelEl) staffStructurePanelEl.hidden = showApproval;
+    if (staffApprovalMainApprovalTabEl) {
+      staffApprovalMainApprovalTabEl.classList.toggle("is-active", showApproval);
+      staffApprovalMainApprovalTabEl.setAttribute("aria-selected", showApproval ? "true" : "false");
+    }
+    if (staffApprovalMainStructureTabEl) {
+      staffApprovalMainStructureTabEl.classList.toggle("is-active", !showApproval);
+      staffApprovalMainStructureTabEl.setAttribute("aria-selected", showApproval ? "false" : "true");
+    }
+    syncStaffPositionPanelVisibility();
+  };
+
   const syncOrgRepresentativePanelCaption = () => {
     if (!orgRepresentativePanelCaptionEl) return;
     if (currentOrgRepresentativeView === "history") {
@@ -231,6 +263,21 @@ function initStaffAccessPages() {
       `แสดงผล ${currentOrgRepresentativeFilteredOrganizations.length} จาก ${currentOrgRepresentativeOrganizations.length} องค์กร`;
   };
 
+  const setOrgRepresentativeMainTab = (tab = "overview") => {
+    const nextTab = tab === "filter" ? "filter" : "overview";
+    const showOverview = nextTab === "overview";
+    if (orgRepresentativeOverviewPanelEl) orgRepresentativeOverviewPanelEl.hidden = !showOverview;
+    if (orgRepresentativeFilterPanelEl) orgRepresentativeFilterPanelEl.hidden = showOverview;
+    if (orgRepresentativeMainOverviewTabEl) {
+      orgRepresentativeMainOverviewTabEl.classList.toggle("is-active", showOverview);
+      orgRepresentativeMainOverviewTabEl.setAttribute("aria-selected", showOverview ? "true" : "false");
+    }
+    if (orgRepresentativeMainFilterTabEl) {
+      orgRepresentativeMainFilterTabEl.classList.toggle("is-active", !showOverview);
+      orgRepresentativeMainFilterTabEl.setAttribute("aria-selected", showOverview ? "false" : "true");
+    }
+  };
+
   const setOrgRepresentativeView = (view = "overview") => {
     currentOrgRepresentativeView = view === "history" ? "history" : view === "pending" ? "pending" : "overview";
     const showOverview = currentOrgRepresentativeView === "overview";
@@ -241,7 +288,7 @@ function initStaffAccessPages() {
     if (orgRepresentativeHistoryContentEl) orgRepresentativeHistoryContentEl.style.display = showHistory ? "" : "none";
     if (orgRepresentativePanelTitleEl) {
       orgRepresentativePanelTitleEl.textContent = showOverview
-        ? "ภาพรวมตัวแทนรายองค์กร"
+        ? "อนุมัติตัวแทนองค์กร"
         : showPending
           ? "คำขอตัวแทนองค์กรที่รออนุมัติ"
           : "ตัวแทนองค์กรที่อนุมัติแล้ว";
@@ -264,14 +311,14 @@ function initStaffAccessPages() {
   const setApprovalType = (type = "staff") => {
     if (!staffApprovalTypeStaffBtnEl && !staffApprovalTypeOrgBtnEl) {
       if (staffApprovalStaffSectionEl) staffApprovalStaffSectionEl.style.display = "";
-      if (positionManagePanelEl) positionManagePanelEl.style.display = "";
+      syncStaffPositionPanelVisibility();
       if (orgRepresentativeApprovalSectionEl) orgRepresentativeApprovalSectionEl.style.display = "";
       return;
     }
     currentApprovalType = type === "org" ? "org" : "staff";
     const showOrg = currentApprovalType === "org";
     if (staffApprovalStaffSectionEl) staffApprovalStaffSectionEl.style.display = showOrg ? "none" : "";
-    if (positionManagePanelEl) positionManagePanelEl.style.display = showOrg ? "none" : "";
+    syncStaffPositionPanelVisibility();
     if (orgRepresentativeApprovalSectionEl) orgRepresentativeApprovalSectionEl.style.display = showOrg ? "" : "none";
     if (staffApprovalTypeStaffBtnEl) {
       staffApprovalTypeStaffBtnEl.classList.toggle("is-active", !showOrg);
@@ -3760,11 +3807,24 @@ function initStaffAccessPages() {
     approvalShowHistoryBtnEl.addEventListener("click", () => setApprovalView("history"));
   }
 
+  if (staffApprovalMainApprovalTabEl) {
+    staffApprovalMainApprovalTabEl.addEventListener("click", () => setStaffApprovalMainTab("approval"));
+  }
+  if (staffApprovalMainStructureTabEl) {
+    staffApprovalMainStructureTabEl.addEventListener("click", () => setStaffApprovalMainTab("structure"));
+  }
+
   if (staffApprovalTypeStaffBtnEl) {
     staffApprovalTypeStaffBtnEl.addEventListener("click", () => setApprovalType("staff"));
   }
   if (staffApprovalTypeOrgBtnEl) {
     staffApprovalTypeOrgBtnEl.addEventListener("click", () => setApprovalType("org"));
+  }
+  if (orgRepresentativeMainOverviewTabEl) {
+    orgRepresentativeMainOverviewTabEl.addEventListener("click", () => setOrgRepresentativeMainTab("overview"));
+  }
+  if (orgRepresentativeMainFilterTabEl) {
+    orgRepresentativeMainFilterTabEl.addEventListener("click", () => setOrgRepresentativeMainTab("filter"));
   }
   if (orgRepresentativeShowOverviewBtnEl) {
     orgRepresentativeShowOverviewBtnEl.addEventListener("click", () => setOrgRepresentativeView("overview"));
@@ -4156,6 +4216,7 @@ function initStaffAccessPages() {
   startApprovedHistoryListener();
   startOrgRepresentativeApplicationsListener();
   setApprovalView("pending");
+  setStaffApprovalMainTab("approval");
   setOrgRepresentativeView("overview");
   setApprovalType("staff");
 

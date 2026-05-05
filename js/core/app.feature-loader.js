@@ -3,6 +3,7 @@
   if (window.sgcuFeatureLoader) return;
 
   const config = {
+    assetVersion: window.sgcuAssetVersion || "20260505-1",
     vendorScripts: {
       chart: "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js",
       papa: "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"
@@ -41,11 +42,18 @@
 
   const loadedFeatureScripts = new Map();
 
+  const withAssetVersion = (src) => {
+    const scriptSrc = (src || "").toString().trim();
+    if (!scriptSrc || /^https?:\/\//i.test(scriptSrc)) return scriptSrc;
+    const [path] = scriptSrc.split("?");
+    return `${path}?v=${encodeURIComponent(config.assetVersion)}`;
+  };
+
   const toScriptList = (value) => {
     if (Array.isArray(value)) {
-      return value.map((item) => (item || "").toString().trim()).filter(Boolean);
+      return value.map(withAssetVersion).filter(Boolean);
     }
-    const one = (value || "").toString().trim();
+    const one = withAssetVersion(value);
     return one ? [one] : [];
   };
 

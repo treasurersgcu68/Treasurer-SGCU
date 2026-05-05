@@ -203,11 +203,13 @@ function initBudgetApprovalRequestPage() {
   const getApprovedRepresentativeOptions = () => {
     return Array.isArray(currentApprovedRepresentatives)
       ? currentApprovedRepresentatives
+        .filter((item) => isCurrentRepresentativeAcademicYear(item))
         .map((item) => ({
           id: (item.id || "").toString(),
           organizationType: normalizeOrgText(item.organizationType),
           organizationName: normalizeOrgText(item.organizationName),
-          representativeRole: normalizeOrgText(item.representativeRole)
+          representativeRole: normalizeOrgText(item.representativeRole),
+          academicYear: getRepresentativeAcademicYear(item)
         }))
         .filter((item) => item.organizationType && item.organizationName)
       : [];
@@ -236,7 +238,8 @@ function initBudgetApprovalRequestPage() {
   const hasApprovedRepresentativeApplication = () => {
     return Array.isArray(currentRepresentativeApplications) &&
       currentRepresentativeApplications.some((item) =>
-        (item.status || "").toString().trim().toLowerCase() === "approved"
+        (item.status || "").toString().trim().toLowerCase() === "approved" &&
+        isCurrentRepresentativeAcademicYear(item)
       );
   };
 
@@ -484,6 +487,31 @@ function initBudgetApprovalRequestPage() {
     return date instanceof Date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
   };
 
+  const getCurrentAcademicYearBE = () => {
+    const now = new Date();
+    const yearCE = now.getFullYear();
+    const month = now.getMonth() + 1;
+    return (month >= 6 ? yearCE : yearCE - 1) + 543;
+  };
+
+  const getAcademicYearFromTimestamp = (value) => {
+    if (!value) return "";
+    const date = typeof value?.toDate === "function" ? value.toDate() : new Date(value);
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    const yearCE = date.getFullYear();
+    const month = date.getMonth() + 1;
+    return String((month >= 6 ? yearCE : yearCE - 1) + 543);
+  };
+
+  const getRepresentativeAcademicYear = (item = {}) => {
+    const explicit = (item.academicYear || item.representativeAcademicYear || item.schoolYear || "").toString().trim();
+    if (/^\d{4}$/.test(explicit)) return explicit;
+    return getAcademicYearFromTimestamp(item.createdAt || item.reviewedAt || item.updatedAt) || String(getCurrentAcademicYearBE());
+  };
+
+  const isCurrentRepresentativeAcademicYear = (item = {}) =>
+    getRepresentativeAcademicYear(item) === String(getCurrentAcademicYearBE());
+
   const formatCurrency = (value) => {
     const num = Number(value || 0);
     if (!Number.isFinite(num)) return "-";
@@ -606,17 +634,21 @@ function initBudgetApprovalRequestPage() {
       const orgType = escapeHtml(item.organizationType || "-");
       const orgName = escapeHtml(item.organizationName || "-");
       const role = escapeHtml(item.representativeRole || "-");
+      const academicYear = escapeHtml(getRepresentativeAcademicYear(item));
       return `
         <tr>
           <td data-label="เวลายื่นคำขอ"><span class="budget-representative-history-value">${formatTimestampDisplay(item.createdAt)}</span></td>
-          <td data-label="องค์กร"><span class="budget-representative-history-value">${orgName}<br><span class="section-text-sm">${orgType}</span></span></td>
+          <td data-label="องค์กร"><span class="budget-representative-history-value">${orgName}<br><span class="section-text-sm">${orgType} · ปีการศึกษา ${academicYear}</span></span></td>
           <td data-label="ตำแหน่ง"><span class="budget-representative-history-value">${role}</span></td>
           <td data-label="สถานะ"><span class="budget-representative-history-value">${representativeStatusBadgeHtml(item.status)}</span></td>
         </tr>
       `;
     }).join("");
 
-    const approvedCount = items.filter((item) => (item.status || "").toString().trim().toLowerCase() === "approved").length;
+    const approvedCount = items.filter((item) =>
+      (item.status || "").toString().trim().toLowerCase() === "approved" &&
+      isCurrentRepresentativeAcademicYear(item)
+    ).length;
     if (representativeStatusCaptionEl) {
       representativeStatusCaptionEl.textContent = approvedCount
         ? `มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว ${approvedCount} รายการ`
@@ -1263,6 +1295,7 @@ function initBudgetApprovalRequestPage() {
     const existingActive = currentRepresentativeApplications.find((item) => {
       const status = (item.status || "pending").toString().trim().toLowerCase();
       if (status === "rejected" || status === "cancelled") return false;
+      if (!isCurrentRepresentativeAcademicYear(item)) return false;
       return normalizeOrgText(item.organizationType) === organizationType &&
         normalizeOrgText(item.organizationName) === organizationName;
     });
@@ -1281,6 +1314,7 @@ function initBudgetApprovalRequestPage() {
     return {
       requestType: "organization_representative",
       status: "pending",
+      academicYear: String(getCurrentAcademicYearBE()),
       organizationType: normalizeOrgText(representativeOrgTypeEl?.value),
       organizationName: normalizeOrgText(representativeOrgDeptEl?.value),
       representativeRole: getRepresentativeRoleValue(),

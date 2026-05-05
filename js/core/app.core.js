@@ -58,6 +58,51 @@ function applyRuntimeConfigAliases() {
 applyRuntimeConfigAliases();
 window.applyRuntimeConfigAliases = applyRuntimeConfigAliases;
 
+function getConfigValueByPath(source, path) {
+  return (path || "")
+    .split(".")
+    .filter(Boolean)
+    .reduce((cursor, key) => (cursor && cursor[key] !== undefined ? cursor[key] : undefined), source);
+}
+
+function syncManagementLinks(root = document) {
+  const scope = root || document;
+  const linkEls = Array.from(scope.querySelectorAll("[data-management-link], [data-settings-link]"));
+  linkEls.forEach((linkEl) => {
+    const path = linkEl.dataset.managementLink || linkEl.dataset.settingsLink || "";
+    const url = (getConfigValueByPath(APP_CONFIG, path) || "").toString().trim();
+    const actionText = linkEl.dataset.managementAction || linkEl.dataset.settingsAction || "";
+    const disabledText = linkEl.dataset.managementDisabledText || "รอลิงก์";
+    const actionEl = linkEl.querySelector("[data-management-action-label]") ||
+      (linkEl.matches(".settings-data-row") ? linkEl.querySelector("em") : null);
+
+    if (!url) {
+      linkEl.setAttribute("href", "#");
+      linkEl.setAttribute("aria-disabled", "true");
+      linkEl.classList.add("is-disabled");
+      if (actionEl) actionEl.textContent = disabledText;
+      else if (actionText || linkEl.classList.contains("management-link-button")) linkEl.textContent = disabledText;
+      return;
+    }
+
+    linkEl.setAttribute("href", url);
+    linkEl.removeAttribute("aria-disabled");
+    linkEl.classList.remove("is-disabled");
+    if (actionEl) actionEl.textContent = actionText || "เปิด";
+  });
+}
+
+function syncManagementPanels() {
+  const panels = Array.from(document.querySelectorAll("[data-management-visibility='staff']"));
+  const shouldShow = Boolean(staffAuthUser);
+  panels.forEach((panel) => {
+    panel.hidden = !shouldShow;
+  });
+}
+
+window.syncManagementLinks = syncManagementLinks;
+window.syncManagementPanels = syncManagementPanels;
+
 /* Globals: shared state */
 let projects = [];
 let newsItems = [];

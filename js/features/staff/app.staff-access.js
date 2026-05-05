@@ -6,7 +6,7 @@ function initStaffAccessPages() {
   const applicationModalEl = document.getElementById("staffApplicationModal");
   const applicationModalCloseEl = document.getElementById("staffApplicationModalClose");
   const applicationModalOpenEl = document.getElementById("loginHelpApplyBtn");
-  const approvalPageEl = document.querySelector('.page-view[data-page="staff-approval"]');
+  const approvalPageEl = document.querySelector('.page-view[data-page="staff-approval"], .page-view[data-page="org-representative-approval-staff"]');
   if (!applicationModalEl && !approvalPageEl) return;
 
   const appFormEl = document.getElementById("staffApplicationForm");
@@ -131,8 +131,9 @@ function initStaffAccessPages() {
     { id: "borrow-assets-staff", label: "อนุมัติยืมทรัพย์สิน" },
     { id: "meeting-room-staff", label: "อนุมัติห้องประชุม" },
     { id: "budget-approval-staff", label: "จัดการคำของบ" },
+    { id: "content-management-staff", label: "จัดการเนื้อหา" },
     { id: "staff-approval", label: "อนุมัติสมาชิกสตาฟ" },
-    { id: "system-settings", label: "ตั้งค่าระบบ" },
+    { id: "org-representative-approval-staff", label: "อนุมัติตัวแทนองค์กร" },
     { id: "login", label: "หน้าเข้าสู่ระบบ" }
   ];
 
@@ -224,6 +225,12 @@ function initStaffAccessPages() {
   };
 
   const setApprovalType = (type = "staff") => {
+    if (!staffApprovalTypeStaffBtnEl && !staffApprovalTypeOrgBtnEl) {
+      if (staffApprovalStaffSectionEl) staffApprovalStaffSectionEl.style.display = "";
+      if (positionManagePanelEl) positionManagePanelEl.style.display = "";
+      if (orgRepresentativeApprovalSectionEl) orgRepresentativeApprovalSectionEl.style.display = "";
+      return;
+    }
     currentApprovalType = type === "org" ? "org" : "staff";
     const showOrg = currentApprovalType === "org";
     if (staffApprovalStaffSectionEl) staffApprovalStaffSectionEl.style.display = showOrg ? "none" : "";
@@ -780,7 +787,7 @@ function initStaffAccessPages() {
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
-      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "staff-approval", "system-settings", "login"];
+      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "staff-approval", "org-representative-approval-staff", "login"];
     }
     return ["login"];
   };
@@ -3636,7 +3643,8 @@ function initStaffAccessPages() {
   window.addEventListener("sgcu:auth-state", handleAuthOrProfileUpdate);
   window.addEventListener("sgcu:user-profile-updated", prefillApplicationForm);
   window.addEventListener("hashchange", () => {
-    if ((window.location.hash || "").replace("#", "") === "staff-approval") {
+    const page = (window.location.hash || "").replace("#", "");
+    if (page === "staff-approval" || page === "org-representative-approval-staff") {
       scheduleApprovalUiSync();
     }
   });

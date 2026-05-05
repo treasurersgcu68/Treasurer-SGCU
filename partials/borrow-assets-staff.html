@@ -10,6 +10,23 @@
 
           <div id="staffBorrowQueue" class="section-appear section-delay-1">
             <div id="staffBorrowOverviewCards" class="cards borrow-overview-cards" aria-live="polite"></div>
+            <section class="management-link-panel management-link-panel-slim" data-management-visibility="staff" hidden>
+              <div class="management-link-copy">
+                <span class="management-link-kicker">ข้อมูลคลังพัสดุ</span>
+                <h3>รายการพัสดุ</h3>
+                <p>แก้รายการ รหัส จำนวน ที่เก็บ และสถานะอนุญาตให้ยืมจากแหล่งข้อมูลคลังพัสดุ เมื่อสรุป database ใหม่แล้วให้ใส่ลิงก์จัดการไว้ตรงนี้</p>
+              </div>
+              <a
+                class="btn-primary management-link-button"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-management-link="managementLinks.borrowAssets"
+                data-management-disabled-text="รอ database ใหม่"
+              >
+                เปิดรายการพัสดุ
+              </a>
+            </section>
             <div class="panel panel-hover borrow-staff-settings-panel">
               <div class="panel-header">
                 <div>

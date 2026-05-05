@@ -3,107 +3,237 @@
         <div class="page">
           <div class="page-header-flex">
             <div>
-              <h1 class="page-title">จัดการตัวแทนองค์กร</h1>
-              <p class="page-subtitle">ตรวจคำขอตัวแทนฝ่าย/ชมรม และจัดการสิทธิ์ผู้ที่อนุมัติแล้ว</p>
+              <h1 class="page-title">ตัวแทนและทะเบียนองค์กร</h1>
+              <p class="page-subtitle">อนุมัติตัวแทนฝ่าย/ชมรม และดูคู่มือการดูแลทะเบียนองค์กร</p>
+            </div>
+            <div class="tabs org-representative-main-tabs" role="tablist" aria-label="เลือกส่วนงานตัวแทนองค์กร">
+              <button
+                id="orgRepresentativeMainOverviewTab"
+                class="tab-btn view-toggle-btn is-active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="orgRepresentativeOverviewPanel"
+              >
+                อนุมัติตัวแทนองค์กร
+              </button>
+              <button
+                id="orgRepresentativeMainFilterTab"
+                class="tab-btn view-toggle-btn"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="orgRepresentativeFilterPanel"
+              >
+                ทะเบียนองค์กร
+              </button>
             </div>
           </div>
 
           <div id="orgRepresentativeApprovalSection">
-            <section class="management-link-panel management-link-panel-slim" data-management-visibility="staff" hidden>
-              <div class="management-link-copy">
-                <span class="management-link-kicker">ข้อมูลประกอบตัวแทนองค์กร</span>
-                <h3>ตัวกรององค์กร</h3>
-                <p>แก้รายการฝ่าย ชมรม และประเภทองค์กรที่ใช้ในฟอร์ม ก่อนพิจารณาคำขอตัวแทนองค์กร</p>
-              </div>
-              <a
-                class="btn-primary management-link-button"
-                href="#"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-management-link="managementLinks.orgFilters"
-              >
-                เปิด Sheet ตัวกรององค์กร
-              </a>
-            </section>
+            <div id="orgRepresentativeFilterPanel" class="org-representative-main-panel" role="tabpanel" aria-labelledby="orgRepresentativeMainFilterTab" hidden>
+              <section class="management-link-panel management-link-panel-slim" data-management-visibility="staff" hidden>
+                <div class="management-link-copy">
+                  <span class="management-link-kicker">ข้อมูลประกอบตัวแทนองค์กร</span>
+                  <h3>ทะเบียนองค์กร</h3>
+                  <p>เว็บดึงข้อมูลจากชีต ALL สำหรับแสดงผลรวม แต่เวลาปรับข้อมูลจริงให้กรอกในชีทย่อยของแต่ละฝ่ายใหญ่ แล้วให้ Sheet รวมข้อมูลกลับมาที่ ALL</p>
+                </div>
+                <a
+                  class="btn-primary management-link-button"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-management-link="managementLinks.orgFilters"
+                >
+                  เปิด Sheet ทะเบียนองค์กร
+                </a>
+              </section>
 
-            <div id="orgRepresentativeOverviewTools" class="org-representative-overview-tools">
-              <div class="org-representative-summary-grid" aria-label="สรุปตัวแทนองค์กร">
-                <div class="org-representative-summary-card">
-                  <div class="org-representative-summary-label">องค์กรทั้งหมด</div>
-                  <div id="orgRepresentativeTotalOrgCount" class="org-representative-summary-value">0</div>
+              <section class="sheet-guide-section section-appear section-delay-1" aria-label="คู่มือกรอกข้อมูล Sheet ทะเบียนองค์กร">
+                <div class="sheet-guide-header">
+                  <div>
+                    <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
+                    <h3>ทะเบียนองค์กร</h3>
+                  </div>
+                  <p>ทะเบียนองค์กรมี 2 ส่วน คือชีต ALL ที่เว็บดึงไปใช้แสดงผล/เติมข้อมูลเอกสาร และชีทย่อยของแต่ละฝ่ายใหญ่ที่ใช้กรอกข้อมูลจริง เวลากรอกหรือแก้ข้อมูลให้กรอกในชีทย่อย ไม่แก้ที่ ALL โดยตรง</p>
                 </div>
-                <div class="org-representative-summary-card is-complete">
-                  <div class="org-representative-summary-label">ข้อมูลครบ</div>
-                  <div id="orgRepresentativeCompleteOrgCount" class="org-representative-summary-value">0</div>
-                </div>
-                <div class="org-representative-summary-card is-warning">
-                  <div class="org-representative-summary-label">ยังไม่ครบ</div>
-                  <div id="orgRepresentativeIncompleteOrgCount" class="org-representative-summary-value">0</div>
-                </div>
-                <div class="org-representative-summary-card">
-                  <div class="org-representative-summary-label">ตัวแทนอนุมัติแล้ว</div>
-                  <div id="orgRepresentativeApprovedTotalCount" class="org-representative-summary-value">0</div>
-                </div>
-              </div>
 
-              <div class="org-representative-tools">
-                <div class="filter-group">
-                  <label for="orgRepresentativeStatusFilter">สถานะข้อมูล</label>
-                  <select id="orgRepresentativeStatusFilter" class="login-input">
-                    <option value="all">ทุกสถานะ</option>
-                    <option value="complete">ข้อมูลครบ</option>
-                    <option value="incomplete">ยังไม่ครบ 4 ตำแหน่ง</option>
-                    <option value="empty">ยังไม่มีตัวแทน</option>
-                    <option value="pending">มีคำขอรออนุมัติ</option>
-                  </select>
+                <div class="sheet-guide-legend" aria-label="คำอธิบายสีแถว">
+                  <span><i class="is-required"></i><strong>จำเป็น</strong> ถ้าว่างรายการจะไม่แสดงในตัวเลือก</span>
+                  <span><i class="is-recommended"></i><strong>ควรกรอก</strong> ใช้อ้างอิงรหัสองค์กรในงานยืมพัสดุ/คำของบ</span>
+                  <span><i class="is-optional"></i><strong>ไม่จำเป็น</strong> เว้นว่างได้ ระบบยังทำงาน แต่ห้ามลบหรือย้ายคอลัมน์</span>
                 </div>
-                <div class="filter-group">
-                  <label for="orgRepresentativeAcademicYearFilter">ปีการศึกษา</label>
-                  <select id="orgRepresentativeAcademicYearFilter" class="login-input">
-                    <option value="">ปีการศึกษาปัจจุบัน</option>
-                  </select>
+
+                <div class="sheet-guide-grid">
+                  <article class="sheet-guide-card">
+                    <div class="sheet-guide-card-head">
+                      <h4>ALL</h4>
+                      <span>เว็บอ่านจากชีทรวม</span>
+                    </div>
+                    <div class="sheet-guide-table-wrap">
+                      <table class="sheet-guide-table">
+                        <thead>
+                          <tr>
+                            <th>คอลัมน์</th>
+                            <th>หัวข้อ</th>
+                            <th>คำอธิบาย</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="is-required">
+                            <td>A</td>
+                            <td>ประเภทองค์กร</td>
+                            <td>เว็บใช้สร้างตัวกรองประเภทองค์กร เช่น องค์การบริหารสโมสรนิสิต หรือชมรมฝ่ายกีฬา</td>
+                          </tr>
+                          <tr class="is-required">
+                            <td>B</td>
+                            <td>ชื่อชมรม</td>
+                            <td>เว็บใช้เป็นชื่อองค์กรในฟอร์ม ตัวกรอง และการจับคู่ข้อมูลเอกสาร</td>
+                          </tr>
+                          <tr class="is-recommended">
+                            <td>C</td>
+                            <td>รหัสชมรม</td>
+                            <td>เว็บใช้เป็นรหัสอ้างอิงองค์กร ควรเป็นค่ามาตรฐานและไม่ซ้ำกัน</td>
+                          </tr>
+                          <tr class="is-optional">
+                            <td>D</td>
+                            <td>เลขรันเอกสาร</td>
+                            <td>บันทึกไว้สำหรับติดตามเอกสารหรืออ้างอิงรหัสเอกสารขององค์กร</td>
+                          </tr>
+                          <tr class="is-recommended">
+                            <td>E</td>
+                            <td>เลขที่บัญชี</td>
+                            <td>เว็บใช้เติมเลขบัญชีในเอกสารยืมรองจ่ายอัตโนมัติ โดยจับคู่จากชื่อชมรม</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </article>
+
+                  <article class="sheet-guide-card">
+                    <div class="sheet-guide-card-head">
+                      <h4>ชีทย่อยของฝ่ายใหญ่</h4>
+                      <span>กรอกในชีทย่อยของฝ่ายใหญ่</span>
+                    </div>
+                    <div class="sheet-guide-table-wrap">
+                      <table class="sheet-guide-table">
+                        <thead>
+                          <tr>
+                            <th>คอลัมน์</th>
+                            <th>หัวข้อ</th>
+                            <th>คำอธิบาย</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="is-required">
+                            <td>A</td>
+                            <td>ชื่อชมรม</td>
+                            <td>ชื่อองค์กรที่ผู้ใช้เลือกในฟอร์ม ถ้าว่างแถวนี้จะไม่ถูกนำไปใช้</td>
+                          </tr>
+                          <tr class="is-required">
+                            <td>B</td>
+                            <td>รหัสชมรม</td>
+                            <td>ใช้เป็นรหัสอ้างอิงในระบบ ควรกรอกเป็นตัวอักษร/ตัวเลขมาตรฐานและไม่ซ้ำกัน</td>
+                          </tr>
+                          <tr class="is-optional">
+                            <td>C</td>
+                            <td>เลขรันเอกสาร</td>
+                            <td>เอาไว้อ้างอิง ติดตามเอกสาร (Google Sheet จะรันเองตามรหัสชมรม)</td>
+                          </tr>
+                          <tr class="is-recommended">
+                            <td>D</td>
+                            <td>เลขที่บัญชี</td>
+                            <td>ใช้เติมเลขบัญชีในเอกสารยืมรองจ่ายอัตโนมัติ โดยจับคู่จากชื่อชมรมและรหัสชมรม</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </article>
                 </div>
-                <div class="filter-group">
-                  <label for="orgRepresentativeGroupFilter">ประเภทองค์กร</label>
-                  <select id="orgRepresentativeGroupFilter" class="login-input">
-                    <option value="all">ทุกประเภทองค์กร</option>
-                  </select>
-                </div>
-                <div class="filter-group org-representative-search-field">
-                  <label for="orgRepresentativeSearchInput">ค้นหาองค์กร / ตัวแทน</label>
-                  <input id="orgRepresentativeSearchInput" class="login-input" type="search" placeholder="พิมพ์ชื่อองค์กร ชื่อคน หรืออีเมล">
-                </div>
-              </div>
+              </section>
             </div>
 
-            <div class="panel panel-hover staff-access-panel">
-              <div class="panel-header">
-                <div>
-                  <h3 id="orgRepresentativeApprovalPanelTitle" class="panel-title">ภาพรวมตัวแทนรายองค์กร</h3>
-                  <p id="orgRepresentativeApprovalPanelCaption" class="panel-caption">แสดงผล 0 รายการ</p>
+            <div id="orgRepresentativeOverviewPanel" class="org-representative-main-panel" role="tabpanel" aria-labelledby="orgRepresentativeMainOverviewTab">
+              <div id="orgRepresentativeOverviewTools" class="org-representative-overview-tools">
+                <div class="org-representative-summary-grid" aria-label="สรุปตัวแทนองค์กร">
+                  <div class="org-representative-summary-card">
+                    <div class="org-representative-summary-label">องค์กรทั้งหมด</div>
+                    <div id="orgRepresentativeTotalOrgCount" class="org-representative-summary-value">0</div>
+                  </div>
+                  <div class="org-representative-summary-card is-complete">
+                    <div class="org-representative-summary-label">ข้อมูลครบ</div>
+                    <div id="orgRepresentativeCompleteOrgCount" class="org-representative-summary-value">0</div>
+                  </div>
+                  <div class="org-representative-summary-card is-warning">
+                    <div class="org-representative-summary-label">ยังไม่ครบ</div>
+                    <div id="orgRepresentativeIncompleteOrgCount" class="org-representative-summary-value">0</div>
+                  </div>
+                  <div class="org-representative-summary-card">
+                    <div class="org-representative-summary-label">ตัวแทนอนุมัติแล้ว</div>
+                    <div id="orgRepresentativeApprovedTotalCount" class="org-representative-summary-value">0</div>
+                  </div>
                 </div>
-                <button id="orgRepresentativeExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
+
+                <div class="org-representative-tools">
+                  <div class="filter-group">
+                    <label for="orgRepresentativeStatusFilter">สถานะข้อมูล</label>
+                    <select id="orgRepresentativeStatusFilter" class="login-input">
+                      <option value="all">ทุกสถานะ</option>
+                      <option value="complete">ข้อมูลครบ</option>
+                      <option value="incomplete">ยังไม่ครบ 4 ตำแหน่ง</option>
+                      <option value="empty">ยังไม่มีตัวแทน</option>
+                      <option value="pending">มีคำขอรออนุมัติ</option>
+                    </select>
+                  </div>
+                  <div class="filter-group">
+                    <label for="orgRepresentativeAcademicYearFilter">ปีการศึกษา</label>
+                    <select id="orgRepresentativeAcademicYearFilter" class="login-input">
+                      <option value="">ปีการศึกษาปัจจุบัน</option>
+                    </select>
+                  </div>
+                  <div class="filter-group">
+                    <label for="orgRepresentativeGroupFilter">ประเภทองค์กร</label>
+                    <select id="orgRepresentativeGroupFilter" class="login-input">
+                      <option value="all">ทุกประเภทองค์กร</option>
+                    </select>
+                  </div>
+                  <div class="filter-group org-representative-search-field">
+                    <label for="orgRepresentativeSearchInput">ค้นหาองค์กร / ตัวแทน</label>
+                    <input id="orgRepresentativeSearchInput" class="login-input" type="search" placeholder="พิมพ์ชื่อองค์กร ชื่อคน หรืออีเมล">
+                  </div>
+                </div>
               </div>
 
-              <div id="orgRepresentativeApprovalMessage" class="section-text-sm staff-access-status" aria-live="polite"></div>
-
-              <div id="orgRepresentativeOverviewContent">
-                <div class="project-table-wrapper">
-                  <table id="orgRepresentativeOverviewTable">
-                    <thead>
-                      <tr>
-                        <th>องค์กร</th>
-                        <th>ตัวแทนอนุมัติแล้ว</th>
-                        <th>คำขอรออนุมัติ</th>
-                        <th>ตำแหน่งที่ยังขาด</th>
-                        <th>สถานะข้อมูล</th>
-                      </tr>
-                    </thead>
-                    <tbody id="orgRepresentativeOverviewBody">
-                      <tr><td colspan="5">กำลังโหลดข้อมูล...</td></tr>
-                    </tbody>
-                  </table>
+              <div class="panel panel-hover staff-access-panel">
+                <div class="panel-header">
+                  <div>
+                    <h3 id="orgRepresentativeApprovalPanelTitle" class="panel-title">อนุมัติตัวแทนองค์กร</h3>
+                    <p id="orgRepresentativeApprovalPanelCaption" class="panel-caption">แสดงผล 0 รายการ</p>
+                  </div>
+                  <button id="orgRepresentativeExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
                 </div>
+
+                <div id="orgRepresentativeApprovalMessage" class="section-text-sm staff-access-status" aria-live="polite"></div>
+
+                <div id="orgRepresentativeOverviewContent">
+                  <div class="project-table-wrapper">
+                    <table id="orgRepresentativeOverviewTable">
+                      <thead>
+                        <tr>
+                          <th>องค์กร</th>
+                          <th>ตัวแทนอนุมัติแล้ว</th>
+                          <th>คำขอรออนุมัติ</th>
+                          <th>ตำแหน่งที่ยังขาด</th>
+                          <th>สถานะข้อมูล</th>
+                        </tr>
+                      </thead>
+                      <tbody id="orgRepresentativeOverviewBody">
+                        <tr><td colspan="5">กำลังโหลดข้อมูล...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
               </div>
 
             </div>

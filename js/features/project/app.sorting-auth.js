@@ -524,6 +524,13 @@ function getAllowedPagesForCurrentState() {
 
   if (staffAuthUser && staffViewMode === "staff") {
     const yyAllowed = getAllowedStaffPagesByProfile(staffAuthUser);
+    if (isHeadStaffProfile(staffAuthUser)) {
+      yyAllowed.add("staff-approval");
+      yyAllowed.add("org-representative-approval-staff");
+      yyAllowed.add("content-management-staff");
+      yyAllowed.add("dashboard-staff");
+      yyAllowed.add("project-status-staff");
+    }
     yyAllowed.add("budget-approval-staff");
     if (!isHeadStaffProfile(staffAuthUser)) {
       yyAllowed.delete("staff-approval");

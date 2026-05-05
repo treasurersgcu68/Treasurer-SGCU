@@ -53,8 +53,20 @@ function initStaffAccessPages() {
   const orgRepresentativeHistoryBodyEl = document.getElementById("orgRepresentativeHistoryBody");
   const orgRepresentativeHistoryCaptionEl = document.getElementById("orgRepresentativeHistoryCaption");
   const orgRepresentativeMessageEl = document.getElementById("orgRepresentativeApprovalMessage");
+  const orgRepresentativeOverviewContentEl = document.getElementById("orgRepresentativeOverviewContent");
+  const orgRepresentativeOverviewBodyEl = document.getElementById("orgRepresentativeOverviewBody");
+  const orgRepresentativeShowOverviewBtnEl = document.getElementById("orgRepresentativeShowOverviewBtn");
+  const orgRepresentativeExportCsvBtnEl = document.getElementById("orgRepresentativeExportCsvBtn");
   const orgRepresentativeShowPendingBtnEl = document.getElementById("orgRepresentativeShowPendingBtn");
   const orgRepresentativeShowHistoryBtnEl = document.getElementById("orgRepresentativeShowHistoryBtn");
+  const orgRepresentativeSearchInputEl = document.getElementById("orgRepresentativeSearchInput");
+  const orgRepresentativeStatusFilterEl = document.getElementById("orgRepresentativeStatusFilter");
+  const orgRepresentativeAcademicYearFilterEl = document.getElementById("orgRepresentativeAcademicYearFilter");
+  const orgRepresentativeGroupFilterEl = document.getElementById("orgRepresentativeGroupFilter");
+  const orgRepresentativeTotalOrgCountEl = document.getElementById("orgRepresentativeTotalOrgCount");
+  const orgRepresentativeCompleteOrgCountEl = document.getElementById("orgRepresentativeCompleteOrgCount");
+  const orgRepresentativeIncompleteOrgCountEl = document.getElementById("orgRepresentativeIncompleteOrgCount");
+  const orgRepresentativeApprovedTotalCountEl = document.getElementById("orgRepresentativeApprovedTotalCount");
 
   if (approvalDetailModalEl && approvalDetailModalEl.parentElement !== document.body) {
     document.body.appendChild(approvalDetailModalEl);
@@ -136,6 +148,12 @@ function initStaffAccessPages() {
     { id: "org-representative-approval-staff", label: "อนุมัติตัวแทนองค์กร" },
     { id: "login", label: "หน้าเข้าสู่ระบบ" }
   ];
+  const REQUIRED_ORG_REPRESENTATIVE_ROLES = [
+    { key: "president", label: "ประธาน" },
+    { key: "vice_president", label: "รองประธาน" },
+    { key: "secretary", label: "เลขา" },
+    { key: "treasurer", label: "เหรัญญิก" }
+  ];
 
   let firestore = window.sgcuFirestore || {};
   let hasStore = false;
@@ -152,12 +170,15 @@ function initStaffAccessPages() {
   let currentOrgRepresentativeApplications = [];
   let currentOrgRepresentativePending = [];
   let currentOrgRepresentativeApproved = [];
+  let currentOrgRepresentativeOrganizations = [];
+  let currentOrgRepresentativeFilteredOrganizations = [];
+  let currentOrgRepresentativeAcademicYear = "";
   let currentPositionCatalog = [];
   let currentEditingPositionId = "";
   let appFormStatusLocked = false;
   let currentApprovalView = "pending";
   let currentApprovalType = "staff";
-  let currentOrgRepresentativeView = "pending";
+  let currentOrgRepresentativeView = "overview";
   let currentApprovalDetailRequestKey = "";
   let lastKnownAuthState = {
     isAuthenticated: false,
@@ -198,28 +219,44 @@ function initStaffAccessPages() {
 
   const syncOrgRepresentativePanelCaption = () => {
     if (!orgRepresentativePanelCaptionEl) return;
-    orgRepresentativePanelCaptionEl.textContent = currentOrgRepresentativeView === "history"
-      ? (orgRepresentativeHistoryCaptionEl?.textContent || "แสดงผล 0 รายการ")
-      : `แสดงผล ${currentOrgRepresentativePending.length} รายการ`;
+    if (currentOrgRepresentativeView === "history") {
+      orgRepresentativePanelCaptionEl.textContent = orgRepresentativeHistoryCaptionEl?.textContent || "แสดงผล 0 รายการ";
+      return;
+    }
+    if (currentOrgRepresentativeView === "pending") {
+      orgRepresentativePanelCaptionEl.textContent = `แสดงผล ${currentOrgRepresentativePending.length} รายการ`;
+      return;
+    }
+    orgRepresentativePanelCaptionEl.textContent =
+      `แสดงผล ${currentOrgRepresentativeFilteredOrganizations.length} จาก ${currentOrgRepresentativeOrganizations.length} องค์กร`;
   };
 
-  const setOrgRepresentativeView = (view = "pending") => {
-    currentOrgRepresentativeView = view === "history" ? "history" : "pending";
+  const setOrgRepresentativeView = (view = "overview") => {
+    currentOrgRepresentativeView = view === "history" ? "history" : view === "pending" ? "pending" : "overview";
+    const showOverview = currentOrgRepresentativeView === "overview";
     const showPending = currentOrgRepresentativeView === "pending";
+    const showHistory = currentOrgRepresentativeView === "history";
+    if (orgRepresentativeOverviewContentEl) orgRepresentativeOverviewContentEl.style.display = showOverview ? "" : "none";
     if (orgRepresentativePendingContentEl) orgRepresentativePendingContentEl.style.display = showPending ? "" : "none";
-    if (orgRepresentativeHistoryContentEl) orgRepresentativeHistoryContentEl.style.display = showPending ? "none" : "";
+    if (orgRepresentativeHistoryContentEl) orgRepresentativeHistoryContentEl.style.display = showHistory ? "" : "none";
     if (orgRepresentativePanelTitleEl) {
-      orgRepresentativePanelTitleEl.textContent = showPending
-        ? "คำขอตัวแทนองค์กรที่รออนุมัติ"
-        : "ตัวแทนองค์กรที่อนุมัติแล้ว";
+      orgRepresentativePanelTitleEl.textContent = showOverview
+        ? "ภาพรวมตัวแทนรายองค์กร"
+        : showPending
+          ? "คำขอตัวแทนองค์กรที่รออนุมัติ"
+          : "ตัวแทนองค์กรที่อนุมัติแล้ว";
+    }
+    if (orgRepresentativeShowOverviewBtnEl) {
+      orgRepresentativeShowOverviewBtnEl.classList.toggle("is-active", showOverview);
+      orgRepresentativeShowOverviewBtnEl.setAttribute("aria-selected", showOverview ? "true" : "false");
     }
     if (orgRepresentativeShowPendingBtnEl) {
       orgRepresentativeShowPendingBtnEl.classList.toggle("is-active", showPending);
       orgRepresentativeShowPendingBtnEl.setAttribute("aria-selected", showPending ? "true" : "false");
     }
     if (orgRepresentativeShowHistoryBtnEl) {
-      orgRepresentativeShowHistoryBtnEl.classList.toggle("is-active", !showPending);
-      orgRepresentativeShowHistoryBtnEl.setAttribute("aria-selected", showPending ? "false" : "true");
+      orgRepresentativeShowHistoryBtnEl.classList.toggle("is-active", showHistory);
+      orgRepresentativeShowHistoryBtnEl.setAttribute("aria-selected", showHistory ? "true" : "false");
     }
     syncOrgRepresentativePanelCaption();
   };
@@ -987,6 +1024,23 @@ function initStaffAccessPages() {
     return academicYearCE + 543;
   };
 
+  currentOrgRepresentativeAcademicYear = String(getCurrentAcademicYearBE());
+
+  const getAcademicYearFromTimestamp = (value) => {
+    if (!value) return "";
+    const date = typeof value?.toDate === "function" ? value.toDate() : new Date(value);
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    const yearCE = date.getFullYear();
+    const month = date.getMonth() + 1;
+    return String((month >= 6 ? yearCE : yearCE - 1) + 543);
+  };
+
+  const getOrgRepresentativeAcademicYear = (item = {}) => {
+    const explicit = (item.academicYear || item.representativeAcademicYear || item.schoolYear || "").toString().trim();
+    if (/^\d{4}$/.test(explicit)) return explicit;
+    return getAcademicYearFromTimestamp(item.createdAt || item.reviewedAt || item.updatedAt) || String(getCurrentAcademicYearBE());
+  };
+
   const isMeaningfulProfileValue = (value) => {
     const normalized = (value || "").toString().trim().toLowerCase();
     return !["", "-", "—", "unknown", "n/a", "na", "null", "undefined", "ไม่ระบุ"].includes(normalized);
@@ -1395,6 +1449,24 @@ function initStaffAccessPages() {
     }
   };
 
+  const renderAllowedPageBadges = (allowedPages = []) => {
+    const pages = Array.isArray(allowedPages) ? allowedPages : [];
+    if (!pages.length) return '<span class="staff-position-page-badge is-summary">ไม่มีหน้าที่อนุญาต</span>';
+    if (STAFF_PAGE_OPTIONS.every((item) => pages.includes(item.id))) {
+      return `<span class="staff-position-page-badge is-summary">ทุกหน้า (${toSafeText(STAFF_PAGE_OPTIONS.length)} หน้า)</span>`;
+    }
+    const visiblePages = pages.slice(0, 4);
+    const hiddenCount = Math.max(0, pages.length - visiblePages.length);
+    const visibleBadges = visiblePages.map((page) => {
+      const label = STAFF_PAGE_OPTIONS.find((entry) => entry.id === page)?.label || page;
+      return `<span class="staff-position-page-badge">${toSafeText(label)}</span>`;
+    });
+    if (hiddenCount) {
+      visibleBadges.push(`<span class="staff-position-page-badge is-summary">+${toSafeText(hiddenCount)} หน้า</span>`);
+    }
+    return visibleBadges.join("");
+  };
+
   const renderApplicationPositionSelect = () => {
     const currentUserEmail = getCurrentAuthEmail();
     const localProfile = currentUserEmail ? (readLoginProfiles()[currentUserEmail] || {}) : {};
@@ -1519,10 +1591,7 @@ function initStaffAccessPages() {
                 <span class="staff-position-chip-name">${toSafeText(generatedName)}</span>
               </div>
               <div class="staff-position-chip-pages${isEditing ? " is-muted" : ""}">
-                ${allowedPages.map((page) => {
-                  const label = STAFF_PAGE_OPTIONS.find((entry) => entry.id === page)?.label || page;
-                  return `<span class="staff-position-page-badge">${toSafeText(label)}</span>`;
-                }).join("")}
+                ${renderAllowedPageBadges(allowedPages)}
               </div>
               ${isEditing ? `
                 <div class="staff-position-editor">
@@ -1847,6 +1916,204 @@ function initStaffAccessPages() {
     };
   };
 
+  const getOrgRepresentativeOrgKey = (orgType = "", orgName = "") => {
+    const type = (orgType || "").toString().trim();
+    const name = (orgName || "").toString().trim();
+    return `${type || "-"}||${name || "-"}`.toLowerCase();
+  };
+
+  const getKnownOrganizationFilters = () => {
+    try {
+      if (typeof orgFilters !== "undefined" && Array.isArray(orgFilters)) return orgFilters;
+    } catch (_) {}
+    return Array.isArray(globalThis.orgFilters) ? globalThis.orgFilters : [];
+  };
+
+  const getOrgRepresentativeRoleKey = (role = "") => {
+    const text = (role || "").toString().trim().toLowerCase();
+    if (!text) return "";
+    if (text.includes("รอง") && text.includes("ประธาน")) return "vice_president";
+    if (text.includes("ประธาน")) return "president";
+    if (text.includes("เหรัญญิก") || text.includes("การเงิน")) return "treasurer";
+    if (text.includes("เลขา") || text.includes("เลขานุการ")) return "secretary";
+    return "";
+  };
+
+  const getMissingOrgRepresentativeRoles = (approvedItems = []) => {
+    const approvedKeys = new Set(
+      approvedItems
+        .map((item) => getOrgRepresentativeRoleKey(item.representativeRole))
+        .filter(Boolean)
+    );
+    return REQUIRED_ORG_REPRESENTATIVE_ROLES.filter((role) => !approvedKeys.has(role.key));
+  };
+
+  const getOrgRepresentativeCompleteness = (approvedItems = [], pendingCount = 0) => {
+    const approvedCount = Array.isArray(approvedItems) ? approvedItems.length : Number(approvedItems || 0);
+    const missingRoles = Array.isArray(approvedItems) ? getMissingOrgRepresentativeRoles(approvedItems) : [];
+    if (Array.isArray(approvedItems) && missingRoles.length <= 0) {
+      return { status: "complete", label: "ข้อมูลครบ", className: "badge-approved" };
+    }
+    if (approvedCount <= 0 && pendingCount <= 0) {
+      return { status: "empty", label: "ยังไม่มีตัวแทน", className: "badge-rejected" };
+    }
+    return {
+      status: "incomplete",
+      label: `ยังขาด ${Array.isArray(approvedItems) ? missingRoles.length : Math.max(0, 4 - approvedCount)} ตำแหน่ง`,
+      className: "badge-pending"
+    };
+  };
+
+  const populateOrgRepresentativeAcademicYearFilter = () => {
+    if (!orgRepresentativeAcademicYearFilterEl) return;
+    const years = Array.from(new Set([
+      String(getCurrentAcademicYearBE()),
+      ...currentOrgRepresentativeApplications.map((item) => getOrgRepresentativeAcademicYear(item))
+    ].filter(Boolean))).sort((a, b) => Number(b) - Number(a));
+    const selected = currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE());
+    orgRepresentativeAcademicYearFilterEl.innerHTML = years
+      .map((year) => `<option value="${toSafeText(year)}">${toSafeText(year)}${year === String(getCurrentAcademicYearBE()) ? " (ปัจจุบัน)" : ""}</option>`)
+      .join("");
+    orgRepresentativeAcademicYearFilterEl.value = years.includes(selected) ? selected : String(getCurrentAcademicYearBE());
+    currentOrgRepresentativeAcademicYear = orgRepresentativeAcademicYearFilterEl.value;
+  };
+
+  const buildOrgRepresentativeOrganizations = () => {
+    const orgMap = new Map();
+    const selectedAcademicYear = currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE());
+    getKnownOrganizationFilters().forEach((item) => {
+      const orgType = (item?.group || item?.organizationType || "").toString().trim();
+      const orgName = (item?.name || item?.organizationName || "").toString().trim();
+      if (!orgName) return;
+      const key = getOrgRepresentativeOrgKey(orgType, orgName);
+      if (!orgMap.has(key)) {
+        orgMap.set(key, { key, orgType, orgName, applications: [], approved: [], pending: [], rejected: [] });
+      }
+    });
+
+    currentOrgRepresentativeApplications
+      .filter((item) => getOrgRepresentativeAcademicYear(item) === selectedAcademicYear)
+      .forEach((item) => {
+      const orgType = (item.organizationType || "").toString().trim();
+      const orgName = (item.organizationName || "").toString().trim();
+      if (!orgName) return;
+      const key = getOrgRepresentativeOrgKey(orgType, orgName);
+      if (!orgMap.has(key)) {
+        orgMap.set(key, { key, orgType, orgName, applications: [], approved: [], pending: [], rejected: [] });
+      }
+      const entry = orgMap.get(key);
+      entry.applications.push(item);
+      const status = normalizeApplicationStatus(item.status);
+      if (status === "approved") entry.approved.push(item);
+      else if (status === "pending") entry.pending.push(item);
+      else if (status === "rejected") entry.rejected.push(item);
+    });
+
+    currentOrgRepresentativeOrganizations = Array.from(orgMap.values())
+      .map((entry) => ({
+        ...entry,
+        searchText: [
+          entry.orgType,
+          entry.orgName,
+          ...entry.applications.flatMap((item) => {
+            const applicant = getOrgRepresentativeApplicant(item);
+            return [applicant.displayName, applicant.email, applicant.phone, applicant.lineId, item.representativeRole, getOrgRepresentativeAcademicYear(item)];
+          })
+        ].join(" ").toLowerCase()
+      }))
+      .sort((a, b) => {
+        const typeCompare = (a.orgType || "").localeCompare(b.orgType || "", "th");
+        if (typeCompare) return typeCompare;
+        return (a.orgName || "").localeCompare(b.orgName || "", "th");
+      });
+  };
+
+  const populateOrgRepresentativeGroupFilter = () => {
+    if (!orgRepresentativeGroupFilterEl) return;
+    const currentValue = orgRepresentativeGroupFilterEl.value || "all";
+    const groups = Array.from(
+      new Set(currentOrgRepresentativeOrganizations.map((entry) => (entry.orgType || "").trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, "th"));
+    orgRepresentativeGroupFilterEl.innerHTML = [
+      '<option value="all">ทุกประเภทองค์กร</option>',
+      ...groups.map((group) => `<option value="${toSafeText(group)}">${toSafeText(group)}</option>`)
+    ].join("");
+    orgRepresentativeGroupFilterEl.value = groups.includes(currentValue) ? currentValue : "all";
+  };
+
+  const renderOrgRepresentativeOverview = () => {
+    populateOrgRepresentativeAcademicYearFilter();
+    buildOrgRepresentativeOrganizations();
+    populateOrgRepresentativeGroupFilter();
+
+    const query = (orgRepresentativeSearchInputEl?.value || "").toString().trim().toLowerCase();
+    const statusFilter = (orgRepresentativeStatusFilterEl?.value || "all").toString();
+    const groupFilter = (orgRepresentativeGroupFilterEl?.value || "all").toString();
+    currentOrgRepresentativeFilteredOrganizations = currentOrgRepresentativeOrganizations.filter((entry) => {
+      const complete = getOrgRepresentativeCompleteness(entry.approved, entry.pending.length);
+      if (query && !entry.searchText.includes(query)) return false;
+      if (groupFilter !== "all" && entry.orgType !== groupFilter) return false;
+      if (statusFilter === "pending") return entry.pending.length > 0;
+      if (statusFilter !== "all" && complete.status !== statusFilter) return false;
+      return true;
+    });
+
+    const totalOrgCount = currentOrgRepresentativeOrganizations.length;
+    const completeOrgCount = currentOrgRepresentativeOrganizations
+      .filter((entry) => getOrgRepresentativeCompleteness(entry.approved, entry.pending.length).status === "complete").length;
+    const emptyOrgCount = currentOrgRepresentativeOrganizations
+      .filter((entry) => getOrgRepresentativeCompleteness(entry.approved, entry.pending.length).status === "empty").length;
+    const incompleteOrgCount = Math.max(0, totalOrgCount - completeOrgCount);
+    const approvedTotalCount = currentOrgRepresentativeApplications
+      .filter((item) => normalizeApplicationStatus(item.status) === "approved").length;
+
+    if (orgRepresentativeTotalOrgCountEl) orgRepresentativeTotalOrgCountEl.textContent = String(totalOrgCount);
+    if (orgRepresentativeCompleteOrgCountEl) orgRepresentativeCompleteOrgCountEl.textContent = String(completeOrgCount);
+    if (orgRepresentativeIncompleteOrgCountEl) {
+      orgRepresentativeIncompleteOrgCountEl.textContent = emptyOrgCount
+        ? `${incompleteOrgCount} (${emptyOrgCount} ว่าง)`
+        : String(incompleteOrgCount);
+    }
+    if (orgRepresentativeApprovedTotalCountEl) orgRepresentativeApprovedTotalCountEl.textContent = String(approvedTotalCount);
+
+    if (!orgRepresentativeOverviewBodyEl) {
+      syncOrgRepresentativePanelCaption();
+      return;
+    }
+
+    if (!currentOrgRepresentativeFilteredOrganizations.length) {
+      orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="5">ไม่พบองค์กรตามตัวกรองที่เลือก</td></tr>';
+      syncOrgRepresentativePanelCaption();
+      return;
+    }
+
+    orgRepresentativeOverviewBodyEl.innerHTML = currentOrgRepresentativeFilteredOrganizations.map((entry) => {
+      const complete = getOrgRepresentativeCompleteness(entry.approved, entry.pending.length);
+      const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
+      const approvedNames = entry.approved.slice(0, 4).map((item) => getOrgRepresentativeApplicant(item).displayName).filter(Boolean);
+      const pendingNames = entry.pending.slice(0, 3).map((item) => getOrgRepresentativeApplicant(item).displayName).filter(Boolean);
+      return `
+        <tr class="org-representative-org-row" data-org-key="${toSafeText(entry.key)}">
+          <td data-label="องค์กร">
+            <div>${toSafeText(entry.orgName || "-")}</div>
+            <div class="section-text-sm">${toSafeText(entry.orgType || "-")}</div>
+          </td>
+          <td data-label="ตัวแทนอนุมัติแล้ว">
+            <div class="org-representative-count">${toSafeText(String(entry.approved.length))}/4</div>
+            <div class="section-text-sm">${toSafeText(approvedNames.join(", ") || "-")}</div>
+          </td>
+          <td data-label="คำขอรออนุมัติ">
+            <div class="org-representative-count">${toSafeText(String(entry.pending.length))}</div>
+            <div class="section-text-sm">${toSafeText(pendingNames.join(", ") || "-")}</div>
+          </td>
+          <td data-label="ตำแหน่งที่ยังขาด">${toSafeText(missingRoles.join(", ") || "-")}</td>
+          <td data-label="สถานะข้อมูล"><span class="badge ${complete.className}">${toSafeText(complete.label)}</span></td>
+        </tr>
+      `;
+    }).join("");
+    syncOrgRepresentativePanelCaption();
+  };
+
   const renderOrgRepresentativePending = () => {
     if (!orgRepresentativePendingBodyEl) return;
     currentOrgRepresentativePending = currentOrgRepresentativeApplications
@@ -1946,8 +2213,161 @@ function initStaffAccessPages() {
   };
 
   const renderOrgRepresentativeApplications = () => {
+    renderOrgRepresentativeOverview();
     renderOrgRepresentativePending();
     renderOrgRepresentativeHistory();
+  };
+
+  const exportOrgRepresentativeOverviewCsv = () => {
+    renderOrgRepresentativeOverview();
+    const rows = currentOrgRepresentativeFilteredOrganizations.map((entry) => {
+      const complete = getOrgRepresentativeCompleteness(entry.approved, entry.pending.length);
+      const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
+      const approvedPeople = entry.approved.map((item) => {
+        const applicant = getOrgRepresentativeApplicant(item);
+        return `${applicant.displayName || "-"} (${item.representativeRole || "-"})`;
+      });
+      const pendingPeople = entry.pending.map((item) => {
+        const applicant = getOrgRepresentativeApplicant(item);
+        return `${applicant.displayName || "-"} (${item.representativeRole || "-"})`;
+      });
+      return {
+        "ปีการศึกษา": currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE()),
+        "ประเภทองค์กร": entry.orgType || "",
+        "องค์กร": entry.orgName || "",
+        "ตัวแทนอนุมัติแล้ว": entry.approved.length,
+        "คำขอรออนุมัติ": entry.pending.length,
+        "ตำแหน่งที่ยังขาด": missingRoles.join(", "),
+        "สถานะข้อมูล": complete.label,
+        "รายชื่อตัวแทนอนุมัติแล้ว": approvedPeople.join("; "),
+        "รายชื่อคำขอรออนุมัติ": pendingPeople.join("; ")
+      };
+    });
+    const headers = [
+      "ปีการศึกษา",
+      "ประเภทองค์กร",
+      "องค์กร",
+      "ตัวแทนอนุมัติแล้ว",
+      "คำขอรออนุมัติ",
+      "ตำแหน่งที่ยังขาด",
+      "สถานะข้อมูล",
+      "รายชื่อตัวแทนอนุมัติแล้ว",
+      "รายชื่อคำขอรออนุมัติ"
+    ];
+    if (window.sgcuCsvExport?.download) {
+      window.sgcuCsvExport.download({
+        fileName: `organization-representatives-${currentOrgRepresentativeAcademicYear || getCurrentAcademicYearBE()}`,
+        headers,
+        rows
+      });
+      return;
+    }
+    const csv = [
+      headers.join(","),
+      ...rows.map((row) => headers.map((header) => `"${String(row[header] ?? "").replaceAll("\"", "\"\"")}"`).join(","))
+    ].join("\r\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `organization-representatives-${currentOrgRepresentativeAcademicYear || getCurrentAcademicYearBE()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const openOrgRepresentativeOrganizationModal = (orgKey) => {
+    if (!approvalDetailModalEl || !approvalDetailBodyEl) return;
+    const entry = currentOrgRepresentativeOrganizations.find((item) => (item.key || "").toString() === (orgKey || "").toString());
+    if (!entry) return;
+    const detailTitleEl = document.getElementById("staffApprovalDetailTitle");
+    if (detailTitleEl) detailTitleEl.textContent = "จัดการตัวแทนรายองค์กร";
+    const complete = getOrgRepresentativeCompleteness(entry.approved, entry.pending.length);
+    const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
+    const sortedApplications = [...entry.pending, ...entry.approved, ...entry.rejected];
+    const rowHtml = sortedApplications.length
+      ? sortedApplications.map((item) => {
+        const applicant = getOrgRepresentativeApplicant(item);
+        const id = (item.id || "").toString();
+        const status = normalizeApplicationStatus(item.status);
+        const statusLabel = status === "approved" ? "อนุมัติแล้ว" : status === "rejected" ? "ไม่อนุมัติ" : "รออนุมัติ";
+        return `
+          <tr data-org-representative-id="${toSafeText(id)}">
+            <td data-label="ตัวแทน">
+              <div>${toSafeText(applicant.displayName || "-")}</div>
+              <div class="section-text-sm">${toSafeText(applicant.email || "-")}</div>
+              <div class="section-text-sm">${toSafeText([applicant.phone, applicant.lineId].filter(Boolean).join(" / ") || "")}</div>
+            </td>
+            <td data-label="ตำแหน่ง">${toSafeText(item.representativeRole || "-")}</td>
+            <td data-label="สถานะ">${toSafeText(statusLabel)}</td>
+            <td data-label="จัดการ">
+              <select
+                class="staff-status-select ${status === "approved" ? "is-approved" : status === "rejected" ? "is-rejected" : "is-pending"}"
+                data-role="org-representative-status-select"
+                data-org-representative-id="${toSafeText(id)}"
+                aria-label="จัดการสิทธิ์ตัวแทนองค์กร"
+              >
+                <option value="pending" ${status === "pending" ? "selected" : ""}>รออนุมัติ</option>
+                <option value="approved" ${status === "approved" ? "selected" : ""}>อนุมัติแล้ว</option>
+                <option value="rejected" ${status === "rejected" ? "selected" : ""}>ไม่อนุมัติ</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join("")
+      : '<tr><td colspan="4">ยังไม่มีคำขอตัวแทนขององค์กรนี้</td></tr>';
+
+    approvalDetailBodyEl.removeAttribute("data-application-id");
+    approvalDetailBodyEl.innerHTML = `
+      <div class="staff-approval-detail-layout org-representative-org-detail">
+        <div class="modal-section">
+          <div class="modal-section-title">${toSafeText(entry.orgName || "-")}</div>
+          <div class="modal-section-caption">${toSafeText(entry.orgType || "-")} · ปีการศึกษา ${toSafeText(currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE()))}</div>
+          <div class="org-representative-detail-summary">
+            <div>
+              <div class="modal-item-label">ตัวแทนอนุมัติแล้ว</div>
+              <div class="modal-item-value">${toSafeText(String(entry.approved.length))}/4</div>
+            </div>
+            <div>
+              <div class="modal-item-label">รออนุมัติ</div>
+              <div class="modal-item-value">${toSafeText(String(entry.pending.length))}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">สถานะข้อมูล</div>
+              <div class="modal-item-value"><span class="badge ${complete.className}">${toSafeText(complete.label)}</span></div>
+            </div>
+            <div>
+              <div class="modal-item-label">ตำแหน่งที่ยังขาด</div>
+              <div class="modal-item-value">${toSafeText(missingRoles.join(", ") || "-")}</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <div class="modal-section-title">รายชื่อตัวแทน</div>
+          <div class="modal-table-wrap">
+            <table class="modal-table">
+              <thead>
+                <tr>
+                  <th>ตัวแทน</th>
+                  <th>ตำแหน่ง</th>
+                  <th>สถานะ</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>${rowHtml}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+    if (typeof openDialog === "function") {
+      openDialog(approvalDetailModalEl, { focusSelector: ".org-representative-org-detail select, .modal-close" });
+    } else {
+      approvalDetailModalEl.classList.add("show");
+      approvalDetailModalEl.setAttribute("aria-hidden", "false");
+      document.body.classList.add("has-modal");
+    }
   };
 
   const openOrgRepresentativeDetailModal = (item) => {
@@ -2403,6 +2823,14 @@ function initStaffAccessPages() {
     if (!resolveStore()) {
       scheduleDeferredBootstrap();
       return;
+    }
+
+    if (typeof loadOrgFilters === "function" && !getKnownOrganizationFilters().length) {
+      loadOrgFilters()
+        .then(() => renderOrgRepresentativeOverview())
+        .catch((error) => {
+          console.warn("load organization filters for representative overview failed", error);
+        });
     }
 
     if (typeof unsubscribeOrgRepresentativeApplications === "function") {
@@ -2947,10 +3375,11 @@ function initStaffAccessPages() {
 
     const rowEl = [
       ...(orgRepresentativePendingBodyEl ? Array.from(orgRepresentativePendingBodyEl.querySelectorAll("tr")) : []),
-      ...(orgRepresentativeHistoryBodyEl ? Array.from(orgRepresentativeHistoryBodyEl.querySelectorAll("tr")) : [])
+      ...(orgRepresentativeHistoryBodyEl ? Array.from(orgRepresentativeHistoryBodyEl.querySelectorAll("tr")) : []),
+      ...(approvalDetailBodyEl ? Array.from(approvalDetailBodyEl.querySelectorAll("tr")) : [])
     ].find((tr) => tr.getAttribute("data-org-representative-id") === id) || null;
     const target = currentOrgRepresentativeApplications.find((item) => (item.id || "").toString() === id);
-    if (!rowEl || !target) return false;
+    if (!target) return false;
 
     const currentUser = readCurrentUser();
     const reviewerUid = (currentUser?.uid || "").toString();
@@ -2973,7 +3402,7 @@ function initStaffAccessPages() {
       reviewedNote = reason ? `ไม่อนุมัติ: ${reason}` : "ไม่อนุมัติคำขอ";
     }
 
-    const rowControls = rowEl.querySelectorAll("button, select, input");
+    const rowControls = rowEl ? rowEl.querySelectorAll("button, select, input") : [];
     rowControls.forEach((control) => {
       control.disabled = true;
     });
@@ -3337,11 +3766,42 @@ function initStaffAccessPages() {
   if (staffApprovalTypeOrgBtnEl) {
     staffApprovalTypeOrgBtnEl.addEventListener("click", () => setApprovalType("org"));
   }
+  if (orgRepresentativeShowOverviewBtnEl) {
+    orgRepresentativeShowOverviewBtnEl.addEventListener("click", () => setOrgRepresentativeView("overview"));
+  }
+  if (orgRepresentativeExportCsvBtnEl) {
+    orgRepresentativeExportCsvBtnEl.addEventListener("click", exportOrgRepresentativeOverviewCsv);
+  }
   if (orgRepresentativeShowPendingBtnEl) {
     orgRepresentativeShowPendingBtnEl.addEventListener("click", () => setOrgRepresentativeView("pending"));
   }
   if (orgRepresentativeShowHistoryBtnEl) {
     orgRepresentativeShowHistoryBtnEl.addEventListener("click", () => setOrgRepresentativeView("history"));
+  }
+  [orgRepresentativeSearchInputEl, orgRepresentativeStatusFilterEl, orgRepresentativeAcademicYearFilterEl, orgRepresentativeGroupFilterEl].forEach((control) => {
+    if (!control) return;
+    control.addEventListener("input", () => {
+      if (control === orgRepresentativeAcademicYearFilterEl) {
+        currentOrgRepresentativeAcademicYear = (control.value || "").toString();
+      }
+      renderOrgRepresentativeOverview();
+    });
+    control.addEventListener("change", () => {
+      if (control === orgRepresentativeAcademicYearFilterEl) {
+        currentOrgRepresentativeAcademicYear = (control.value || "").toString();
+      }
+      renderOrgRepresentativeOverview();
+    });
+  });
+  if (orgRepresentativeOverviewBodyEl) {
+    orgRepresentativeOverviewBodyEl.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const rowEl = target.closest("tr[data-org-key]");
+      if (!rowEl) return;
+      const key = (rowEl.getAttribute("data-org-key") || "").toString();
+      openOrgRepresentativeOrganizationModal(key);
+    });
   }
 
   if (orgRepresentativePendingBodyEl) {
@@ -3463,6 +3923,24 @@ function initStaffAccessPages() {
     approvalDetailModalEl.addEventListener("change", (event) => {
       const target = event.target;
       if (!(target instanceof HTMLSelectElement)) return;
+      if (target.dataset.role === "org-representative-status-select") {
+        const id = (target.dataset.orgRepresentativeId || "").toString();
+        const nextValue = (target.value || "").toString();
+        const item = currentOrgRepresentativeApplications.find((entry) => (entry.id || "").toString() === id);
+        const currentValue = normalizeApplicationStatus(item?.status);
+        if (!id || !item || nextValue === currentValue) return;
+        const action = nextValue === "approved" ? "approve" : nextValue === "rejected" ? "reject" : "pending";
+        target.value = currentValue;
+        target.classList.remove("is-approved", "is-rejected", "is-pending");
+        target.classList.add(currentValue === "approved" ? "is-approved" : currentValue === "rejected" ? "is-rejected" : "is-pending");
+        void updateOrgRepresentativeStatus(id, action).then((ok) => {
+          if (!ok) return;
+          target.value = nextValue;
+          target.classList.remove("is-approved", "is-rejected", "is-pending");
+          target.classList.add(nextValue === "approved" ? "is-approved" : nextValue === "rejected" ? "is-rejected" : "is-pending");
+        });
+        return;
+      }
       if (target.id !== "modalApprovalTargetSelect") return;
       const selectedOption = target.selectedOptions?.[0] || null;
       const selectedId = (target.value || "").toString();
@@ -3482,6 +3960,13 @@ function initStaffAccessPages() {
     approvalDetailModalEl.addEventListener("click", (event) => {
       const target = event.target;
       if (target instanceof Element) {
+        const orgRepresentativeRow = target.closest(".org-representative-org-detail tr[data-org-representative-id]");
+        if (orgRepresentativeRow && !target.closest("select, button, input, textarea, a")) {
+          const id = (orgRepresentativeRow.getAttribute("data-org-representative-id") || "").toString();
+          const item = currentOrgRepresentativeApplications.find((entry) => (entry.id || "").toString() === id);
+          if (item) openOrgRepresentativeDetailModal(item);
+          return;
+        }
         const saveBtn = target.closest(".modal-approval-save-position");
         if (saveBtn instanceof HTMLButtonElement) {
           const id = (saveBtn.dataset.applicationId || "").toString();
@@ -3671,7 +4156,7 @@ function initStaffAccessPages() {
   startApprovedHistoryListener();
   startOrgRepresentativeApplicationsListener();
   setApprovalView("pending");
-  setOrgRepresentativeView("pending");
+  setOrgRepresentativeView("overview");
   setApprovalType("staff");
 
   window.addEventListener("beforeunload", () => {

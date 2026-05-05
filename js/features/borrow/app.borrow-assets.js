@@ -15,6 +15,7 @@ function initBorrowAssetsApp() {
   const borrowProjectDeptOther = document.getElementById("borrowProjectDeptOther");
   const borrowProjectDetail = document.getElementById("borrowProjectDetail");
   const borrowPickupDate = document.getElementById("borrowPickupDate");
+  const borrowPickupDateRule = document.getElementById("borrowPickupDateRule");
   const borrowReturnDate = document.getElementById("borrowReturnDate");
   const borrowProfileFullNameEl = document.getElementById("borrowProfileFullName");
   const borrowProfileNicknameEl = document.getElementById("borrowProfileNickname");
@@ -52,6 +53,10 @@ function initBorrowAssetsApp() {
   const staffBorrowFollowupTableBody = document.getElementById("staffBorrowFollowupTableBody");
   const staffHistoryTableBody = document.getElementById("staffBorrowHistoryTableBody");
   const staffBorrowExportCsvBtn = document.getElementById("staffBorrowExportCsvBtn");
+  const staffBorrowPickupDaysForm = document.getElementById("staffBorrowPickupDaysForm");
+  const staffBorrowPickupDayInputs = Array.from(document.querySelectorAll("[data-staff-borrow-pickup-day]"));
+  const staffBorrowPickupDaysSaveBtn = document.getElementById("staffBorrowPickupDaysSaveBtn");
+  const staffBorrowPickupDaysMessage = document.getElementById("staffBorrowPickupDaysMessage");
   const staffRequestPanelTitleEl = document.getElementById("staffRequestPanelTitle");
   const staffRequestPanelCaptionEl = document.getElementById("staffRequestPanelCaption");
   const staffSummaryCards = Array.from(
@@ -93,6 +98,17 @@ function initBorrowAssetsApp() {
   const STAFF_REQUEST_TAB_STATUSES = new Set([STATUS_PENDING, STATUS_APPROVED, STATUS_RECEIVED]);
   const STAFF_HISTORY_TAB_STATUSES = new Set([STATUS_REJECTED, STATUS_CANCELLED, STATUS_RETURNED]);
   const BORROW_FOLLOWUP_SOON_DAYS = 3;
+  const DEFAULT_ALLOWED_PICKUP_DAYS = [1, 4];
+  const WEEKDAY_NAMES_TH = {
+    0: "อาทิตย์",
+    1: "จันทร์",
+    2: "อังคาร",
+    3: "พุธ",
+    4: "พฤหัสบดี",
+    5: "ศุกร์",
+    6: "เสาร์"
+  };
+  const WEEKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
   const safeEscape = (value) =>
     String(value ?? "")
@@ -588,6 +604,126 @@ function initBorrowAssetsApp() {
     return Number.isNaN(date.getTime()) ? null : date;
   };
 
+  const normalizeAllowedPickupDays = (value) => {
+    const source = Array.isArray(value) ? value : DEFAULT_ALLOWED_PICKUP_DAYS;
+    const days = source
+      .map((item) => Number(item))
+      .filter((item) => Number.isInteger(item) && item >= 0 && item <= 6);
+    const unique = Array.from(new Set(days));
+    return unique.length ? unique : DEFAULT_ALLOWED_PICKUP_DAYS;
+  };
+
+  const getAllowedPickupDays = () =>
+    normalizeAllowedPickupDays(globalThis.SGCU_APP_CONFIG?.features?.borrowAssets?.allowedPickupDays);
+
+  const formatAllowedPickupDays = (days) => {
+    const ordered = WEEKDAY_DISPLAY_ORDER.filter((day) => days.includes(day));
+    if (ordered.length === 7) return "ทุกวัน";
+    return ordered.map((day) => WEEKDAY_NAMES_TH[day]).join(" / ");
+  };
+
+  const updateBorrowPickupDateRule = () => {
+    if (!borrowPickupDateRule) return;
+    const dayText = formatAllowedPickupDays(getAllowedPickupDays());
+    borrowPickupDateRule.textContent = dayText === "ทุกวัน"
+      ? "รับพัสดุได้ทุกวัน เวลา 16.00 น."
+      : `รับพัสดุได้เฉพาะวัน${dayText} เวลา 16.00 น.`;
+  };
+
+  const setStaffBorrowPickupDaysMessage = (text = "", tone = "") => {
+    if (!staffBorrowPickupDaysMessage) return;
+    staffBorrowPickupDaysMessage.textContent = text;
+    staffBorrowPickupDaysMessage.dataset.tone = tone;
+  };
+
+  const fillStaffBorrowPickupDays = (days = getAllowedPickupDays()) => {
+    const allowedDays = normalizeAllowedPickupDays(days);
+    staffBorrowPickupDayInputs.forEach((input) => {
+      input.checked = allowedDays.includes(Number(input.value));
+    });
+  };
+
+  const collectStaffBorrowPickupDays = () =>
+    staffBorrowPickupDayInputs
+      .filter((input) => input.checked)
+      .map((input) => Number(input.value))
+      .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6);
+
+  const getBorrowRuntimeSettingsRef = () => {
+    const runtime = window.sgcuRuntimeConfig || {};
+    const store = window.sgcuFirestore || firestore || {};
+    if (!store.db || !store.doc) return null;
+    return store.doc(store.db, runtime.collection || "appSettings", runtime.docId || "global");
+  };
+
+  const loadStaffBorrowPickupDays = async () => {
+    if (!staffBorrowPickupDayInputs.length) return;
+    fillStaffBorrowPickupDays();
+    const store = window.sgcuFirestore || {};
+    const ref = getBorrowRuntimeSettingsRef();
+    if (!ref || !store.getDoc) return;
+    try {
+      const snap = await store.getDoc(ref);
+      if (!snap.exists()) return;
+      const remoteConfig = snap.data()?.config || {};
+      const remoteDays = remoteConfig.features?.borrowAssets?.allowedPickupDays;
+      if (!Array.isArray(remoteDays) || !remoteDays.length) return;
+      if (window.sgcuRuntimeConfig?.applyConfig) window.sgcuRuntimeConfig.applyConfig(remoteConfig);
+      fillStaffBorrowPickupDays(remoteDays);
+      updateBorrowPickupDateRule();
+    } catch (error) {
+      console.warn("borrow pickup days load failed - app.borrow-assets.js:640", error);
+    }
+  };
+
+  const saveStaffBorrowPickupDays = async () => {
+    if (!staffBorrowPickupDayInputs.length) return;
+    if (!ensureStaffPermission()) return;
+    const allowedPickupDays = collectStaffBorrowPickupDays();
+    if (!allowedPickupDays.length) {
+      setStaffBorrowPickupDaysMessage("กรุณาเลือกอย่างน้อย 1 วัน", "error");
+      return;
+    }
+    const store = window.sgcuFirestore || {};
+    const ref = getBorrowRuntimeSettingsRef();
+    if (!ref || !store.setDoc) {
+      setStaffBorrowPickupDaysMessage("ไม่สามารถบันทึกได้ เพราะยังไม่เชื่อมต่อ Firestore", "error");
+      return;
+    }
+    const config = {
+      features: {
+        borrowAssets: {
+          allowedPickupDays: normalizeAllowedPickupDays(allowedPickupDays)
+        }
+      }
+    };
+    const normalized = window.sgcuRuntimeConfig?.normalizeSettingsConfig
+      ? window.sgcuRuntimeConfig.normalizeSettingsConfig(config)
+      : config;
+    if (staffBorrowPickupDaysSaveBtn) staffBorrowPickupDaysSaveBtn.disabled = true;
+    setStaffBorrowPickupDaysMessage("กำลังบันทึก...", "warning");
+    try {
+      await store.setDoc(
+        ref,
+        {
+          enabled: true,
+          config: normalized,
+          updatedAt: store.serverTimestamp ? store.serverTimestamp() : new Date()
+        },
+        { merge: true }
+      );
+      if (window.sgcuRuntimeConfig?.applyConfig) window.sgcuRuntimeConfig.applyConfig(normalized);
+      fillStaffBorrowPickupDays(normalized.features?.borrowAssets?.allowedPickupDays);
+      updateBorrowPickupDateRule();
+      setStaffBorrowPickupDaysMessage("บันทึกวันรับพัสดุแล้ว", "success");
+    } catch (error) {
+      console.error("borrow pickup days save failed - app.borrow-assets.js:695", error);
+      setStaffBorrowPickupDaysMessage("บันทึกไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ Staff", "error");
+    } finally {
+      if (staffBorrowPickupDaysSaveBtn) staffBorrowPickupDaysSaveBtn.disabled = false;
+    }
+  };
+
   const formatDate = (value) => {
     if (!value) return "-";
     const date = parseDateYmd(value);
@@ -601,6 +737,9 @@ function initBorrowAssetsApp() {
 
   const formatDateRange = (pickupDate, returnDate) =>
     `${formatDate(pickupDate)} - ${formatDate(returnDate)}`;
+
+  const formatPickupAppointmentNote = (pickupDate) =>
+    pickupDate ? `เจ้าหน้าที่นัดรับพัสดุวันที่ ${formatDate(pickupDate)} เวลา 16.00 น.` : "";
 
   const getDayDiffFromToday = (value) => {
     const date = parseDateYmd(value);
@@ -1456,9 +1595,10 @@ function initBorrowAssetsApp() {
         const itemsText = (item.assets || [])
           .map((asset) => `${safeEscape(asset.name || asset.code || "-")} ${safeEscape(asset.qty || 0)} ${safeEscape(asset.unit || "")}`.trim())
           .join("<br />");
+        const appointmentNote = formatPickupAppointmentNote(item.pickupDate);
         const noteText =
           (item.status === STATUS_APPROVED && !item.staffNote)
-            ? "รับพัสดุตามเวลาที่ระบุในระบบ"
+            ? (appointmentNote || "รับพัสดุตามเวลาที่ระบุในระบบ")
             : (item.status === STATUS_RECEIVED && !item.staffNote)
               ? "รับพัสดุเรียบร้อยแล้ว"
             : (item.status === STATUS_CANCELLED && !item.staffNote)
@@ -1489,9 +1629,10 @@ function initBorrowAssetsApp() {
       const itemsText = (item.assets || [])
         .map((asset) => `${safeEscape(asset.name || asset.code || "-")} ${safeEscape(asset.qty || 0)} ${safeEscape(asset.unit || "")}`.trim())
         .join("<br />");
+      const appointmentNote = formatPickupAppointmentNote(item.pickupDate);
       const noteText =
         (item.status === STATUS_APPROVED && !item.staffNote)
-          ? "รับพัสดุตามเวลาที่ระบุในระบบ"
+          ? (appointmentNote || "รับพัสดุตามเวลาที่ระบุในระบบ")
           : (item.status === STATUS_RECEIVED && !item.staffNote)
             ? "รับพัสดุเรียบร้อยแล้ว"
           : (item.status === STATUS_CANCELLED && !item.staffNote)
@@ -1748,12 +1889,12 @@ function initBorrowAssetsApp() {
           role="button"
           aria-label="ดูรายละเอียดคำขอ ${safeEscape(item.requestNo || item.id || "-")}"
         >
-          <td>${safeEscape(formatDate(item.createdDate || ""))}</td>
-          <td>${renderRequesterCell(item)}</td>
-          <td>${renderAssetsCell(item.assets, item.staffNote || "")}</td>
-          <td>${renderPeriodCell(item)}</td>
-          <td>${renderFollowupCell(item)}</td>
-          <td><div class="borrow-staff-actions">${actionHtml}</div></td>
+          <td data-label="วันที่ยื่น">${safeEscape(formatDate(item.createdDate || ""))}</td>
+          <td data-label="ผู้ขอ">${renderRequesterCell(item)}</td>
+          <td data-label="รายการ">${renderAssetsCell(item.assets, item.staffNote || "")}</td>
+          <td data-label="ช่วงเวลา">${renderPeriodCell(item)}</td>
+          <td data-label="ติดตามคืน">${renderFollowupCell(item)}</td>
+          <td data-label="สถานะ"><div class="borrow-staff-actions">${actionHtml}</div></td>
         </tr>
       `;
     }).join("");
@@ -2144,6 +2285,8 @@ function initBorrowAssetsApp() {
     const contactMeta = [item.phone, item.lineId ? `Line: ${item.lineId}` : ""].filter(Boolean).join(" • ");
     const projectMeta = [item.projectName, item.projectDept].filter(Boolean).join(" • ");
     const activityMeta = (item.projectDetail || "").toString().trim();
+    const originalPickupDate = (item.originalPickupDate || "").toString().trim();
+    const hasChangedPickupDate = !!originalPickupDate && originalPickupDate !== item.pickupDate;
     borrowDetailBodyEl.innerHTML = `
       <div class="borrow-request-detail-shell">
         <div class="borrow-request-detail-hero">
@@ -2183,6 +2326,9 @@ function initBorrowAssetsApp() {
 
         <div class="borrow-request-detail-grid">
           <div class="borrow-request-detail-item borrow-request-detail-item-full"><span class="borrow-request-detail-label">หมายเหตุ Staff</span><span class="borrow-request-detail-value">${safeEscape(item.staffNote || "ยังไม่มีหมายเหตุ")}</span></div>
+          ${hasChangedPickupDate
+            ? `<div class="borrow-request-detail-item"><span class="borrow-request-detail-label">วันรับที่ผู้ขอเลือกเดิม</span><span class="borrow-request-detail-value">${safeEscape(formatDate(originalPickupDate))}</span></div>`
+            : ""}
         </div>
 
         <div class="borrow-request-detail-section">
@@ -2208,7 +2354,7 @@ function initBorrowAssetsApp() {
         ${canManageStatus
           ? `
             <div class="borrow-request-detail-section">
-              <div class="borrow-request-detail-section-title">ปรับสถานะการอนุมัติ</div>
+	              <div class="borrow-request-detail-section-title">ปรับสถานะและวันนัดรับ</div>
               <div class="borrow-request-detail-controls">
                   <select
                     id="borrowRequestDetailStatusSelect"
@@ -2222,9 +2368,29 @@ function initBorrowAssetsApp() {
                     <option value="${STATUS_RECEIVED}" ${item.status === STATUS_RECEIVED ? "selected" : ""}>${borrowStatusLabel(STATUS_RECEIVED)}</option>
                     <option value="${STATUS_REJECTED}" ${item.status === STATUS_REJECTED ? "selected" : ""}>${borrowStatusLabel(STATUS_REJECTED)}</option>
                     <option value="${STATUS_CANCELLED}" ${item.status === STATUS_CANCELLED ? "selected" : ""}>${borrowStatusLabel(STATUS_CANCELLED)}</option>
-                    <option value="${STATUS_RETURNED}" ${item.status === STATUS_RETURNED ? "selected" : ""}>${borrowStatusLabel(STATUS_RETURNED)}</option>
-                  </select>
-                  <textarea
+	                    <option value="${STATUS_RETURNED}" ${item.status === STATUS_RETURNED ? "selected" : ""}>${borrowStatusLabel(STATUS_RETURNED)}</option>
+	                  </select>
+                  <div class="borrow-form-row">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="borrowRequestDetailPickupDateInput">วันนัดรับพัสดุ</label>
+                      <input
+                        id="borrowRequestDetailPickupDateInput"
+                        class="login-input"
+                        type="date"
+                        value="${safeEscape(item.pickupDate || "")}"
+                      />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="borrowRequestDetailReturnDateInput">วันที่คืนพัสดุ</label>
+                      <input
+                        id="borrowRequestDetailReturnDateInput"
+                        class="login-input"
+                        type="date"
+                        value="${safeEscape(item.returnDate || "")}"
+                      />
+                    </div>
+                  </div>
+	                  <textarea
                     id="borrowRequestDetailNoteInput"
                     class="login-input borrow-request-detail-note"
                     rows="3"
@@ -2238,7 +2404,7 @@ function initBorrowAssetsApp() {
                     data-request-id="${safeEscape(item.id || "")}"
                     data-request-source="${safeEscape(item.sourceCollection || "")}"
                   >
-                    บันทึกสถานะ
+	                    บันทึก
                   </button>
                   <span
                     id="borrowRequestDetailStatusMessage"
@@ -2298,23 +2464,52 @@ function initBorrowAssetsApp() {
       if (!requestId) return;
       const select = borrowDetailBodyEl.querySelector("#borrowRequestDetailStatusSelect");
       const noteInput = borrowDetailBodyEl.querySelector("#borrowRequestDetailNoteInput");
+      const pickupDateInput = borrowDetailBodyEl.querySelector("#borrowRequestDetailPickupDateInput");
+      const returnDateInput = borrowDetailBodyEl.querySelector("#borrowRequestDetailReturnDateInput");
       if (!(select instanceof HTMLSelectElement)) return;
       const noteText = noteInput instanceof HTMLTextAreaElement
         ? (noteInput.value || "").toString().trim()
         : "";
+      const nextPickupDate = pickupDateInput instanceof HTMLInputElement ? pickupDateInput.value.trim() : "";
+      const nextReturnDate = returnDateInput instanceof HTMLInputElement ? returnDateInput.value.trim() : "";
       const nextStatus = normalizeRequestStatus(select.value);
       const messageEl = borrowDetailBodyEl.querySelector("#borrowRequestDetailStatusMessage");
+      const nextPickupDateObj = parseDateYmd(nextPickupDate);
+      const nextReturnDateObj = parseDateYmd(nextReturnDate);
+      if (!nextPickupDateObj || !nextReturnDateObj) {
+        if (messageEl instanceof HTMLElement) {
+          messageEl.textContent = "กรุณาระบุวันนัดรับและวันคืนให้ถูกต้อง";
+          messageEl.style.color = "#b91c1c";
+        }
+        return;
+      }
+      if (nextReturnDateObj.getTime() < nextPickupDateObj.getTime()) {
+        if (messageEl instanceof HTMLElement) {
+          messageEl.textContent = "วันที่คืนต้องไม่ก่อนวันนัดรับ";
+          messageEl.style.color = "#b91c1c";
+        }
+        return;
+      }
       target.disabled = true;
       if (messageEl instanceof HTMLElement) {
         messageEl.textContent = "กำลังบันทึกสถานะ...";
         messageEl.style.color = "#6b7280";
       }
       try {
-        await updateBorrowRequestStatus(requestId, nextStatus, noteText, sourceCollection);
+        await updateBorrowRequestStatus(requestId, nextStatus, noteText, sourceCollection, {
+          pickupDate: nextPickupDate,
+          returnDate: nextReturnDate
+        });
         const targetItem = getBorrowRequestByKey(requestId, sourceCollection);
         if (targetItem) {
+          const previousPickupDate = targetItem.pickupDate || "";
           targetItem.status = nextStatus;
-          targetItem.staffNote = noteText;
+          targetItem.pickupDate = nextPickupDate;
+          targetItem.returnDate = nextReturnDate;
+          targetItem.originalPickupDate = targetItem.originalPickupDate || previousPickupDate;
+          targetItem.staffNote = noteText || (
+            nextPickupDate !== previousPickupDate ? formatPickupAppointmentNote(nextPickupDate) : ""
+          );
           targetItem.updatedAtMs = Date.now();
         }
         renderBorrowRequests();
@@ -2382,6 +2577,7 @@ function initBorrowAssetsApp() {
       projectDept: (safeData.projectDept || "").toString().trim(),
       projectDetail: (safeData.projectDetail || "").toString().trim(),
       pickupDate: (safeData.pickupDate || "").toString().trim(),
+      originalPickupDate: (safeData.originalPickupDate || "").toString().trim(),
       returnDate: (safeData.returnDate || "").toString().trim(),
       assets,
       staffNote: (safeData.staffNote || "").toString().trim(),
@@ -2537,8 +2733,15 @@ function initBorrowAssetsApp() {
       return;
     }
     const pickupDay = pickupDateObj.getDay();
-    if (pickupDay !== 1 && pickupDay !== 4) {
-      setBorrowMessage("วันที่รับพัสดุต้องเป็นวันจันทร์หรือวันพฤหัสบดีเท่านั้น", "#b91c1c");
+    const allowedPickupDays = getAllowedPickupDays();
+    if (!allowedPickupDays.includes(pickupDay)) {
+      const dayText = formatAllowedPickupDays(allowedPickupDays);
+      setBorrowMessage(
+        dayText === "ทุกวัน"
+          ? "วันที่รับพัสดุไม่ถูกต้อง"
+          : `วันที่รับพัสดุต้องเป็นวัน${dayText}เท่านั้น`,
+        "#b91c1c"
+      );
       return;
     }
 
@@ -2589,6 +2792,7 @@ function initBorrowAssetsApp() {
       projectDept: getBorrowProjectDeptValueForSubmit(),
       projectDetail: borrowProjectDetail?.value.trim() || "",
       pickupDate: borrowPickupDate?.value || "",
+      originalPickupDate: borrowPickupDate?.value || "",
       returnDate: borrowReturnDate?.value || "",
       assets: assetsResult.items,
       requesterEmail: currentUserEmail,
@@ -2633,12 +2837,17 @@ function initBorrowAssetsApp() {
     }
   };
 
-  const updateBorrowRequestStatus = async (requestId, nextStatus, noteText = "", sourceCollection = "") => {
+  const updateBorrowRequestStatus = async (requestId, nextStatus, noteText = "", sourceCollection = "", datePatch = {}) => {
     if (!requestId) return;
     if (!resolveFirestoreBridge()) return;
     const requestItem = getBorrowRequestByKey(requestId, sourceCollection);
     const targetCollection = requestItem?.sourceCollection || sourceCollection || BORROW_REQUEST_COLLECTION;
-    const trimmedNote = (noteText || "").toString().trim();
+    const hasPickupDatePatch = Object.prototype.hasOwnProperty.call(datePatch, "pickupDate");
+    const hasReturnDatePatch = Object.prototype.hasOwnProperty.call(datePatch, "returnDate");
+    const nextPickupDate = (hasPickupDatePatch ? datePatch.pickupDate : requestItem?.pickupDate || "").toString().trim();
+    const nextReturnDate = (hasReturnDatePatch ? datePatch.returnDate : requestItem?.returnDate || "").toString().trim();
+    const pickupChanged = !!nextPickupDate && !!requestItem?.pickupDate && nextPickupDate !== requestItem.pickupDate;
+    const trimmedNote = (noteText || "").toString().trim() || (pickupChanged ? formatPickupAppointmentNote(nextPickupDate) : "");
     const targetStatus = normalizeRequestStatus(nextStatus);
     const actorEmail = readCurrentUserEmail();
     const docRef = firestore.doc(firestore.db, targetCollection, requestId);
@@ -2648,6 +2857,15 @@ function initBorrowAssetsApp() {
       staffUpdatedBy: actorEmail,
       updatedAt: firestore.serverTimestamp()
     };
+    if (hasPickupDatePatch && nextPickupDate && nextPickupDate !== requestItem?.pickupDate) {
+      payload.pickupDate = nextPickupDate;
+    }
+    if (hasReturnDatePatch && nextReturnDate && nextReturnDate !== requestItem?.returnDate) {
+      payload.returnDate = nextReturnDate;
+    }
+    if (pickupChanged && !requestItem?.originalPickupDate) {
+      payload.originalPickupDate = requestItem.pickupDate;
+    }
     if (typeof firestore.runTransaction !== "function") {
       await firestore.updateDoc(docRef, payload);
       return;
@@ -3083,7 +3301,13 @@ function initBorrowAssetsApp() {
     const name = staffRequestTabMode === "history" ? "borrow-staff-history" : "borrow-staff-queue";
     exportBorrowRowsCsv(getStaffBorrowVisibleRows(), name);
   });
+  staffBorrowPickupDaysForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void saveStaffBorrowPickupDays();
+  });
 
+  updateBorrowPickupDateRule();
+  void loadStaffBorrowPickupDays();
   loadBorrowAssets();
 
   if (borrowAssetsSearch) {

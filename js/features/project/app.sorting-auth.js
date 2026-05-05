@@ -262,6 +262,12 @@ function updateNavVisibility(isAuthenticated) {
   });
   syncDesktopNavGroupVisibility();
   syncMobileNavGroupVisibility();
+  if (typeof window.syncManagementPanels === "function") {
+    window.syncManagementPanels();
+  }
+  if (typeof window.syncManagementLinks === "function") {
+    window.syncManagementLinks(document);
+  }
 }
 
 function syncDesktopNavGroupVisibility() {
@@ -338,8 +344,9 @@ const STAFF_PAGE_OPTIONS = [
   "borrow-assets-staff",
   "meeting-room-staff",
   "budget-approval-staff",
+  "content-management-staff",
   "staff-approval",
-  "system-settings",
+  "org-representative-approval-staff",
   "login"
 ];
 let unsubscribeCurrentStaffApproval = null;
@@ -445,7 +452,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "staff-approval", "system-settings", "login"]);
+    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "staff-approval", "org-representative-approval-staff", "login"]);
   }
   return new Set(["login"]);
 }
@@ -520,7 +527,7 @@ function getAllowedPagesForCurrentState() {
     yyAllowed.add("budget-approval-staff");
     if (!isHeadStaffProfile(staffAuthUser)) {
       yyAllowed.delete("staff-approval");
-      yyAllowed.delete("system-settings");
+      yyAllowed.delete("org-representative-approval-staff");
     }
     if (isAffairsProfile) {
       yyAllowed.delete("borrow-assets");
@@ -536,6 +543,7 @@ function getAllowedPagesForCurrentState() {
     allowed.delete("meeting-room-staff");
     if (!isHeadStaffProfile(staffAuthUser)) {
       allowed.delete("staff-approval");
+      allowed.delete("org-representative-approval-staff");
     }
   }
 

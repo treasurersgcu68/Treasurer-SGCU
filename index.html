@@ -116,26 +116,38 @@
           </div>
 
           <div id="desktopNavStaff" class="desktop-nav-role" data-role-nav="staff" style="display:none;">
-            <a href="#" data-page="dashboard-staff" class="nav-pill" data-visible="protected">ภาพรวม</a>
+            <div class="nav-group">
+              <button class="nav-group-toggle" type="button" aria-expanded="false">ภาพรวม</button>
+              <div class="nav-group-menu" aria-hidden="true">
+                <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวม</a>
+                <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ</a>
+              </div>
+            </div>
 
             <div class="nav-group">
               <button class="nav-group-toggle" type="button" aria-expanded="false">จัดการคำขอ</button>
               <div class="nav-group-menu" aria-hidden="true">
+                <a href="#" data-page="budget-approval-staff" data-visible="protected">จัดการคำของบ</a>
                 <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการคำขอยืม-คืนพัสดุ</a>
                 <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม</a>
-                <a href="#" data-page="budget-approval-staff" data-visible="protected">จัดการคำของบ</a>
               </div>
             </div>
 
             <div class="nav-group">
-              <button class="nav-group-toggle" type="button" aria-expanded="false">ผู้ใช้งาน</button>
+              <button class="nav-group-toggle" type="button" aria-expanded="false">สิทธิ์ผู้ใช้งาน</button>
               <div class="nav-group-menu" aria-hidden="true">
-                <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
-                <a href="#" data-page="system-settings" data-visible="protected">ตั้งค่าระบบ</a>
+                <a href="#" data-page="staff-approval" data-visible="protected">สมาชิกสตาฟ</a>
+                <a href="#" data-page="org-representative-approval-staff" data-visible="protected">ตัวแทนองค์กร</a>
               </div>
             </div>
 
-            <a href="#" data-page="project-status-staff" class="nav-pill" data-visible="protected">กำกับสถานะโครงการ</a>
+            <div class="nav-group">
+              <button class="nav-group-toggle" type="button" aria-expanded="false">จัดการข้อมูลเว็บไซต์</button>
+              <div class="nav-group-menu" aria-hidden="true">
+                <a href="#" data-page="content-management-staff" data-visible="protected">จัดการเนื้อหา</a>
+              </div>
+            </div>
+
             <a href="#" data-page="login" class="nav-pill" data-visible="public">เข้าสู่ระบบ</a>
           </div>
         </nav>
@@ -187,7 +199,7 @@
           </details>
 
           <details class="mobile-menu-group" data-mobile-nav="staff">
-            <summary>Staff</summary>
+            <summary>ภาพรวม</summary>
             <div class="mobile-menu-links">
               <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวม</a>
               <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ</a>
@@ -197,17 +209,24 @@
           <details class="mobile-menu-group" data-mobile-nav="staff">
             <summary>จัดการคำขอ</summary>
             <div class="mobile-menu-links">
+              <a href="#" data-page="budget-approval-staff" data-visible="protected">จัดการคำของบ</a>
               <a href="#" data-page="borrow-assets-staff" data-visible="protected">จัดการยืม-คืนพัสดุ</a>
               <a href="#" data-page="meeting-room-staff" data-visible="protected">อนุมัติห้องประชุม</a>
-              <a href="#" data-page="budget-approval-staff" data-visible="protected">จัดการคำของบ</a>
             </div>
           </details>
 
           <details class="mobile-menu-group" data-mobile-nav="staff">
-            <summary>ผู้ใช้งาน</summary>
+            <summary>สิทธิ์ผู้ใช้งาน</summary>
             <div class="mobile-menu-links">
-              <a href="#" data-page="staff-approval" data-visible="protected">จัดการสิทธิ์ผู้ใช้งาน</a>
-              <a href="#" data-page="system-settings" data-visible="protected">ตั้งค่าระบบ</a>
+              <a href="#" data-page="staff-approval" data-visible="protected">สมาชิกสตาฟ</a>
+              <a href="#" data-page="org-representative-approval-staff" data-visible="protected">ตัวแทนองค์กร</a>
+            </div>
+          </details>
+
+          <details class="mobile-menu-group" data-mobile-nav="staff">
+            <summary>จัดการข้อมูลเว็บไซต์</summary>
+            <div class="mobile-menu-links">
+              <a href="#" data-page="content-management-staff" data-visible="protected">จัดการเนื้อหา</a>
             </div>
           </details>
 
@@ -258,9 +277,11 @@
 
       <!-- @include partials/news.html -->
 
+      <!-- @include partials/content-management-staff.html -->
+
       <!-- @include partials/staff-approval.html -->
 
-      <!-- @include partials/system-settings.html -->
+      <!-- @include partials/org-representative-approval-staff.html -->
 
       <!-- @include partials/budget-approval-staff.html -->
 

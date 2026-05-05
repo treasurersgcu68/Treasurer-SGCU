@@ -68,6 +68,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.applyRuntimeConfigAliases();
     }
   }
+  if (typeof window.syncManagementLinks === "function") {
+    window.syncManagementLinks(document);
+  }
+  if (typeof window.syncManagementPanels === "function") {
+    window.syncManagementPanels();
+  }
 
   // ===== 1) เก็บ DOM element ที่ใช้ซ้ำ =====
   yearSelect = document.getElementById("yearSelect");

@@ -28,7 +28,8 @@
         "js/features/staff/app.staff-access.js?v=20260504-1",
         "js/features/budget/app.budget-staff.js?v=20260504-11"
       ],
-      "system-settings": "js/features/admin/app.system-settings.js?v=20260504-1",
+      "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260504-1",
+      "content-management-staff": [],
       "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260504-11"
     },
     idlePrefetchPages: [

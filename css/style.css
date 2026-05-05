@@ -1751,6 +1751,49 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   line-height: 1.45;
 }
 
+.settings-weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.settings-weekday-grid label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.settings-weekday-grid input {
+  width: 16px;
+  height: 16px;
+  accent-color: #db2777;
+}
+
+.borrow-staff-settings-panel {
+  margin-bottom: 18px;
+}
+
+.borrow-staff-pickup-days-form {
+  display: grid;
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.borrow-staff-settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .settings-link-note {
   padding: 10px 12px;
   border: 1px solid rgba(217, 119, 6, 0.18);
@@ -9870,20 +9913,12 @@ th.sortable.sort-desc::after {
   }
 
   #projectTable td:nth-child(3)::before,
-  #projectTableStaff td:nth-child(3)::before,
-  #longestOpenTableStaff td:nth-child(3)::before {
-    content: "ปี";
-  }
-
-  #projectTable td:nth-child(4)::before,
-  #projectTableStaff td:nth-child(4)::before,
-  #longestOpenTableStaff td:nth-child(4)::before {
+  #projectTableStaff td:nth-child(3)::before {
     content: "สถานะ";
   }
 
-  #projectTable td:nth-child(5)::before,
-  #projectTableStaff td:nth-child(5)::before,
-  #longestOpenTableStaff td:nth-child(5)::before {
+  #projectTable td:nth-child(4)::before,
+  #projectTableStaff td:nth-child(4)::before {
     content: "งบประมาณ";
   }
 
@@ -11897,6 +11932,65 @@ th.sortable.sort-desc::after {
   }
   .borrow-overview-cards {
     grid-template-columns: 1fr;
+  }
+  #staffBorrowHistory .table-wrapper {
+    overflow: visible;
+  }
+  #staffBorrowHistory table,
+  #staffBorrowHistory thead,
+  #staffBorrowHistory tbody,
+  #staffBorrowHistory tr,
+  #staffBorrowHistory td {
+    display: block;
+    width: 100%;
+  }
+  #staffBorrowHistory thead {
+    display: none;
+  }
+  #staffBorrowHistory tbody {
+    display: grid;
+    gap: 12px;
+  }
+  #staffBorrowHistory .borrow-history-row {
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.16);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(148, 163, 184, 0.14);
+  }
+  #staffBorrowHistory .borrow-history-row td {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 0;
+    border: 0;
+  }
+  #staffBorrowHistory .borrow-history-row td + td {
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+  }
+  #staffBorrowHistory .borrow-history-row td::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  #staffBorrowHistory .borrow-history-row td[data-label="ผู้ขอ"] {
+    padding-top: 0;
+  }
+  #staffBorrowHistory .borrow-history-row td[data-label="สถานะ"] {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  #staffBorrowHistory .borrow-history-row td[data-label="สถานะ"]::before {
+    content: "จัดการสถานะ";
+  }
+  #staffBorrowHistory .borrow-staff-actions,
+  #staffBorrowHistory .borrow-staff-status-select {
+    width: 100%;
+  }
+  #staffBorrowHistory .borrow-staff-items-note {
+    padding-top: 4px;
   }
 }
 

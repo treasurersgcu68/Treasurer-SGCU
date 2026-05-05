@@ -53,7 +53,8 @@ const SGCU_APP_CONFIG = {
   features: {
     borrowAssets: {
       useCsvAssetCatalog: true,
-      enableAssetAvailabilityCheck: false
+      enableAssetAvailabilityCheck: false,
+      allowedPickupDays: [1, 4]
     }
   },
   org: {

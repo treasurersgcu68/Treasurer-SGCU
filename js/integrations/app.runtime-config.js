@@ -30,6 +30,14 @@
     return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : fallback;
   };
 
+  const normalizeWeekdayList = (value, fallback = []) => {
+    if (!Array.isArray(value)) return fallback;
+    const days = value
+      .map((item) => Number(item))
+      .filter((item) => Number.isInteger(item) && item >= 0 && item <= 6);
+    return Array.from(new Set(days)).sort((a, b) => a - b);
+  };
+
   const normalizeSettingsConfig = (config = {}) => {
     const input = isPlainObject(config) ? config : {};
     const normalized = {};
@@ -42,6 +50,15 @@
     const sessionMaxAgeMs = toPositiveNumber(input.auth?.sessionMaxAgeMs, 0);
     if (sessionMaxAgeMs > 0) {
       normalized.auth = { sessionMaxAgeMs };
+    }
+
+    const allowedPickupDays = normalizeWeekdayList(input.features?.borrowAssets?.allowedPickupDays);
+    if (allowedPickupDays.length) {
+      normalized.features = {
+        borrowAssets: {
+          allowedPickupDays
+        }
+      };
     }
 
     return normalized;

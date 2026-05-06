@@ -345,6 +345,8 @@ const STAFF_PAGE_OPTIONS = [
   "meeting-room-staff",
   "budget-approval-staff",
   "content-management-staff",
+  "content-news-staff",
+  "content-documents-staff",
   "staff-approval",
   "org-representative-approval-staff",
   "login"
@@ -452,7 +454,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "staff-approval", "org-representative-approval-staff", "login"]);
+    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
   }
   return new Set(["login"]);
 }
@@ -528,6 +530,8 @@ function getAllowedPagesForCurrentState() {
       yyAllowed.add("staff-approval");
       yyAllowed.add("org-representative-approval-staff");
       yyAllowed.add("content-management-staff");
+      yyAllowed.add("content-news-staff");
+      yyAllowed.add("content-documents-staff");
       yyAllowed.add("dashboard-staff");
       yyAllowed.add("project-status-staff");
     }

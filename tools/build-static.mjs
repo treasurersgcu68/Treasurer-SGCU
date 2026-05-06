@@ -44,6 +44,7 @@ const textFileExtensions = new Set([
 
 const textTransforms = new Map([
   ["index.html", transformIndexHtml],
+  ["css/style.css", transformCssEntrypoint],
   ["sw.js", transformServiceWorker]
 ]);
 
@@ -145,6 +146,7 @@ async function resolveIncludes(content, fromDir, seen = []) {
 function withVersionedLocalAssets(html) {
   return html
     .replace(/((?:src|href)=["'](?:\.\/)?(?:css|js)\/[^"']+?)(?:\?v=[^"']*)?(["'])/g, `$1?v=${buildVersion}$2`)
+    .replace(/(window\.sgcuAssetVersion\s*=\s*["']).*?(["'])/g, `$1${buildVersion}$2`)
     .replace(/(window\.sgcuServiceWorkerUrl\s*=\s*["']\.\/sw\.js)(?:\?v=[^"']*)?(["'])/g, `$1?v=${buildVersion}$2`);
 }
 
@@ -157,6 +159,13 @@ function transformServiceWorker(source) {
   return source
     .replace(/const CACHE_VERSION = ".*?";/, `const CACHE_VERSION = "${buildVersion}";`)
     .replace(/(\.\/(?:css|js)\/[^"',]+?)(?:\?v=[^"',]*)?(["'])/g, `$1?v=${buildVersion}$2`);
+}
+
+function transformCssEntrypoint(source) {
+  return source.replace(
+    /(@import\s+url\(["']\.\/[^"']+?\.css)(?:\?v=[^"']*)?(["']\);)/g,
+    `$1?v=${buildVersion}$2`
+  );
 }
 
 async function applyTextTransforms() {

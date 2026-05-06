@@ -1,0 +1,122 @@
+# Data Model
+
+เอกสารนี้อธิบายแหล่งข้อมูลหลักของเว็บ Treasurer SGCU เพื่อให้รุ่นถัดไปเข้าใจว่าแต่ละส่วนอ่านข้อมูลจากที่ไหน และถ้าจะย้ายไป Firestore ควรใช้ collection อะไร
+
+## Current Sources
+
+ค่าตั้งต้นของ Google Sheets อยู่ที่ `js/core/app.config.js` ใน `SGCU_APP_CONFIG.sheets`
+
+| Key | ใช้ทำอะไร | Source ปัจจุบัน | โค้ดที่อ่าน |
+| --- | --- | --- | --- |
+| `projectSources` | รายชื่อชีต Project Status แยกตามปีการศึกษา และ contact sheet | Google Sheets CSV | `js/features/project/app.data.js` |
+| `orgStructure` | แผนผังทีมเหรัญญิกหน้า Home | Google Sheets CSV + `staffProfiles` บางส่วนจาก Firestore | `js/features/org/app.org.js` |
+| `downloads` | รายการเอกสารการเงินและลิงก์ดาวน์โหลด | Google Sheets CSV | `js/features/docs/app.downloads.js` |
+| `news` | ข่าวและประกาศ | Google Sheets CSV | `js/features/news/app.news.js` |
+| `orgFilters` | ประเภทองค์กร ชื่อฝ่าย/ชมรม รหัสองค์กร และข้อมูลเสริมสำหรับ PDF | Google Sheets CSV | `js/features/project/app.data.js`, `js/features/project/app.project-modal.js` |
+| `borrowAssets` | รายการพัสดุให้ยืม | Google Sheets CSV | `js/features/borrow/app.borrow-assets.js` |
+
+ข้อมูล workflow ที่เป็นคำขอ/การอนุมัติหลายส่วนอยู่ใน Firestore แล้ว เช่น booking, borrow requests, budget requests, staff profiles และ user profiles
+
+## Recommended Firestore Collections
+
+### `newsItems`
+
+ใช้แทน `SGCU_APP_CONFIG.sheets.news`
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `title` | string | yes | หัวข้อข่าว |
+| `summary` | string | no | รายละเอียดสั้น |
+| `body` | string | no | รายละเอียดเต็มในอนาคต |
+| `date` | string | yes | วันที่แสดงผล เช่น `2026-05-06` หรือรูปแบบไทยเดิม |
+| `academicYear` | string | no | ปีการศึกษา |
+| `category` | string | no | หมวดข่าว |
+| `audience` | string | no | กลุ่มเป้าหมาย |
+| `previewUrl` | string | no | ลิงก์เอกสาร/รูป/ประกาศ |
+| `expireDate` | string | no | วันหมดอายุ |
+| `pinned` | boolean | yes | ใช้เรียงข่าวปักหมุด |
+| `status` | string | yes | `draft`, `published`, `archived` |
+| `createdAt` | timestamp | yes | server timestamp |
+| `updatedAt` | timestamp | yes | server timestamp |
+| `createdBy` | string | no | email ผู้สร้าง |
+| `updatedBy` | string | no | email ผู้แก้ล่าสุด |
+
+### `downloadDocuments`
+
+ใช้แทน `SGCU_APP_CONFIG.sheets.downloads`
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `name` | string | yes | ชื่อเอกสาร |
+| `description` | string | no | รายละเอียด |
+| `organization` | string | no | องค์กรที่เกี่ยวข้อง |
+| `category` | string | yes | หมวดหมู่ |
+| `links.ex` | string | no | ลิงก์ EX |
+| `links.pdf` | string | no | ลิงก์ PDF |
+| `links.docx` | string | no | ลิงก์ DOCX |
+| `links.xlsx` | string | no | ลิงก์ XLSX |
+| `sortOrder` | number | no | ใช้เรียงภายในหมวด |
+| `status` | string | yes | `published`, `hidden`, `archived` |
+| `createdAt` | timestamp | yes | server timestamp |
+| `updatedAt` | timestamp | yes | server timestamp |
+| `createdBy` | string | no | email ผู้สร้าง |
+| `updatedBy` | string | no | email ผู้แก้ล่าสุด |
+
+### `borrowAssetCatalog`
+
+ใช้แทน `SGCU_APP_CONFIG.sheets.borrowAssets`
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `type` | string | yes | ประเภทพัสดุ |
+| `code` | string | yes | รหัสพัสดุ ใช้เป็น document id ได้ |
+| `name` | string | yes | รายการ |
+| `location` | string | no | ที่เก็บ |
+| `approved` | boolean | yes | อนุมัติให้ยืมหรือไม่ |
+| `total` | number | no | จำนวนทั้งหมด |
+| `borrowed` | number | no | จำนวนที่ยืมอยู่ |
+| `damaged` | number | no | จำนวนชำรุด |
+| `remaining` | number | no | จำนวนคงเหลือ |
+| `unit` | string | no | หน่วย |
+| `note` | string | no | หมายเหตุ |
+| `updatedAt` | timestamp | yes | server timestamp |
+
+### `organizationCatalog`
+
+ใช้แทน `SGCU_APP_CONFIG.sheets.orgFilters`
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `group` | string | yes | ประเภทองค์กร |
+| `name` | string | yes | ชื่อฝ่าย/ชมรม |
+| `code` | string | no | รหัสองค์กร |
+| `bankAccount` | string | no | ใช้ auto-fill PDF ถ้ามี |
+| `status` | string | yes | `active`, `hidden`, `archived` |
+| `updatedAt` | timestamp | yes | server timestamp |
+
+## Migration Rule
+
+ย้ายทีละ collection และต้องมี fallback ไป Google Sheets ระหว่างเปลี่ยนผ่าน
+
+1. อ่าน Firestore ก่อน
+2. ถ้า Firestore ว่างหรืออ่านไม่ได้ ให้ fallback ไป Google Sheets เดิม
+3. เพิ่มหน้า staff admin สำหรับแก้ข้อมูล
+4. เมื่อใช้งานจริงนิ่งแล้ว ค่อยปิด fallback ของ feature นั้น
+
+## Ownership
+
+ข้อมูลที่ควรให้ Staff แก้ผ่านหน้าเว็บ:
+
+- `newsItems`
+- `downloadDocuments`
+- `borrowAssetCatalog`
+- `organizationCatalog`
+- `appSettings/global`
+
+ข้อมูลที่ควรให้ Head Staff เท่านั้นแก้:
+
+- `staffProfiles`
+- `staffPositionCatalog`
+- `staffPositionCodeCounters`
+- Firestore rules
+- Firebase project settings

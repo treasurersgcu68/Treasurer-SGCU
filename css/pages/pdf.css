@@ -1,0 +1,320 @@
+@font-face {
+  font-family: "THSarabunNew";
+  src: url("../../THSarabunNew/THSarabunNew.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "THSarabunNew";
+  src: url("../../THSarabunNew/THSarabunNew Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "THSarabunNew";
+  src: url("../../THSarabunNew/THSarabunNew Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "THSarabunNew";
+  src: url("../../THSarabunNew/THSarabunNew BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ===== PDF Template ===== */
+.pdf-root {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 210mm;
+  font-family: "THSarabunNew", "TH Sarabun New", serif;
+  color: #111;
+  background: #fff;
+  pointer-events: none;
+  line-break: auto;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.pdf-page {
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  padding: 23.4mm 24.3mm 29mm 25.4mm;
+  page-break-after: always;
+  break-after: page;
+}
+
+.pdf-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+.pdf-page + .pdf-page {
+  page-break-before: always;
+  break-before: page;
+}
+
+.pdf-flow {
+  width: 210mm;
+  box-sizing: border-box;
+  padding: 25.4mm 24.3mm 29mm 25.4mm;
+}
+
+.pdf-page-break {
+  page-break-before: always;
+  break-before: page;
+}
+
+.pdf-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4mm;
+}
+
+.pdf-banner {
+  width: 160mm;
+  height: 32mm;
+  max-width: 100%;
+  max-height: 32mm;
+  object-fit: contain;
+}
+
+.pdf-center-title {
+  text-align: center;
+  font-size: 14pt;
+  font-weight: 600;
+  margin: 6mm 0 8mm;
+}
+
+.pdf-row-between {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14pt;
+  margin-bottom: 6mm;
+}
+
+.pdf-section {
+  margin-bottom: 1.5mm;
+}
+
+.pdf-section-title {
+  font-weight: 600;
+  font-size: 14pt;
+  margin-bottom: 1mm;
+}
+
+.pdf-section-subtitle {
+  font-size: 14pt;
+  margin-bottom: 1mm;
+}
+
+.pdf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1mm 10mm;
+  font-size: 14pt;
+}
+
+.pdf-line {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
+  flex-wrap: wrap;
+  font-size: 14pt;
+  margin-bottom: 1mm;
+}
+
+.pdf-line .label {
+  white-space: nowrap;
+}
+
+.pdf-fill {
+  display: inline-block;
+  border-bottom: 1px solid #111;
+  min-height: 5mm;
+  padding: 0 2mm 1mm;
+  line-height: 1.2;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.pdf-fill[data-pdf-field] {
+  border-bottom: none;
+  padding: 0;
+  min-width: 0;
+}
+
+.pdf-fill-parentheses::before,
+.pdf-fill-parentheses::after {
+  display: inline-block;
+  font-weight: 500;
+}
+
+.pdf-fill-parentheses::before {
+  content: '(';
+  margin-right: 0.2em;
+}
+
+.pdf-fill-parentheses::after {
+  content: ')';
+  margin-left: 0.2em;
+}
+
+.pdf-fill-sm {
+  min-width: 26mm;
+}
+
+.pdf-fill-md {
+  min-width: 40mm;
+}
+
+.pdf-fill-lg {
+  min-width: 60mm;
+}
+
+.pdf-fill-xl {
+  min-width: 90mm;
+}
+
+.pdf-note {
+  font-size: 14pt;
+  margin-top: 3mm;
+}
+
+.pdf-list {
+  font-size: 14pt;
+  margin: 0;
+  padding-left: 5mm;
+}
+
+.pdf-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 4mm 0;
+  font-size: 14pt;
+}
+
+.pdf-table th, .pdf-table td {
+  border: 0.5px solid #444;
+  padding: 2mm 1.5mm;
+  text-align: left;
+  font-size: 14pt;
+}
+
+.pdf-table tbody td:nth-child(1) {
+  text-align: center;
+}
+
+.pdf-table tbody td:nth-child(2) {
+  text-align: left;
+}
+
+.pdf-table tbody td:nth-child(3) {
+  text-align: right;
+}
+
+.pdf-table thead th {
+  text-align: center;
+}
+
+.pdf-table th {
+  text-align: center;
+  font-weight: 600;
+}
+
+.pdf-table-total {
+  text-align: right;
+  font-weight: 600;
+}
+
+.pdf-table-total-amount {
+  text-align: right;
+}
+
+.pdf-table tbody td.pdf-table-total-amount {
+  text-align: right;
+}
+
+.pdf-signature-block {
+  width: 70mm;
+  text-align: center;
+  font-size: 14pt;
+}
+
+.pdf-signature-right {
+  margin-top: 16mm;
+  margin-left: auto;
+}
+
+.pdf-right-block {
+  text-align: right;
+  margin-top: 6mm;
+  font-size: 14pt;
+}
+
+.pdf-sign-line {
+  border-bottom: 1px dashed #111;
+  height: 6mm;
+  margin-bottom: 2mm;
+}
+
+.pdf-sign-name {
+  min-height: 6mm;
+  overflow-wrap: break-word;
+}
+
+.pdf-sign-role, .pdf-sign-org {
+  font-size: 14pt;
+  overflow-wrap: break-word;
+}
+
+.pdf-paragraph {
+  font-size: 14pt;
+  margin-bottom: 1mm;
+  line-height: 1.5;
+  text-align: justify;
+  text-justify: inter-word;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.pdf-thai-distributed {
+  text-align: justify;
+  text-align-last: left;
+  text-justify: inter-word;
+  word-spacing: normal;
+  letter-spacing: 0;
+}
+
+@supports (text-justify: distribute) {
+  .pdf-thai-distributed {
+    text-justify: inter-word;
+  }
+}
+
+.pdf-dots-right {
+  width: 50%;
+  margin-left: 50%;
+  text-align: left;
+}
+
+.pdf-print-frame {
+  position: fixed;
+  width: 0;
+  height: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}

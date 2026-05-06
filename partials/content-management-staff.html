@@ -3,56 +3,281 @@
         <div class="page content-management-staff-page">
           <div class="page-header-flex section-appear">
             <div>
-              <h1 class="page-title">จัดการข่าวสารและเอกสารการเงิน</h1>
-              <p class="page-subtitle">เปิด Sheet ต้นทางเพื่ออัปเดตประกาศ คู่มือ แบบฟอร์ม และลิงก์ดาวน์โหลดสำหรับเว็บไซต์</p>
+              <h1 class="page-title">จัดการข้อมูลเว็บไซต์</h1>
+              <p class="page-subtitle">เลือกส่วนที่ต้องการจัดการ ข่าวสารใช้ Firestore แล้ว ส่วนเอกสารการเงินยังใช้ Google Sheet ระหว่างรอย้ายระบบ</p>
             </div>
           </div>
 
-          <div class="content-management-grid section-appear section-delay-1">
+          <div class="content-management-grid content-management-choice-grid section-appear section-delay-1">
             <section class="management-link-panel content-management-card">
               <div class="management-link-copy">
-                <span class="management-link-kicker">ประกาศเว็บไซต์</span>
-                <h3>ข่าวสาร</h3>
-                <p>เพิ่มหรือแก้ข่าวประกาศที่แสดงบนหน้าแรกและหน้าข่าวสาร ตรวจวันที่ หมวดข่าว กลุ่มเป้าหมาย สถานะปักหมุด และลิงก์แนบก่อนรีเฟรชเว็บ</p>
+                <span class="management-link-kicker">Firestore</span>
+                <h3>จัดการข่าวสาร</h3>
+                <p>เพิ่ม แก้ ปักหมุด Archive และ Import/Export CSV ข่าวที่แสดงหน้าแรกและหน้าข่าวสาร</p>
               </div>
-              <ol class="content-management-checklist">
-                <li>เพิ่มข่าวใหม่เป็นแถวใหม่ใน Sheet</li>
-                <li>ตรวจชื่อข่าว สรุป วันที่ และหมวดข่าวให้ครบ</li>
-                <li>ใส่ลิงก์ไฟล์หรือเอกสารแนบถ้าต้องการให้เปิดรายละเอียด</li>
-              </ol>
-              <a
-                class="btn-primary management-link-button"
-                href="#"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-management-link="managementLinks.news"
-              >
-                เปิด Sheet ข่าวสาร
-              </a>
+              <button class="btn-primary management-link-button" type="button" data-content-target-page="content-news-staff">เปิดจัดการข่าวสาร</button>
             </section>
 
             <section class="management-link-panel content-management-card">
               <div class="management-link-copy">
-                <span class="management-link-kicker">คู่มือและแบบฟอร์ม</span>
-                <h3>เอกสารการเงิน</h3>
-                <p>อัปเดตรายการเอกสารที่หน้าแบบฟอร์มการเงินใช้แสดง เช่น คู่มือ แบบฟอร์ม ระเบียบ และลิงก์ดาวน์โหลดจาก Google Drive</p>
+                <span class="management-link-kicker">Google Sheet</span>
+                <h3>จัดการเอกสารการเงิน</h3>
+                <p>เปิด Sheet ดาวน์โหลด ตรวจคอลัมน์ และทดสอบลิงก์เอกสารการเงินที่แสดงหน้าแบบฟอร์มการเงิน</p>
               </div>
-              <ol class="content-management-checklist">
-                <li>เพิ่มเอกสารหรือแก้ข้อมูลเอกสารใน Sheet ดาวน์โหลด</li>
-                <li>ตรวจประเภทเอกสาร ชื่อเอกสาร และคำอธิบายให้ค้นหาเจอ</li>
-                <li>ทดสอบลิงก์ดาวน์โหลดว่าเปิดได้สำหรับผู้ใช้งานทั่วไป</li>
-              </ol>
-              <a
-                class="btn-primary management-link-button"
-                href="#"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-management-link="managementLinks.downloads"
-              >
-                เปิด Sheet เอกสารการเงิน
-              </a>
+              <button class="btn-primary management-link-button" type="button" data-content-target-page="content-documents-staff">เปิดจัดการเอกสารการเงิน</button>
             </section>
           </div>
+        </div>
+      </section>
+
+      <section class="page-view" data-page="content-news-staff">
+        <div class="page content-management-staff-page">
+          <div class="page-header-flex section-appear">
+            <div>
+              <h1 class="page-title">จัดการข่าวสาร</h1>
+              <p class="page-subtitle">พิจารณารายการข่าว เพิ่มหรือแก้ไขข่าวที่แสดงบนหน้าแรกและหน้าข่าวสาร</p>
+            </div>
+          </div>
+
+          <div class="content-news-layout section-appear section-delay-1">
+            <section class="panel panel-hover staff-access-panel content-news-list-panel">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">รายการข่าว</h3>
+                  <p id="contentNewsTableCaption" class="panel-caption">กำลังโหลดข่าว...</p>
+                </div>
+                <div class="content-admin-actions">
+                  <button id="contentNewsNewBtn" class="btn-primary" type="button">ข่าวใหม่</button>
+                  <button id="contentNewsRefreshBtn" class="btn-ghost" type="button">รีเฟรช</button>
+                  <button id="contentNewsExportBtn" class="btn-ghost" type="button">Export CSV</button>
+                  <button id="contentNewsImportBtn" class="btn-ghost" type="button">Import CSV</button>
+                  <input id="contentNewsImportFile" type="file" accept=".csv,text/csv" hidden />
+                </div>
+              </div>
+              <p id="contentNewsMessage" class="content-admin-message" role="status" aria-live="polite"></p>
+              <div class="content-news-filters" aria-label="ตัวกรองรายการข่าว">
+                <div class="content-news-filter-row content-news-filter-row-top">
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="contentNewsStatusFilter">สถานะ</label>
+                    <select id="contentNewsStatusFilter" class="login-input">
+                      <option value="all">ทุกสถานะ</option>
+                      <option value="published">published</option>
+                      <option value="draft">draft</option>
+                      <option value="archived">archived</option>
+                    </select>
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="contentNewsCategoryFilter">หมวดข่าว</label>
+                    <select id="contentNewsCategoryFilter" class="login-input">
+                      <option value="all">ทุกหมวด</option>
+                    </select>
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="contentNewsAudienceFilter">ฝ่ายที่รับผิดชอบ</label>
+                    <select id="contentNewsAudienceFilter" class="login-input">
+                      <option value="all">ทุกฝ่าย</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="content-news-filter-row content-news-filter-row-search">
+                  <div class="borrow-form-field content-news-search-field">
+                    <label class="login-label" for="contentNewsSearchInput">ค้นหา</label>
+                    <div class="content-news-search-control">
+                      <input id="contentNewsSearchInput" class="login-input" type="search" placeholder="ชื่อข่าว / สรุป / หมวด / ฝ่าย" />
+                      <button id="contentNewsFilterReset" class="content-news-clear-filter-btn" type="button" aria-label="ล้างตัวกรอง">X</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="project-table-wrapper budget-staff-table-wrapper content-news-table-wrapper">
+                <table class="budget-staff-requests-table content-admin-table">
+                  <thead>
+                    <tr>
+                      <th class="col-project">ข่าว</th>
+                      <th>วันที่</th>
+                      <th>หมวด</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="contentNewsTableBody">
+                    <tr>
+                      <td colspan="4">กำลังโหลดข่าว...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel panel-hover staff-access-panel content-news-form-panel">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">เพิ่มหรือแก้ไขข่าว</h3>
+                  <p class="panel-caption">บันทึกเป็น published เมื่อต้องการให้แสดงหน้าเว็บ</p>
+                </div>
+              </div>
+              <form id="contentNewsForm" class="staff-access-form content-admin-form" autocomplete="off">
+                <input id="contentNewsId" type="hidden" />
+
+                <div class="budget-staff-form-section">
+                  <div class="budget-staff-form-section-title">ข้อมูลข่าว</div>
+                  <div class="staff-application-position-grid budget-staff-form-grid">
+                    <div class="borrow-form-field budget-staff-form-field-full">
+                      <label class="login-label" for="contentNewsTitle">ชื่อข่าว</label>
+                      <input id="contentNewsTitle" class="login-input" type="text" required />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="contentNewsDate">วันที่ประกาศ</label>
+                      <input id="contentNewsDate" class="login-input" type="date" />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="contentNewsAcademicYear">ปีการศึกษา</label>
+                      <input id="contentNewsAcademicYear" class="login-input" type="text" inputmode="numeric" placeholder="2568" />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="contentNewsCategory">หมวดข่าว</label>
+                      <input id="contentNewsCategory" class="login-input" type="text" placeholder="ประกาศ" />
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="contentNewsAudience">ฝ่ายที่รับผิดชอบ</label>
+                      <input id="contentNewsAudience" class="login-input" type="text" placeholder="ฝ่ายการเงิน" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="budget-staff-form-section">
+                  <div class="budget-staff-form-section-title">เนื้อหาและลิงก์</div>
+                  <div class="staff-application-position-grid budget-staff-form-grid">
+                    <div class="borrow-form-field budget-staff-form-field-full">
+                      <label class="login-label" for="contentNewsSummary">สรุปข่าว</label>
+                      <textarea id="contentNewsSummary" class="login-input" rows="5"></textarea>
+                    </div>
+                    <div class="borrow-form-field budget-staff-form-field-full">
+                      <label class="login-label" for="contentNewsPreviewUrl">ลิงก์แนบ</label>
+                      <input id="contentNewsPreviewUrl" class="login-input" type="url" placeholder="https://..." />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="budget-staff-form-section">
+                  <div class="budget-staff-form-section-title">การเผยแพร่</div>
+                  <div class="staff-application-position-grid budget-staff-form-grid">
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="contentNewsStatus">สถานะ</label>
+                      <select id="contentNewsStatus" class="login-input">
+                        <option value="published">published</option>
+                        <option value="draft">draft</option>
+                        <option value="archived">archived</option>
+                      </select>
+                    </div>
+                    <div class="borrow-form-field">
+                      <label class="login-label" for="contentNewsExpireDate">วันหมดอายุ</label>
+                      <input id="contentNewsExpireDate" class="login-input" type="date" />
+                    </div>
+                    <label class="content-admin-checkbox content-news-pin-check">
+                      <input id="contentNewsPinned" type="checkbox" />
+                      <span>ปักหมุด</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="staff-access-actions budget-staff-form-actions">
+                  <button class="btn-primary" type="submit">บันทึกข่าว</button>
+                  <button id="contentNewsArchiveBtn" class="btn-ghost" type="button">Archive</button>
+                  <button id="contentNewsResetBtn" class="btn-ghost" type="button">ล้างฟอร์ม</button>
+                </div>
+                <div id="contentNewsFormMessage" class="section-text-sm" aria-live="polite"></div>
+              </form>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-view" data-page="content-documents-staff">
+        <div class="page content-management-staff-page">
+          <div class="page-header-flex section-appear">
+            <div>
+              <h1 class="page-title">จัดการเอกสารการเงิน</h1>
+              <p class="page-subtitle">เอกสารการเงินยังใช้ Google Sheet ดาวน์โหลดเป็น source หลักในช่วงนี้</p>
+            </div>
+          </div>
+
+          <section class="panel panel-hover staff-access-panel content-documents-list-panel section-appear section-delay-1">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">รายการเอกสารการเงิน</h3>
+                <p id="contentDocumentsTableCaption" class="panel-caption">กำลังโหลดเอกสาร...</p>
+              </div>
+              <div class="content-admin-actions">
+                <a
+                  id="contentDocumentsSheetLink"
+                  class="btn-primary management-link-button"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-management-link="managementLinks.downloads"
+                >
+                  เปิด Sheet
+                </a>
+                <button id="contentDocumentsRefreshBtn" class="btn-ghost" type="button">รีเฟรช</button>
+                <button id="contentDocumentsExportBtn" class="btn-ghost" type="button">Export CSV</button>
+              </div>
+            </div>
+
+            <p id="contentDocumentsMessage" class="content-admin-message" role="status" aria-live="polite"></p>
+            <div class="content-documents-filters" aria-label="ตัวกรองรายการเอกสารการเงิน">
+              <div class="content-documents-filter-row content-documents-filter-row-top">
+                <div class="borrow-form-field">
+                  <label class="login-label" for="contentDocumentsCategoryFilter">หมวดหมู่</label>
+                  <select id="contentDocumentsCategoryFilter" class="login-input">
+                    <option value="all">ทุกหมวด</option>
+                  </select>
+                </div>
+                <div class="borrow-form-field">
+                  <label class="login-label" for="contentDocumentsOrgFilter">องค์กร</label>
+                  <select id="contentDocumentsOrgFilter" class="login-input">
+                    <option value="all">ทุกองค์กร</option>
+                  </select>
+                </div>
+                <div class="borrow-form-field">
+                  <label class="login-label" for="contentDocumentsFormatFilter">ประเภทไฟล์</label>
+                  <select id="contentDocumentsFormatFilter" class="login-input">
+                    <option value="all">ทุกประเภท</option>
+                    <option value="ex">EX</option>
+                    <option value="pdf">PDF</option>
+                    <option value="docx">DOCX</option>
+                    <option value="xlsx">XLSX</option>
+                  </select>
+                </div>
+              </div>
+              <div class="content-documents-filter-row content-documents-filter-row-search">
+                <div class="borrow-form-field content-documents-search-field">
+                  <label class="login-label" for="contentDocumentsSearchInput">ค้นหา</label>
+                  <div class="content-documents-search-control">
+                    <input id="contentDocumentsSearchInput" class="login-input" type="search" placeholder="ชื่อเอกสาร / รายละเอียด / หมวด / องค์กร" />
+                    <button id="contentDocumentsFilterReset" class="content-documents-clear-filter-btn" type="button" aria-label="ล้างตัวกรอง">X</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="project-table-wrapper budget-staff-table-wrapper content-documents-table-wrapper">
+              <table class="budget-staff-requests-table content-admin-table content-documents-table">
+                <thead>
+                  <tr>
+                    <th class="col-project">เอกสาร</th>
+                    <th>หมวดหมู่</th>
+                    <th>องค์กร</th>
+                    <th>ไฟล์</th>
+                  </tr>
+                </thead>
+                <tbody id="contentDocumentsTableBody">
+                  <tr>
+                    <td colspan="4">กำลังโหลดเอกสาร...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
 
           <p class="sheet-access-note">
             ก่อนเปิด Google Sheet เพื่อแก้ไข ต้องเข้า
@@ -60,92 +285,16 @@
             ก่อน เพื่อให้บัญชีมีสิทธิ์เข้าถึงไฟล์
           </p>
 
-          <section class="sheet-guide-section section-appear section-delay-2" aria-label="คู่มือกรอกข้อมูล Google Sheet">
+          <section class="sheet-guide-section section-appear section-delay-2" aria-label="คู่มือกรอกข้อมูลเอกสารการเงิน">
             <div class="sheet-guide-header">
               <div>
                 <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
-                <h3>เริ่มจากชีตข่าวสารและเอกสารการเงิน</h3>
+                <h3>คอลัมน์ Sheet เอกสารการเงิน</h3>
               </div>
-              <p>ห้ามลบแถวหัวตารางหรือสลับคอลัมน์ เพราะระบบอ่านข้อมูลตามตำแหน่งคอลัมน์โดยตรง ถ้าต้องลบรายการ ให้ลบทั้งแถวของรายการนั้นแทน</p>
+              <p>ห้ามลบแถวหัวตารางหรือสลับคอลัมน์ เพราะระบบอ่านข้อมูลตามตำแหน่งคอลัมน์โดยตรง</p>
             </div>
 
-            <div class="sheet-guide-legend" aria-label="คำอธิบายสีแถว">
-              <span><i class="is-required"></i><strong>จำเป็น</strong> ถ้าว่างรายการจะไม่แสดงหรือข้อมูลหลักหาย</span>
-              <span><i class="is-recommended"></i><strong>ควรกรอก</strong> ไม่บังคับ แต่ช่วยให้หน้าเว็บอ่านง่ายและเรียง/จัดกลุ่มถูก</span>
-              <span><i class="is-optional"></i><strong>ไม่จำเป็น</strong> เว้นว่างได้ ระบบยังทำงาน แต่ห้ามลบหรือย้ายคอลัมน์</span>
-            </div>
-
-            <div class="sheet-guide-grid">
-              <article class="sheet-guide-card">
-                <div class="sheet-guide-card-head">
-                  <h4>ข่าวสาร</h4>
-                  <span>อ่านคอลัมน์ B-J</span>
-                </div>
-                <div class="sheet-guide-table-wrap">
-                  <table class="sheet-guide-table">
-                    <thead>
-                      <tr>
-                        <th>คอลัมน์</th>
-                        <th>หัวข้อ</th>
-                        <th>คำอธิบาย</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr class="is-optional">
-                        <td>A</td>
-                        <td>เลขรันเอกสาร</td>
-                        <td>เอาไว้อ้างอิง ติดตามเอกสาร (ถ้ามี)</td>
-                      </tr>
-                      <tr class="is-recommended">
-                        <td>B</td>
-                        <td>วันที่ประกาศ</td>
-                        <td>ใช้แสดงและเรียงข่าวล่าสุด</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>C</td>
-                        <td>ปีการศึกษา</td>
-                        <td>ใช้เป็นตัวกรอง เช่น 2568</td>
-                      </tr>
-                      <tr class="is-required">
-                        <td>D</td>
-                        <td>ชื่อข่าว</td>
-                        <td>จำเป็น ถ้าว่างทั้งแถวจะไม่แสดง</td>
-                      </tr>
-                      <tr class="is-recommended">
-                        <td>E</td>
-                        <td>สรุปข่าว</td>
-                        <td>แสดงบนการ์ดและในรายละเอียดข่าว</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>F</td>
-                        <td>ลิงก์แนบ</td>
-                        <td>ใส่ Google Drive, Docs, Sheets, Slides หรือไฟล์ที่เปิดได้</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>G</td>
-                        <td>หมวดข่าว</td>
-                        <td>ใช้เป็นตัวกรองหมวด</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>H</td>
-                        <td>กลุ่มเป้าหมาย</td>
-                        <td>ใช้เป็นตัวกรองกลุ่มผู้ชม</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>I</td>
-                        <td>วันหมดอายุ</td>
-                        <td>บันทึกไว้ได้ แต่ตอนนี้ยังไม่ซ่อนข่าวอัตโนมัติ</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>J</td>
-                        <td>ปักหมุด</td>
-                        <td>ติ๊กเพื่อปักหมุดข่าว</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </article>
-
+            <div class="sheet-guide-grid sheet-guide-grid-single">
               <article class="sheet-guide-card">
                 <div class="sheet-guide-card-head">
                   <h4>เอกสารการเงิน</h4>
@@ -161,60 +310,19 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr class="is-required">
-                        <td>A</td>
-                        <td>ชื่อเอกสาร</td>
-                        <td>จำเป็น ถ้าว่างทั้งแถวจะไม่แสดง</td>
-                      </tr>
-                      <tr class="is-recommended">
-                        <td>B</td>
-                        <td>รายละเอียด</td>
-                        <td>แสดงเป็นคำอธิบายใต้ชื่อเอกสาร</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>C</td>
-                        <td>องค์กร</td>
-                        <td>ถ้ามี ระบบจะแสดงต่อท้ายชื่อเอกสารในวงเล็บ</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>D</td>
-                        <td>ลิงก์ EX</td>
-                        <td>ลิงก์ตัวอย่างหรือไฟล์ประกอบ ใส่ - ได้ถ้าไม่มี</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>E</td>
-                        <td>ลิงก์ PDF</td>
-                        <td>ปุ่ม PDF จะแสดงเมื่อมีลิงก์</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>F</td>
-                        <td>ลิงก์ DOCX</td>
-                        <td>ปุ่ม DOCX จะแสดงเมื่อมีลิงก์</td>
-                      </tr>
-                      <tr class="is-optional">
-                        <td>G</td>
-                        <td>ลิงก์ XLSX</td>
-                        <td>ปุ่ม XLSX จะแสดงเมื่อมีลิงก์</td>
-                      </tr>
-                      <tr class="is-recommended">
-                        <td>H</td>
-                        <td>หมวดหมู่</td>
-                        <td>ใช้จัดกลุ่มและตัวกรอง ถ้าว่างจะเป็น อื่น ๆ</td>
-                      </tr>
+                      <tr class="is-required"><td>A</td><td>ชื่อเอกสาร</td><td>จำเป็น ถ้าว่างทั้งแถวจะไม่แสดง</td></tr>
+                      <tr class="is-recommended"><td>B</td><td>รายละเอียด</td><td>แสดงเป็นคำอธิบายใต้ชื่อเอกสาร</td></tr>
+                      <tr class="is-optional"><td>C</td><td>องค์กร</td><td>ถ้ามี ระบบจะแสดงต่อท้ายชื่อเอกสารในวงเล็บ</td></tr>
+                      <tr class="is-optional"><td>D</td><td>ลิงก์ EX</td><td>ลิงก์ตัวอย่างหรือไฟล์ประกอบ ใส่ - ได้ถ้าไม่มี</td></tr>
+                      <tr class="is-optional"><td>E</td><td>ลิงก์ PDF</td><td>ปุ่ม PDF จะแสดงเมื่อมีลิงก์</td></tr>
+                      <tr class="is-optional"><td>F</td><td>ลิงก์ DOCX</td><td>ปุ่ม DOCX จะแสดงเมื่อมีลิงก์</td></tr>
+                      <tr class="is-optional"><td>G</td><td>ลิงก์ XLSX</td><td>ปุ่ม XLSX จะแสดงเมื่อมีลิงก์</td></tr>
+                      <tr class="is-recommended"><td>H</td><td>หมวดหมู่</td><td>ใช้จัดกลุ่มและตัวกรอง ถ้าว่างจะเป็น อื่น ๆ</td></tr>
                     </tbody>
                   </table>
                 </div>
               </article>
             </div>
-          </section>
-
-          <section class="settings-handoff-card content-management-handoff section-appear section-delay-2">
-            <h3>หลังแก้ข้อมูล</h3>
-            <ol>
-              <li>รีเฟรชหน้าเว็บเพื่อให้แคชโหลดข้อมูลใหม่</li>
-              <li>ตรวจหน้า ข่าวสาร และแบบฟอร์มการเงินว่ารายการใหม่แสดงถูกต้อง</li>
-              <li>ถ้าลิงก์ไม่ขึ้น ให้เช็กสิทธิ์แชร์ของไฟล์หรือ Sheet ต้นทางก่อนแก้โค้ด</li>
-            </ol>
           </section>
         </div>
       </section>

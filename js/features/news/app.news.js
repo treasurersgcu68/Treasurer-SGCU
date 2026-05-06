@@ -11,6 +11,8 @@ const newsFilterState = {
 };
 let newsFilterInitialized = false;
 let newsVisibleCount = NEWS_PAGE_SIZE;
+const NEWS_CACHE_SOURCE_FIRESTORE = "firestore";
+const NEWS_CACHE_SOURCE_SHEETS = "sheets";
 
 function toggleNewsSkeleton(isLoading) {
   const homePreview = document.getElementById("homeNewsPreview");
@@ -28,11 +30,111 @@ function toggleNewsSkeleton(isLoading) {
   }
 }
 
+function normalizeNewsFirestoreDate(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value.trim();
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  if (typeof value.toDate === "function") {
+    const date = value.toDate();
+    return date instanceof Date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : "";
+  }
+  return value.toString ? value.toString().trim() : "";
+}
+
+function normalizeNewsFirestoreItem(docSnap) {
+  const data = docSnap?.data ? docSnap.data() : {};
+  const title = (data.title || "").toString().trim();
+  if (!title) return null;
+  return {
+    id: docSnap.id || data.id || `FS-NEWS-${title}`,
+    title,
+    date: normalizeNewsFirestoreDate(data.date || data.publishedAt || data.createdAt),
+    year: (data.academicYear || data.year || "").toString().trim(),
+    category: (data.category || "").toString().trim(),
+    audience: (data.audience || "").toString().trim(),
+    summary: (data.summary || data.body || "").toString().trim(),
+    previewUrl: (data.previewUrl || data.url || "").toString().trim(),
+    expireDate: normalizeNewsFirestoreDate(data.expireDate),
+    pinned: data.pinned === true
+  };
+}
+
+function sortNewsItems(list) {
+  return list.sort((a, b) => {
+    const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+    if (pinDiff !== 0) return pinDiff;
+
+    const dA = parseNewsDate(a.date);
+    const dB = parseNewsDate(b.date);
+    const tA = dA ? dA.getTime() : 0;
+    const tB = dB ? dB.getTime() : 0;
+
+    if (tA === tB) return 0;
+    return tB - tA;
+  });
+}
+
+async function loadNewsFromFirestore() {
+  const store = window.sgcuFirestore || {};
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const collectionName = appConfig.firestore?.collections?.newsItems || "newsItems";
+  if (!store.db || !store.collection || !store.getDocs) return null;
+
+  const collectionRef = store.collection(store.db, collectionName);
+  const listQuery =
+    store.query && store.where
+      ? store.query(collectionRef, store.where("status", "==", "published"))
+      : collectionRef;
+  const snapshot = await store.getDocs(listQuery);
+  const items = [];
+  snapshot.forEach((docSnap) => {
+    const item = normalizeNewsFirestoreItem(docSnap);
+    if (item) items.push(item);
+  });
+  return sortNewsItems(items);
+}
+
 async function loadNewsFromSheet() {
   try {
     toggleNewsSkeleton(true);
 
     const cached = getCache(CACHE_KEYS.NEWS, CACHE_TTL_MS);
+    if (
+      cached?.source === NEWS_CACHE_SOURCE_FIRESTORE &&
+      Array.isArray(cached.items) &&
+      cached.items.length
+    ) {
+      newsItems = cached.items;
+      clearLoadError("news");
+      renderNewsList();
+      return;
+    }
+
+    try {
+      const firestoreItems = await loadNewsFromFirestore();
+      if (Array.isArray(firestoreItems) && firestoreItems.length) {
+        newsItems = firestoreItems;
+        setCache(CACHE_KEYS.NEWS, {
+          source: NEWS_CACHE_SOURCE_FIRESTORE,
+          items: newsItems
+        });
+        clearLoadError("news");
+        renderNewsList();
+        return;
+      }
+    } catch (firestoreErr) {
+      console.warn("โหลดข่าวจาก Firestore ไม่สำเร็จ ใช้ Google Sheets fallback - app.news.js", firestoreErr);
+    }
+
+    if (cached?.source === NEWS_CACHE_SOURCE_SHEETS && Array.isArray(cached.items) && cached.items.length) {
+      newsItems = cached.items;
+      clearLoadError("news");
+      renderNewsList();
+      return;
+    }
+
     if (cached && Array.isArray(cached) && cached.length) {
       newsItems = cached;
       clearLoadError("news");
@@ -89,20 +191,12 @@ async function loadNewsFromSheet() {
     }
 
     // เรียง: ปักหมุดขึ้นก่อนเสมอ แล้วเรียงตามวันที่ออก (ล่าสุดก่อน)
-    newsItems.sort((a, b) => {
-      const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
-      if (pinDiff !== 0) return pinDiff;
+    sortNewsItems(newsItems);
 
-      const dA = parseNewsDate(a.date);
-      const dB = parseNewsDate(b.date);
-      const tA = dA ? dA.getTime() : 0;
-      const tB = dB ? dB.getTime() : 0;
-
-      if (tA === tB) return 0;
-      return tB - tA; // ใหม่กว่าก่อน
+    setCache(CACHE_KEYS.NEWS, {
+      source: NEWS_CACHE_SOURCE_SHEETS,
+      items: newsItems
     });
-
-    setCache(CACHE_KEYS.NEWS, newsItems);
     clearLoadError("news");
     renderNewsList();
   } catch (err) {

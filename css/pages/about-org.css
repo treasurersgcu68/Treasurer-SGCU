@@ -1,0 +1,623 @@
+/* =========================================
+   10) Org structure (cards layout)
+========================================= */
+
+/* บังคับทั้งโครงสร้างทีมเหรัญญิกใช้ Kanit */
+.org-tree, .org-tree * {
+  font-family: "Kanit", sans-serif;
+}
+
+/* ให้ตัวอักษรในวงกลม Initial / ชื่อ / ตำแหน่ง อ่านง่ายขึ้น */
+.org-node-role, .org-node-name, .org-node-nick, .org-node-assistant-box, #personModalName, #personModalNick, #personModalPosition, #personModalContact {
+  font-family: inherit;   /* ดึงจาก .org-tree ด้านบน */
+}
+
+.org-node-role, .org-node-name, .org-node-nick {
+  text-align: center;
+  width: 100%;
+}
+
+.org-structure-wrapper {
+  margin-top: 10px;
+}
+
+.org-term-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 6px;
+  flex-wrap: wrap;
+}
+
+.org-term-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  border-radius: 999px;
+  padding: 6px 11px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color 0.2s var(--motion-ease), border-color 0.2s var(--motion-ease), box-shadow 0.2s var(--motion-ease), background 0.2s var(--motion-ease), padding 0.2s var(--motion-ease);
+}
+
+.org-term-dot:not(.is-active) {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.org-term-dot:not(.is-active) .org-term-dot-label {
+  display: none;
+}
+
+.org-term-dot:hover,
+.org-term-dot:focus-visible {
+  color: #be185d;
+  border-color: #f9a8d4;
+  box-shadow: 0 8px 18px rgba(236, 72, 153, 0.13);
+  outline: none;
+}
+
+.org-term-dot.is-active {
+  color: #9d174d;
+  border-color: #ec4899;
+  background: #fdf2f8;
+}
+
+.org-term-dot-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  transition: background 0.2s var(--motion-ease), transform 0.2s var(--motion-ease);
+}
+
+.org-term-dot:not(.is-active) .org-term-dot-mark {
+  width: 9px;
+  height: 9px;
+}
+
+.org-term-dot.is-active .org-term-dot-mark {
+  background: #ec4899;
+  transform: scale(1.18);
+}
+
+.org-term-panels {
+  width: 100%;
+}
+
+.org-term-panel {
+  display: none;
+}
+
+.org-term-panel.is-active {
+  display: block;
+}
+
+/* Avatar (card-style org) */
+/* =========================================
+   11) ORG TREE (วงกลมใหญ่ – แผนผังเหรัญญิก)
+========================================= */
+
+.org-tree {
+  margin-top: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 11px;
+  font-family: "Kanit", sans-serif;
+}
+
+/* บังคับทุกตัวในโครงสร้างใช้ Kanit ตามกัน */
+.org-tree * {
+  font-family: inherit;
+}
+
+/* Level rows */
+
+.org-level {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 51px;
+}
+
+.org-level-secretaries {
+  gap: 77px;
+}
+
+/* node (วงกลม + text) */
+
+.org-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* ▲ จากเดิมถ้าเป็น flex-start ให้เปลี่ยนเป็น center */
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: center;
+  padding: 0;
+  max-width: 176px;
+}
+
+.org-node-circle {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  border: 3px solid #ec4899;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, #fdf2ff, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.org-node-circle.sm {
+  width: 90px;
+  height: 90px;
+}
+
+.org-node-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.org-node-circle.is-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.org-node-role {
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.org-node-name {
+  margin-top: 2px;
+}
+
+.org-node-nick {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.org-node-code {
+  margin-top: 4px;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #fdf2f8;
+  color: #be185d;
+  font-size: 9px;
+  line-height: 1.25;
+  padding: 2px 7px;
+  overflow-wrap: anywhere;
+}
+
+.org-tree-code-layout {
+  gap: 24px;
+}
+
+.org-code-top,
+.org-code-section,
+.org-code-branches {
+  width: 100%;
+}
+
+.org-code-top {
+  display: flex;
+  justify-content: center;
+}
+
+.org-code-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.org-code-section-label,
+.org-code-branch-label {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.org-code-central-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px 48px;
+  width: 100%;
+}
+
+.org-code-central-grid .org-node {
+  flex: 0 1 176px;
+}
+
+.org-code-branches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 28px 26px;
+  align-items: flex-start;
+  margin-inline: auto;
+}
+
+.org-code-branches-cols-1 {
+  max-width: 320px;
+}
+
+.org-code-branches-cols-2 {
+  max-width: 666px;
+}
+
+.org-code-branches-cols-3 {
+  max-width: 1012px;
+}
+
+.org-code-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 0 1 320px;
+  max-width: 100%;
+}
+
+.org-code-branch-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 38px;
+}
+
+.org-code-branch-label span {
+  border-radius: 999px;
+  background: #fdf2f8;
+  color: #be185d;
+  padding: 2px 9px;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.org-code-branch-label strong {
+  color: #111827;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.org-code-branch-people {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
+.org-code-zz-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  max-width: 100%;
+}
+
+.org-code-zz-label {
+  border-radius: 999px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.3;
+  padding: 2px 8px;
+}
+
+.org-code-zz-people {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px 22px;
+  width: 100%;
+}
+
+.org-code-zz-people .org-node {
+  flex: 1 1 112px;
+  min-width: 0;
+  max-width: 176px;
+}
+
+.org-code-assistant-box {
+  margin-top: 2px;
+}
+
+/* กล่องผู้ช่วย (เทา) */
+
+.org-node-assistant-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 128px;
+  padding: 3px 14px;
+  background: #f9fafb;
+  border-radius: 999px;
+  font-size: 10px;
+  white-space: nowrap;
+  border: 1px solid #e5e7eb;
+}
+
+/* layout main branches */
+
+.org-level-main-branches {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
+.org-left-asst {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 22px;
+}
+
+.org-right-branches {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 38px;
+  padding-top: 32px;
+}
+
+/* Branch groups */
+
+.org-branch {
+  position: relative;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* หัว + รอง (ใช้ร่วมทุก branch) */
+.org-branch-head, .org-branch-dep {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.org-branch-head {
+  gap: 13px;
+}
+
+.org-branch-dep {
+  margin-top: 8px;
+}
+
+/* ===== เคสฝ่ายบริหารและพัฒนางบประมาณ ===== */
+/* บังคับให้รองประธานอยู่กึ่งกลางใต้ประธานแบบตรงเป๊ะ */
+
+.org-branch-budget {
+  align-items: center;
+}
+
+.org-branch-budget .org-branch-head, .org-branch-budget .org-branch-dep {
+  justify-content: center;
+  width: 100%;
+}
+
+.org-branch-budget .org-branch-dep .org-node {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* กล่องผู้ช่วยใต้แต่ละ branch */
+
+.org-branch-assistant {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+/* แถวรองประธาน บริหารงบ + หาทุนฯ ให้อยู่บรรทัดเดียวกันและไม่ทับกัน */
+.org-level-depfund {
+  display: flex;
+  justify-content: center;
+  gap: 2.4rem;          /* ระยะห่างระหว่างสองวงกลม ปรับได้ */
+  flex-wrap: nowrap;  /* บังคับให้อยู่บรรทัดเดียวกันบนจอใหญ่ */
+  margin-top: 10px;
+}
+
+/* จำกัดความกว้าง node ให้ตัวอักษรไม่ล้ำไปทับกัน */
+.org-level-depfund .org-node {
+  max-width: 176px;   /* กว้างพอให้ชื่อ 2–3 บรรทัด แต่ไม่ล้ำไปหาอีกวงกลม */
+  /* flex: 0 0 auto; */
+}
+
+/* กล่องรองประธานฝ่ายหาทุนและสิทธิประโยชน์ – ให้ 2 คนอยู่บรรทัดเดียวกัน */
+.org-branch-dep.org-level-depfund {
+  display: flex;
+  flex-direction: row;      /* วางแนวนอน */
+  justify-content: center;  /* จัดกลาง */
+  align-items: flex-start;
+  gap: 1.6rem;                /* ระยะห่างระหว่างสองคน */
+  flex-wrap: nowrap;        /* ▲ บังคับไม่ให้ตกรอบ */
+  margin-top: 10px;
+}
+/* ถ้าจอเล็กมาก ค่อยอนุญาตให้หักบรรทัดได้ */
+@media (max-width: 640px) {
+  .org-branch-dep.org-level-depfund {
+    flex-wrap: wrap;
+  }
+}
+
+/* ประธานกายภาพ 2 คน */
+
+.org-level-asset-heads {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 48px;
+  margin-bottom: 10px;
+}
+
+/* เส้นทั้งหมดใน org-tree ปิดการแสดงผล */
+
+.org-line-vertical, .org-connector-wide, .org-branch::before, .org-level-asset-heads::before, .org-tree::before, .org-tree::after, .org-level::before, .org-level::after {
+  display: none !important;
+}
+
+/* Responsive – org tree */
+
+@media (max-width: 900px) {
+  .org-tree {
+    font-size: 10px;
+  }
+
+  .org-level {
+    gap: 26px;
+  }
+
+  .org-level-main-branches {
+    grid-template-columns: 1fr;
+    row-gap: 20px;
+  }
+
+  .org-left-asst {
+    padding-top: 13px;
+  }
+
+  .org-right-branches {
+    flex-direction: column;
+    gap: 26px;
+    padding-top: 19px;
+  }
+
+  .org-code-branches-cols-3 {
+    max-width: 666px;
+  }
+}
+
+@media (max-width: 600px) {
+  .org-node-circle {
+    width: 80px;
+    height: 80px;
+  }
+  .org-node-circle.sm {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* มือถือ / แท็บเล็ตแนวตั้ง: วาง Org Chart เป็นแนวตั้งทีละแถว */
+@media (max-width: 768px) {
+
+  /* แต่ละ level ไม่ต้องกางกว้างมาก */
+  .org-level {
+    flex-direction: column;
+    gap: 19px;
+  }
+
+  /* กลุ่ม main branches: จาก 2 คอลัมน์ → 1 คอลัมน์ */
+  .org-level-main-branches {
+    grid-template-columns: 1fr;
+    row-gap: 19px;
+  }
+
+  /* กล่องผู้ช่วยส่วนกลางอยู่แถวบนสุด ตรงกลาง */
+  .org-left-asst {
+    justify-content: center;
+    padding-top: 6px;
+    margin-bottom: 6px;
+  }
+
+  /* สาม branch (บริหารงบ / หาทุนฯ / กายภาพฯ) ซ้อนกันทีละแถว */
+  .org-right-branches {
+    flex-direction: column;
+    align-items: center;
+    gap: 26px;
+    padding-top: 0;
+  }
+
+  .org-branch {
+    width: 100%;
+    align-items: center;
+  }
+
+  .org-branch-head, .org-branch-dep {
+    justify-content: center;
+  }
+
+  /* รองประธานฝ่ายหาทุนฯ: จอเล็กให้ซ้อนแนวตั้งแทนแนวนอน */
+  .org-level-depfund {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  /* ประธานกายภาพ 2 คน: จอเล็กให้ซ้อนกันทีละแถว */
+  .org-level-asset-heads {
+    flex-direction: column;
+    gap: 13px;
+    margin-bottom: 6px;
+  }
+
+  /* จำกัดความกว้าง node ไม่ให้กินจอทั้งแถบ */
+  .org-node {
+    max-width: 160px;
+    margin-inline: auto;
+  }
+
+  .org-code-central-grid,
+  .org-code-zz-people {
+    gap: 16px 12px;
+  }
+
+  .org-code-central-grid .org-node,
+  .org-code-zz-people .org-node {
+    flex-basis: 146px;
+  }
+
+  .org-node-code {
+    font-size: 8px;
+    padding-inline: 5px;
+  }
+
+  .org-code-branches-cols-2,
+  .org-code-branches-cols-3 {
+    max-width: 320px;
+  }
+}
+
+/* จอเล็กมาก เพิ่มย่อวงกลมลงอีกนิด */
+@media (max-width: 600px) {
+  .org-node-circle {
+    width: 80px;
+    height: 80px;
+  }
+  .org-node-circle.sm {
+    width: 64px;
+    height: 64px;
+  }
+}

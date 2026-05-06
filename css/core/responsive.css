@@ -1,0 +1,1202 @@
+/* =========================================
+   18) Responsive (global)
+========================================= */
+
+@media (min-width: 841px) {
+  .desktop-nav {
+    display: flex;
+  }
+  .burger {
+    display: none;
+  }
+}
+
+@media (max-width: 840px) {
+  .desktop-nav {
+    display: none;
+  }
+  .burger {
+    display: block;
+  }
+  .chart-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .page-header-flex {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .calendar-grid {
+    font-size: 10px;
+  }
+  .footer-inner {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+/* Filter & cards – responsive columns */
+
+@media (max-width: 1024px) {
+  .filter-bar, .cards, .calendar-filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-lower {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-year, .filter-orgtype, .filter-org {
+    grid-column: span 2;
+  }
+
+  .filter-search {
+    grid-column: 1 / -1;
+  }
+
+  .assets-filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .assets-filter-bar .filter-search {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-bar, .cards, .calendar-filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .about-card h2 {
+    font-size: 16px;
+  }
+
+  .about-page .home-section-header h2 {
+    font-size: 18px;
+  }
+
+  .about-page .home-scope-pills {
+    justify-content: center;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .filter-group {
+    min-width: 0;
+  }
+  .filter-search {
+    grid-column: 1 / -1;
+  }
+
+  /* ปฏิทิน: เพิ่มพื้นที่แตะ + เลื่อนแนวนอน */
+  .calendar-controls {
+    width: 100%;
+  }
+  .calendar-grid-scroll {
+    margin: 0 -12px;
+    padding: 0 12px 6px;
+  }
+  .calendar-grid {
+    min-width: 560px;
+    font-size: 10px;
+    gap: 3px;
+  }
+  .calendar-weekday-row {
+    min-width: 560px;
+    gap: 3px;
+  }
+  .calendar-weekday {
+    font-size: 10px;
+  }
+  .calendar-skeleton {
+    min-width: 560px;
+  }
+  .calendar-day {
+    min-height: 80px;
+    padding: 6px;
+  }
+  .calendar-day-header {
+    font-size: 12px;
+  }
+  .calendar-event {
+    font-size: 10px;
+  }
+
+  .meeting-booking-detail-item {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .meeting-booking-detail-summary {
+    grid-template-columns: 1fr;
+  }
+  .borrow-request-detail-summary {
+    grid-template-columns: 1fr;
+  }
+  .borrow-request-detail-item {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* Tighter mobile spacing & stacking */
+@media (max-width: 720px) {
+  .header-inner {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    min-width: 0;
+  }
+  .logo-text {
+    min-width: 0;
+  }
+  .logo-title {
+    font-size: 13px;
+  }
+  .logo-subtitle {
+    display: none;
+  }
+  .header-actions {
+    margin-left: auto;
+    gap: 6px;
+  }
+  .auth-panel {
+    font-size: 11px;
+  }
+  .auth-user {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .main {
+    padding: 14px max(12px, env(safe-area-inset-right, 0px))
+      calc(28px + env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px));
+  }
+  .home-hero {
+    padding: 32px 0 28px;
+    min-height: auto;
+  }
+  .home-hero-inner {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .home-hero-text {
+    width: 100%;
+    text-align: center;
+  }
+  .home-hero-subtitle {
+    max-width: none;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .home-hero-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .home-hero-actions .btn-primary, .home-hero-actions .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+  .home-hero-highlight {
+    width: 100%;
+    justify-content: center;
+  }
+  .home-hero-badge-img {
+    width: 200px;
+  }
+  .home-news-grid, .home-scope-grid {
+    gap: 12px;
+  }
+  #projectTable th, #projectTable td, #projectTableStaff th, #projectTableStaff td, #longestOpenTableStaff th, #longestOpenTableStaff td {
+    padding: 0.45rem 0.55rem;
+    font-size: 12px;
+  }
+  .project-table-wrapper {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #projectTable, #projectTableStaff, #longestOpenTableStaff {
+    min-width: 720px;
+  }
+  #longestOpenTableStaff {
+    width: 100%;
+  }
+  .calendar-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+  .calendar-controls .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 840px) {
+  .mobile-menu a,
+  .mobile-menu-group summary,
+  .mobile-menu .mobile-menu-logout,
+  .auth-btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    min-height: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .burger:hover,
+  .mobile-menu a:hover,
+  .mobile-menu .mobile-menu-logout:hover,
+  .nav-pill:hover,
+  .nav-group-toggle:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* Mobile usability refinements */
+@media (max-width: 640px) {
+  .page-view[data-page="meeting-room-staff"],
+  .page-view[data-page="meeting-room-staff"] .page,
+  .page-view[data-page="meeting-room-staff"] .panel,
+  .page-view[data-page="meeting-room-staff"] .panel-body,
+  .page-view[data-page="meeting-room-staff"] .panel-header {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .page-view[data-page="meeting-room-staff"] .panel-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start;
+  }
+
+  .page-view[data-page="meeting-room-staff"] .panel-header > *,
+  .page-view[data-page="meeting-room-staff"] .panel-header > div,
+  .page-view[data-page="meeting-room-staff"] .tabs,
+  .page-view[data-page="meeting-room-staff"] .filter-group,
+  .page-view[data-page="meeting-room-staff"] .search-box {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .page-view[data-page="meeting-room-staff"] .tabs.panel-header-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 1 / -1;
+    overflow: visible;
+  }
+
+  .page-view[data-page="meeting-room-staff"] .tabs.panel-header-tabs .tab-btn {
+    min-width: 0;
+    width: 100%;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  #meetingRoomExportCsvBtn {
+    justify-self: end;
+    width: auto;
+    margin-left: auto;
+    justify-content: center;
+  }
+
+  #meetingRoomHistorySearchWrap,
+  .meeting-history-filter-bar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .meeting-history-filter-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .meeting-history-filter-bar input,
+  .meeting-history-filter-bar select,
+  .meeting-history-filter-bar .search-box input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #meetingRoomStaffCalendarPanel .meeting-calendar-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
+    justify-content: stretch;
+  }
+
+  #meetingRoomStaffCalendarPanel .meeting-calendar-toolbar .btn-ghost {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  #meetingRoomStaffCalendarPanel .calendar-grid-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  #meetingRoomStaffCalendarPanel .calendar-weekday-row,
+  #meetingRoomStaffCalendarPanel .calendar-grid {
+    min-width: 520px;
+  }
+
+  .meeting-room-manage-row,
+  .meeting-room-holiday-panel .meeting-room-manage-row,
+  .meeting-room-manage-item,
+  .meeting-room-manage-actions,
+  .meeting-room-manage-edit-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .meeting-room-manage-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .meeting-room-manage-actions .btn-primary,
+  .meeting-room-manage-actions .btn-ghost,
+  .meeting-room-manage-btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  .meeting-room-manage-name,
+  .meeting-room-manage-access-pill,
+  .meeting-row-meta {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #staffMeetingAll table td {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  #staffMeetingAll table td > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #staffMeetingAll table td[data-label="วัตถุประสงค์"] {
+    align-items: start;
+  }
+
+  #staffMeetingAll .meeting-staff-purpose-cell {
+    max-height: 96px;
+    max-width: 100%;
+    overflow: auto;
+    color: #374151;
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #staffMeetingAll .meeting-staff-purpose-cell .meeting-row-meta {
+    margin-top: 6px;
+  }
+
+  #staffMeetingAll .staff-status-select {
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .page {
+    padding-top: 4px;
+  }
+
+  .page-header-flex,
+  .panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .panel-header:has(> .panel-header-tabs) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .panel-header:has(> .csv-export-btn):not(:has(> .panel-header-tabs)) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .panel-header:has(> .panel-header-tabs) > .panel-header-tabs {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .page-header-flex > *,
+  .panel-header > * {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .panel-header > .csv-export-btn {
+    width: auto;
+    margin-left: auto;
+  }
+
+  .page-title {
+    font-size: 18px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .page-subtitle,
+  .page-meta,
+  .panel-caption {
+    line-height: 1.45;
+  }
+
+  .tabs {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    justify-content: flex-start;
+    border-radius: 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn,
+  .view-toggle-btn {
+    flex: 1 0 auto;
+    min-height: 40px;
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+
+  .table-wrapper,
+  .calendar-grid-scroll,
+  .borrow-request-assets-wrap,
+  .modal-table-wrap {
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #projectTable,
+  #projectTableStaff,
+  #longestOpenTableStaff {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  #projectTable caption,
+  #projectTableStaff caption,
+  #longestOpenTableStaff caption {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  #projectTable thead,
+  #projectTableStaff thead,
+  #longestOpenTableStaff thead {
+    display: none;
+  }
+
+  #projectTable tbody,
+  #projectTableStaff tbody,
+  #longestOpenTableStaff tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  #projectTable tr.project-row,
+  #projectTableStaff tr.project-row,
+  #longestOpenTableStaff tr.project-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(148, 163, 184, 0.16);
+  }
+
+  #projectTable tbody > tr:not(.project-row),
+  #projectTableStaff tbody > tr:not(.project-row),
+  #longestOpenTableStaff tbody > tr:not(.project-row) {
+    display: block;
+    padding: 12px;
+    border: 1px dashed rgba(236, 72, 153, 0.2);
+    border-radius: 14px;
+    background: #ffffff;
+  }
+
+  #projectTable tr.project-row:hover,
+  #projectTableStaff tr.project-row:hover,
+  #longestOpenTableStaff tr.project-row:hover {
+    background: #ffffff;
+  }
+
+  #projectTable tr.project-row-advance,
+  #projectTableStaff tr.project-row-advance,
+  #longestOpenTableStaff tr.project-row-advance {
+    border-color: rgba(220, 38, 38, 0.28);
+    box-shadow: inset 4px 0 0 #dc2626, 0 8px 22px rgba(148, 163, 184, 0.16);
+  }
+
+  /* longest-open: avoid per-cell red blocks on mobile card layout */
+  #longestOpenTableStaff tr.project-row-advance {
+    background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+  }
+
+  #longestOpenTableStaff tr.project-row-advance td {
+    background: transparent;
+  }
+
+  #longestOpenTableStaff tr.project-row-advance td:first-child {
+    box-shadow: none;
+  }
+
+  #projectTable td,
+  #projectTableStaff td,
+  #longestOpenTableStaff td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    border-bottom: 0;
+    text-align: right;
+    white-space: normal;
+  }
+
+  #projectTable td::before,
+  #projectTableStaff td::before,
+  #longestOpenTableStaff td::before {
+    content: "";
+    flex: 0 0 92px;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  #projectTable td:nth-child(1)::before,
+  #projectTableStaff td:nth-child(1)::before,
+  #longestOpenTableStaff td:nth-child(1)::before {
+    content: "รหัส";
+  }
+
+  #projectTable td:nth-child(2)::before,
+  #projectTableStaff td:nth-child(2)::before,
+  #longestOpenTableStaff td:nth-child(2)::before {
+    content: "โครงการ";
+  }
+
+  #projectTable td:nth-child(3)::before,
+  #projectTableStaff td:nth-child(3)::before {
+    content: "สถานะ";
+  }
+
+  #projectTable td:nth-child(4)::before,
+  #projectTableStaff td:nth-child(4)::before {
+    content: "งบประมาณ";
+  }
+
+  /* longest-open table uses a different column schema on mobile */
+  #longestOpenTableStaff td:nth-child(3)::before {
+    content: "ผู้รับผิดชอบ";
+  }
+
+  #longestOpenTableStaff td:nth-child(4)::before {
+    content: "สถานะปิดโครงการ";
+  }
+
+  #longestOpenTableStaff td:nth-child(5)::before {
+    content: "ยอดวันที่ค้าง";
+  }
+
+  #projectTable td[colspan],
+  #projectTableStaff td[colspan],
+  #longestOpenTableStaff td[colspan] {
+    display: block;
+    text-align: center;
+  }
+
+  #projectTable td[colspan]::before,
+  #projectTableStaff td[colspan]::before,
+  #longestOpenTableStaff td[colspan]::before {
+    display: none;
+  }
+
+  #projectTable td.col-name,
+  #projectTableStaff td.col-name,
+  #longestOpenTableStaff td.col-name {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    text-align: left;
+  }
+
+  #projectTable td.col-code,
+  #projectTableStaff td.col-code,
+  #longestOpenTableStaff td.col-code {
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+    text-align: left;
+    color: #9f1239;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  #projectTable td.col-status,
+  #projectTableStaff td.col-status,
+  #longestOpenTableStaff td.col-status {
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  #projectTable td.col-year,
+  #projectTableStaff td.col-year,
+  #longestOpenTableStaff td.col-year,
+  #projectTable td.col-budget,
+  #projectTableStaff td.col-budget,
+  #longestOpenTableStaff td.col-budget {
+    grid-column: 1 / -1;
+  }
+
+  #longestOpenTableStaff td.col-assistant {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+    align-items: flex-start;
+    text-align: right;
+    gap: 10px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  #projectTable td.col-code::before,
+  #projectTableStaff td.col-code::before,
+  #longestOpenTableStaff td.col-code::before,
+  #projectTable td.col-status::before,
+  #projectTableStaff td.col-status::before,
+  #longestOpenTableStaff td.col-status::before,
+  #projectTable td.col-name::before,
+  #projectTableStaff td.col-name::before,
+  #longestOpenTableStaff td.col-name::before {
+    display: none;
+  }
+
+  #projectTable td.col-name > *,
+  #projectTableStaff td.col-name > *,
+  #longestOpenTableStaff td.col-name > * {
+    min-width: 0;
+  }
+
+  #projectTable .project-name,
+  #projectTableStaff .project-name,
+  #longestOpenTableStaff .project-name {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  #projectTable .project-org,
+  #projectTableStaff .project-org,
+  #longestOpenTableStaff .project-org {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .budget-staff-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .budget-staff-requests-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .budget-staff-requests-table thead {
+    display: none;
+  }
+
+  .budget-staff-requests-table tbody {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .budget-staff-requests-table .budget-staff-request-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(148, 163, 184, 0.16);
+  }
+
+  .budget-staff-requests-table .budget-staff-request-row:hover {
+    background: #ffffff;
+  }
+
+  .budget-staff-requests-table td {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: auto;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    text-align: right;
+    white-space: normal;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .budget-staff-requests-table td::before {
+    content: attr(data-label);
+    flex: 0 0 106px;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  .budget-staff-requests-table td.col-code {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    color: #9f1239;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left;
+    overflow-wrap: anywhere;
+    width: 100%;
+  }
+
+  .budget-staff-requests-table td.col-code code {
+    display: inline-flex;
+    max-width: 100%;
+    border-radius: 999px;
+    background: #fff7fb;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    padding: 4px 9px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .budget-staff-requests-table td.col-code::before,
+  .budget-staff-requests-table td.col-status::before,
+  .budget-staff-requests-table td.col-project::before {
+    display: none;
+  }
+
+  .budget-staff-requests-table td.col-status {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    text-align: left;
+    width: 100%;
+  }
+
+  .budget-staff-requests-table td.col-status .badge {
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.35;
+  }
+
+  .budget-staff-requests-table td.col-project {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    text-align: left;
+    width: 100%;
+  }
+
+  .budget-staff-requests-table td.col-money {
+    min-width: 0;
+  }
+
+  .budget-staff-requests-table td.col-money {
+    display: grid;
+    align-content: start;
+    justify-content: stretch;
+    gap: 4px;
+    grid-column: auto;
+    grid-row: 4;
+    padding: 10px;
+    border-radius: 12px;
+    background: #f8fafc;
+    text-align: left;
+  }
+
+  .budget-staff-requests-table td.col-money::before {
+    flex: none;
+    color: #64748b;
+    font-size: 11px;
+  }
+
+  .budget-staff-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    white-space: normal;
+  }
+
+  .budget-staff-row-actions .btn-ghost {
+    justify-content: center;
+    width: 100%;
+  }
+
+  #staffMeetingAll .table-wrapper,
+  #staffApprovalPendingPanel .project-table-wrapper,
+  #orgRepresentativeApprovalSection .project-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  #staffMeetingAll .table-wrapper {
+    max-height: min(62vh, 520px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  #staffMeetingAll table,
+  #staffApprovalPendingTable,
+  #staffApprovalHistoryTable,
+  #orgRepresentativePendingTable,
+  #orgRepresentativeHistoryTable,
+  #budgetApprovalRequestsTable {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  #staffMeetingAll table thead,
+  #staffApprovalPendingTable thead,
+  #staffApprovalHistoryTable thead,
+  #orgRepresentativePendingTable thead,
+  #orgRepresentativeHistoryTable thead,
+  #budgetApprovalRequestsTable thead {
+    display: none;
+  }
+
+  #staffMeetingAll table tbody,
+  #staffApprovalPendingTable tbody,
+  #staffApprovalHistoryTable tbody,
+  #orgRepresentativePendingTable tbody,
+  #orgRepresentativeHistoryTable tbody,
+  #budgetApprovalRequestsTable tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  #staffMeetingAll table tr,
+  #staffApprovalPendingTable tr,
+  #staffApprovalHistoryTable tr,
+  #orgRepresentativePendingTable tr,
+  #orgRepresentativeHistoryTable tr,
+  #budgetApprovalRequestsTable tr {
+    display: block;
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(148, 163, 184, 0.16);
+  }
+
+  #staffMeetingAll table td,
+  #staffApprovalPendingTable td,
+  #staffApprovalHistoryTable td,
+  #orgRepresentativePendingTable td,
+  #orgRepresentativeHistoryTable td,
+  #budgetApprovalRequestsTable td {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 6px 12px;
+    width: 100%;
+    padding: 7px 0;
+    border: 0;
+    text-align: left !important;
+    white-space: normal;
+    align-items: start;
+    overflow-wrap: anywhere;
+  }
+
+  #staffMeetingAll table td::before,
+  #staffApprovalPendingTable td::before,
+  #staffApprovalHistoryTable td::before,
+  #orgRepresentativePendingTable td::before,
+  #orgRepresentativeHistoryTable td::before,
+  #budgetApprovalRequestsTable td::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  #staffMeetingAll table td[colspan],
+  #staffApprovalPendingTable td[colspan],
+  #staffApprovalHistoryTable td[colspan],
+  #orgRepresentativePendingTable td[colspan],
+  #orgRepresentativeHistoryTable td[colspan],
+  #budgetApprovalRequestsTable td[colspan] {
+    display: block;
+    text-align: center !important;
+  }
+
+  #staffMeetingAll table td[colspan]::before,
+  #staffApprovalPendingTable td[colspan]::before,
+  #staffApprovalHistoryTable td[colspan]::before,
+  #orgRepresentativePendingTable td[colspan]::before,
+  #orgRepresentativeHistoryTable td[colspan]::before,
+  #budgetApprovalRequestsTable td[colspan]::before {
+    content: none;
+  }
+
+  #staffMeetingAll .staff-status-select,
+  #staffApprovalPendingTable .staff-status-select,
+  #orgRepresentativePendingTable .staff-status-select,
+  #orgRepresentativeHistoryTable .staff-status-select,
+  #staffApprovalPendingTable .login-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #budgetApprovalRequestsTable .budget-request-history-row.is-editable {
+    cursor: pointer;
+  }
+
+  #budgetApprovalRequestsTable td[data-label="รายการโครงการ"] > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .page-view[data-page="staff-approval"] .project-table-wrapper {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  #staffApprovalPendingTable tbody,
+  #staffApprovalHistoryTable tbody,
+  #orgRepresentativePendingTable tbody,
+  #orgRepresentativeHistoryTable tbody {
+    gap: 12px;
+  }
+
+  #staffApprovalPendingTable tr,
+  #staffApprovalHistoryTable tr,
+  #orgRepresentativePendingTable tr,
+  #orgRepresentativeHistoryTable tr {
+    padding: 14px;
+    border-color: rgba(148, 163, 184, 0.24);
+    border-radius: 12px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  #staffApprovalPendingTable td,
+  #staffApprovalHistoryTable td,
+  #orgRepresentativePendingTable td,
+  #orgRepresentativeHistoryTable td {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 4px 10px;
+    padding: 8px 0;
+    line-height: 1.45;
+  }
+
+  #staffApprovalPendingTable td:first-child,
+  #staffApprovalHistoryTable td:first-child,
+  #orgRepresentativePendingTable td:first-child,
+  #orgRepresentativeHistoryTable td:first-child {
+    display: block;
+    padding: 0 0 10px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  #staffApprovalPendingTable td:first-child::before,
+  #staffApprovalHistoryTable td:first-child::before,
+  #orgRepresentativePendingTable td:first-child::before,
+  #orgRepresentativeHistoryTable td:first-child::before {
+    content: none;
+  }
+
+  #staffApprovalPendingTable td:first-child > div:first-child,
+  #staffApprovalHistoryTable td:first-child > div:first-child,
+  #orgRepresentativePendingTable td:first-child > div:first-child,
+  #orgRepresentativeHistoryTable td:first-child > div:first-child {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  #staffApprovalPendingTable .section-text-sm,
+  #staffApprovalHistoryTable .section-text-sm,
+  #orgRepresentativePendingTable .section-text-sm,
+  #orgRepresentativeHistoryTable .section-text-sm {
+    margin-top: 2px;
+    color: #64748b;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #staffApprovalPendingTable td[data-label="ตำแหน่งที่ขอ"],
+  #staffApprovalPendingTable td[data-label="จัดการคำขอ"],
+  #orgRepresentativePendingTable td[data-label="จัดการคำขอ"],
+  #orgRepresentativeHistoryTable td[data-label="จัดการสิทธิ์"] {
+    display: block;
+    padding-top: 10px;
+  }
+
+  #staffApprovalPendingTable td[data-label="ตำแหน่งที่ขอ"]::before,
+  #staffApprovalPendingTable td[data-label="จัดการคำขอ"]::before,
+  #orgRepresentativePendingTable td[data-label="จัดการคำขอ"]::before,
+  #orgRepresentativeHistoryTable td[data-label="จัดการสิทธิ์"]::before {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  #orgRepresentativePendingTable td[data-label="องค์กร"] > div,
+  #orgRepresentativeHistoryTable td[data-label="องค์กร"] > div {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  #orgRepresentativePendingTable td[data-label="องค์กร"] > div:first-child,
+  #orgRepresentativeHistoryTable td[data-label="องค์กร"] > div:first-child {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #orgRepresentativePendingTable td[data-label="องค์กร"] .section-text-sm,
+  #orgRepresentativeHistoryTable td[data-label="องค์กร"] .section-text-sm {
+    display: block;
+    max-width: 100%;
+    margin-top: 2px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  #staffApprovalPendingTable .staff-approval-position-input,
+  #staffApprovalPendingTable .staff-status-select,
+  #orgRepresentativePendingTable .staff-status-select,
+  #orgRepresentativeHistoryTable .staff-status-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .meeting-secondary-actions,
+  .modal-actions,
+  .borrow-request-detail-actions,
+  .borrow-action-reason-meta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meeting-secondary-actions #meetingToggleRescheduleForm {
+    margin-left: 0;
+  }
+
+  .modal-actions .btn-primary,
+  .modal-actions .btn-ghost,
+  .borrow-request-detail-actions .btn-primary,
+  .borrow-request-detail-actions .btn-ghost,
+  .borrow-staff-status-select {
+    width: 100%;
+    justify-content: center;
+  }
+}

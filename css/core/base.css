@@ -1,0 +1,80 @@
+/* =========================================
+   1) Base & Global
+========================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --motion-fast: 160ms;
+  --motion-medium: 320ms;
+  --theme-pink-50: #fff1f2;
+  --theme-pink-100: #ffe4f1;
+  --theme-pink-200: #fecdd3;
+  --theme-pink-300: #f9a8d4;
+  --theme-pink-400: #f472b6;
+  --theme-pink-500: #ec4899;
+  --theme-pink-600: #db2777;
+  --theme-pink-700: #be185d;
+  --theme-pink-800: #9d174d;
+  --theme-bg: radial-gradient(circle at top right, #fff1f2, #fdf2ff 45%, #fff7f0 100%);
+  --theme-gradient: linear-gradient(135deg, #ec4899, #db2777);
+  --theme-shadow: rgba(236, 72, 153, 0.35);
+  --theme-border: rgba(236, 72, 153, 0.25);
+  --theme-focus: rgba(236, 72, 153, 0.25);
+  --menu-glass-bg: rgba(255, 255, 255, 0.86);
+  --menu-glass-border: rgba(236, 72, 153, 0.2);
+  --menu-shadow: 0 14px 34px rgba(157, 23, 77, 0.14);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Kanit", sans-serif;
+  background: var(--theme-bg);
+  color: #111827;
+  scroll-behavior: smooth;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+body.has-modal {
+  overflow: hidden;
+}
+
+body.mobile-menu-open {
+  overflow: hidden;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+/* Focus styles for keyboard navigation */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .tab-btn:focus-visible, .scope-pill:focus-visible, .mobile-menu a:focus-visible {
+  outline: 2px solid var(--theme-pink-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--theme-focus);
+  border-radius: 10px;
+}
+
+.mobile-menu button:focus-visible, .burger:focus-visible {
+  outline: 2px solid var(--theme-pink-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--theme-focus);
+  border-radius: 10px;
+}
+
+.modal-close:focus-visible, .person-modal-close:focus-visible {
+  outline: 2px solid var(--theme-pink-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--theme-focus);
+}

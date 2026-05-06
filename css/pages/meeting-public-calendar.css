@@ -1,0 +1,295 @@
+.meeting-public-calendar-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-top: 24px;
+  padding-bottom: 40px;
+}
+
+.meeting-public-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.meeting-public-home-link {
+  white-space: nowrap;
+}
+
+.meeting-public-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.meeting-public-legend-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.meeting-public-legend-pill.is-approved {
+  background: #ffe4f1;
+  color: #be185d;
+}
+
+.meeting-public-legend-pill.is-pending {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.meeting-public-legend-pill.is-requested {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.meeting-calendar-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.meeting-calendar-title-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 840px) {
+  .borrow-my-requests-cards {
+    display: grid;
+    gap: 10px;
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .meeting-public-calendar-page {
+    padding-top: 18px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .meeting-public-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meeting-public-home-link {
+    width: fit-content;
+  }
+
+  .meeting-public-calendar-page .panel-header {
+    gap: 10px;
+  }
+
+  .meeting-public-calendar-page .meeting-calendar-toolbar {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .meeting-public-calendar-page .meeting-calendar-toolbar .btn-ghost {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .meeting-public-calendar-page .calendar-grid-scroll {
+    margin: 0 -4px;
+    padding: 0 4px 6px;
+  }
+
+  .meeting-public-calendar-page .calendar-grid,
+  .meeting-public-calendar-page .calendar-weekday-row {
+    min-width: 520px;
+  }
+
+  .meeting-public-calendar-page .calendar-day {
+    min-height: 76px;
+    padding: 5px;
+  }
+
+  .meeting-public-calendar-page .calendar-day-header {
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .meeting-public-calendar-page .calendar-event {
+    font-size: 9.5px;
+    padding: 3px 5px;
+  }
+
+  .meeting-public-calendar-page .meeting-public-legend {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .meeting-public-calendar-page .meeting-public-legend-pill {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  #meetingPublicBookingDayModal .modal-dialog {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px) !important;
+    margin: 0 auto;
+  }
+
+  #meetingPublicBookingDayModal .modal-body {
+    padding: 12px;
+  }
+
+  #meetingPublicBookingDayModal .modal-table {
+    min-width: 620px;
+  }
+}
+
+@media (max-width: 768px) {
+  .budget-staff-list-panel,
+  .budget-staff-list-panel .panel-header,
+  .budget-staff-table-wrapper,
+  .budget-staff-requests-table,
+  .budget-staff-requests-table tbody,
+  .budget-staff-requests-table .budget-staff-request-row {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .budget-staff-table-wrapper {
+    overflow: visible !important;
+  }
+
+  .budget-staff-requests-table {
+    display: block !important;
+    table-layout: fixed !important;
+  }
+
+  .budget-staff-requests-table thead {
+    display: none !important;
+  }
+
+  .budget-staff-requests-table tbody {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  .budget-staff-requests-table .budget-staff-request-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+  }
+
+  .budget-staff-requests-table td {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: auto !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .budget-staff-requests-table td.col-code,
+  .budget-staff-requests-table td.col-project,
+  .budget-staff-requests-table td.col-status {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  .budget-staff-requests-table td.col-money {
+    grid-column: auto !important;
+    width: auto !important;
+  }
+
+  .budget-staff-requests-table td.col-money::before {
+    flex: none !important;
+  }
+
+  .budget-staff-row-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 840px) {
+  #orgRepresentativeApprovalSection,
+  #orgRepresentativeApprovalSection *,
+  #orgRepresentativeApprovalSection *::before,
+  #orgRepresentativeApprovalSection *::after {
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  #orgRepresentativeApprovalSection .panel,
+  #orgRepresentativeApprovalSection .project-table-wrapper,
+  #orgRepresentativeOverviewContent,
+  #orgRepresentativeOverviewTable,
+  #orgRepresentativeOverviewTable tbody,
+  #orgRepresentativeOverviewTable tr,
+  #orgRepresentativeOverviewTable td {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #orgRepresentativeApprovalSection .panel {
+    overflow: visible;
+  }
+
+  #orgRepresentativeApprovalSection .project-table-wrapper {
+    max-height: none !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  #orgRepresentativeOverviewTable {
+    display: block !important;
+    table-layout: fixed !important;
+    border-collapse: separate;
+  }
+
+  #orgRepresentativeOverviewTable thead {
+    display: none !important;
+  }
+
+  #orgRepresentativeOverviewTable tbody {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  #orgRepresentativeOverviewTable tr {
+    display: block !important;
+    padding: 12px !important;
+    overflow: hidden;
+  }
+
+  #orgRepresentativeOverviewTable td {
+    display: block !important;
+    padding: 8px 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  #orgRepresentativeOverviewTable td::before {
+    display: block !important;
+    margin-bottom: 4px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #orgRepresentativeOverviewTable td > *,
+  #orgRepresentativeOverviewTable .badge {
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+}

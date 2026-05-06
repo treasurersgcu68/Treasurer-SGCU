@@ -1,0 +1,370 @@
+/* =========================================
+   12) PERSON MODAL
+========================================= */
+
+.person-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.32s var(--motion-ease), visibility 0s linear 0.32s;
+}
+
+.person-modal.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.36s var(--motion-ease);
+}
+
+.person-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(4px);
+}
+
+.person-modal-dialog {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px 28px;
+  max-width: 90vw;
+  width: 420px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  z-index: 1;
+  transform: translateY(16px) scale(0.99);
+  transition: transform 0.36s var(--motion-ease), box-shadow 0.36s var(--motion-ease);
+}
+
+.person-modal.show .person-modal-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.person-modal-dialog.is-roomy {
+  width: 560px;
+  padding: 30px 34px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-header {
+  gap: 20px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-avatar {
+  width: 148px;
+  height: 148px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-position {
+  font-size: 20px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-name {
+  font-size: 24px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-nick {
+  font-size: 15px;
+}
+
+.person-modal-dialog.is-roomy .person-modal-contact {
+  font-size: 14px;
+}
+
+.person-modal-close {
+  border: none;
+  background: none;
+  position: absolute;
+  right: 14px;
+  top: 8px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.person-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.person-modal-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-right: 18px;
+  border: 3px solid #ec4899;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.person-modal-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.person-modal-avatar.is-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.person-modal-position {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ec4899;
+}
+
+.person-modal-name {
+  font-size: 20px;              /* ▲ ใหญ่ขึ้น */
+  font-weight: 700;
+  color: #111827;
+}
+
+.person-modal-nick {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.person-modal-extra {
+  margin-top: 18px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.person-modal-extra div {
+  margin-bottom: 6px;
+}
+
+.person-modal-contact {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 8px;
+  padding-top: 8px;
+  font-size: 13px;
+}
+
+.person-modal-contact-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.person-modal-contact-label {
+  width: 42px;
+  color: #6b7280;
+}
+
+.person-modal-contact-value a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .person-modal {
+    width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .person-modal-backdrop {
+    position: fixed;
+    inset: 0;
+  }
+
+  .person-modal-dialog,
+  .person-modal-dialog.is-roomy {
+    width: min(100%, 420px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+  }
+}
+
+/* =========================================
+   13) Download / Financial Documents
+========================================= */
+
+#downloadList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.download-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 240px);
+  gap: 1rem;
+  align-items: end;
+  margin: 0;
+  justify-items: end;
+}
+
+@media (max-width: 640px) {
+  .download-filter-bar {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+
+  .download-filter-bar .filter-group {
+    width: 100%;
+  }
+
+  .download-filter-bar .filter-group label {
+    font-size: 12px;
+  }
+
+  .download-filter-bar .filter-group select {
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+}
+
+/* การ์ดแต่ละหมวด */
+
+.download-section-card {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 18px 45px rgba(248, 113, 166, 0.18);
+  overflow: hidden;
+}
+
+/* header หมวด */
+
+.download-card-header {
+  display: flex;
+  align-items: center;
+  padding: 1px 24px 1px;
+  background: linear-gradient(90deg, #ffcfea 0%, #ffc2e3 45%);
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.download-card-bar {
+  width: 4px;
+  height: 28px;
+  border-radius: 999px;
+  background: #ec4899;
+  margin-right: 12px;
+}
+
+.download-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #db2777;
+}
+
+/* list ภายในการ์ด */
+
+.download-card-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 24px 10px;
+}
+
+.download-item {
+  width: 100%;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: transparent;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.download-item:last-child {
+  border-bottom: none;
+  padding-bottom: 20px;
+}
+
+.download-main {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  gap: 4px;
+}
+
+.download-title {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.download-desc {
+  margin-top: 2px;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.download-buttons {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #ffe4f0;
+  color: #be185d;
+  font-weight: 600;
+  font-size: 0.78rem;
+  border: none;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out,
+    background 0.12s ease-out;
+}
+
+.download-btn:hover {
+  background: #fecdd3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(236, 72, 153, 0.25);
+}
+
+/* Responsive download buttons */
+
+@media (max-width: 768px) {
+  .download-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .download-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .download-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .download-title {
+    font-size: 13px;
+  }
+  .download-desc {
+    font-size: 0.85rem;
+  }
+  .download-buttons {
+    margin-left: 0;
+  }
+}

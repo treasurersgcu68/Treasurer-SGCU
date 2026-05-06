@@ -30,7 +30,9 @@
         "js/features/budget/app.budget-staff.js?v=20260504-11"
       ],
       "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260504-1",
-      "content-management-staff": [],
+      "content-management-staff": "js/features/content/app.content-management.js?v=20260506-1",
+      "content-news-staff": "js/features/content/app.content-management.js?v=20260506-1",
+      "content-documents-staff": "js/features/content/app.content-management.js?v=20260506-1",
       "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260504-11"
     },
     idlePrefetchPages: [
@@ -79,7 +81,15 @@
     });
 
     loadedFeatureScripts.set(scriptSrc, promise);
-    await promise;
+    try {
+      await promise;
+    } catch (error) {
+      const [fallbackSrc] = scriptSrc.split("?");
+      if (!fallbackSrc || fallbackSrc === scriptSrc || /^https?:\/\//i.test(scriptSrc)) {
+        throw error;
+      }
+      await loadScriptOnce(fallbackSrc);
+    }
   };
 
   const ensurePageLoaded = async (page) => {

@@ -1,0 +1,231 @@
+/* ===== App Loader ===== */
+.app-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at top right, #fff1f5 0%, #fdf2f8 55%, #fff7fb 100%);
+  transition: opacity 600ms var(--motion-ease), visibility 600ms linear;
+}
+
+.app-loader::before, .app-loader::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  opacity: 0.4;
+  filter: blur(0px);
+}
+
+.app-loader::before {
+  width: 320px;
+  height: 320px;
+  background: linear-gradient(135deg, rgba(255, 143, 177, 0.55), rgba(255, 255, 255, 0));
+  top: -110px;
+  right: -60px;
+}
+
+.app-loader::after {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle at top, rgba(255, 194, 214, 0.6), rgba(255, 255, 255, 0));
+  bottom: -160px;
+  left: -140px;
+}
+
+.app-loader-panel {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 420px);
+  padding: 32px 28px 28px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111827;
+  text-align: center;
+  box-shadow: 0 24px 50px rgba(255, 143, 177, 0.18);
+  backdrop-filter: blur(8px);
+  animation: loader-panel-float 3s ease-in-out infinite;
+  overflow: hidden;
+}
+
+.app-loader-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.65) 20%,
+    transparent 45%
+  );
+  transform: translateX(-120%);
+  animation: loader-panel-shine 2.5s ease-in-out infinite;
+}
+
+.app-loader-logo {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 28px rgba(255, 143, 177, 0.18);
+  display: grid;
+  place-items: center;
+  animation: logo-pulse 2.5s ease-in-out infinite;
+}
+
+.app-loader-logo img {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+}
+
+.app-loader-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.app-loader-status {
+  margin-top: 10px;
+  font-size: 13px;
+  color: rgba(236, 72, 153, 0.85);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-loader-percent {
+  min-width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-loader-progress {
+  margin-top: 20px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 143, 177, 0.22);
+  overflow: hidden;
+}
+
+.app-loader-progress span {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 143, 177, 0.2), #ff8fb1, #ffc2d6);
+  transition: width 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-loader-error {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(254, 226, 226, 0.6);
+  color: #991b1b;
+  display: grid;
+  gap: 10px;
+}
+
+.app-loader-error[hidden] {
+  display: none;
+}
+
+.app-loader-error-text {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.app-loader-retry {
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  background: #fff;
+  color: #991b1b;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.app-loader.is-hidden .app-loader-panel {
+  animation: none;
+  transform: scale(0.96) translateY(10px);
+  opacity: 0;
+  transition: transform 500ms var(--motion-ease), opacity 400ms ease;
+}
+
+@keyframes loader-progress {
+  0% {
+    transform: translateX(-20%);
+  }
+  50% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes loader-panel-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes loader-panel-shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  60% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes logo-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 14px 28px rgba(255, 143, 177, 0.18);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 18px 32px rgba(255, 143, 177, 0.25);
+  }
+}
+
+@keyframes loader-dots {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 18px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-loader-panel, .app-loader-progress span {
+    animation: none;
+  }
+  .app-loader-panel::after, .app-loader-logo {
+    animation: none;
+  }
+}

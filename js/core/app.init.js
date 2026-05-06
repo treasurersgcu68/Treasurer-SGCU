@@ -746,6 +746,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       await runFeatureTask("news", "loadNewsFromSheet");
     } else if (page === "financial-docs") {
       await runFeatureTask("financial-docs", "loadDownloadDocuments");
+    } else if (["content-management-staff", "content-news-staff", "content-documents-staff"].includes(page)) {
+      await runFeatureTask(page, "initContentManagementStaffPage");
     }
 
     if (shouldLoadProjectDataForPage(page)) {

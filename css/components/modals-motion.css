@@ -1,0 +1,882 @@
+/* =========================================
+   15) Modals (Project / Calendar / News / Sections)
+========================================= */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.34s var(--motion-ease), visibility 0s linear 0.34s;
+  backdrop-filter: blur(6px);
+}
+
+.modal.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.4s var(--motion-ease);
+}
+
+.modal-dialog {
+  max-width: 1100px;
+  width: min(100% - 32px, 1100px);
+  max-height: 90vh;
+  margin: 0 auto;
+  background: radial-gradient(circle at top left, #fdf2ff, #ffffff);
+  border-radius: 26px;
+  padding: 16px 18px 14px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.5);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(248, 187, 208, 0.6);
+  transform: translateY(18px) scale(0.99);
+  transition: transform 0.4s var(--motion-ease), box-shadow 0.4s var(--motion-ease);
+}
+
+.modal.show .modal-dialog {
+  transform: translateY(0) scale(1);
+}
+
+#staffApprovalDetailModal {
+  position: fixed;
+  inset: 0;
+  padding: 16px;
+}
+
+#staffApprovalDetailModal .modal-dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(640px, calc(100vw - 32px));
+  max-width: 640px;
+  max-height: min(90vh, calc(100vh - 32px));
+  margin: 0;
+  opacity: 0;
+  transform: translate(-50%, calc(-50% + 18px)) scale(0.99);
+}
+
+#staffApprovalDetailModal.show .modal-dialog {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(248, 250, 252, 0.9);
+  margin-bottom: 10px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.modal-subtitle {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.modal-badge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fdf2ff;
+  color: #7e22ce;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.modal-header-row {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.modal-close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modal-body {
+  margin-top: 4px;
+  padding-right: 4px;
+  overflow-y: auto;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  max-height: calc(90vh - 140px);
+}
+
+.modal-sections {
+  background: transparent;
+}
+
+/* section card inside modal */
+
+.modal-section {
+  border-radius: 20px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 28px rgba(148, 163, 184, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-section-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 20% 20%, #fef3c7, #f9a8d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #7f1d1d;
+  flex-shrink: 0;
+}
+
+.modal-section-icon.icon-approve {
+  background: radial-gradient(circle at 20% 20%, #dcfce7, #bbf7d0);
+  color: #166534;
+}
+.modal-section-icon.icon-transfer {
+  background: radial-gradient(circle at 20% 20%, #e0f2fe, #bfdbfe);
+  color: #1d4ed8;
+}
+.modal-section-icon.icon-advance {
+  background: radial-gradient(circle at 20% 20%, #fee2e2, #fecaca);
+  color: #b91c1c;
+}
+.modal-section-icon.icon-close {
+  background: radial-gradient(circle at 20% 20%, #ede9fe, #ddd6fe);
+  color: #4c1d95;
+}
+
+.modal-section-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modal-section-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.modal-section-caption {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.modal-section-grid {
+  margin-top: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 6px 14px;
+}
+
+.modal-item-label {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.modal-item-value {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.modal-table-wrap {
+  border-radius: 16px;
+  border: 1px solid rgba(248, 187, 208, 0.6);
+  background: #ffffff;
+  box-shadow: 0 12px 26px rgba(148, 163, 184, 0.15);
+  overflow: hidden;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.modal-table thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  background: linear-gradient(180deg, #fff5fb 0%, #ffffff 100%);
+  border-bottom: 1px solid rgba(248, 187, 208, 0.35);
+}
+
+.modal-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(248, 187, 208, 0.2);
+  vertical-align: top;
+}
+
+.modal-table tbody tr {
+  cursor: pointer;
+  transition: background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.modal-table tbody tr:hover {
+  background: #fff5fb;
+}
+
+.modal-table-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modal-table-caption {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* contact assistant box */
+
+.assistant-contact-link {
+  border: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f9a8d4;
+  color: #9f1239;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.assistant-contact-box {
+  margin-top: 6px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 11px;
+  display: none;
+}
+.assistant-contact-box.show {
+  display: block;
+}
+
+.assistant-contact-box-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.assistant-contact-title {
+  font-weight: 600;
+}
+.assistant-contact-role {
+  color: #6b7280;
+}
+
+.assistant-contact-box-body div {
+  margin-bottom: 2px;
+}
+
+/* responsive modal dialog */
+
+@media (max-width: 768px) {
+  .modal {
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .modal-dialog {
+    width: 100vw;
+    max-width: 100vw !important;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0;
+    margin: 0;
+    padding: calc(12px + env(safe-area-inset-top, 0px))
+      calc(12px + env(safe-area-inset-right, 0px))
+      calc(12px + env(safe-area-inset-bottom, 0px))
+      calc(12px + env(safe-area-inset-left, 0px));
+  }
+
+  .modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.96) 100%);
+    border-bottom-color: rgba(236, 72, 153, 0.12);
+    border: 1px solid rgba(236, 72, 153, 0.14);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 10px 24px rgba(236, 72, 153, 0.08);
+  }
+
+  .modal-title {
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .modal-close {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.18);
+    flex: 0 0 auto;
+  }
+
+  .modal-body {
+    max-height: none;
+    padding-right: 0;
+    overscroll-behavior: contain;
+  }
+
+  .modal-section {
+    border-radius: 18px;
+  }
+
+  #staffApprovalDetailModal {
+    padding: 0;
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  #staffApprovalDetailModal .modal-dialog {
+    position: fixed;
+    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    max-width: 100vw !important;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    opacity: 1;
+    transform: none !important;
+  }
+
+  .staff-access-panel {
+    margin-bottom: 12px;
+  }
+
+  .staff-access-panel .panel-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .staff-access-panel .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .staff-access-panel table {
+    min-width: 620px;
+  }
+
+  .staff-approval-position-item {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .staff-approval-position-item code {
+    width: 100%;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .staff-approval-modal-edit-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .staff-approval-modal-edit-row .login-input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .org-representative-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .org-representative-overview-tools {
+    margin-top: 12px;
+  }
+
+  .org-representative-tools {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .org-representative-summary-card {
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .org-representative-summary-label {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .org-representative-summary-value {
+    font-size: 22px;
+    overflow-wrap: anywhere;
+  }
+
+  .org-representative-detail-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #orgRepresentativeApprovalSection .panel-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+  }
+
+  #orgRepresentativeApprovalSection .panel-header > div {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #orgRepresentativeApprovalSection .panel-title,
+  #orgRepresentativeApprovalSection .panel-caption {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #orgRepresentativeApprovalSection .panel-header > .csv-export-btn {
+    justify-self: end;
+    width: auto;
+    margin-left: auto;
+    min-height: 38px;
+  }
+
+  #orgRepresentativeApprovalSection .project-table-wrapper {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  #orgRepresentativeOverviewTable {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  #orgRepresentativeOverviewTable thead {
+    display: none;
+  }
+
+  #orgRepresentativeOverviewTable tbody {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #orgRepresentativeOverviewTable tr {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  #orgRepresentativeOverviewTable td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 8px 0;
+    border: 0;
+    text-align: left !important;
+    white-space: normal;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    align-items: start;
+  }
+
+  #orgRepresentativeOverviewTable td > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #orgRepresentativeOverviewTable td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #orgRepresentativeOverviewTable td[colspan] {
+    display: block;
+    text-align: center !important;
+  }
+
+  #orgRepresentativeOverviewTable td[colspan]::before {
+    content: none;
+  }
+
+  #orgRepresentativeOverviewTable td:first-child {
+    display: block;
+    padding: 0 0 10px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  #orgRepresentativeOverviewTable td:first-child::before {
+    content: none;
+  }
+
+  #orgRepresentativeOverviewTable td:first-child > div:first-child {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  #orgRepresentativeOverviewTable .section-text-sm {
+    margin-top: 2px;
+    color: #64748b;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #orgRepresentativeOverviewTable .badge {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table thead {
+    display: none;
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table tr {
+    display: block;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 12px;
+    background: #ffffff;
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table td {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 4px 10px;
+    width: 100%;
+    padding: 7px 0;
+    border: 0;
+    text-align: left !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    align-items: start;
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table td::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table td:first-child {
+    display: block;
+    padding-bottom: 9px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table td:first-child::before {
+    content: none;
+  }
+
+  #staffApprovalDetailModal .org-representative-org-detail .modal-table .staff-status-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .staff-approval-modal-edit-row .btn-primary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .org-representative-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #staffApprovalDetailModal .modal-dialog {
+    inset: 0;
+    width: 100vw;
+    max-width: 100vw;
+    padding: 12px 12px 10px;
+    overflow-x: hidden;
+  }
+
+  #staffApprovalDetailModal .modal-header {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+  }
+
+  #staffApprovalDetailModal .modal-title {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  #staffApprovalDetailModal .modal-subtitle {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  #staffApprovalDetailModal .modal-body {
+    padding-right: 0;
+    gap: 8px;
+    max-height: calc(100vh - 92px);
+    overflow-x: hidden;
+  }
+
+  #staffApprovalDetailModal .modal-section {
+    border-radius: 18px;
+    padding: 10px 11px;
+    box-shadow: 0 6px 16px rgba(148, 163, 184, 0.14);
+  }
+
+  #staffApprovalDetailModal .modal-section-grid {
+    gap: 8px 10px;
+  }
+
+  #staffApprovalDetailModal .modal-item-label {
+    font-size: 12px;
+  }
+
+  #staffApprovalDetailModal .modal-item-value {
+    font-size: 13px;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  #staffApprovalDetailModal .staff-approval-code-pill {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.35;
+    min-height: 34px;
+  }
+
+  #staffApprovalDetailModal .staff-approval-manage-grid {
+    gap: 8px;
+  }
+
+  #staffApprovalDetailModal .staff-approval-manage-actions .staff-approval-manage-btn {
+    width: 100%;
+  }
+
+  #staffRejectionReasonModal {
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .staff-rejection-reason-dialog {
+    width: calc(100vw - 20px);
+    max-width: 420px;
+    height: auto;
+    max-height: calc(100dvh - 20px);
+    margin: auto;
+    padding: 14px 14px 12px;
+    border-radius: 18px;
+    overflow: auto;
+  }
+
+  #staffRejectionReasonModal .modal-header {
+    position: static;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(254, 202, 202, 0.82);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 22px rgba(185, 28, 28, 0.10);
+  }
+
+  #staffRejectionReasonModal .modal-title {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  #staffRejectionReasonModal .modal-subtitle {
+    line-height: 1.45;
+  }
+
+  #staffRejectionReasonModal .modal-body {
+    flex: 0 1 auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .staff-rejection-reason-section {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .staff-rejection-reason-input {
+    min-height: 170px;
+    max-height: 34dvh;
+    font-size: 16px;
+  }
+
+  .staff-rejection-reason-meta {
+    display: grid;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .staff-rejection-reason-helper {
+    line-height: 1.45;
+  }
+
+  .staff-rejection-reason-actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .staff-rejection-reason-counter {
+    justify-self: end;
+  }
+
+  .staff-rejection-reason-actions .btn-ghost,
+  .staff-rejection-reason-actions .btn-primary {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+/* =========================================
+   17) Motion / Animations
+========================================= */
+
+.section-appear {
+  opacity: 0;
+  transform: translateY(30px);
+  filter: blur(5px);
+  transition: opacity 0.8s var(--motion-ease), transform 0.8s var(--motion-ease), filter 0.8s var(--motion-ease);
+  will-change: opacity, transform, filter;
+}
+
+.section-appear.section-visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+.section-delay-1 {
+  transition-delay: 0.1s;
+}
+.section-delay-2 {
+  transition-delay: 0.2s;
+}
+.section-delay-3 {
+  transition-delay: 0.3s;
+}
+.section-delay-4 {
+  transition-delay: 0.4s;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (max-width: 840px) {
+  .site-header, .modal, .person-modal-backdrop, .login-card, .app-loader-panel {
+    backdrop-filter: none;
+  }
+}

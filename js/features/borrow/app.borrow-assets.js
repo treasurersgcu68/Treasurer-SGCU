@@ -124,6 +124,8 @@ function initBorrowAssetsApp() {
   let borrowRequests = [];
   let borrowRequestsSnapshotCount = 0;
   let currentUserEmail = "";
+  let myRequestsLoadState = "idle";
+  let myRequestsLoadError = "";
   const assetMap = new Map();
   const assetRowMap = new Map();
   let borrowAssetsRows = [];
@@ -857,7 +859,7 @@ function initBorrowAssetsApp() {
     }
     const mine = borrowRequests
       .filter((item) => !item.isDeleted)
-      .filter((item) => (item.requesterEmail || "") === currentUserEmail);
+      .filter((item) => (item.requesterEmail || "").toString().trim().toLowerCase() === currentUserEmail);
     const pending = mine.filter((item) => item.status === STATUS_PENDING).length;
     const borrowed = mine.filter((item) => item.status === STATUS_APPROVED || item.status === STATUS_RECEIVED).length;
     const overdue = mine.filter((item) => buildBorrowFollowupMeta(item).overdue).length;
@@ -1136,7 +1138,7 @@ function initBorrowAssetsApp() {
   const getMyBorrowRequestRows = () =>
     borrowRequests
       .filter((item) => !item.isDeleted)
-      .filter((item) => currentUserEmail && (item.requesterEmail || "") === currentUserEmail)
+      .filter((item) => currentUserEmail && (item.requesterEmail || "").toString().trim().toLowerCase() === currentUserEmail)
       .sort((a, b) => (b.submittedAtMs || 0) - (a.submittedAtMs || 0));
 
   const getStaffBorrowVisibleRows = () =>
@@ -1554,9 +1556,23 @@ function initBorrowAssetsApp() {
 
   const renderMyRequests = () => {
     if (!myRequestsTableBody) return;
+    const myRequestsPanel = myRequestsTableBody.closest(".panel");
+    if (myRequestsPanel) {
+      myRequestsPanel.classList.add("section-visible");
+    }
     const isCompactMobile =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(max-width: 840px)").matches;
+    const renderEmptyState = (message) => {
+      myRequestsTableBody.innerHTML = `
+        <tr>
+          <td colspan="4">${safeEscape(message)}</td>
+        </tr>
+      `;
+      if (myRequestsCardsEl && isCompactMobile) {
+        myRequestsCardsEl.innerHTML = `<article class="borrow-my-request-card-empty">${safeEscape(message)}</article>`;
+      }
+    };
     if (myRequestsTableWrapper) {
       myRequestsTableWrapper.style.display = isCompactMobile ? "none" : "";
     }
@@ -1565,28 +1581,21 @@ function initBorrowAssetsApp() {
       myRequestsCardsEl.innerHTML = "";
     }
     if (!currentUserEmail) {
-      myRequestsTableBody.innerHTML = `
-        <tr>
-          <td colspan="4">กรุณาเข้าสู่ระบบด้วยอีเมลจุฬาฯ เพื่อดูสถานะคำขอของตนเอง</td>
-        </tr>
-      `;
-      if (myRequestsCardsEl && isCompactMobile) {
-        myRequestsCardsEl.innerHTML = `<article class="borrow-my-request-card-empty">กรุณาเข้าสู่ระบบด้วยอีเมลจุฬาฯ เพื่อดูสถานะคำขอของตนเอง</article>`;
-      }
+      renderEmptyState("กรุณาเข้าสู่ระบบด้วยอีเมลจุฬาฯ เพื่อดูสถานะคำขอของตนเอง");
       return;
     }
+    const normalizedCurrentEmail = currentUserEmail.toString().trim().toLowerCase();
     const list = borrowRequests
       .filter((item) => !item.isDeleted)
-      .filter((item) => (item.requesterEmail || "") === currentUserEmail)
+      .filter((item) => (item.requesterEmail || "").toString().trim().toLowerCase() === normalizedCurrentEmail)
       .sort((a, b) => (b.submittedAtMs || 0) - (a.submittedAtMs || 0));
     if (!list.length) {
-      myRequestsTableBody.innerHTML = `
-        <tr>
-          <td colspan="4">ยังไม่มีคำขอยืมพัสดุ</td>
-        </tr>
-      `;
-      if (myRequestsCardsEl && isCompactMobile) {
-        myRequestsCardsEl.innerHTML = `<article class="borrow-my-request-card-empty">ยังไม่มีคำขอยืมพัสดุ</article>`;
+      if (myRequestsLoadState === "loading") {
+        renderEmptyState("กำลังโหลดสถานะคำขอ...");
+      } else if (myRequestsLoadState === "error") {
+        renderEmptyState(myRequestsLoadError || "โหลดสถานะคำขอไม่สำเร็จ กรุณาลองใหม่");
+      } else {
+        renderEmptyState("ยังไม่มีคำขอยืมพัสดุ");
       }
       return;
     }
@@ -2591,6 +2600,8 @@ function initBorrowAssetsApp() {
     resolveFirestoreBridge();
     if (!hasFirestore) {
       borrowRequests = [];
+      myRequestsLoadState = "error";
+      myRequestsLoadError = "ระบบฐานข้อมูลยังไม่พร้อม กรุณาลองใหม่";
       renderBorrowRequests();
       setStaffQueueStatusMessage("ระบบฐานข้อมูลยังไม่พร้อม (กำลังเชื่อมต่อ Firestore)");
       setStaffQueueMessage("กำลังเชื่อมต่อฐานข้อมูล...", "#6b7280");
@@ -2606,6 +2617,8 @@ function initBorrowAssetsApp() {
       });
     }
     unsubscribeBorrowRequests = [];
+    myRequestsLoadState = "loading";
+    myRequestsLoadError = "";
 
     const mergeAndRender = () => {
       const merged = [];
@@ -2632,6 +2645,8 @@ function initBorrowAssetsApp() {
 
     if (!currentEmail && !shouldReadAllRequests) {
       borrowRequests = [];
+      myRequestsLoadState = "idle";
+      myRequestsLoadError = "";
       renderBorrowRequests();
       setStaffQueueStatusMessage("กรุณาเข้าสู่ระบบก่อนดูคิวคำขอ");
       return;
@@ -2651,6 +2666,8 @@ function initBorrowAssetsApp() {
         (snapshot) => {
           collectionSnapshotErrors.set(collectionName, "");
           collectionSnapshotCounts.set(collectionName, Number(snapshot.size || 0));
+          myRequestsLoadState = "loaded";
+          myRequestsLoadError = "";
           const normalized = [];
           const badDocIds = [];
           snapshot.docs.forEach((docSnap) => {
@@ -2683,6 +2700,12 @@ function initBorrowAssetsApp() {
           collectionSnapshotErrors.set(collectionName, code || "unknown");
           collectionSnapshotRows.set(collectionName, []);
           collectionSnapshotCounts.set(collectionName, 0);
+          if (!shouldReadAllRequests) {
+            myRequestsLoadState = "error";
+            myRequestsLoadError = code === "permission-denied"
+              ? "บัญชีนี้ยังไม่มีสิทธิ์อ่านสถานะคำขอของตนเอง"
+              : "โหลดสถานะคำขอไม่สำเร็จ กรุณาลองใหม่";
+          }
           mergeAndRender();
           const totalNow = borrowRequestsSnapshotCount;
           if (totalNow > 0) {

@@ -12,20 +12,8 @@ function openProjectModal(project) {
 
   // title + badge ด้านบน
   projectModalTitleEl.textContent = name;
-  projectModalTitleBadgeEl.textContent = code || "";
-
-  const tags = [];
-  if (orgGroup) tags.push(orgGroup);
-  if (orgName) tags.push(orgName);
-
-  projectModalHeaderRowEl.innerHTML = `
-    <div class="modal-header-maincode">
-      <strong>${code}</strong> · ${yearStr}
-    </div>
-    <div class="modal-header-tags">
-      ${tags.map((t) => `<span class="modal-tag">${t}</span>`).join("")}
-    </div>
-  `;
+  projectModalTitleBadgeEl.textContent = "";
+  projectModalHeaderRowEl.innerHTML = "";
 
   // เตรียมข้อมูลที่ใช้ต่อ
   const councilSessionText = project.councilSessionText || "-";
@@ -136,10 +124,6 @@ function openProjectModal(project) {
           </div>
         </div>
         <div class="modal-section-grid">
-          <div>
-            <div class="modal-item-label">รหัสโครงการ</div>
-            <div class="modal-item-value">${code}</div>
-          </div>
           <div>
             <div class="modal-item-label">ชื่อโครงการ</div>
             <div class="modal-item-value">${name}</div>

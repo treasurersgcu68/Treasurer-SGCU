@@ -106,6 +106,7 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   updateTrendLineChart(filtered);
   if (ctxKey === "staff") {
     renderHomeKpis(filtered);
+    updateStaffProjectOperationsPanel(filtered);
   }
 
   if (tableCaptionEl) {
@@ -180,6 +181,224 @@ function exportVisibleProjectsCsv(ctxKey = activeProjectStatusContext) {
     headers,
     rows,
     fileName: ctxKey === "staff" ? "sgcu-project-status-staff" : "sgcu-project-status"
+  });
+}
+
+function isApprovedProjectForFinanceOps(project) {
+  const status = (project?.statusMain || project?.approvalStatus || "").toString().trim();
+  const closeStatus = (project?.statusClose || "").toString().trim();
+  return status === "อนุมัติโครงการ" && closeStatus !== "ยกเลิกโครงการ";
+}
+
+function getProjectDaysToDeadline(project) {
+  const days = project?.daysToDeadline;
+  return typeof days === "number" && !isNaN(days) ? days : null;
+}
+
+function hasTextValue(value) {
+  const text = (value || "").toString().trim();
+  return text !== "" && text !== "-";
+}
+
+function getAdvanceBlockedReason(project) {
+  if (!isApprovedProjectForFinanceOps(project) || isProjectClosed(project)) return "";
+
+  const advanceStatus = (project.advanceStatus || "").toString().trim();
+  const lowerStatus = advanceStatus.toLowerCase();
+  const hasAdvanceData =
+    hasAdvanceBorrow(project) ||
+    hasTextValue(project.advanceDocNo) ||
+    (Number(project.advanceAmount) || 0) > 0;
+  if (hasAdvanceData) return "";
+
+  if (advanceStatus && (advanceStatus.includes("ไม่อนุมัติ") || advanceStatus.includes("ยกเลิก") || lowerStatus.includes("ไม่ยืม"))) {
+    return `สถานะยืมรองจ่าย: ${advanceStatus}`;
+  }
+
+  const days = getProjectDaysToDeadline(project);
+  if (days !== null && days <= 21) {
+    return days < 0
+      ? `เลยกำหนดแล้ว ${Math.abs(days)} วัน และยังไม่มีข้อมูลยืมรองจ่าย`
+      : `เหลือ ${days} วัน ไม่เข้าเงื่อนไขยืมรองจ่าย`;
+  }
+
+  return "";
+}
+
+function hasCompletedTransfer(project) {
+  const status = (project?.transferStatus || "").toString().trim();
+  const normalized = status.toLowerCase();
+  if (hasTextValue(project?.transferDocNo)) return true;
+  if ((Number(project?.transferNet) || 0) > 0) return true;
+  return (
+    status.includes("โอน") ||
+    status.includes("เรียบร้อย") ||
+    status.includes("เสร็จ") ||
+    normalized.includes("done") ||
+    normalized.includes("complete")
+  ) && !status.includes("ไม่ได้") && !status.includes("ไม่สำเร็จ");
+}
+
+function getTransferBlockedReason(project) {
+  if (!isApprovedProjectForFinanceOps(project) || isProjectClosed(project)) return "";
+  if (hasCompletedTransfer(project)) return "";
+
+  const transferStatus = (project.transferStatus || "").toString().trim();
+  if (transferStatus && (transferStatus.includes("ไม่ได้") || transferStatus.includes("ไม่สำเร็จ") || transferStatus.includes("ยกเลิก"))) {
+    return `สถานะโอนงบประมาณ: ${transferStatus}`;
+  }
+
+  const days = getProjectDaysToDeadline(project);
+  if (days !== null && days <= 0) {
+    return days < 0
+      ? `เลยกำหนดแล้ว ${Math.abs(days)} วัน แต่ยังไม่มีข้อมูลโอนงบประมาณ`
+      : "ถึงกำหนดแล้ว แต่ยังไม่มีข้อมูลโอนงบประมาณ";
+  }
+
+  return "";
+}
+
+function buildProjectOpsRows(filtered, reasonGetter) {
+  return (filtered || [])
+    .map((project) => ({
+      project,
+      reason: reasonGetter(project)
+    }))
+    .filter((item) => item.reason)
+    .sort((a, b) => {
+      const aDays = getProjectDaysToDeadline(a.project);
+      const bDays = getProjectDaysToDeadline(b.project);
+      if (aDays === null && bDays === null) return 0;
+      if (aDays === null) return 1;
+      if (bDays === null) return -1;
+      return aDays - bDays;
+    });
+}
+
+function renderProjectOpsTable(tbody, rows) {
+  if (!tbody) return;
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="3" class="project-staff-alert-empty">ยังไม่มีรายการที่ต้องตรวจ</td></tr>`;
+    return;
+  }
+
+  const visibleRows = rows.slice(0, 8);
+  const extraCount = rows.length - visibleRows.length;
+  const html = visibleRows.map(({ project, reason }) => `
+    <tr>
+      <td>${escapeHtml(project.code || "")}</td>
+      <td>
+        <div class="project-staff-alert-project">${escapeHtml(project.name || "")}</div>
+        <div class="project-staff-alert-org">${escapeHtml(project.orgName || "")}</div>
+      </td>
+      <td>${escapeHtml(reason)}</td>
+    </tr>
+  `).join("");
+
+  tbody.innerHTML = extraCount > 0
+    ? `${html}<tr><td colspan="3" class="project-staff-alert-more">และอีก ${extraCount} โครงการ</td></tr>`
+    : html;
+}
+
+function updateStaffProjectOperationsPanel(filtered) {
+  const ctx = projectStatusContexts.staff || {};
+  if (!ctx.projectStaffOpsPanelEl) return;
+
+  const data = Array.isArray(filtered) ? filtered : [];
+  ctx.projectStaffOpsPanelEl.hidden = !isUserAuthenticated;
+  if (ctx.projectClosureMailMergeExportBtn) {
+    ctx.projectClosureMailMergeExportBtn.disabled = !isUserAuthenticated || data.length === 0 || !window.sgcuCsvExport?.download;
+  }
+
+  const sheetUrl = (activeProjectSourceConfig?.projectUrl || "").toString().trim();
+  if (ctx.projectStaffSourceSheetLinkEl) {
+    if (sheetUrl) {
+      ctx.projectStaffSourceSheetLinkEl.href = sheetUrl;
+      ctx.projectStaffSourceSheetLinkEl.hidden = false;
+    } else {
+      ctx.projectStaffSourceSheetLinkEl.hidden = true;
+    }
+  }
+
+  const advanceRows = buildProjectOpsRows(data, getAdvanceBlockedReason);
+  const transferRows = buildProjectOpsRows(data, getTransferBlockedReason);
+  if (ctx.projectAdvanceBlockedCountEl) ctx.projectAdvanceBlockedCountEl.textContent = advanceRows.length.toLocaleString("th-TH");
+  if (ctx.projectTransferBlockedCountEl) ctx.projectTransferBlockedCountEl.textContent = transferRows.length.toLocaleString("th-TH");
+  renderProjectOpsTable(ctx.projectAdvanceBlockedTableBodyEl, advanceRows);
+  renderProjectOpsTable(ctx.projectTransferBlockedTableBodyEl, transferRows);
+}
+
+function exportClosureMailMergeCsv(ctxKey = "staff") {
+  if (!isUserAuthenticated) return;
+  const visibleProjects = getVisibleProjectsForContext(ctxKey);
+  if (!visibleProjects.length || !window.sgcuCsvExport?.download) return;
+
+  const headers = [
+    "รหัสโครงการ",
+    "ชื่อโครงการ",
+    "ประเภทองค์กร",
+    "ฝ่าย/ชมรม",
+    "สถานะอนุมัติโครงการ",
+    "สถานะปิดโครงการยืมรองจ่าย",
+    "สถานะปิดโครงการฎีกา",
+    "ผู้สอบตรวจเอกสาร",
+    "เบอร์ผู้สอบตรวจ",
+    "LINE ผู้สอบตรวจ",
+    "วันที่อนุมัติ",
+    "วันปฏิบัติงานวันสุดท้าย",
+    "กำหนดส่งเอกสารสรุปโครงการ",
+    "จำนวนวันคงเหลือ",
+    "เลขฎีกา",
+    "งบประมาณอนุมัติ 100%",
+    "งบใช้จริง",
+    "งบคงเหลือ",
+    "ร้อยละการใช้งบ",
+    "สถานะยืมรองจ่าย",
+    "เลขเอกสารยืมรองจ่าย",
+    "จำนวนเงินยืมรองจ่าย",
+    "สถานะโอนงบประมาณ",
+    "เลขเอกสารโอนงบประมาณ",
+    "งบประมาณสุทธิหลังโอน"
+  ];
+
+  const rows = visibleProjects
+    .filter((project) => isApprovedProjectForFinanceOps(project) || isProjectClosed(project))
+    .map((project) => {
+      const checker = (project.closeChecker || "").toString().trim();
+      const checkerContact = checker ? assistantContactsByName?.[checker] : null;
+      return {
+        "รหัสโครงการ": project.code || "",
+        "ชื่อโครงการ": project.name || "",
+        "ประเภทองค์กร": project.orgGroup || "",
+        "ฝ่าย/ชมรม": project.orgName || "",
+        "สถานะอนุมัติโครงการ": project.statusMain || project.approvalStatus || "",
+        "สถานะปิดโครงการยืมรองจ่าย": project.closeStatusAdvance || project.statusClose || "",
+        "สถานะปิดโครงการฎีกา": project.closeStatusDecree || project.statusCloseDecree || "",
+        "ผู้สอบตรวจเอกสาร": checker,
+        "เบอร์ผู้สอบตรวจ": checkerContact?.phone || "",
+        "LINE ผู้สอบตรวจ": checkerContact?.line || "",
+        "วันที่อนุมัติ": project.approveDate || "",
+        "วันปฏิบัติงานวันสุดท้าย": project.lastWorkDate || "",
+        "กำหนดส่งเอกสารสรุปโครงการ": project.closeDueDate || "",
+        "จำนวนวันคงเหลือ": getProjectDaysToDeadline(project) ?? "",
+        "เลขฎีกา": project.decreeNo || "",
+        "งบประมาณอนุมัติ 100%": project.approvedBudget100 ?? project.budget ?? "",
+        "งบใช้จริง": project.actualBudget ?? "",
+        "งบคงเหลือ": project.remainingBudget ?? "",
+        "ร้อยละการใช้งบ": project.usagePercent ?? "",
+        "สถานะยืมรองจ่าย": project.advanceStatus || "",
+        "เลขเอกสารยืมรองจ่าย": project.advanceDocNo || "",
+        "จำนวนเงินยืมรองจ่าย": project.advanceAmount ?? "",
+        "สถานะโอนงบประมาณ": project.transferStatus || "",
+        "เลขเอกสารโอนงบประมาณ": project.transferDocNo || "",
+        "งบประมาณสุทธิหลังโอน": project.transferNet ?? ""
+      };
+    });
+
+  window.sgcuCsvExport.download({
+    headers,
+    rows,
+    fileName: "sgcu-project-closure-mail-merge"
   });
 }
 

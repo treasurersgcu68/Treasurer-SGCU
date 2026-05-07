@@ -41,6 +41,7 @@ const SGCU_APP_CONFIG = {
       meetingRoomHolidays: "meetingRoomHolidays",
       meetingRooms: "meetingRooms",
       newsItems: "newsItems",
+      orgStructureMembers: "orgStructureMembers",
       organizationRepresentativeApplications: "organizationRepresentativeApplications",
       staffApplications: "staffApplications",
       staffPositionCatalog: "staffPositionCatalog",

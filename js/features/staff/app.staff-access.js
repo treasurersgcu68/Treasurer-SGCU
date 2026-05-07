@@ -92,6 +92,36 @@ function initStaffAccessPages() {
   const positionOptionsDatalistEl = document.getElementById("staffPositionOptionsList");
   const divisionCodeOptionsDatalistEl = document.getElementById("staffDivisionCodeOptionsList");
   const divisionNameOptionsDatalistEl = document.getElementById("staffDivisionNameOptionsList");
+  const orgStructureMemberFormEl = document.getElementById("orgStructureMemberForm");
+  const orgStructureTableBodyEl = document.getElementById("orgStructureTableBody");
+  const orgStructureListCaptionEl = document.getElementById("orgStructureListCaption");
+  const orgStructureFormMessageEl = document.getElementById("orgStructureFormMessage");
+  const orgStructureTermFilterEl = document.getElementById("orgStructureTermFilter");
+  const orgStructureStatusFilterEl = document.getElementById("orgStructureStatusFilter");
+  const orgStructureSearchInputEl = document.getElementById("orgStructureSearchInput");
+  const orgStructureFilterResetEl = document.getElementById("orgStructureFilterReset");
+  const orgStructureRefreshBtnEl = document.getElementById("orgStructureRefreshBtn");
+  const orgStructureExportBtnEl = document.getElementById("orgStructureExportBtn");
+  const orgStructureArchiveBtnEl = document.getElementById("orgStructureArchiveBtn");
+  const orgStructureResetBtnEl = document.getElementById("orgStructureResetBtn");
+  const orgStructurePhotoPreviewEl = document.getElementById("orgStructurePhotoPreview");
+  const orgStructureFields = {
+    id: document.getElementById("orgStructureMemberId"),
+    positionCode: document.getElementById("orgStructurePositionCode"),
+    position: document.getElementById("orgStructurePosition"),
+    prefix: document.getElementById("orgStructurePrefix"),
+    firstName: document.getElementById("orgStructureFirstName"),
+    lastName: document.getElementById("orgStructureLastName"),
+    nick: document.getElementById("orgStructureNick"),
+    studentId: document.getElementById("orgStructureStudentId"),
+    year: document.getElementById("orgStructureYear"),
+    faculty: document.getElementById("orgStructureFaculty"),
+    email: document.getElementById("orgStructureEmail"),
+    lineId: document.getElementById("orgStructureLineId"),
+    phone: document.getElementById("orgStructurePhone"),
+    photoUrl: document.getElementById("orgStructurePhotoUrl"),
+    status: document.getElementById("orgStructureStatus")
+  };
 
   const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
   const firestoreCollections = appConfig.firestore?.collections || {};
@@ -101,6 +131,7 @@ function initStaffAccessPages() {
   const COLLECTION_PROFILES = firestoreCollections.staffProfiles || "staffProfiles";
   const COLLECTION_USER_PROFILES = firestoreCollections.userProfiles || "userProfiles";
   const COLLECTION_POSITIONS = firestoreCollections.staffPositionCatalog || "staffPositionCatalog";
+  const COLLECTION_ORG_STRUCTURE = firestoreCollections.orgStructureMembers || "orgStructureMembers";
   const COLLECTION_POSITION_CODE_COUNTERS =
     firestoreCollections.staffPositionCodeCounters || "staffPositionCodeCounters";
   const STAFF_HEAD_EMAIL_OVERRIDES = new Set([
@@ -170,6 +201,7 @@ function initStaffAccessPages() {
   let unsubscribePendingApplications = null;
   let unsubscribeApprovalHistory = null;
   let unsubscribePositionCatalog = null;
+  let unsubscribeOrgStructureMembers = null;
   let unsubscribeOrgRepresentativeApplications = null;
 
   let currentMyApplications = [];
@@ -178,6 +210,12 @@ function initStaffAccessPages() {
   let currentApprovedHistoryGrouped = [];
   let currentOrgRepresentativeApplications = [];
   let currentOrgRepresentativePending = [];
+  let currentOrgStructureMembers = [];
+  const orgStructureFilters = {
+    query: "",
+    term: "all",
+    status: "all"
+  };
   let currentOrgRepresentativeApproved = [];
   let currentOrgRepresentativeOrganizations = [];
   let currentOrgRepresentativeFilteredOrganizations = [];
@@ -248,6 +286,9 @@ function initStaffAccessPages() {
       staffApprovalMainStructureTabEl.setAttribute("aria-selected", showApproval ? "false" : "true");
     }
     syncStaffPositionPanelVisibility();
+    if (!showApproval) {
+      startOrgStructureMembersListener();
+    }
   };
 
   const syncOrgRepresentativePanelCaption = () => {
@@ -1222,6 +1263,377 @@ function initStaffAccessPages() {
     if (!el) return;
     el.textContent = text;
     el.style.color = color;
+  };
+
+  const escapeStaffHtml = (value) =>
+    typeof escapeHtml === "function"
+      ? escapeHtml(value)
+      : (value ?? "")
+          .toString()
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
+
+  const normalizeOrgStructureText = (value) =>
+    (value || "").toString().trim();
+
+  const orgStructureFacultyMap = {
+    "21": "วิศวกรรมศาสตร์",
+    "22": "อักษรศาสตร์",
+    "23": "วิทยาศาสตร์",
+    "24": "รัฐศาสตร์",
+    "25": "สถาปัตยกรรมศาสตร์",
+    "26": "พาณิชยศาสตร์และการบัญชี",
+    "27": "ครุศาสตร์",
+    "28": "นิเทศศาสตร์",
+    "29": "เศรษฐศาสตร์",
+    "30": "แพทยศาสตร์",
+    "31": "สัตวแพทย์ศาสตร์",
+    "32": "ทันตแพทย์ศาสตร์",
+    "33": "เภสัชศาสตร์",
+    "34": "นิติศาสตร์",
+    "35": "ศิลปกรรมศาสตร์",
+    "37": "สหเวชศาสตร์",
+    "38": "จิตวิทยา",
+    "39": "วิทยาศาสตร์การกีฬา",
+    "40": "เกษตรและบูรณาการ",
+    "56": "สถาบันนวัตกรรมบูรณาการฯ"
+  };
+
+  const resolveOrgStructureStudentMeta = (studentId = "", positionCode = "") => {
+    const digits = normalizeOrgStructureText(studentId).replace(/\D/g, "");
+    if (digits.length < 10) return { year: "", faculty: "", isComplete: false };
+
+    const faculty = orgStructureFacultyMap[digits.slice(-2)] || "";
+    const studentYear = Number(digits.slice(0, 2));
+    const termMatch = normalizeOrgStructureText(positionCode).match(/^SGCU\s*(\d{2,4})(?=\.|$)/i);
+    const termYear = termMatch ? Number(termMatch[1].slice(-2)) : NaN;
+    const yearLevel = Number.isFinite(studentYear) && Number.isFinite(termYear)
+      ? termYear - studentYear + 1
+      : NaN;
+    const year = yearLevel >= 1 && yearLevel <= 8 ? String(yearLevel) : "";
+    return { year, faculty, isComplete: !!(year && faculty) };
+  };
+
+  const updateOrgStructureStudentMeta = () => {
+    const meta = resolveOrgStructureStudentMeta(
+      orgStructureFields.studentId?.value,
+      orgStructureFields.positionCode?.value
+    );
+    if (orgStructureFields.year) orgStructureFields.year.value = meta.year;
+    if (orgStructureFields.faculty) orgStructureFields.faculty.value = meta.faculty;
+    return meta;
+  };
+
+  const getOrgStructureTerm = (positionCode = "") => {
+    const match = normalizeOrgStructureText(positionCode).match(/^SGCU\s*(\d{2,4})(?=\.|$)/i);
+    return match ? `SGCU${match[1].slice(-2)}` : "";
+  };
+
+  const slugifyOrgStructureId = (value) => {
+    const base = normalizeOrgStructureText(value)
+      .toLowerCase()
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/[^a-z0-9ก-๙]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 100);
+    return base || `org-member-${Date.now()}`;
+  };
+
+  const extractOrgStructureDriveFileId = (value) => {
+    const raw = normalizeOrgStructureText(value);
+    if (!raw) return "";
+    const fileMatch = raw.match(/drive\.google\.com\/file\/d\/([^/?#]+)/i);
+    if (fileMatch?.[1]) return fileMatch[1];
+    const idMatch = raw.match(/[?&]id=([^&#]+)/i);
+    if (idMatch?.[1]) return idMatch[1];
+    const openMatch = raw.match(/drive\.google\.com\/open\?id=([^&#]+)/i);
+    if (openMatch?.[1]) return openMatch[1];
+    return "";
+  };
+
+  const resolveOrgStructurePhotoPreviewUrl = (value) => {
+    const raw = normalizeOrgStructureText(value);
+    if (!raw) return "";
+    const driveFileId = extractOrgStructureDriveFileId(raw);
+    if (driveFileId) return `https://lh3.googleusercontent.com/d/${driveFileId}=w240`;
+    if (/^https?:\/\//i.test(raw)) return raw;
+    return raw.includes(".") ? `img/org/${raw.replace(/\s+/g, "")}` : "";
+  };
+
+  const updateOrgStructurePhotoPreview = () => {
+    if (!orgStructurePhotoPreviewEl) return;
+    const raw = normalizeOrgStructureText(orgStructureFields.photoUrl?.value);
+    const previewUrl = resolveOrgStructurePhotoPreviewUrl(raw);
+    if (!raw) {
+      orgStructurePhotoPreviewEl.innerHTML = `<span>ยังไม่ได้แนบรูป</span>`;
+      orgStructurePhotoPreviewEl.dataset.state = "empty";
+      return;
+    }
+    if (!previewUrl) {
+      orgStructurePhotoPreviewEl.innerHTML = `<span>วางลิงก์รูปจาก Google Drive หรือ URL รูปภาพ</span>`;
+      orgStructurePhotoPreviewEl.dataset.state = "hint";
+      return;
+    }
+    orgStructurePhotoPreviewEl.innerHTML = `
+      <img src="${escapeStaffHtml(previewUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+      <span>รูปที่จะแสดงบนหน้าเว็บ</span>
+    `;
+    orgStructurePhotoPreviewEl.dataset.state = "ready";
+  };
+
+  const buildOrgStructureRow = (item) => [
+    item.positionCode,
+    item.position,
+    item.prefix,
+    item.firstName,
+    item.lastName,
+    item.nick,
+    item.studentId,
+    item.year,
+    item.faculty,
+    item.email,
+    item.lineId,
+    item.phone,
+    item.photoUrl
+  ].map((value) => normalizeOrgStructureText(value));
+
+  const normalizeOrgStructureDoc = (docSnap) => {
+    const data = docSnap?.data ? docSnap.data() : {};
+    const row = Array.isArray(data.row) ? data.row : [];
+    const item = {
+      id: docSnap.id,
+      positionCode: normalizeOrgStructureText(data.positionCode || row[0]),
+      position: normalizeOrgStructureText(data.position || row[1]),
+      prefix: normalizeOrgStructureText(data.prefix || row[2]),
+      firstName: normalizeOrgStructureText(data.firstName || row[3]),
+      lastName: normalizeOrgStructureText(data.lastName || row[4]),
+      nick: normalizeOrgStructureText(data.nick || row[5]),
+      studentId: normalizeOrgStructureText(data.studentId || row[6]),
+      year: normalizeOrgStructureText(data.year || row[7]),
+      faculty: normalizeOrgStructureText(data.faculty || row[8]),
+      email: normalizeOrgStructureText(data.email || row[9]).toLowerCase(),
+      lineId: normalizeOrgStructureText(data.lineId || row[10]),
+      phone: normalizeOrgStructureText(data.phone || row[11]),
+      photoUrl: normalizeOrgStructureText(data.photoUrl || data.photo || row[12]),
+      sortOrder: Number(data.sortOrder || 0),
+      status: normalizeOrgStructureText(data.status || "published")
+    };
+    const studentMeta = resolveOrgStructureStudentMeta(item.studentId, item.positionCode);
+    if (studentMeta.year) item.year = studentMeta.year;
+    if (studentMeta.faculty) item.faculty = studentMeta.faculty;
+    item.term = getOrgStructureTerm(item.positionCode);
+    item.fullName = [item.prefix, item.firstName, item.lastName].filter(Boolean).join(" ").trim();
+    return item;
+  };
+
+  const syncOrgStructureFilterOptions = () => {
+    if (!orgStructureTermFilterEl) return;
+    const currentValue = orgStructureTermFilterEl.value || "all";
+    const terms = Array.from(new Set(currentOrgStructureMembers.map((item) => item.term).filter(Boolean)))
+      .sort((a, b) => Number((b.match(/\d+/) || [0])[0]) - Number((a.match(/\d+/) || [0])[0]));
+    orgStructureTermFilterEl.innerHTML = `<option value="all">ทุกรุ่น</option>${terms
+      .map((term) => `<option value="${escapeStaffHtml(term)}">${escapeStaffHtml(term)}</option>`)
+      .join("")}`;
+    orgStructureTermFilterEl.value = terms.includes(currentValue) ? currentValue : "all";
+    orgStructureFilters.term = orgStructureTermFilterEl.value || "all";
+  };
+
+  const getFilteredOrgStructureMembers = () => {
+    const query = normalizeOrgStructureText(orgStructureFilters.query).toLowerCase();
+    return currentOrgStructureMembers.filter((item) => {
+      if (orgStructureFilters.term !== "all" && item.term !== orgStructureFilters.term) return false;
+      if (orgStructureFilters.status !== "all" && item.status !== orgStructureFilters.status) return false;
+      if (!query) return true;
+      return [
+        item.positionCode,
+        item.position,
+        item.fullName,
+        item.nick,
+        item.term,
+        item.email,
+        item.faculty
+      ].join(" ").toLowerCase().includes(query);
+    });
+  };
+
+  const renderOrgStructureMembers = () => {
+    if (!orgStructureTableBodyEl || !orgStructureListCaptionEl) return;
+    syncOrgStructureFilterOptions();
+    const visibleItems = getFilteredOrgStructureMembers();
+    orgStructureListCaptionEl.textContent =
+      `แสดง ${visibleItems.length.toLocaleString("th-TH")} จาก ${currentOrgStructureMembers.length.toLocaleString("th-TH")} รายชื่อจาก Firestore`;
+
+    if (!currentOrgStructureMembers.length) {
+      orgStructureTableBodyEl.innerHTML = `<tr><td colspan="4">ยังไม่มีรายชื่อใน Firestore</td></tr>`;
+      return;
+    }
+    if (!visibleItems.length) {
+      orgStructureTableBodyEl.innerHTML = `<tr><td colspan="4">ไม่พบรายชื่อตามตัวกรอง</td></tr>`;
+      return;
+    }
+
+    orgStructureTableBodyEl.innerHTML = visibleItems
+      .map((item) => {
+        return `
+          <tr class="org-structure-admin-row" data-org-member-id="${escapeStaffHtml(item.id)}" tabindex="0" role="button" aria-label="แก้ไข ${escapeStaffHtml(item.fullName)}">
+            <td>
+              <strong>${escapeStaffHtml(item.fullName || "-")}</strong>
+              <small>${escapeStaffHtml([item.position, item.nick ? `(${item.nick})` : ""].filter(Boolean).join(" "))}</small>
+            </td>
+            <td>${escapeStaffHtml(item.positionCode || "-")}</td>
+            <td>${escapeStaffHtml(item.term || "-")}</td>
+            <td><span class="content-admin-status status-${escapeStaffHtml(item.status || "published")}">${escapeStaffHtml(item.status || "published")}</span></td>
+          </tr>
+        `;
+      })
+      .join("");
+  };
+
+  const resetOrgStructureForm = () => {
+    orgStructureMemberFormEl?.reset();
+    if (orgStructureFields.id) orgStructureFields.id.value = "";
+    if (orgStructureFields.status) orgStructureFields.status.value = "published";
+    updateOrgStructureStudentMeta();
+    updateOrgStructurePhotoPreview();
+    setMessage(orgStructureFormMessageEl, "");
+  };
+
+  const fillOrgStructureForm = (item) => {
+    if (!item || !orgStructureMemberFormEl) return;
+    Object.keys(orgStructureFields).forEach((key) => {
+      const field = orgStructureFields[key];
+      if (!field) return;
+      field.value = key === "id" ? (item.id || "") : (item[key] || "");
+    });
+    updateOrgStructureStudentMeta();
+    updateOrgStructurePhotoPreview();
+    setMessage(orgStructureFormMessageEl, `กำลังแก้ไข: ${item.fullName || item.positionCode}`, "#1d4ed8");
+    orgStructureMemberFormEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    orgStructureFields.positionCode?.focus();
+  };
+
+  const readOrgStructurePayload = () => {
+    const studentId = normalizeOrgStructureText(orgStructureFields.studentId?.value);
+    const positionCode = normalizeOrgStructureText(orgStructureFields.positionCode?.value);
+    const studentMeta = resolveOrgStructureStudentMeta(studentId, positionCode);
+    const payload = {
+      positionCode,
+      position: normalizeOrgStructureText(orgStructureFields.position?.value),
+      prefix: normalizeOrgStructureText(orgStructureFields.prefix?.value),
+      firstName: normalizeOrgStructureText(orgStructureFields.firstName?.value),
+      lastName: normalizeOrgStructureText(orgStructureFields.lastName?.value),
+      nick: normalizeOrgStructureText(orgStructureFields.nick?.value),
+      studentId,
+      year: studentMeta.year,
+      faculty: studentMeta.faculty,
+      email: normalizeOrgStructureText(orgStructureFields.email?.value).toLowerCase(),
+      lineId: normalizeOrgStructureText(orgStructureFields.lineId?.value),
+      phone: normalizeOrgStructureText(orgStructureFields.phone?.value),
+      photoUrl: normalizeOrgStructureText(orgStructureFields.photoUrl?.value),
+      status: normalizeOrgStructureText(orgStructureFields.status?.value) || "published"
+    };
+    if (!payload.positionCode) throw new Error("กรุณากรอกรหัสตำแหน่ง");
+    if (!payload.position) throw new Error("กรุณากรอกตำแหน่ง");
+    if (!payload.firstName) throw new Error("กรุณากรอกชื่อ");
+    if (payload.studentId && !studentMeta.isComplete) {
+      throw new Error("กรุณาตรวจสอบรหัสนิสิต เพื่อให้ระบบระบุชั้นปีและคณะได้");
+    }
+    payload.row = buildOrgStructureRow(payload);
+    payload.term = getOrgStructureTerm(payload.positionCode);
+    return payload;
+  };
+
+  const saveOrgStructureMember = async (event) => {
+    event.preventDefault();
+    if (!resolveStore()) {
+      setMessage(orgStructureFormMessageEl, "ระบบ Firestore ยังไม่พร้อม", "#b91c1c");
+      return;
+    }
+    const controls = Array.from(orgStructureMemberFormEl?.elements || []);
+    controls.forEach((control) => {
+      if ("disabled" in control) control.disabled = true;
+    });
+    try {
+      const payload = readOrgStructurePayload();
+      const id = normalizeOrgStructureText(orgStructureFields.id?.value);
+      const docId = id || slugifyOrgStructureId(payload.positionCode);
+      const existingIndex = currentOrgStructureMembers.findIndex((item) => item.id === docId);
+      const nextSortOrder = existingIndex >= 0
+        ? currentOrgStructureMembers[existingIndex].sortOrder || existingIndex + 1
+        : currentOrgStructureMembers.length + 1;
+      await firestore.setDoc(
+        firestore.doc(firestore.db, COLLECTION_ORG_STRUCTURE, docId),
+        {
+          ...payload,
+          sortOrder: nextSortOrder,
+          updatedAt: firestore.serverTimestamp(),
+          updatedBy: window.sgcuAuth?.auth?.currentUser?.email || ""
+        },
+        { merge: true }
+      );
+      resetOrgStructureForm();
+      setMessage(orgStructureFormMessageEl, "บันทึกรายชื่อทำเนียบรุ่นแล้ว", "#047857");
+    } catch (error) {
+      console.error("save org structure member failed - app.staff-access.js", error);
+      setMessage(orgStructureFormMessageEl, error.message || "บันทึกทำเนียบรุ่นไม่สำเร็จ", "#b91c1c");
+    } finally {
+      controls.forEach((control) => {
+        if ("disabled" in control) control.disabled = false;
+      });
+    }
+  };
+
+  const archiveCurrentOrgStructureMember = () => {
+    if (!orgStructureFields.id?.value) {
+      if (orgStructureFields.status) orgStructureFields.status.value = "archived";
+      return;
+    }
+    if (orgStructureFields.status) orgStructureFields.status.value = "archived";
+    orgStructureMemberFormEl?.requestSubmit();
+  };
+
+  const startOrgStructureMembersListener = () => {
+    if (!orgStructureTableBodyEl || !resolveStore() || unsubscribeOrgStructureMembers) return;
+    orgStructureListCaptionEl.textContent = "กำลังโหลดรายชื่อ...";
+    orgStructureTableBodyEl.innerHTML = `<tr><td colspan="4">กำลังโหลดรายชื่อ...</td></tr>`;
+    unsubscribeOrgStructureMembers = firestore.onSnapshot(
+      firestore.collection(firestore.db, COLLECTION_ORG_STRUCTURE),
+      (snapshot) => {
+        currentOrgStructureMembers = (snapshot?.docs || [])
+          .map((docSnap) => normalizeOrgStructureDoc(docSnap))
+          .sort((a, b) => a.sortOrder - b.sortOrder || a.positionCode.localeCompare(b.positionCode, "th"));
+        renderOrgStructureMembers();
+      },
+      (error) => {
+        console.error("load org structure members failed - app.staff-access.js", error);
+        orgStructureListCaptionEl.textContent = "โหลดทำเนียบรุ่นไม่สำเร็จ";
+        orgStructureTableBodyEl.innerHTML = `<tr><td colspan="4">ไม่สามารถโหลดรายชื่อจาก Firestore ได้</td></tr>`;
+      }
+    );
+  };
+
+  const exportOrgStructureMembersCsv = () => {
+    const rows = getFilteredOrgStructureMembers().map((item) => ({
+      positionCode: item.positionCode,
+      position: item.position,
+      prefix: item.prefix,
+      firstName: item.firstName,
+      lastName: item.lastName,
+      nick: item.nick,
+      studentId: item.studentId,
+      year: item.year,
+      faculty: item.faculty,
+      email: item.email,
+      lineId: item.lineId,
+      phone: item.phone,
+      photoUrl: item.photoUrl,
+      status: item.status
+    }));
+    const ok = window.sgcuCsvExport?.download?.("org-structure-members.csv", rows);
+    if (!ok) setMessage(orgStructureFormMessageEl, "ไม่พบตัวช่วย Export CSV", "#b91c1c");
   };
 
   const buildListenerErrorText = (contextLabel, error) => {
@@ -3819,6 +4231,71 @@ function initStaffAccessPages() {
     staffApprovalMainStructureTabEl.addEventListener("click", () => setStaffApprovalMainTab("structure"));
   }
 
+  if (orgStructureMemberFormEl) {
+    orgStructureMemberFormEl.addEventListener("submit", (event) => {
+      void saveOrgStructureMember(event);
+    });
+  }
+  orgStructureFields.studentId?.addEventListener("input", updateOrgStructureStudentMeta);
+  orgStructureFields.studentId?.addEventListener("blur", updateOrgStructureStudentMeta);
+  orgStructureFields.positionCode?.addEventListener("input", updateOrgStructureStudentMeta);
+  orgStructureFields.positionCode?.addEventListener("blur", updateOrgStructureStudentMeta);
+  if (orgStructureTableBodyEl) {
+    orgStructureTableBodyEl.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const rowEl = target.closest("[data-org-member-id]");
+      if (!rowEl) return;
+      const id = (rowEl.getAttribute("data-org-member-id") || "").toString();
+      const item = currentOrgStructureMembers.find((entry) => entry.id === id);
+      if (item) fillOrgStructureForm(item);
+    });
+    orgStructureTableBodyEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const rowEl = target.closest("[data-org-member-id]");
+      if (!rowEl) return;
+      event.preventDefault();
+      const id = (rowEl.getAttribute("data-org-member-id") || "").toString();
+      const item = currentOrgStructureMembers.find((entry) => entry.id === id);
+      if (item) fillOrgStructureForm(item);
+    });
+  }
+  orgStructureRefreshBtnEl?.addEventListener("click", () => {
+    if (typeof unsubscribeOrgStructureMembers === "function") {
+      unsubscribeOrgStructureMembers();
+      unsubscribeOrgStructureMembers = null;
+    }
+    startOrgStructureMembersListener();
+  });
+  orgStructureExportBtnEl?.addEventListener("click", exportOrgStructureMembersCsv);
+  orgStructureArchiveBtnEl?.addEventListener("click", archiveCurrentOrgStructureMember);
+  orgStructureResetBtnEl?.addEventListener("click", resetOrgStructureForm);
+  orgStructureTermFilterEl?.addEventListener("change", () => {
+    orgStructureFilters.term = orgStructureTermFilterEl.value || "all";
+    renderOrgStructureMembers();
+  });
+  orgStructureStatusFilterEl?.addEventListener("change", () => {
+    orgStructureFilters.status = orgStructureStatusFilterEl.value || "all";
+    renderOrgStructureMembers();
+  });
+  orgStructureSearchInputEl?.addEventListener("input", () => {
+    orgStructureFilters.query = orgStructureSearchInputEl.value.trim();
+    renderOrgStructureMembers();
+  });
+  orgStructureFields.photoUrl?.addEventListener("input", updateOrgStructurePhotoPreview);
+  orgStructureFields.photoUrl?.addEventListener("change", updateOrgStructurePhotoPreview);
+  orgStructureFilterResetEl?.addEventListener("click", () => {
+    if (orgStructureSearchInputEl) orgStructureSearchInputEl.value = "";
+    if (orgStructureTermFilterEl) orgStructureTermFilterEl.value = "all";
+    if (orgStructureStatusFilterEl) orgStructureStatusFilterEl.value = "all";
+    orgStructureFilters.query = "";
+    orgStructureFilters.term = "all";
+    orgStructureFilters.status = "all";
+    renderOrgStructureMembers();
+  });
+
   if (staffApprovalTypeStaffBtnEl) {
     staffApprovalTypeStaffBtnEl.addEventListener("click", () => setApprovalType("staff"));
   }
@@ -4224,6 +4701,7 @@ function initStaffAccessPages() {
   setStaffApprovalMainTab("approval");
   setOrgRepresentativeView("overview");
   setApprovalType("staff");
+  updateOrgStructurePhotoPreview();
 
   window.addEventListener("beforeunload", () => {
     if (deferredBootstrapTimer) {
@@ -4239,7 +4717,8 @@ function initStaffAccessPages() {
       unsubscribePendingApplications,
       unsubscribeApprovalHistory,
       unsubscribeOrgRepresentativeApplications,
-      unsubscribePositionCatalog
+      unsubscribePositionCatalog,
+      unsubscribeOrgStructureMembers
     ].forEach((unsubscribe) => {
       if (typeof unsubscribe === "function") {
         try {
@@ -4254,6 +4733,7 @@ function initStaffAccessPages() {
     unsubscribeApprovalHistory = null;
     unsubscribeOrgRepresentativeApplications = null;
     unsubscribePositionCatalog = null;
+    unsubscribeOrgStructureMembers = null;
   });
 }
 

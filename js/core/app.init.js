@@ -1033,6 +1033,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         exportVisibleProjectsCsv(key);
       });
     }
+    if (ctx.projectClosureMailMergeExportBtn) {
+      ctx.projectClosureMailMergeExportBtn.addEventListener("click", () => {
+        exportClosureMailMergeCsv(key);
+      });
+    }
     if (ctx.longestOpenAssistantFilterEl) {
       ctx.longestOpenAssistantFilterEl.addEventListener("change", () => {
         setActiveProjectStatusContext(key);

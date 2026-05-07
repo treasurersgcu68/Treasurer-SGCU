@@ -72,6 +72,82 @@
 
           <div id="projectDataLoadStateStaff" class="project-data-load-state" hidden></div>
 
+          <section id="projectStaffOpsPanel" class="panel project-staff-ops-panel section-appear section-delay-1" hidden>
+            <header class="panel-header">
+              <div>
+                <h3 class="panel-title">ส่งออกข้อมูลและตรวจข้อมูลก่อนดำเนินงาน</h3>
+                <p class="panel-caption">
+                  ใช้ข้อมูลตามตัวกรองปัจจุบันของหน้า กำกับสถานะโครงการ
+                </p>
+              </div>
+              <div class="project-staff-ops-actions">
+                <button id="projectClosureMailMergeExportCsvStaff" class="btn-primary csv-export-btn" type="button" disabled>
+                  Export CSV ปิดโครงการ
+                </button>
+                <a
+                  id="projectStaffSourceSheetLink"
+                  class="btn-ghost"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  hidden
+                >
+                  เปิด Google Sheet
+                </a>
+              </div>
+            </header>
+
+            <div class="project-staff-ops-grid">
+              <article class="project-staff-alert-box">
+                <div class="project-staff-alert-head">
+                  <div>
+                    <h4>ยืมรองจ่ายไม่ได้แล้ว</h4>
+                    <p>โครงการที่ควรตรวจสถานะยืมรองจ่ายหรือวันที่ใน Google Sheet</p>
+                  </div>
+                  <span id="projectAdvanceBlockedCountStaff" class="project-staff-alert-count">0</span>
+                </div>
+                <div class="project-staff-alert-table-wrap">
+                  <table class="project-staff-alert-table">
+                    <thead>
+                      <tr>
+                        <th>รหัส</th>
+                        <th>โครงการ</th>
+                        <th>เหตุผล</th>
+                      </tr>
+                    </thead>
+                    <tbody id="projectAdvanceBlockedTableBodyStaff">
+                      <tr><td colspan="3">ยังไม่มีรายการ</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="project-staff-alert-box">
+                <div class="project-staff-alert-head">
+                  <div>
+                    <h4>โอนงบประมาณไม่ได้แล้ว</h4>
+                    <p>โครงการที่ควรตรวจสถานะโอนงบประมาณหรือเลขเอกสารใน Google Sheet</p>
+                  </div>
+                  <span id="projectTransferBlockedCountStaff" class="project-staff-alert-count">0</span>
+                </div>
+                <div class="project-staff-alert-table-wrap">
+                  <table class="project-staff-alert-table">
+                    <thead>
+                      <tr>
+                        <th>รหัส</th>
+                        <th>โครงการ</th>
+                        <th>เหตุผล</th>
+                      </tr>
+                    </thead>
+                    <tbody id="projectTransferBlockedTableBodyStaff">
+                      <tr><td colspan="3">ยังไม่มีรายการ</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </section>
+
           <!-- ================= STATUS VIEW ================= -->
           <div id="statusViewStaff">
             <!-- การ์ดสรุป -->

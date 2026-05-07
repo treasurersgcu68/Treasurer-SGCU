@@ -13,20 +13,19 @@ async function loadOrgStructure() {
   toggleOrgStructureLoading(true);
   const el = document.getElementById("org-structure-content");
   try {
-    await window.sgcuVendorLoader?.ensurePapa?.();
-    const structureCsvText = await fetchTextWithProgress(ORG_STRUCTURE_SHEET_CSV, (ratio) => {
-      if (typeof updateLoaderProgress === "function") {
-        updateLoaderProgress("orgStructure", ratio);
-      }
-    });
-
-    const parsed = Papa.parse(structureCsvText, {
-      header: false,
-      skipEmptyLines: false
-    });
     const staffProfiles = await loadOrgStaffProfilesFromFirestore();
+    try {
+      const firestoreRows = await loadOrgStructureFromFirestore();
+      if (Array.isArray(firestoreRows) && firestoreRows.length > 1) {
+        renderOrgStructure(firestoreRows, staffProfiles);
+        return;
+      }
+    } catch (firestoreErr) {
+      console.warn("โหลดทำเนียบรุ่นจาก Firestore ไม่สำเร็จ ใช้ Google Sheets fallback - app.org.js", firestoreErr);
+    }
 
-    const rows = parsed.data;
+    const rows = await loadOrgStructureFromSheet();
+
     renderOrgStructure(rows, staffProfiles);
   } catch (err) {
     console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:32", err);
@@ -40,8 +39,102 @@ async function loadOrgStructure() {
   }
 }
 
+const ORG_STRUCTURE_HEADER_ROW = [
+  "รหัสตำแหน่ง",
+  "ตำแหน่ง",
+  "คำนำ",
+  "ชื่อ",
+  "สกุล",
+  "ชื่อเล่น",
+  "รหัสนิสิต",
+  "ชั้นปี",
+  "คณะ",
+  "อีเมลที่ใช้ประจำ",
+  "Line ID",
+  "เบอร์โทรศัพท์",
+  "PIC"
+];
+
+function normalizeOrgStructureDateValue(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value.trim();
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString();
+  if (typeof value.toDate === "function") {
+    const date = value.toDate();
+    return date instanceof Date && !Number.isNaN(date.getTime()) ? date.toISOString() : "";
+  }
+  return value.toString ? value.toString().trim() : "";
+}
+
+function normalizeOrgStructureMemberDoc(docSnap) {
+  const data = docSnap?.data ? docSnap.data() : {};
+  const row = Array.isArray(data.row)
+    ? data.row.map((value) => (value ?? "").toString())
+    : [
+        data.positionCode,
+        data.position,
+        data.prefix,
+        data.firstName,
+        data.lastName,
+        data.nick,
+        data.studentId,
+        data.year,
+        data.faculty,
+        data.email,
+        data.lineId,
+        data.phone,
+        data.photoUrl || data.photo
+      ].map((value) => (value ?? "").toString());
+  if (!row.some((value) => (value || "").toString().trim())) return null;
+  return {
+    id: docSnap.id,
+    row,
+    sortOrder: Number(data.sortOrder ?? data.order ?? 0),
+    positionCode: (data.positionCode || row[0] || "").toString().trim(),
+    updatedAt: normalizeOrgStructureDateValue(data.updatedAt)
+  };
+}
+
+async function loadOrgStructureFromFirestore() {
+  const store = window.sgcuFirestore || {};
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const collectionName = appConfig.firestore?.collections?.orgStructureMembers || "orgStructureMembers";
+  if (!store.db || !store.collection || !store.getDocs) return null;
+
+  const collectionRef = store.collection(store.db, collectionName);
+  const listQuery =
+    store.query && store.where
+      ? store.query(collectionRef, store.where("status", "==", "published"))
+      : collectionRef;
+  const snapshot = await store.getDocs(listQuery);
+  const items = [];
+  snapshot.forEach((docSnap) => {
+    const item = normalizeOrgStructureMemberDoc(docSnap);
+    if (item) items.push(item);
+  });
+  if (!items.length) return null;
+  items.sort((a, b) => a.sortOrder - b.sortOrder || a.positionCode.localeCompare(b.positionCode, "th"));
+  return [ORG_STRUCTURE_HEADER_ROW, ...items.map((item) => item.row)];
+}
+
+async function loadOrgStructureFromSheet() {
+  await window.sgcuVendorLoader?.ensurePapa?.();
+  const structureCsvText = await fetchTextWithProgress(ORG_STRUCTURE_SHEET_CSV, (ratio) => {
+    if (typeof updateLoaderProgress === "function") {
+      updateLoaderProgress("orgStructure", ratio);
+    }
+  });
+
+  const parsed = Papa.parse(structureCsvText, {
+    header: false,
+    skipEmptyLines: false
+  });
+  return parsed.data;
+}
+
 async function loadOrgStaffProfilesFromFirestore() {
   const store = window.sgcuFirestore || {};
+  if (!window.sgcuAuth?.auth?.currentUser) return null;
   if (!store.db || !store.collection || !store.onSnapshot) return null;
 
   return new Promise((resolve) => {

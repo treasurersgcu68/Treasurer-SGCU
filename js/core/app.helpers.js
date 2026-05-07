@@ -572,6 +572,7 @@ function extractProjectsFromRows(dataRows, headerRow, sourceYear = "") {
 
         approvalStatus: statusMainRaw,
         councilSessionText,
+        councilMeetingNo: councilMeetNo,
         approveDate,
         lastWorkDate,
         fundSource,

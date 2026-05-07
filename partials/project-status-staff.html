@@ -13,9 +13,16 @@
               <button
                 class="tab-btn view-toggle-btn is-active"
                 type="button"
+                data-view="ops-staff"
+              >
+                งานเอกสารและตรวจข้อมูล
+              </button>
+              <button
+                class="tab-btn view-toggle-btn"
+                type="button"
                 data-view="status-staff"
               >
-                สรุปสถานะโครงการ
+                ภาพรวม
               </button>
               <button
                 class="tab-btn view-toggle-btn"
@@ -72,12 +79,13 @@
 
           <div id="projectDataLoadStateStaff" class="project-data-load-state" hidden></div>
 
-          <section id="projectStaffOpsPanel" class="panel project-staff-ops-panel section-appear section-delay-1" hidden>
-            <header class="panel-header">
+          <section id="projectStaffOpsPanelStaff" class="panel project-staff-ops-panel section-appear section-delay-1" hidden>
+            <header class="panel-header project-staff-ops-header">
               <div>
+                <span class="project-staff-ops-kicker">Data operations</span>
                 <h3 class="panel-title">ส่งออกข้อมูลและตรวจข้อมูลก่อนดำเนินงาน</h3>
                 <p class="panel-caption">
-                  ใช้ข้อมูลตามตัวกรองปัจจุบันของหน้า กำกับสถานะโครงการ
+                  ใช้ข้อมูลตามตัวกรองปัจจุบันของหน้า กำกับสถานะโครงการ เพื่อตรวจงานที่ต้องแก้ใน Google Sheet และเตรียมไฟล์ mail merge
                 </p>
               </div>
               <div class="project-staff-ops-actions">
@@ -85,7 +93,7 @@
                   Export CSV ปิดโครงการ
                 </button>
                 <a
-                  id="projectStaffSourceSheetLink"
+                  id="projectStaffSourceSheetLinkStaff"
                   class="btn-ghost"
                   href="#"
                   target="_blank"
@@ -97,10 +105,29 @@
               </div>
             </header>
 
+            <div class="project-staff-ops-note">
+              <div>
+                <strong>CSV ปิดโครงการ</strong>
+                <span>ส่งออกข้อมูลโครงการที่อนุมัติแล้วหรือปิดแล้ว พร้อมผู้ตรวจ สถานะปิด งบใช้จริง และข้อมูลเอกสารที่ใช้กับ mail merge</span>
+              </div>
+              <div>
+                <strong>ตรวจข้อมูล</strong>
+                <span>รายการสีแดงคือพ้นเงื่อนไขแล้ว ควรแก้ชีททันที ส่วนรายการสีเหลืองคือยังดำเนินการได้แต่ยังไม่เริ่ม</span>
+              </div>
+            </div>
+
+            <div class="project-staff-ops-section-head">
+              <div>
+                <h4>รายการที่ต้องติดตาม</h4>
+                <p>แสดงสูงสุด 8 รายการต่อกล่องตามตัวกรองปี ประเภทองค์กร ฝ่าย/ชมรม และคำค้นปัจจุบัน</p>
+              </div>
+            </div>
+
             <div class="project-staff-ops-grid">
-              <article class="project-staff-alert-box">
+              <article class="project-staff-alert-box is-critical">
                 <div class="project-staff-alert-head">
                   <div>
+                    <span class="project-staff-alert-label">ต้องแก้ในชีท</span>
                     <h4>ยืมรองจ่ายไม่ได้แล้ว</h4>
                     <p>โครงการที่ควรตรวจสถานะยืมรองจ่ายหรือวันที่ใน Google Sheet</p>
                   </div>
@@ -122,9 +149,10 @@
                 </div>
               </article>
 
-              <article class="project-staff-alert-box">
+              <article class="project-staff-alert-box is-critical">
                 <div class="project-staff-alert-head">
                   <div>
+                    <span class="project-staff-alert-label">ต้องแก้ในชีท</span>
                     <h4>โอนงบประมาณไม่ได้แล้ว</h4>
                     <p>โครงการที่ควรตรวจสถานะโอนงบประมาณหรือเลขเอกสารใน Google Sheet</p>
                   </div>
@@ -145,11 +173,61 @@
                   </table>
                 </div>
               </article>
+
+              <article class="project-staff-alert-box is-actionable">
+                <div class="project-staff-alert-head">
+                  <div>
+                    <span class="project-staff-alert-label">ยังดำเนินการได้</span>
+                    <h4>ยังยืมรองจ่ายได้ แต่ยังไม่ดำเนินการ</h4>
+                    <p>โครงการที่มีข้อมูลกำหนดยืมรองจ่ายแล้ว แต่สถานะยังไม่เริ่มดำเนินการ</p>
+                  </div>
+                  <span id="projectAdvancePendingCountStaff" class="project-staff-alert-count">0</span>
+                </div>
+                <div class="project-staff-alert-table-wrap">
+                  <table class="project-staff-alert-table">
+                    <thead>
+                      <tr>
+                        <th>รหัส</th>
+                        <th>โครงการ</th>
+                        <th>เหตุผล</th>
+                      </tr>
+                    </thead>
+                    <tbody id="projectAdvancePendingTableBodyStaff">
+                      <tr><td colspan="3">ยังไม่มีรายการ</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="project-staff-alert-box is-actionable">
+                <div class="project-staff-alert-head">
+                  <div>
+                    <span class="project-staff-alert-label">ยังดำเนินการได้</span>
+                    <h4>ยังโอนงบประมาณได้ แต่ยังไม่ดำเนินการ</h4>
+                    <p>โครงการที่ยังมีจำนวนวันคงเหลือ และยังไม่มีสถานะโอนงบประมาณ</p>
+                  </div>
+                  <span id="projectTransferPendingCountStaff" class="project-staff-alert-count">0</span>
+                </div>
+                <div class="project-staff-alert-table-wrap">
+                  <table class="project-staff-alert-table">
+                    <thead>
+                      <tr>
+                        <th>รหัส</th>
+                        <th>โครงการ</th>
+                        <th>เหตุผล</th>
+                      </tr>
+                    </thead>
+                    <tbody id="projectTransferPendingTableBodyStaff">
+                      <tr><td colspan="3">ยังไม่มีรายการ</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
             </div>
           </section>
 
           <!-- ================= STATUS VIEW ================= -->
-          <div id="statusViewStaff">
+          <div id="statusViewStaff" style="display:none;">
             <!-- การ์ดสรุป -->
             <div class="cards section-appear section-delay-2">
               <article class="card card-hover">

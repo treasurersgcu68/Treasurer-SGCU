@@ -142,6 +142,13 @@ async function loadNewsFromSheet() {
       return;
     }
 
+    if (!NEWS_SHEET_CSV) {
+      newsItems = [];
+      clearLoadError("news");
+      renderNewsList();
+      return;
+    }
+
     await window.sgcuVendorLoader?.ensurePapa?.();
     const csvText = await fetchTextWithProgress(NEWS_SHEET_CSV, (ratio) => {
       if (typeof updateLoaderProgress === "function") {

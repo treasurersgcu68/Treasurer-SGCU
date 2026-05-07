@@ -18,7 +18,10 @@
       "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260504-3",
       "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260504-3",
       "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
-      "meeting-room-staff": "js/features/booking/app.meeting-room-staff.js?v=20260504-5",
+      "meeting-room-staff": [
+        "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
+        "js/features/booking/app.meeting-room-staff.js?v=20260504-6"
+      ],
       "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260504-8",
       login: [
         "js/features/staff/app.staff-access.js?v=20260504-1",

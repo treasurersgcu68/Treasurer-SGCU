@@ -14,23 +14,12 @@ async function loadOrgStructure() {
   const el = document.getElementById("org-structure-content");
   try {
     const staffProfiles = await loadOrgStaffProfilesFromFirestore();
-    try {
-      const firestoreRows = await loadOrgStructureFromFirestore();
-      if (Array.isArray(firestoreRows) && firestoreRows.length > 1) {
-        renderOrgStructure(firestoreRows, staffProfiles);
-        return;
-      }
-    } catch (firestoreErr) {
-      console.warn("โหลดทำเนียบรุ่นจาก Firestore ไม่สำเร็จ ใช้ Google Sheets fallback - app.org.js", firestoreErr);
-    }
-
-    const rows = await loadOrgStructureFromSheet();
-
-    renderOrgStructure(rows, staffProfiles);
+    const firestoreRows = await loadOrgStructureFromFirestore();
+    renderOrgStructure(firestoreRows, staffProfiles);
   } catch (err) {
     console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:32", err);
     recordLoadError("orgStructure", "โหลดโครงสร้างองค์กรไม่สำเร็จ", { showRetry: true });
-    setInlineError(el, "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้");
+    setInlineError(el, "ไม่สามารถโหลดข้อมูลทำเนียบจาก Firestore ได้");
   } finally {
     toggleOrgStructureLoading(false);
     if (typeof markLoaderStep === "function") {
@@ -117,21 +106,6 @@ async function loadOrgStructureFromFirestore() {
   return [ORG_STRUCTURE_HEADER_ROW, ...items.map((item) => item.row)];
 }
 
-async function loadOrgStructureFromSheet() {
-  await window.sgcuVendorLoader?.ensurePapa?.();
-  const structureCsvText = await fetchTextWithProgress(ORG_STRUCTURE_SHEET_CSV, (ratio) => {
-    if (typeof updateLoaderProgress === "function") {
-      updateLoaderProgress("orgStructure", ratio);
-    }
-  });
-
-  const parsed = Papa.parse(structureCsvText, {
-    header: false,
-    skipEmptyLines: false
-  });
-  return parsed.data;
-}
-
 async function loadOrgStaffProfilesFromFirestore() {
   const store = window.sgcuFirestore || {};
   if (!window.sgcuAuth?.auth?.currentUser) return null;
@@ -190,13 +164,13 @@ function renderOrgStructure(rows, staffProfileDocs = null) {
           .replaceAll("'", "&#39;");
 
   if (!rows || rows.length < 2) {
-    container.innerHTML = `<p>ไม่พบข้อมูลในชีต</p>`;
+    container.innerHTML = `<p>ไม่พบข้อมูลทำเนียบ</p>`;
     return;
   }
 
   const dataRows = rows.slice(1);
 
-  // ====== คอลัมน์ในชีตโครงสร้างองค์กร (ORG_STRUCTURE_SHEET_CSV หลังลบ A-B) ======
+  // Firestore rows keep the former sheet column order for the existing renderer.
   const STRUCT_COL_POS = 1;    // เดิม D -> ใหม่ B
   const STRUCT_COL_PREFIX = 2; // เดิม E -> ใหม่ C
   const STRUCT_COL_FIRST = 3;  // เดิม F -> ใหม่ D

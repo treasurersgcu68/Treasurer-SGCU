@@ -1088,18 +1088,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       btn.addEventListener("click", () => {
         if (!isUserAuthenticated && key === "staff") return;
         setActiveProjectStatusContext(key);
-        const target = btn.dataset.view; // 'status' หรือ 'calendar' หรือ '-staff'
+        const target = btn.dataset.view; // 'status', 'calendar', 'ops' หรือ '-staff'
 
         ctx.viewToggleBtns.forEach((b) => b.classList.remove("is-active"));
         btn.classList.add("is-active");
 
         const isCalendar = target.includes("calendar");
         const isDashboard = target.includes("dashboard");
+        const isOps = target.includes("ops");
         if (ctx.statusViewEl) {
-          ctx.statusViewEl.style.display = isCalendar || isDashboard ? "none" : "block";
+          ctx.statusViewEl.style.display = isCalendar || isDashboard || isOps ? "none" : "block";
         }
         if (ctx.calendarViewEl) {
           ctx.calendarViewEl.style.display = isCalendar ? "block" : "none";
+        }
+        if (ctx.projectStaffOpsPanelEl) {
+          ctx.projectStaffOpsPanelEl.style.display = isOps ? "block" : "none";
         }
         if (ctx.dashboardViewEl) {
           ctx.dashboardViewEl.style.display = isDashboard ? "block" : "none";

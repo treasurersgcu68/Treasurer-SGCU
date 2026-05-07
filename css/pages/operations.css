@@ -222,10 +222,28 @@
 
 .project-staff-ops-panel {
   margin: 12px 0 18px;
+  border-color: rgba(148, 163, 184, 0.22);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .project-staff-ops-panel[hidden] {
   display: none !important;
+}
+
+.project-staff-ops-header {
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.project-staff-ops-kicker {
+  display: inline-flex;
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .project-staff-ops-actions {
@@ -236,33 +254,138 @@
   flex-wrap: wrap;
 }
 
+.project-staff-ops-actions .btn-primary,
+.project-staff-ops-actions .btn-ghost {
+  min-height: 40px;
+}
+
+.project-staff-ops-note {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.project-staff-ops-note > div {
+  padding: 12px 14px;
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.project-staff-ops-note strong,
+.project-staff-ops-note span {
+  display: block;
+}
+
+.project-staff-ops-note strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.project-staff-ops-note span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.project-staff-ops-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.project-staff-ops-section-head h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.project-staff-ops-section-head p {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
 .project-staff-ops-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .project-staff-alert-box {
-  border: 1px solid #fee2e2;
+  border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: 8px;
-  background: #fffafa;
+  background: #ffffff;
   overflow: hidden;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.project-staff-alert-box.is-critical {
+  border-color: #fecaca;
+  background: #fffafa;
+}
+
+.project-staff-alert-box.is-actionable {
+  border-color: #fde68a;
+  background: #fffdf5;
 }
 
 .project-staff-alert-head {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
-  padding: 12px 14px;
-  border-bottom: 1px solid #fee2e2;
+  padding: 14px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  background: #f8fafc;
+}
+
+.project-staff-alert-box.is-critical .project-staff-alert-head {
+  border-bottom-color: #fee2e2;
   background: #fff7f7;
+}
+
+.project-staff-alert-box.is-actionable .project-staff-alert-head {
+  border-bottom-color: #fde68a;
+  background: #fffbeb;
+}
+
+.project-staff-alert-label {
+  display: inline-flex;
+  margin-bottom: 5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.project-staff-alert-box.is-actionable .project-staff-alert-label {
+  background: #fde68a;
+  color: #92400e;
 }
 
 .project-staff-alert-head h4 {
   margin: 0;
-  font-size: 16px;
+  color: #0f172a;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.project-staff-alert-box.is-critical .project-staff-alert-head h4 {
   color: #991b1b;
+}
+
+.project-staff-alert-box.is-actionable .project-staff-alert-head h4 {
+  color: #92400e;
 }
 
 .project-staff-alert-head p {
@@ -276,32 +399,60 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  height: 32px;
+  flex: 0 0 auto;
+  min-width: 42px;
+  height: 36px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: 8px;
   background: #fee2e2;
   color: #991b1b;
   font-weight: 800;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.project-staff-alert-box.is-actionable .project-staff-alert-count {
+  background: #fde68a;
+  color: #92400e;
 }
 
 .project-staff-alert-table-wrap {
-  max-height: 300px;
+  max-height: 330px;
   overflow: auto;
 }
 
 .project-staff-alert-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .project-staff-alert-table th,
 .project-staff-alert-table td {
-  padding: 9px 10px;
-  border-bottom: 1px solid #fee2e2;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
   vertical-align: top;
   text-align: left;
+}
+
+.project-staff-alert-table th:first-child,
+.project-staff-alert-table td:first-child {
+  width: 104px;
+}
+
+.project-staff-alert-table th:last-child,
+.project-staff-alert-table td:last-child {
+  width: 34%;
+}
+
+.project-staff-alert-box.is-critical .project-staff-alert-table th,
+.project-staff-alert-box.is-critical .project-staff-alert-table td {
+  border-bottom-color: #fee2e2;
+}
+
+.project-staff-alert-box.is-actionable .project-staff-alert-table th,
+.project-staff-alert-box.is-actionable .project-staff-alert-table td {
+  border-bottom-color: #fde68a;
 }
 
 .project-staff-alert-table th {
@@ -313,15 +464,49 @@
   font-size: 11px;
 }
 
+.project-staff-alert-box.is-critical .project-staff-alert-table th {
+  background: #fff7f7;
+  color: #7f1d1d;
+}
+
+.project-staff-alert-box.is-actionable .project-staff-alert-table th {
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.project-staff-alert-code {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .project-staff-alert-project {
   font-weight: 700;
   color: #111827;
+  line-height: 1.3;
 }
 
 .project-staff-alert-org,
 .project-staff-alert-empty,
 .project-staff-alert-more {
   color: #6b7280;
+}
+
+.project-staff-alert-org {
+  margin-top: 2px;
+  font-size: 11.5px;
+}
+
+.project-staff-alert-reason {
+  display: block;
+  color: #475569;
+  line-height: 1.45;
 }
 
 .project-staff-alert-empty,
@@ -333,6 +518,10 @@
 @media (max-width: 860px) {
   .project-staff-ops-panel .panel-header {
     align-items: stretch;
+  }
+
+  .project-staff-ops-note {
+    grid-template-columns: 1fr;
   }
 
   .project-staff-ops-actions {

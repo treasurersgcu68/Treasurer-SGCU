@@ -282,6 +282,13 @@ async function loadDownloadDocuments() {
       }
     }
 
+    if (!DOWNLOAD_SHEET) {
+      setDownloadListState(listEl, "empty", "ยังไม่มีเอกสารดาวน์โหลด");
+      clearLoadError("downloads");
+      if (categorySelectEl) categorySelectEl.disabled = false;
+      return;
+    }
+
     await window.sgcuVendorLoader?.ensurePapa?.();
     const csvText = await fetchTextWithProgress(DOWNLOAD_SHEET, (ratio) => {
       if (typeof updateLoaderProgress === "function") {

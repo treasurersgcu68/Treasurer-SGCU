@@ -6,7 +6,6 @@ const APP_CONFIG = SGCU_APP_CONFIG;
 let PROJECT_SOURCES_CSV_URL = "";
 let SHEET_CSV_URL = "";
 let PROJECT_CONTACTS_CSV_URL = "";
-let ORG_STRUCTURE_SHEET_CSV = "";
 let DOWNLOAD_SHEET = "";
 let NEWS_SHEET_CSV = "";
 let ORG_FILTER_CSV_URL = "";
@@ -33,12 +32,11 @@ let CACHE_KEYS = APP_CONFIG.cache.keys;
 
 function applyRuntimeConfigAliases() {
   PROJECT_SOURCES_CSV_URL = APP_CONFIG.sheets.projectSources || "";
-  SHEET_CSV_URL = APP_CONFIG.sheets.projects;
+  SHEET_CSV_URL = APP_CONFIG.sheets.projects || "";
   PROJECT_CONTACTS_CSV_URL = APP_CONFIG.sheets.projectContacts || "";
-  ORG_STRUCTURE_SHEET_CSV = APP_CONFIG.sheets.orgStructure;
-  DOWNLOAD_SHEET = APP_CONFIG.sheets.downloads;
-  NEWS_SHEET_CSV = APP_CONFIG.sheets.news;
-  ORG_FILTER_CSV_URL = APP_CONFIG.sheets.orgFilters;
+  DOWNLOAD_SHEET = APP_CONFIG.sheets.downloads || "";
+  NEWS_SHEET_CSV = APP_CONFIG.sheets.news || "";
+  ORG_FILTER_CSV_URL = APP_CONFIG.sheets.orgFilters || "";
   DEFAULT_BASE_GROUPS = APP_CONFIG.org.defaultBaseGroups;
   AUTH_SESSION_MAX_AGE_MS =
     typeof globalThis.AUTH_SESSION_MAX_AGE_MS === "number" &&
@@ -315,6 +313,10 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     projectAdvanceBlockedTableBodyEl: get("projectAdvanceBlockedTableBody"),
     projectTransferBlockedCountEl: get("projectTransferBlockedCount"),
     projectTransferBlockedTableBodyEl: get("projectTransferBlockedTableBody"),
+    projectAdvancePendingCountEl: get("projectAdvancePendingCount"),
+    projectAdvancePendingTableBodyEl: get("projectAdvancePendingTableBody"),
+    projectTransferPendingCountEl: get("projectTransferPendingCount"),
+    projectTransferPendingTableBodyEl: get("projectTransferPendingTableBody"),
     filterBarEl: get("filterBar"),
     totalProjectsEl: get("totalProjects"),
     pendingProjectsEl: get("pendingProjects"),

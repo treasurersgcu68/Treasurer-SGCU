@@ -319,7 +319,6 @@ async function build() {
 
 async function check() {
   await build();
-  await fs.rm(distDir, { recursive: true, force: true });
 }
 
 try {

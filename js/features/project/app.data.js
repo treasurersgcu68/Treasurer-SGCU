@@ -536,7 +536,10 @@ async function loadOrgFilters() {
       const hasOrgCode = cached.some((item) =>
         (item?.code || "").toString().trim() !== ""
       );
-      if (hasOrgCode) {
+      const hasAccountField = cached.some((item) =>
+        Object.prototype.hasOwnProperty.call(item || {}, "accountNo")
+      );
+      if (hasOrgCode && hasAccountField) {
         orgFilters = cached;
         return;
       }
@@ -561,7 +564,9 @@ async function loadOrgFilters() {
       .map((row) => ({
         group: (row[0] || "").toString().trim(),
         name: (row[1] || "").toString().trim(),
-        code: (row[2] || "").toString().trim().toUpperCase()
+        code: (row[2] || "").toString().trim().toUpperCase(),
+        documentRunCode: (row[3] || "").toString().trim(),
+        accountNo: (row[4] || "").toString().trim()
       }))
       .filter((r) => r.group !== "" && r.name !== "");
 

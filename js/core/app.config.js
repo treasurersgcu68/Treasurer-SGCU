@@ -3,12 +3,6 @@ const SGCU_APP_CONFIG = {
   sheets: {
     projectSources:
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vQoybDIWotYcgg-UWuRAUvbEkmWrdIbKbHWANHRyzta4i7CCNR5dKPVi_40ruIxrvbVMtsxrUUagrEx/pub?output=csv",
-    orgStructure:
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vSiGgrustQXlqTrRlPj2sY7pkI7slLhTFSIKjPDHenzt0ddhhoQA6VHbffoiT29J2Hk1ndxYGKVSZ4B/pub?output=csv",
-    downloads:
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vTburYaUshqF-DOvbwOEinWik0KXNwqqJLfO6frlxUn1iEsLu5RzkNoum4KgnWeSwBdo4--B1eScRD5/pub?output=csv",
-    news:
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLaBypwNGVEZHCjCxQDSLn8s7tTx1EKAIKuYjL7oIx7_fmssMnAcq9hpLyC4N5TvwIhrzwtZxxCAe0/pub?output=csv",
     orgFilters:
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3mW8GVPRgbiURGAx59WyB3TZT5GbKoXJxHxmgpU2LRd_jgow9JBwXVjtjJRvfIgYYL5MKLLuZEddd/pub?output=csv",
     borrowAssets:
@@ -17,12 +11,6 @@ const SGCU_APP_CONFIG = {
   managementLinks: {
     projectSources:
       "https://docs.google.com/spreadsheets/d/1YmrHUdwdCGErwuMOlm9ohEFDvJkeeSq8AKNUu4h6c8c/edit?usp=sharing",
-    orgStructure:
-      "https://docs.google.com/spreadsheets/d/1vWD8BwJm_gk8Jrww8gwKEdRHc6lu6xSzJHDR7b5_4KY/edit?usp=sharing",
-    news:
-      "https://docs.google.com/spreadsheets/d/1QrlqwCsSg-vZZtFIESdLSAaFekHX5HoIS6oyl9v-LWk/edit?usp=sharing",
-    downloads:
-      "https://docs.google.com/spreadsheets/d/17-Gh5J6heNjjHlxSAoFy_pDmXY7aTIQQUB4VzdWQSp4/edit?usp=sharing",
     orgFilters:
       "https://docs.google.com/spreadsheets/d/19ncbNPEVXoTMGXQeKAvY88Dsr4a-Xy35-VyekQj8xdk/edit?usp=sharing",
     borrowAssets: ""

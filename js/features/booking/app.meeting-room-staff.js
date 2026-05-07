@@ -36,6 +36,11 @@ function initMeetingRoomStaffApproval() {
   const bookingDayModalEl = document.getElementById("meetingBookingDayModal");
   const bookingDayModalTitleEl = document.getElementById("meetingBookingDayTitle");
   const bookingDayModalBodyEl = document.getElementById("meetingBookingDayBody");
+  const bookingDayModalCloseEl = document.getElementById("meetingBookingDayClose");
+  const bookingDetailModalEl = document.getElementById("meetingBookingDetailModal");
+  const bookingDetailTitleEl = document.getElementById("meetingBookingDetailTitle");
+  const bookingDetailBodyEl = document.getElementById("meetingBookingDetailBody");
+  const bookingDetailCloseEl = document.getElementById("meetingBookingDetailClose");
   const rejectReasonModalEl = document.getElementById("meetingRejectReasonModal");
   const rejectReasonInputEl = document.getElementById("meetingRejectReasonInput");
   const rejectReasonErrorEl = document.getElementById("meetingRejectReasonError");
@@ -350,6 +355,60 @@ function initMeetingRoomStaffApproval() {
     activeStaffDayModalDate = dateText;
     setStaffBookingDayBody(dateText, sourceRows);
     openDialog(bookingDayModalEl, { focusSelector: "#meetingBookingDayClose" });
+  };
+
+  const closeStaffBookingDayModal = () => {
+    activeStaffDayModalDate = "";
+    if (bookingDayModalEl && typeof closeDialog === "function") {
+      closeDialog(bookingDayModalEl);
+    }
+  };
+
+  const openStaffBookingDetailFallback = (bookingId = "") => {
+    const booking = bookings.find((item) => item.id === bookingId);
+    if (!bookingDetailModalEl || !bookingDetailBodyEl || !bookingDetailTitleEl) return;
+    bookingDetailTitleEl.textContent = "รายละเอียดการจองห้องประชุม";
+    if (!booking) {
+      bookingDetailBodyEl.innerHTML = '<div class="section-text-sm">ไม่พบรายละเอียดรายการจอง</div>';
+    } else {
+      const contactText = [booking.contactPhone, booking.contactInfo]
+        .filter((value) => (value || "").toString().trim())
+        .join(" / ") || "-";
+      const rows = [
+        ["ห้องประชุม", normalizeRoomDisplay(booking.roomId, booking.roomName)],
+        ["วันที่", formatDate(booking.date)],
+        ["เวลา", `${booking.startTime || "-"} - ${booking.endTime || "-"}`],
+        ["ผู้ขอ", booking.requester || "-"],
+        ["ข้อมูลติดต่อ", contactText],
+        ["วัตถุประสงค์", booking.purpose || "-"],
+        ["สถานะ", statusText(booking.status)]
+      ];
+      if (booking.cancelRequestReason) rows.push(["เหตุผลขอยกเลิก", booking.cancelRequestReason]);
+      if (booking.rescheduleRequestedDate) {
+        rows.push(["วันที่ใหม่ที่ขอ", formatDate(booking.rescheduleRequestedDate)]);
+        rows.push([
+          "เวลาใหม่ที่ขอ",
+          `${booking.rescheduleRequestedStartTime || "-"} - ${booking.rescheduleRequestedEndTime || "-"}`
+        ]);
+      }
+      if (booking.rescheduleRequestReason) rows.push(["เหตุผลขอเปลี่ยนเวลา", booking.rescheduleRequestReason]);
+      if (booking.rejectionReason) rows.push(["เหตุผลไม่อนุมัติ", booking.rejectionReason]);
+      bookingDetailBodyEl.innerHTML = `
+        <div class="meeting-booking-detail-shell">
+          <div class="meeting-booking-detail-grid">
+            ${rows.map(([label, value]) => `
+              <div class="meeting-booking-detail-item">
+                <div class="meeting-booking-detail-label">${escapeText(label)}</div>
+                <div class="meeting-booking-detail-value">${escapeText(value)}</div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+    if (typeof openDialog === "function") {
+      openDialog(bookingDetailModalEl, { focusSelector: "#meetingBookingDetailClose" });
+    }
   };
 
   let bookings = [];
@@ -2174,6 +2233,32 @@ function initMeetingRoomStaffApproval() {
         if (!dayTarget || !dayTarget.dataset.date) return;
         const calendarRows = getCalendarRows(bookings);
         openStaffBookingDayModal(dayTarget.dataset.date, calendarRows);
+      });
+    }
+
+    if (bookingDayModalCloseEl) {
+      bookingDayModalCloseEl.addEventListener("click", closeStaffBookingDayModal);
+    }
+    if (bookingDayModalEl) {
+      bookingDayModalEl.addEventListener("click", (event) => {
+        if (event.target === bookingDayModalEl) {
+          closeStaffBookingDayModal();
+        }
+      });
+    }
+    if (bookingDayModalBodyEl && typeof window.openMeetingBookingDetailModal !== "function") {
+      bookingDayModalBodyEl.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const row = target.closest("tr[data-booking-id]");
+        if (!row || !row.dataset.bookingId) return;
+        closeStaffBookingDayModal();
+        openStaffBookingDetailFallback(row.dataset.bookingId);
+      });
+    }
+    if (bookingDetailCloseEl && bookingDetailModalEl) {
+      bookingDetailCloseEl.addEventListener("click", () => {
+        if (typeof closeDialog === "function") closeDialog(bookingDetailModalEl);
       });
     }
   }

@@ -2,8 +2,8 @@
 (function initSgcuWebPush() {
   if (window.sgcuWebPush) return;
 
-  const DEFAULT_ICON = "img/icons/icon-192.png";
-  const DEFAULT_BADGE = "img/icons/icon-192.png";
+  const DEFAULT_ICON = "img/icons/treasurer-icon-192.png";
+  const DEFAULT_BADGE = "img/icons/treasurer-icon-192.png";
   const DEFAULT_SW_URL = "./sw.js?v=20260503-1";
   const config = {
     applicationServerKey: "",

@@ -574,13 +574,13 @@ function initMeetingRoomBookingApp() {
       const webPush = window.sgcuWebPush;
       if (webPush && typeof webPush.showNotification === "function") {
         void webPush.showNotification(title, body, {
-          icon: "img/icons/icon-192.png",
-          badge: "img/icons/icon-192.png",
+          icon: "img/icons/treasurer-icon-192.png",
+          badge: "img/icons/treasurer-icon-192.png",
           data: { url: "./#meeting-room-booking" }
         });
         return;
       }
-      const notificationIcon = "img/icons/icon-192.png";
+      const notificationIcon = "img/icons/treasurer-icon-192.png";
       // eslint-disable-next-line no-new
       new Notification(title, { body, icon: notificationIcon, badge: notificationIcon });
     } catch (_) {

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "20260506-2";
+const CACHE_VERSION = "20260507-content-init-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
@@ -47,14 +47,14 @@ const APP_SHELL_URLS = [
   "./js/features/budget/app.budget-staff.js",
   "./js/features/org/app.org.js?v=20260503-1",
   "./js/motion/app.motion.js",
-  "./js/core/app.feature-loader.js?v=20260506-2",
-  "./js/core/app.init.js?v=20260506-2",
-  "./js/features/content/app.content-management.js?v=20260506-2",
+  "./js/core/app.feature-loader.js?v=20260507-2",
+  "./js/core/app.init.js?v=20260507-2",
+  "./js/features/content/app.content-management.js?v=20260507-2",
   "./js/features/project/app.calendar.js",
   "./js/integrations/app.web-push.js",
   "./manifest.webmanifest",
-  "./img/icons/icon-192.png",
-  "./img/icons/icon-512.png"
+  "./img/icons/treasurer-icon-192.png",
+  "./img/icons/treasurer-icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -114,8 +114,8 @@ self.addEventListener("push", (event) => {
   const fallbackUrl = "./";
   const fallbackTitle = "Treasurer SGCU68";
   const fallbackBody = "มีการอัปเดตใหม่";
-  const fallbackIcon = "img/icons/icon-192.png";
-  const fallbackBadge = "img/icons/icon-192.png";
+  const fallbackIcon = "img/icons/treasurer-icon-192.png";
+  const fallbackBadge = "img/icons/treasurer-icon-192.png";
 
   let payload = {};
   try {

@@ -1,8 +1,8 @@
 /* Staff content management: Firestore-backed news editor */
 function initContentManagementStaffPage() {
-  const activeContentPage = (window.location.hash || "").replace("#", "") ||
-    document.querySelector(".page-view.active")?.dataset?.page ||
-    "";
+  const activePage = document.querySelector(".page-view.active")?.dataset?.page || "";
+  const hashPage = (window.location.hash || "").replace("#", "");
+  const activeContentPage = activePage.startsWith("content-") ? activePage : hashPage;
 
   document.querySelectorAll("[data-content-target-page]").forEach((button) => {
     if (button.dataset.contentNavReady === "true") return;
@@ -73,6 +73,7 @@ function initContentManagementStaffPage() {
 
   const state = {
     items: [],
+    source: "sheets",
     listStatus: "",
     filters: {
       query: "",
@@ -560,12 +561,17 @@ function initContentDocumentsStaffPage() {
   const tableBody = document.getElementById("contentDocumentsTableBody");
   const tableCaption = document.getElementById("contentDocumentsTableCaption");
   const messageEl = document.getElementById("contentDocumentsMessage");
-  if (!tableBody || !tableCaption) return;
+  const form = document.getElementById("contentDocumentsForm");
+  const formMessageEl = document.getElementById("contentDocumentsFormMessage");
+  if (!tableBody || !tableCaption || !form) return;
 
   pageEl.dataset.contentDocumentsReady = "true";
 
   const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
   const downloadsSheetUrl = appConfig.sheets?.downloads || window.DOWNLOAD_SHEET || "";
+  const DOCUMENTS_COLLECTION = appConfig.firestore?.collections?.downloadDocuments || "downloadDocuments";
+  const store = () => window.sgcuFirestore || {};
+  const auth = () => window.sgcuAuth?.auth || null;
   const filters = {
     query: document.getElementById("contentDocumentsSearchInput"),
     category: document.getElementById("contentDocumentsCategoryFilter"),
@@ -573,9 +579,24 @@ function initContentDocumentsStaffPage() {
     format: document.getElementById("contentDocumentsFormatFilter"),
     reset: document.getElementById("contentDocumentsFilterReset")
   };
+  const fields = {
+    id: document.getElementById("contentDocumentsId"),
+    name: document.getElementById("contentDocumentsName"),
+    desc: document.getElementById("contentDocumentsDesc"),
+    category: document.getElementById("contentDocumentsCategory"),
+    org: document.getElementById("contentDocumentsOrg"),
+    status: document.getElementById("contentDocumentsStatus"),
+    exUrl: document.getElementById("contentDocumentsExUrl"),
+    pdfUrl: document.getElementById("contentDocumentsPdfUrl"),
+    docxUrl: document.getElementById("contentDocumentsDocxUrl"),
+    xlsxUrl: document.getElementById("contentDocumentsXlsxUrl")
+  };
   const buttons = {
     refresh: document.getElementById("contentDocumentsRefreshBtn"),
-    exportCsv: document.getElementById("contentDocumentsExportBtn")
+    importSheet: document.getElementById("contentDocumentsImportSheetBtn"),
+    exportCsv: document.getElementById("contentDocumentsExportBtn"),
+    archive: document.getElementById("contentDocumentsArchiveBtn"),
+    reset: document.getElementById("contentDocumentsResetBtn")
   };
   const state = {
     items: [],
@@ -597,9 +618,11 @@ function initContentDocumentsStaffPage() {
       .replaceAll("'", "&#39;");
 
   const setMessage = (text, type = "") => {
-    if (!messageEl) return;
-    messageEl.textContent = text || "";
-    messageEl.dataset.state = type || "";
+    [messageEl, formMessageEl].forEach((el) => {
+      if (!el) return;
+      el.textContent = text || "";
+      el.dataset.state = type || "";
+    });
   };
 
   const normalizeFilterText = (value) =>
@@ -612,6 +635,43 @@ function initContentDocumentsStaffPage() {
   const hasLink = (value) => {
     const text = (value || "").toString().trim();
     return !!text && text !== "-" && text !== "--";
+  };
+
+  const slugifyDocumentId = (value) => {
+    const base = (value || "")
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/[^a-z0-9ก-๙]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 72);
+    return base || `document-${Date.now()}`;
+  };
+
+  const normalizeDocumentFirestoreDoc = (docSnap) => {
+    const data = docSnap?.data ? docSnap.data() : {};
+    const name = (data.name || data.title || "").toString().trim();
+    if (!name) return null;
+    const item = {
+      id: docSnap.id,
+      name,
+      desc: (data.desc || data.description || "").toString().trim(),
+      org: (data.org || data.organization || "").toString().trim(),
+      exUrl: (data.exUrl || data.exampleUrl || "").toString().trim(),
+      pdfUrl: (data.pdfUrl || "").toString().trim(),
+      docxUrl: (data.docxUrl || "").toString().trim(),
+      xlsxUrl: (data.xlsxUrl || "").toString().trim(),
+      category: (data.category || "").toString().trim() || "อื่น ๆ",
+      status: (data.status || "published").toString()
+    };
+    item.formats = [
+      hasLink(item.exUrl) ? "ex" : "",
+      hasLink(item.pdfUrl) ? "pdf" : "",
+      hasLink(item.docxUrl) ? "docx" : "",
+      hasLink(item.xlsxUrl) ? "xlsx" : ""
+    ].filter(Boolean);
+    return item;
   };
 
   const normalizeDocumentRow = (row, index) => {
@@ -635,6 +695,57 @@ function initContentDocumentsStaffPage() {
       hasLink(item.xlsxUrl) ? "xlsx" : ""
     ].filter(Boolean);
     return item;
+  };
+
+  const sortDocuments = (items) =>
+    items.sort((a, b) => (a.category || "").localeCompare(b.category || "", "th") || (a.name || "").localeCompare(b.name || "", "th"));
+
+  const setFormDisabled = (disabled) => {
+    Array.from(form.elements).forEach((el) => {
+      if (el instanceof HTMLButtonElement || el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
+        el.disabled = disabled;
+      }
+    });
+  };
+
+  const resetForm = () => {
+    form.reset();
+    if (fields.id) fields.id.value = "";
+    if (fields.status) fields.status.value = "published";
+    setMessage("");
+  };
+
+  const fillForm = (item) => {
+    if (!item) return;
+    fields.id.value = item.id || "";
+    fields.name.value = item.name || "";
+    fields.desc.value = item.desc || "";
+    fields.category.value = item.category || "";
+    fields.org.value = item.org || "";
+    fields.status.value = item.status || "published";
+    fields.exUrl.value = item.exUrl || "";
+    fields.pdfUrl.value = item.pdfUrl || "";
+    fields.docxUrl.value = item.docxUrl || "";
+    fields.xlsxUrl.value = item.xlsxUrl || "";
+    setMessage(`กำลังแก้เอกสาร: ${item.name}`, "info");
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+    fields.name.focus();
+  };
+
+  const readFormPayload = () => {
+    const name = fields.name.value.trim();
+    if (!name) throw new Error("กรุณากรอกชื่อเอกสาร");
+    return {
+      name,
+      desc: fields.desc.value.trim(),
+      category: fields.category.value.trim() || "อื่น ๆ",
+      org: fields.org.value.trim(),
+      status: fields.status.value || "published",
+      exUrl: fields.exUrl.value.trim(),
+      pdfUrl: fields.pdfUrl.value.trim(),
+      docxUrl: fields.docxUrl.value.trim(),
+      xlsxUrl: fields.xlsxUrl.value.trim()
+    };
   };
 
   const syncFilterSelectOptions = (selectEl, values, defaultLabel) => {
@@ -675,7 +786,8 @@ function initContentDocumentsStaffPage() {
   const renderRows = () => {
     const visibleItems = getFilteredItems();
     const loadStatus = state.listStatus ? ` · ${state.listStatus}` : "";
-    tableCaption.textContent = `แสดง ${visibleItems.length.toLocaleString("th-TH")} จาก ${state.items.length.toLocaleString("th-TH")} เอกสารจาก Google Sheet${loadStatus}`;
+    const sourceLabel = state.source === "firestore" ? "Firestore" : "Google Sheet";
+    tableCaption.textContent = `แสดง ${visibleItems.length.toLocaleString("th-TH")} จาก ${state.items.length.toLocaleString("th-TH")} เอกสารจาก ${sourceLabel}${loadStatus}`;
     if (!state.items.length) {
       tableBody.innerHTML = `<tr><td colspan="4">ยังไม่มีเอกสารใน Sheet</td></tr>`;
       return;
@@ -693,7 +805,7 @@ function initContentDocumentsStaffPage() {
           buildLink(item.xlsxUrl, "XLSX")
         ].filter(Boolean).join("");
         return `
-          <tr class="content-documents-row">
+          <tr class="content-documents-row" data-document-id="${esc(item.id)}" tabindex="0" role="button" aria-label="แก้ไขเอกสาร ${esc(item.name || "")}">
             <td>
               <strong>${esc(item.name)}</strong>
               ${item.desc ? `<small>${esc(item.desc)}</small>` : ""}
@@ -707,36 +819,120 @@ function initContentDocumentsStaffPage() {
       .join("");
   };
 
-  const loadDocuments = async () => {
-    if (!downloadsSheetUrl) {
-      tableCaption.textContent = "ยังไม่ได้ตั้งค่าลิงก์ Sheet เอกสารการเงิน";
-      tableBody.innerHTML = `<tr><td colspan="4">ไม่พบลิงก์ Google Sheet ใน config</td></tr>`;
-      return;
+  const loadDocumentsFromFirestore = async () => {
+    const firestore = store();
+    if (!firestore.db || !firestore.collection || !firestore.getDocs) return null;
+    const collectionRef = firestore.collection(firestore.db, DOCUMENTS_COLLECTION);
+    const listQuery =
+      firestore.query && firestore.where
+        ? firestore.query(collectionRef, firestore.where("status", "==", "published"))
+        : collectionRef;
+    const snapshot = await firestore.getDocs(listQuery);
+    const items = [];
+    snapshot.forEach((docSnap) => {
+      const item = normalizeDocumentFirestoreDoc(docSnap);
+      if (item) items.push(item);
+    });
+    return sortDocuments(items);
+  };
+
+  const clearDownloadsCache = () => {
+    try {
+      localStorage.removeItem(appConfig.cache?.keys?.DOWNLOADS || "sgcu_cache_downloads");
+    } catch (_) {
+      // ignore storage failures
     }
+  };
+
+  const loadDocumentsFromSheet = async () => {
+    if (!downloadsSheetUrl) throw new Error("ยังไม่ได้ตั้งค่าลิงก์ Sheet เอกสารการเงิน");
+    await window.sgcuVendorLoader?.ensurePapa?.();
+    if (!window.Papa) throw new Error("ไม่พบ PapaParse สำหรับอ่าน CSV");
+    const response = await fetch(downloadsSheetUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error(`โหลด Sheet ไม่สำเร็จ (${response.status})`);
+    const csvText = await response.text();
+    const parsed = window.Papa.parse(csvText, { header: false, skipEmptyLines: true });
+    if (parsed.errors?.length) throw new Error(parsed.errors[0].message);
+    return (parsed.data || [])
+      .slice(1)
+      .map((row, index) => normalizeDocumentRow(row, index))
+      .filter(Boolean);
+  };
+
+  const loadDocuments = async () => {
     state.listStatus = "";
     tableCaption.textContent = "กำลังโหลดเอกสาร...";
     tableBody.innerHTML = `<tr><td colspan="4">กำลังโหลดเอกสาร...</td></tr>`;
     try {
-      await window.sgcuVendorLoader?.ensurePapa?.();
-      if (!window.Papa) throw new Error("ไม่พบ PapaParse สำหรับอ่าน CSV");
-      const response = await fetch(downloadsSheetUrl, { cache: "no-store" });
-      if (!response.ok) throw new Error(`โหลด Sheet ไม่สำเร็จ (${response.status})`);
-      const csvText = await response.text();
-      const parsed = window.Papa.parse(csvText, { header: false, skipEmptyLines: true });
-      if (parsed.errors?.length) throw new Error(parsed.errors[0].message);
-      state.items = (parsed.data || [])
-        .slice(1)
-        .map((row, index) => normalizeDocumentRow(row, index))
-        .filter(Boolean);
-      state.listStatus = "โหลดเอกสารจาก Google Sheet แล้ว";
+      const firestoreItems = await loadDocumentsFromFirestore();
+      if (Array.isArray(firestoreItems) && firestoreItems.length) {
+        state.items = firestoreItems;
+        state.source = "firestore";
+        state.listStatus = "โหลดเอกสารจาก Firestore แล้ว";
+      } else {
+        state.items = await loadDocumentsFromSheet();
+        state.source = "sheets";
+        state.listStatus = "โหลดเอกสารจาก Google Sheet แล้ว";
+      }
       syncFilterOptions();
       renderRows();
       setMessage("");
     } catch (error) {
       console.error("โหลดเอกสารการเงินไม่สำเร็จ - app.content-management.js", error);
       tableCaption.textContent = "โหลดเอกสารไม่สำเร็จ";
-      tableBody.innerHTML = `<tr><td colspan="4">ไม่สามารถโหลดเอกสารจาก Google Sheet ได้</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="4">ไม่สามารถโหลดเอกสารจาก Firestore หรือ Google Sheet ได้</td></tr>`;
       setMessage("ตรวจลิงก์ Sheet และสิทธิ์การเผยแพร่ CSV", "error");
+    }
+  };
+
+  const importSheetToFirestore = async () => {
+    const firestore = store();
+    const currentUser = auth()?.currentUser;
+    if (!firestore.db || !firestore.doc || !firestore.setDoc || !firestore.serverTimestamp) {
+      setMessage("ระบบยังไม่พร้อม import เข้า Firestore", "error");
+      return;
+    }
+    try {
+      if (buttons.importSheet) buttons.importSheet.disabled = true;
+      setMessage("กำลัง import Sheet เข้า Firestore...", "info");
+      const items = await loadDocumentsFromSheet();
+      if (!items.length) throw new Error("ไม่พบรายการเอกสารใน Sheet");
+      const editorEmail = currentUser?.email || "";
+      let importedCount = 0;
+      const idCounts = {};
+      for (const item of items) {
+        const baseDocId = slugifyDocumentId(`${item.category}-${item.org}-${item.name}`);
+        idCounts[baseDocId] = (idCounts[baseDocId] || 0) + 1;
+        const docId = idCounts[baseDocId] > 1 ? `${baseDocId}-${idCounts[baseDocId]}` : baseDocId;
+        await firestore.setDoc(
+          firestore.doc(firestore.db, DOCUMENTS_COLLECTION, docId),
+          {
+            name: item.name,
+            desc: item.desc,
+            org: item.org,
+            exUrl: item.exUrl,
+            pdfUrl: item.pdfUrl,
+            docxUrl: item.docxUrl,
+            xlsxUrl: item.xlsxUrl,
+            category: item.category,
+            status: "published",
+            updatedAt: firestore.serverTimestamp(),
+            updatedBy: editorEmail,
+            importedAt: firestore.serverTimestamp(),
+            importedBy: editorEmail
+          },
+          { merge: true }
+        );
+        importedCount += 1;
+      }
+      clearDownloadsCache();
+      await loadDocuments();
+      setMessage(`Import เอกสาร ${importedCount.toLocaleString("th-TH")} รายการเข้า Firestore แล้ว`, "success");
+    } catch (error) {
+      console.error("Import เอกสารการเงินเข้า Firestore ไม่สำเร็จ - app.content-management.js", error);
+      setMessage(error.message || "Import Sheet เข้า Firestore ไม่สำเร็จ", "error");
+    } finally {
+      if (buttons.importSheet) buttons.importSheet.disabled = false;
     }
   };
 
@@ -763,6 +959,70 @@ function initContentDocumentsStaffPage() {
     if (ok) setMessage("Export CSV เอกสารการเงินแล้ว", "success");
   };
 
+  const saveDocumentItem = async (event) => {
+    event.preventDefault();
+    const firestore = store();
+    const currentUser = auth()?.currentUser;
+    if (!firestore.db || !firestore.collection || !firestore.doc || !firestore.addDoc || !firestore.setDoc || !firestore.serverTimestamp) {
+      setMessage("ระบบยังไม่พร้อมบันทึก Firestore", "error");
+      return;
+    }
+    setFormDisabled(true);
+    try {
+      const payload = readFormPayload();
+      const editorEmail = currentUser?.email || "";
+      const id = fields.id.value.trim();
+      const savePayload = {
+        ...payload,
+        updatedAt: firestore.serverTimestamp(),
+        updatedBy: editorEmail
+      };
+      if (id) {
+        await firestore.setDoc(firestore.doc(firestore.db, DOCUMENTS_COLLECTION, id), savePayload, { merge: true });
+      } else {
+        await firestore.setDoc(firestore.doc(firestore.db, DOCUMENTS_COLLECTION, slugifyDocumentId(`${payload.category}-${payload.org}-${payload.name}`)), {
+          ...savePayload,
+          createdAt: firestore.serverTimestamp(),
+          createdBy: editorEmail
+        }, { merge: true });
+      }
+      clearDownloadsCache();
+      resetForm();
+      await loadDocuments();
+      setMessage("บันทึกเอกสารแล้ว และล้าง cache เอกสารในเครื่องนี้แล้ว", "success");
+    } catch (error) {
+      console.error("บันทึกเอกสารการเงิน Firestore ไม่สำเร็จ - app.content-management.js", error);
+      setMessage(error.message || "บันทึกเอกสารไม่สำเร็จ", "error");
+    } finally {
+      setFormDisabled(false);
+    }
+  };
+
+  const archiveCurrentItem = async () => {
+    if (!fields.id.value.trim()) {
+      fields.status.value = "archived";
+      return;
+    }
+    fields.status.value = "archived";
+    form.requestSubmit();
+  };
+
+  tableBody.addEventListener("click", (event) => {
+    const row = event.target.closest("[data-document-id]");
+    if (!row || event.target.closest("a")) return;
+    const item = state.items.find((candidate) => candidate.id === row.dataset.documentId);
+    fillForm(item);
+  });
+  tableBody.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const row = event.target.closest("[data-document-id]");
+    if (!row) return;
+    event.preventDefault();
+    const item = state.items.find((candidate) => candidate.id === row.dataset.documentId);
+    fillForm(item);
+  });
+
+  form.addEventListener("submit", saveDocumentItem);
   filters.query?.addEventListener("input", () => {
     state.filters.query = filters.query.value.trim();
     renderRows();
@@ -788,8 +1048,12 @@ function initContentDocumentsStaffPage() {
     renderRows();
   });
   buttons.refresh?.addEventListener("click", () => void loadDocuments());
+  buttons.importSheet?.addEventListener("click", () => void importSheetToFirestore());
   buttons.exportCsv?.addEventListener("click", exportDocumentsCsv);
+  buttons.reset?.addEventListener("click", resetForm);
+  buttons.archive?.addEventListener("click", () => void archiveCurrentItem());
 
+  resetForm();
   void loadDocuments();
 }
 

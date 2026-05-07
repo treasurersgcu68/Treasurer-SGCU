@@ -1,4 +1,6 @@
 /* ดาวน์โหลดเอกสารการเงิน */
+const DOWNLOADS_CACHE_SOURCE_FIRESTORE = "firestore";
+const DOWNLOADS_CACHE_SOURCE_SHEETS = "sheets";
 
 function toggleDownloadSkeleton(isLoading) {
   const downloadSkeletonEl = document.getElementById("downloadSkeleton");
@@ -55,6 +57,96 @@ function createDownloadListItem(doc) {
   li.appendChild(desc);
 
   return li;
+}
+
+function hasDownloadLink(value) {
+  const text = (value || "").toString().trim();
+  return !!text && text !== "-" && text !== "--";
+}
+
+function normalizeDownloadFirestoreItem(docSnap) {
+  const data = docSnap?.data ? docSnap.data() : {};
+  const name = (data.name || data.title || "").toString().trim();
+  if (!name) return null;
+  return {
+    id: docSnap.id || data.id || `FS-DOC-${name}`,
+    name,
+    desc: (data.desc || data.description || "").toString().trim(),
+    org: (data.org || data.organization || "").toString().trim(),
+    exUrl: (data.exUrl || data.exampleUrl || "").toString().trim(),
+    pdfUrl: (data.pdfUrl || "").toString().trim(),
+    docxUrl: (data.docxUrl || "").toString().trim(),
+    xlsxUrl: (data.xlsxUrl || "").toString().trim(),
+    category: (data.category || "").toString().trim() || "อื่น ๆ"
+  };
+}
+
+function normalizeDownloadSheetRow(row, index) {
+  const name = (row?.[0] || "").toString().trim();
+  if (!name) return null;
+  return {
+    id: `sheet-document-${index + 1}`,
+    name,
+    desc: (row?.[1] || "").toString().trim(),
+    org: (row?.[2] || "").toString().trim(),
+    exUrl: (row?.[3] || "").toString().trim(),
+    pdfUrl: (row?.[4] || "").toString().trim(),
+    docxUrl: (row?.[5] || "").toString().trim(),
+    xlsxUrl: (row?.[6] || "").toString().trim(),
+    category: (row?.[7] || "").toString().trim() || "อื่น ๆ"
+  };
+}
+
+function renderDownloadDocuments(listEl, documents) {
+  if (!listEl) return [];
+  listEl.innerHTML = "";
+  const categories = {};
+
+  (documents || []).forEach((doc) => {
+    if (!doc?.name) return;
+    const category = (doc.category || "").trim() || "อื่น ๆ";
+    if (!categories[category]) categories[category] = [];
+    categories[category].push(doc);
+  });
+
+  const categoryNames = Object.keys(categories);
+  categoryNames.forEach((categoryName) => {
+    const section = document.createElement("section");
+    section.className = "download-section-card";
+    section.dataset.category = categoryName;
+    section.appendChild(createDownloadHeader(categoryName));
+    const ul = document.createElement("ul");
+    ul.className = "download-card-list";
+    section.appendChild(ul);
+
+    categories[categoryName].forEach((doc) => {
+      ul.appendChild(createDownloadListItem(doc));
+    });
+
+    listEl.appendChild(section);
+  });
+
+  return categoryNames;
+}
+
+async function loadDownloadDocumentsFromFirestore() {
+  const store = window.sgcuFirestore || {};
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const collectionName = appConfig.firestore?.collections?.downloadDocuments || "downloadDocuments";
+  if (!store.db || !store.collection || !store.getDocs) return null;
+
+  const collectionRef = store.collection(store.db, collectionName);
+  const listQuery =
+    store.query && store.where
+      ? store.query(collectionRef, store.where("status", "==", "published"))
+      : collectionRef;
+  const snapshot = await store.getDocs(listQuery);
+  const items = [];
+  snapshot.forEach((docSnap) => {
+    const item = normalizeDownloadFirestoreItem(docSnap);
+    if (item) items.push(item);
+  });
+  return items.sort((a, b) => (a.category || "").localeCompare(b.category || "", "th") || (a.name || "").localeCompare(b.name || "", "th"));
 }
 
 /* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
@@ -151,12 +243,43 @@ async function loadDownloadDocuments() {
     if (categorySelectEl) categorySelectEl.disabled = true;
 
     const cached = getCache(CACHE_KEYS.DOWNLOADS, CACHE_TTL_MS);
-    if (cached && typeof cached === "string" && cached.trim()) {
-      listEl.innerHTML = cached;
+    if (cached?.source === DOWNLOADS_CACHE_SOURCE_FIRESTORE && Array.isArray(cached.items) && cached.items.length) {
+      renderDownloadDocuments(listEl, cached.items);
       clearLoadError("downloads");
       initDownloadCategoryFilter(listEl);
       if (categorySelectEl) categorySelectEl.disabled = false;
       return;
+    }
+
+    try {
+      const firestoreItems = await loadDownloadDocumentsFromFirestore();
+      if (Array.isArray(firestoreItems) && firestoreItems.length) {
+        renderDownloadDocuments(listEl, firestoreItems);
+        initDownloadCategoryFilter(listEl);
+        setCache(CACHE_KEYS.DOWNLOADS, {
+          source: DOWNLOADS_CACHE_SOURCE_FIRESTORE,
+          items: firestoreItems
+        });
+        clearLoadError("downloads");
+        if (categorySelectEl) categorySelectEl.disabled = false;
+        return;
+      }
+    } catch (firestoreErr) {
+      console.warn("โหลดเอกสารจาก Firestore ไม่สำเร็จ ใช้ Google Sheets fallback - app.downloads.js", firestoreErr);
+      if (cached && typeof cached === "string" && cached.trim()) {
+        listEl.innerHTML = cached;
+        clearLoadError("downloads");
+        initDownloadCategoryFilter(listEl);
+        if (categorySelectEl) categorySelectEl.disabled = false;
+        return;
+      }
+      if (cached?.source === DOWNLOADS_CACHE_SOURCE_SHEETS && Array.isArray(cached.items) && cached.items.length) {
+        renderDownloadDocuments(listEl, cached.items);
+        clearLoadError("downloads");
+        initDownloadCategoryFilter(listEl);
+        if (categorySelectEl) categorySelectEl.disabled = false;
+        return;
+      }
     }
 
     await window.sgcuVendorLoader?.ensurePapa?.();
@@ -168,73 +291,29 @@ async function loadDownloadDocuments() {
     const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: true });
     const rows = parsed.data;
 
-    // เคลียร์ก่อน
-    listEl.innerHTML = "";
-
     if (!rows || rows.length < 2) {
       setDownloadListState(listEl, "empty", "ยังไม่มีเอกสารดาวน์โหลด");
       if (categorySelectEl) categorySelectEl.disabled = false;
       return;
     }
 
-    // โครงสร้างกลุ่มหมวดหมู่
-    const categories = {};
-
-    rows.slice(1).forEach((row) => {
-      const name = (row[0] || "").trim(); // A ชื่อเอกสาร
-      const desc = (row[1] || "").trim(); // B รายละเอียด
-      const org = (row[2] || "").trim(); // C องค์กร
-      const exUrl = (row[3] || "").trim(); // D EX URL
-      const pdfUrl = (row[4] || "").trim(); // E PDF URL
-      const docxUrl = (row[5] || "").trim(); // F DOCX URL
-      const xlsxUrl = (row[6] || "").trim(); // G XLSX URL
-      const category = (row[7] || "").trim() || "อื่น ๆ"; // H หมวดหมู่
-
-      if (!name) return;
-
-      if (!categories[category]) {
-        categories[category] = [];
-      }
-
-      categories[category].push({
-        name,
-        desc,
-        org,
-        exUrl,
-        pdfUrl,
-        docxUrl,
-        xlsxUrl
-      });
-    });
-
-    // Render ออกหน้าเว็บ – 1 การ์ดต่อ 1 หมวด
-    const categoryNames = Object.keys(categories);
+    const sheetItems = rows
+      .slice(1)
+      .map((row, index) => normalizeDownloadSheetRow(row, index))
+      .filter(Boolean);
+    const categoryNames = renderDownloadDocuments(listEl, sheetItems);
     if (!categoryNames.length) {
       setDownloadListState(listEl, "empty", "ยังไม่มีเอกสารดาวน์โหลด");
       if (categorySelectEl) categorySelectEl.disabled = false;
       return;
     }
 
-    for (const categoryName of categoryNames) {
-      const section = document.createElement("section");
-      section.className = "download-section-card";
-      section.dataset.category = categoryName;
-      section.appendChild(createDownloadHeader(categoryName));
-      const ul = document.createElement("ul");
-      ul.className = "download-card-list";
-      section.appendChild(ul);
-
-      categories[categoryName].forEach((doc) => {
-        ul.appendChild(createDownloadListItem(doc));
-      });
-
-      listEl.appendChild(section);
-    }
-
     initDownloadCategoryFilter(listEl);
 
-    // เก็บ cache เป็น HTML string เพื่อลด render ซ้ำ
-    setCache(CACHE_KEYS.DOWNLOADS, listEl.innerHTML);
+    setCache(CACHE_KEYS.DOWNLOADS, {
+      source: DOWNLOADS_CACHE_SOURCE_SHEETS,
+      items: sheetItems
+    });
     clearLoadError("downloads");
     if (categorySelectEl) categorySelectEl.disabled = false;
   } catch (err) {

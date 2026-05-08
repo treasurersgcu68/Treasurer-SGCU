@@ -350,6 +350,7 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     budgetChartSkeletonEl: get("budgetChartSkeleton"),
     statusPieSkeletonEl: get("statusPieSkeleton"),
     projectTableSkeletonEl: get("projectTableSkeleton"),
+    closureStatusChartDownloadBtn: get("downloadClosureStatusChartPng"),
     projectDataLoadStateEl: get("projectDataLoadState"),
     calendarSkeletonEl: get("calendarSkeleton"),
     projectTableAreaEl: get("projectTableArea"),

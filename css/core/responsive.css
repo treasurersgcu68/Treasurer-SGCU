@@ -478,6 +478,15 @@
     width: 100%;
   }
 
+  .dashboard-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-card-header .tabs {
+    flex: 0 1 auto;
+  }
+
   .panel-header > .csv-export-btn {
     width: auto;
     margin-left: auto;

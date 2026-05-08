@@ -26,6 +26,7 @@ function buildProjectStatusRefreshSignature(ctxKey) {
     (ctx.projectBudgetMaxInput?.value || "").trim(),
     ctx.longestOpenAssistantFilterEl?.value || "all",
     ctx.longestOpenStatusFilterEl?.value || "all",
+    document.querySelector("[data-longest-open-tab].is-active")?.dataset.longestOpenTab || "overdue",
     currentSort?.key || "",
     currentSort?.direction || "asc"
   ].join("||");

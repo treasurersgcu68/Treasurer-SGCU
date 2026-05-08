@@ -510,6 +510,18 @@
   grid-column: 1 / -1;
 }
 
+.dashboard-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.dashboard-card-header .tabs {
+  flex: 0 0 auto;
+}
+
 .card:hover, .dashboard-metric:hover, .dashboard-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
@@ -517,9 +529,10 @@
 }
 
 .dashboard-card-title {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
 }
 
 .dashboard-filter-bar {
@@ -1042,11 +1055,21 @@ th.sortable.sort-desc::after {
 
 .chart-header {
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .chart-title {
   font-size: 13px;
   font-weight: 600;
+}
+
+.chart-download-btn {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  font-size: 11px;
 }
 
 .chart-caption {

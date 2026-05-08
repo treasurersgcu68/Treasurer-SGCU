@@ -76,7 +76,7 @@
             <div class="dashboard-charts-grid section-appear section-delay-2" style="margin-top:12px;">
               <article class="chart-card">
                   <header class="chart-header">
-                    <h3 class="chart-title">จำนวนโครงการค้างปิดรายเดือน</h3>
+                    <h3 class="chart-title">โครงการยังไม่ปิดตามเดือนสิ้นสุดงาน</h3>
                   </header>
                 <div class="chart-inner">
                   <canvas id="trendLineChartStaff"></canvas>
@@ -128,7 +128,17 @@
 
             <div class="dashboard-lower" style="margin-top:12px;">
               <article class="dashboard-card dashboard-card-wide">
-                <h4 class="dashboard-card-title">โครงการค้างปิดนานสุด</h4>
+                <div class="dashboard-card-header">
+                  <h4 class="dashboard-card-title">ติดตามการปิดโครงการ</h4>
+                  <div class="tabs" role="tablist" aria-label="เลือกกลุ่มโครงการปิด">
+                    <button type="button" class="tab-btn view-toggle-btn is-active" id="longestOpenOverdueTabStaff" data-longest-open-tab="overdue" aria-selected="true">
+                      ค้างปิดนานสุด
+                    </button>
+                    <button type="button" class="tab-btn view-toggle-btn" id="longestOpenWaitingTabStaff" data-longest-open-tab="waiting" aria-selected="false">
+                      รอปิด
+                    </button>
+                  </div>
+                </div>
                 <div class="dashboard-filter-bar">
                   <div class="filter-group">
                     <label for="longestOpenAssistantFilterStaff">ผู้รับผิดชอบ</label>
@@ -152,7 +162,7 @@
                         <th style="text-align:center;">ชื่อโครงการ</th>
                         <th style="text-align:center;">ผู้รับผิดชอบ</th>
                         <th style="text-align:center;">สถานะปิดโครงการ</th>
-                        <th style="text-align:right;">ยอดวันที่ค้าง</th>
+                        <th id="longestOpenDaysHeaderStaff" style="text-align:right;">ยอดวันที่ค้าง</th>
                       </tr>
                     </thead>
                     <tbody id="longestOpenTableBodyStaff">

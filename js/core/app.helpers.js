@@ -84,20 +84,37 @@ function formatMoney(value) {
 }
 
 function isProjectClosed(project) {
-  const close = (project.statusClose || "").trim();
-  const decree = (project.statusCloseDecree || "").trim();
+  if (isProjectCancelled(project) || isProjectNoClose(project)) return false;
+  const close = (project?.statusClose || "").toString().trim();
+  const decree = (project?.statusCloseDecree || project?.closeStatusDecree || "").toString().trim();
   return (
     close === "ส่งกิจการนิสิตเรียบร้อย" ||
-    close === "ยกเลิกโครงการ" ||
-    close === "ไม่ปิดโครงการ" ||
-    close === "ไม่ส่งปิดโครงการ" ||
-    decree === "ปิดโครงการเรียบร้อย"
+    decree === "ปิดโครงการเรียบร้อย" ||
+    decree === "โครงการรับเงินแล้ว" ||
+    decree === "โครงการคืนเงินแล้ว"
   );
 }
 
+function isProjectCancelled(project) {
+  const main = (project?.statusMain || project?.approvalStatus || "").toString().trim();
+  const close = (project?.statusClose || "").toString().trim();
+  const closeAdvance = (project?.closeStatusAdvance || "").toString().trim();
+  const closeDecree = (project?.statusCloseDecree || project?.closeStatusDecree || "").toString().trim();
+  return [main, close, closeAdvance, closeDecree].some((status) => status === "ยกเลิกโครงการ");
+}
+
 function isProjectNoClose(project) {
-  const close = (project.statusClose || "").trim();
+  const close = (project?.statusClose || "").toString().trim();
   return close === "ไม่ปิดโครงการ" || close === "ไม่ส่งปิดโครงการ";
+}
+
+function isProjectTerminalWithoutClosure(project) {
+  return isProjectCancelled(project) || isProjectNoClose(project);
+}
+
+function isProjectApproved(project) {
+  const status = (project?.statusMain || project?.approvalStatus || "").toString().trim();
+  return status === "อนุมัติโครงการ";
 }
 
 function getProjectOverviewStatus(project) {

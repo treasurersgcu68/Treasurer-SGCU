@@ -43,19 +43,6 @@ function initOrgOptions() {
   });
 }
 
-const EXCLUDED_PENDING_STATUSES = new Set([
-  "ไม่ปิดโครงการ",
-  "ไม่ส่งปิดโครงการ",
-  "ไม่รับรองจากที่ประชุมนายก",
-  "สภาไม่รับหลักการ",
-  "ไม่ผ่านกมธ.วิสามัญ",
-  "สภาไม่อนุมัติงบ",
-  "ไม่ผ่านสภาใหญ่",
-  "อนุมัติโครงการ",
-  "ยกเลิกโครงการ",
-  ""
-]);
-
 const ADVANCE_NOT_BORROWED_STATUSES = new Set([
   "",
   "-",
@@ -119,11 +106,10 @@ function updateSummaryCards(filtered) {
   let totalBudget = 0;
 
   filtered.forEach((p) => {
-    const overviewStatus = getProjectOverviewStatus(p);
-    if (overviewStatus && !EXCLUDED_PENDING_STATUSES.has(overviewStatus)) {
+    if (!isProjectClosed(p) && !isProjectTerminalWithoutClosure(p)) {
       pending += 1;
     }
-    if (overviewStatus === "อนุมัติโครงการ") {
+    if (isProjectApproved(p)) {
       approved += 1;
     }
     if (isProjectClosed(p)) {
@@ -191,25 +177,27 @@ function updateDashboardInsights(filtered, summary) {
   }
 
   const total = summary.total || 0;
-  const closed = summary.closed || 0;
+  const closureEligibleProjects = filtered.filter((p) => !isProjectTerminalWithoutClosure(p));
+  const closureEligibleTotal = closureEligibleProjects.length;
+  const closed = closureEligibleProjects.filter(isProjectClosed).length;
   const approved = summary.approved || 0;
   const totalBudget = summary.totalBudget || 0;
 
-  const closureRate = total ? (closed / total) * 100 : 0;
+  const closureRate = closureEligibleTotal ? (closed / closureEligibleTotal) * 100 : 0;
   const approvalRate = total ? (approved / total) * 100 : 0;
   const avgBudget = total ? totalBudget / total : 0;
 
   if (closureRateEl) closureRateEl.textContent = `${closureRate.toFixed(1)}%`;
   if (closureRateCaptionEl) {
-    closureRateCaptionEl.textContent = total
-      ? `${closed} จาก ${total} โครงการปิดแล้ว`
-      : "ยังไม่มีโครงการในตัวกรองนี้";
+    closureRateCaptionEl.textContent = closureEligibleTotal
+      ? `${closed} จาก ${closureEligibleTotal} โครงการที่ต้องปิด`
+      : "ยังไม่มีโครงการที่ต้องปิดในตัวกรองนี้";
   }
   if (closureRateBarEl) {
     closureRateBarEl.style.width = `${Math.min(closureRate, 100)}%`;
   }
   if (closureRateDonutCanvas) {
-    const closedList = filtered.filter(isProjectClosed);
+    const closedList = closureEligibleProjects.filter(isProjectClosed);
     closureRateDonutChart = updateDonutChart(
       closureRateDonutChart,
       closureRateDonutCanvas,
@@ -229,7 +217,7 @@ function updateDashboardInsights(filtered, summary) {
     approvalRateBarEl.style.width = `${Math.min(approvalRate, 100)}%`;
   }
   if (approvalRateDonutCanvas) {
-    const approvedList = filtered.filter((p) => getProjectOverviewStatus(p) === "อนุมัติโครงการ");
+    const approvedList = filtered.filter(isProjectApproved);
     approvalRateDonutChart = updateDonutChart(
       approvalRateDonutChart,
       approvalRateDonutCanvas,
@@ -335,8 +323,13 @@ function updateDashboardInsights(filtered, summary) {
   renderRankList(recentProjectsListEl, recentItems, "ยังไม่มีวันที่อัปเดตโครงการ");
 
   const today = new Date();
-  const openItemsRaw = [...filtered]
+  const longestOpenTabs = Array.from(document.querySelectorAll("[data-longest-open-tab]"));
+  const longestOpenDaysHeaderEl = document.getElementById("longestOpenDaysHeaderStaff");
+  const activeLongestOpenTab =
+    longestOpenTabs.find((tab) => tab.classList.contains("is-active"))?.dataset.longestOpenTab || "overdue";
+  const openItemsBase = [...filtered]
     .filter((p) => !isProjectClosed(p))
+    .filter((p) => !isProjectTerminalWithoutClosure(p))
     .filter((p) => {
       const status = (p.statusMain || "")
         .toString()
@@ -352,8 +345,9 @@ function updateDashboardInsights(filtered, summary) {
         if (dueDate) p.closeDueDateObj = dueDate;
       }
       if (!dueDate) return null;
-      const days = Math.max(0, Math.floor((today - dueDate) / (24 * 60 * 60 * 1000)));
-      if (days <= 0) return null;
+      const rawDays = Math.floor((today - dueDate) / (24 * 60 * 60 * 1000));
+      const overdueDays = Math.max(0, rawDays);
+      const waitingDays = Math.max(0, -rawDays);
       const statusText = (p.statusClose || "").trim() || "-";
       return {
         project: p,
@@ -364,27 +358,67 @@ function updateDashboardInsights(filtered, summary) {
         assistant: (p.closeChecker || "").trim() || "-",
         status: statusText,
         statusBadge: `<span class="${statusCloseToBadgeClass(statusText)}">${statusText}</span>`,
-        days
+        rawDays,
+        overdueDays,
+        waitingDays
       };
     })
-    .filter(Boolean)
-    .sort((a, b) => b.days - a.days)
+    .filter(Boolean);
+
+  const overdueItemsRaw = openItemsBase
+    .filter((item) => item.rawDays > 0)
+    .sort((a, b) => b.overdueDays - a.overdueDays)
     .map((item) => ({
       ...item,
+      days: item.overdueDays,
       title: item.code ? `${item.name} (${item.code})` : item.name,
-      value: `ค้าง ${item.days.toLocaleString("th-TH")} วัน`
+      value: `ค้าง ${item.overdueDays.toLocaleString("th-TH")} วัน`
     }));
+
+  const waitingItemsRaw = openItemsBase
+    .filter((item) => item.rawDays <= 0)
+    .sort((a, b) => a.waitingDays - b.waitingDays)
+    .map((item) => ({
+      ...item,
+      days: item.waitingDays,
+      title: item.code ? `${item.name} (${item.code})` : item.name,
+      value: item.waitingDays === 0
+        ? "ครบกำหนดวันนี้"
+        : `เหลือ ${item.waitingDays.toLocaleString("th-TH")} วัน`
+    }));
+
+  const activeItemsRaw = activeLongestOpenTab === "waiting" ? waitingItemsRaw : overdueItemsRaw;
 
   const assistantFilterValue = syncDashboardFilterOptions(
     longestOpenAssistantFilterEl,
-    openItemsRaw.map((item) => item.assistant)
+    openItemsBase.map((item) => item.assistant)
   );
   const statusFilterValue = syncDashboardFilterOptions(
     longestOpenStatusFilterEl,
-    openItemsRaw.map((item) => item.status)
+    openItemsBase.map((item) => item.status)
   );
 
-  let openItems = openItemsRaw;
+  longestOpenTabs.forEach((tab) => {
+    const isActive = tab.dataset.longestOpenTab === activeLongestOpenTab;
+    tab.classList.toggle("is-active", isActive);
+    tab.setAttribute("aria-selected", isActive ? "true" : "false");
+    if (!tab.dataset.boundClick) {
+      tab.addEventListener("click", () => {
+        longestOpenTabs.forEach((candidate) => {
+          candidate.classList.toggle("is-active", candidate === tab);
+          candidate.setAttribute("aria-selected", candidate === tab ? "true" : "false");
+        });
+        if (typeof refreshProjectStatus === "function") {
+          refreshProjectStatus(activeProjectStatusContext);
+        } else {
+          updateDashboardInsights(filtered, summary);
+        }
+      });
+      tab.dataset.boundClick = "true";
+    }
+  });
+
+  let openItems = activeItemsRaw;
   if (assistantFilterValue !== "all") {
     openItems = openItems.filter((item) => item.assistant === assistantFilterValue);
   }
@@ -393,17 +427,26 @@ function updateDashboardInsights(filtered, summary) {
   }
 
   if (longestOpenTableCaptionEl) {
-    longestOpenTableCaptionEl.textContent = `แสดงผล ${openItems.length.toLocaleString("th-TH")} โครงการ`;
+    const captionPrefix = activeLongestOpenTab === "waiting" ? "โครงการรอปิด" : "โครงการค้างปิด";
+    longestOpenTableCaptionEl.textContent = `${captionPrefix} ${openItems.length.toLocaleString("th-TH")} โครงการ`;
+  }
+  if (longestOpenDaysHeaderEl) {
+    longestOpenDaysHeaderEl.textContent = activeLongestOpenTab === "waiting" ? "วันถึงกำหนด" : "ยอดวันที่ค้าง";
   }
 
-  renderRankList(longestOpenListEl, openItems, "ยังไม่มีโครงการที่ค้างปิด");
+  renderRankList(
+    longestOpenListEl,
+    openItems,
+    activeLongestOpenTab === "waiting" ? "ยังไม่มีโครงการรอปิด" : "ยังไม่มีโครงการที่ค้างปิด"
+  );
 
   if (longestOpenTableBodyEl) {
     lastLongestOpenProjects = openItems.map((item) => item.project).filter(Boolean);
     longestOpenTableBodyEl.innerHTML = "";
     if (!openItems.length) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="5" class="table-empty" style="text-align:center; color:#9ca3af;">ยังไม่มีโครงการที่ค้างปิด</td>`;
+      const emptyText = activeLongestOpenTab === "waiting" ? "ยังไม่มีโครงการรอปิด" : "ยังไม่มีโครงการที่ค้างปิด";
+      tr.innerHTML = `<td colspan="5" class="table-empty" style="text-align:center; color:#9ca3af;">${emptyText}</td>`;
       longestOpenTableBodyEl.appendChild(tr);
     } else {
       openItems.forEach((item, idx) => {
@@ -421,7 +464,7 @@ function updateDashboardInsights(filtered, summary) {
           <td class="col-name" data-label="ชื่อโครงการ">${item.name}<br>${orgText}</td>
           <td class="col-assistant" data-label="ผู้รับผิดชอบ">${item.assistant}</td>
           <td class="col-status" data-label="สถานะปิดโครงการ">${item.statusBadge || item.status}</td>
-          <td class="col-budget" data-label="ยอดวันที่ค้าง" style="text-align:right;">${item.days} วัน</td>
+          <td class="col-budget" data-label="${activeLongestOpenTab === "waiting" ? "วันถึงกำหนด" : "ยอดวันที่ค้าง"}" style="text-align:right;">${item.value}</td>
         `;
         const openProjectDetail = () => {
           if (item.project) openProjectModal(item.project);
@@ -458,15 +501,16 @@ function updateTrendLineChart(filtered) {
   filtered.forEach((p) => {
     if ((p.statusMain || "").trim() === "ยกเลิกโครงการ") return;
     if (isProjectClosed(p)) return;
-    let dueDate = p.closeDueDateObj;
-    if (!dueDate) {
-      dueDate = parseProjectDate(p.closeDueDate);
-      if (dueDate) p.closeDueDateObj = dueDate;
+    if (isProjectTerminalWithoutClosure(p)) return;
+    let workDate = p.lastWorkDateObj;
+    if (!workDate) {
+      workDate = parseProjectDate(p.lastWorkDate);
+      if (workDate) p.lastWorkDateObj = workDate;
     }
-    if (!dueDate || dueDate > today) return;
-    const key = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}`;
+    if (!workDate || workDate > today) return;
+    const key = `${workDate.getFullYear()}-${String(workDate.getMonth() + 1).padStart(2, "0")}`;
     if (!buckets.has(key)) {
-      buckets.set(key, { date: new Date(dueDate.getFullYear(), dueDate.getMonth(), 1), count: 0 });
+      buckets.set(key, { date: new Date(workDate.getFullYear(), workDate.getMonth(), 1), count: 0 });
     }
     buckets.get(key).count += 1;
   });
@@ -780,6 +824,7 @@ function renderHomeKpis(sourceProjects = projects) {
 
   const monthly = new Map();
   data.forEach((p) => {
+    if (isProjectTerminalWithoutClosure(p)) return;
     let d = p.lastWorkDateObj;
     if (!d) {
       d = parseProjectDate(p.lastWorkDate);
@@ -788,11 +833,15 @@ function renderHomeKpis(sourceProjects = projects) {
     if (!d) return;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     if (!monthly.has(key)) {
-      monthly.set(key, { date: d, approved: 0, actual: 0 });
+      monthly.set(key, { date: d, approved: 0, actual: 0, projectCount: 0, pendingCloseCount: 0 });
     }
     const bucket = monthly.get(key);
     bucket.approved += p.approvedBudget100 ?? p.budget ?? 0;
     bucket.actual += p.actualBudget ?? 0;
+    bucket.projectCount += 1;
+    if (!isProjectClosed(p)) {
+      bucket.pendingCloseCount += 1;
+    }
   });
 
   const monthNamesShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
@@ -805,11 +854,23 @@ function renderHomeKpis(sourceProjects = projects) {
   });
   const approvedData = entries.map(([, bucket]) => Math.round(bucket.approved));
   const actualData = entries.map(([, bucket]) => Math.round(bucket.actual));
+  const actualBudgetStatuses = entries.map(([, bucket]) => {
+    const pendingCloseCount = bucket.pendingCloseCount || 0;
+    return {
+      isFinalized: pendingCloseCount <= 0,
+      pendingCloseCount,
+      projectCount: bucket.projectCount || 0
+    };
+  });
+  const actualBackgroundColors = actualBudgetStatuses.map((status) =>
+    status.isFinalized ? "rgba(34, 197, 94, 0.18)" : "rgba(245, 158, 11, 0.22)"
+  );
+  const actualBorderColors = actualBudgetStatuses.map((status) =>
+    status.isFinalized ? "#22c55e" : "#f59e0b"
+  );
 
   if (kpiMonthlyCaptionEl) {
-    kpiMonthlyCaptionEl.textContent = labels.length
-      ? "ใช้วันที่สิ้นสุดการปฏิบัติงานของโครงการเป็นฐานเวลา"
-      : "ยังไม่มีวันที่สิ้นสุดการปฏิบัติงานของโครงการ";
+    kpiMonthlyCaptionEl.textContent = labels.length ? "" : "ยังไม่มีวันที่สิ้นสุดการปฏิบัติงานของโครงการ";
   }
   renderHomeHeatmap(data, homeHeatmapEl, homeHeatmapMonthsEl);
 
@@ -835,8 +896,8 @@ function renderHomeKpis(sourceProjects = projects) {
       {
         label: "ใช้จริง",
         data: actualData,
-        backgroundColor: "rgba(34, 197, 94, 0.18)",
-        borderColor: "#22c55e",
+        backgroundColor: actualBackgroundColors,
+        borderColor: actualBorderColors,
         borderWidth: 1.5,
         borderRadius: 8
       }
@@ -863,6 +924,13 @@ function renderHomeKpis(sourceProjects = projects) {
             const label = ctx.dataset.label || "";
             const val = ctx.parsed.y || 0;
             return `${label}: ${formatMoney(val)} บาท`;
+          },
+          afterLabel: (ctx) => {
+            if (ctx.dataset.label !== "ใช้จริง") return "";
+            const status = actualBudgetStatuses[ctx.dataIndex];
+            if (!status) return "";
+            if (status.isFinalized) return "สถานะ: สรุปงบครบแล้ว";
+            return `สถานะ: ยังรอปิด/สรุปงบ ${status.pendingCloseCount} จาก ${status.projectCount} โครงการ`;
           }
         }
       }

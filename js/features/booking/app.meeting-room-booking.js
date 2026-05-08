@@ -95,7 +95,6 @@ function initMeetingRoomBookingApp() {
     "ธันวาคม"
   ];
   const DEFAULT_PROJECT_MODE = "non_project";
-  const MIN_ADVANCE_BOOKING_HOURS = 24;
   const MIN_CANCEL_BEFORE_HOURS = 12;
   const REMINDER_WINDOWS = [
     { key: "60m", ms: 60 * 60 * 1000, label: "ภายใน 1 ชั่วโมง" },
@@ -2445,10 +2444,6 @@ function initMeetingRoomBookingApp() {
       setMessage("จองย้อนหลังได้ไม่เกิน 1 ชั่วโมง", "#b91c1c");
       return;
     }
-    if (!isStaffUser() && (startAt.getTime() - now.getTime()) < (MIN_ADVANCE_BOOKING_HOURS * 60 * 60 * 1000)) {
-      setMessage(`ผู้ขอใช้ต้องจองล่วงหน้าไม่น้อยกว่า ${MIN_ADVANCE_BOOKING_HOURS} ชั่วโมง`, "#b91c1c");
-      return;
-    }
     if (!allowLongAdvanceBooking && startAt > latestAllowed) {
       setMessage("จองล่วงหน้าได้ไม่เกิน 1 เดือน", "#b91c1c");
       return;
@@ -2712,10 +2707,6 @@ function initMeetingRoomBookingApp() {
     }
     if (nextStartAt < earliestAllowed) {
       setRescheduleMessage("ปรับเวลาเป็นย้อนหลังได้ไม่เกิน 1 ชั่วโมง", "#b91c1c");
-      return;
-    }
-    if (!isStaffUser() && (nextStartAt.getTime() - now.getTime()) < (MIN_ADVANCE_BOOKING_HOURS * 60 * 60 * 1000)) {
-      setRescheduleMessage(`ต้องขอเปลี่ยนเวลาให้วันใช้งานใหม่ล่วงหน้าไม่น้อยกว่า ${MIN_ADVANCE_BOOKING_HOURS} ชั่วโมง`, "#b91c1c");
       return;
     }
     if (!isStaffUser() && nextStartAt > latestAllowed) {

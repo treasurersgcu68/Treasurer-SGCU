@@ -304,13 +304,11 @@ function updateClosureStatusChart(filtered) {
   const classifyClosureBucket = (p) => {
     const mainStatus = (p.statusMain || "").trim();
     if (isNoCloseSubmission(p)) return "black";
+    if (isProjectCancelled(p)) return "gray";
     if (mainStatus !== "อนุมัติโครงการ" && mainStatus !== "ยกเลิกโครงการ") {
       return "pending";
     }
-    if (mainStatus === "ยกเลิกโครงการ") return "gray";
-
-    const isClosed = (p.statusClose || "").trim() === "ส่งกิจการนิสิตเรียบร้อย";
-    if (isClosed) return "green";
+    if (isProjectClosed(p)) return "green";
 
     const d =
       typeof p.daysToDeadline === "number" && !isNaN(p.daysToDeadline)
@@ -321,40 +319,24 @@ function updateClosureStatusChart(filtered) {
     return "yellow";
   };
 
-  const orgGroupFilter = orgTypeSelect.value;
-  const orgFilter = orgSelect.value;
-  const isGlobalView = orgGroupFilter === "all" && orgFilter === "all";
+  const createClosureStats = () => ({
+    pending: 0,
+    yellow: 0,
+    orange: 0,
+    red: 0,
+    green: 0,
+    gray: 0,
+    black: 0
+  });
 
-  if (isGlobalView) {
-    const baseGroups = getChartOrgGroups();
+  const addProjectToClosureStats = (stats, project) => {
+    const bucket = classifyClosureBucket(project);
+    if (Object.prototype.hasOwnProperty.call(stats, bucket)) {
+      stats[bucket]++;
+    }
+  };
 
-    const statsByGroup = {};
-    baseGroups.forEach((g) => {
-      statsByGroup[g] = { pending: 0, totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
-    });
-
-    closureTrackedProjects.forEach((p) => {
-      const groupName = baseGroups.includes(p.orgGroup) ? p.orgGroup : null;
-      if (!groupName) return;
-
-      const g = statsByGroup[groupName];
-      const bucket = classifyClosureBucket(p);
-      if (bucket === "pending") {
-        g.pending++;
-        return;
-      }
-      if (bucket === "gray") {
-        g.gray++;
-        return;
-      }
-      if ((p.statusMain || "").trim() === "อนุมัติโครงการ") g.totalApproved++;
-      if (bucket === "black") g.black++;
-      else if (bucket === "green") g.green++;
-      else if (bucket === "red") g.red++;
-      else if (bucket === "orange") g.orange++;
-    });
-
-    const labels = baseGroups;
+  const applyClosureChartData = (labels, statsByLabel) => {
     const pendingData = [];
     const yellowData = [];
     const orangeData = [];
@@ -364,23 +346,14 @@ function updateClosureStatusChart(filtered) {
     const blackData = [];
 
     labels.forEach((label) => {
-      const g = statsByGroup[label] || {
-        pending: 0,
-        totalApproved: 0,
-        orange: 0,
-        red: 0,
-        green: 0,
-        gray: 0,
-        black: 0
-      };
-      pendingData.push(g.pending);
-      const yellow = Math.max(g.totalApproved - g.orange - g.red - g.green - g.black, 0);
-      yellowData.push(yellow);
-      orangeData.push(g.orange);
-      redData.push(g.red);
-      greenData.push(g.green);
-      grayData.push(g.gray);
-      blackData.push(g.black);
+      const stats = statsByLabel[label] || createClosureStats();
+      pendingData.push(stats.pending);
+      yellowData.push(stats.yellow);
+      orangeData.push(stats.orange);
+      redData.push(stats.red);
+      greenData.push(stats.green);
+      grayData.push(stats.gray);
+      blackData.push(stats.black);
     });
 
     budgetByMonthChart.data.labels = labels;
@@ -395,69 +368,87 @@ function updateClosureStatusChart(filtered) {
     updateClosureXAxisMax();
     resizeClosureChart(labels.length);
     budgetByMonthChart.update();
+  };
+
+  const orgGroupFilter = orgTypeSelect.value;
+  const orgFilter = orgSelect.value;
+  const isGlobalView = orgGroupFilter === "all" && orgFilter === "all";
+
+  if (isGlobalView) {
+    const baseGroups = getChartOrgGroups();
+
+    const statsByGroup = {};
+    baseGroups.forEach((g) => {
+      statsByGroup[g] = createClosureStats();
+    });
+
+    closureTrackedProjects.forEach((p) => {
+      const groupName = baseGroups.includes(p.orgGroup) ? p.orgGroup : null;
+      if (!groupName) return;
+      addProjectToClosureStats(statsByGroup[groupName], p);
+    });
+
+    const labels = baseGroups;
+    applyClosureChartData(labels, statsByGroup);
     return;
   }
 
   const allowedOrgs = orgFilter === "all" ? getOrgsByGroup(orgGroupFilter) : [orgFilter];
   const groups = {};
   allowedOrgs.forEach((org) => {
-    groups[org] = { pending: 0, totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
+    groups[org] = createClosureStats();
   });
 
   closureTrackedProjects.forEach((p) => {
     const org = p.orgName || "(ไม่ระบุ)";
     if (allowedOrgs.length && !allowedOrgs.includes(org)) return;
     if (!groups[org]) {
-      groups[org] = { pending: 0, totalApproved: 0, orange: 0, red: 0, green: 0, gray: 0, black: 0 };
+      groups[org] = createClosureStats();
     }
-    const g = groups[org];
-    const bucket = classifyClosureBucket(p);
-    if (bucket === "pending") {
-      g.pending++;
-      return;
-    }
-    if (bucket === "gray") {
-      g.gray++;
-      return;
-    }
-    if ((p.statusMain || "").trim() === "อนุมัติโครงการ") g.totalApproved++;
-    if (bucket === "black") g.black++;
-    else if (bucket === "green") g.green++;
-    else if (bucket === "red") g.red++;
-    else if (bucket === "orange") g.orange++;
+    addProjectToClosureStats(groups[org], p);
   });
 
   const labels = Object.keys(groups);
-  const pendingData = [];
-  const yellowData = [];
-  const orangeData = [];
-  const redData = [];
-  const greenData = [];
-  const grayData = [];
-  const blackData = [];
+  applyClosureChartData(labels, groups);
+}
 
-  labels.forEach((org) => {
-    const g = groups[org];
-    pendingData.push(g.pending);
-    const yellow = Math.max(g.totalApproved - g.orange - g.red - g.green - g.black, 0);
-    yellowData.push(yellow);
-    orangeData.push(g.orange);
-    redData.push(g.red);
-    greenData.push(g.green);
-    grayData.push(g.gray);
-    blackData.push(g.black);
-  });
+function downloadClosureStatusChartPng(ctxKey = activeProjectStatusContext) {
+  setActiveProjectStatusContext(ctxKey);
+  const chart = budgetByMonthChart;
+  const sourceCanvas = chart?.canvas;
+  if (!chart || !sourceCanvas) return;
 
-  budgetByMonthChart.data.labels = labels;
-  budgetByMonthChart.data.datasets[0].data = pendingData;
-  budgetByMonthChart.data.datasets[1].data = yellowData;
-  budgetByMonthChart.data.datasets[2].data = orangeData;
-  budgetByMonthChart.data.datasets[3].data = redData;
-  budgetByMonthChart.data.datasets[4].data = greenData;
-  budgetByMonthChart.data.datasets[5].data = grayData;
-  budgetByMonthChart.data.datasets[6].data = blackData;
+  chart.update("none");
 
-  updateClosureXAxisMax();
-  resizeClosureChart(labels.length);
-  budgetByMonthChart.update();
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = sourceCanvas.width;
+  exportCanvas.height = sourceCanvas.height;
+  const exportCtx = exportCanvas.getContext("2d");
+  if (!exportCtx) return;
+
+  exportCtx.fillStyle = "#ffffff";
+  exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+  exportCtx.drawImage(sourceCanvas, 0, 0);
+
+  const yearValue = (yearSelect?.value || selectedProjectSourceYear || "all").toString().trim() || "all";
+  const orgGroupValue = (orgTypeSelect?.value || "all").toString().trim() || "all";
+  const orgValue = (orgSelect?.value || "all").toString().trim() || "all";
+  const fileSafe = (value) =>
+    value
+      .replace(/[\\/:*?"<>|]+/g, "-")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") || "all";
+
+  const link = document.createElement("a");
+  link.href = exportCanvas.toDataURL("image/png");
+  link.download = [
+    "sgcu-project-status-overview",
+    fileSafe(yearValue),
+    fileSafe(orgGroupValue),
+    fileSafe(orgValue)
+  ].join("-") + ".png";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }

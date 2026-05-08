@@ -1075,6 +1075,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         exportVisibleProjectsCsv(key);
       });
     }
+    if (ctx.closureStatusChartDownloadBtn) {
+      ctx.closureStatusChartDownloadBtn.addEventListener("click", () => {
+        downloadClosureStatusChartPng(key);
+      });
+    }
     if (ctx.projectClosureMailMergeExportBtn) {
       ctx.projectClosureMailMergeExportBtn.addEventListener("click", () => {
         exportClosureMailMergeCsv(key);

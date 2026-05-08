@@ -3,34 +3,12 @@
         <div class="page">
           <div class="page-header-flex">
             <div>
-              <h1 class="page-title">ภาพรวมและสารบัญโครงการ</h1>
+              <h1 class="page-title">ภาพรวมโครงการ</h1>
               <p class="page-meta">ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง | ผู้เข้าชมสะสม : <span id="dashboardVisitorAllTimeCount">-</span> ครั้ง</p>
-            </div>
-            <div class="tabs dashboard-staff-main-tabs" role="tablist" aria-label="เลือกส่วนงาน Dashboard">
-              <button
-                id="dashboardStaffMainOverviewTab"
-                class="tab-btn view-toggle-btn is-active"
-                type="button"
-                role="tab"
-                aria-selected="true"
-                aria-controls="dashboardStaffOverviewPanel"
-              >
-                ภาพรวมโครงการ
-              </button>
-              <button
-                id="dashboardStaffMainSourcesTab"
-                class="tab-btn view-toggle-btn"
-                type="button"
-                role="tab"
-                aria-selected="false"
-                aria-controls="dashboardStaffSourcesPanel"
-              >
-                สารบัญ Project Status
-              </button>
             </div>
           </div>
 
-          <div id="dashboardStaffOverviewPanel" class="dashboard-staff-main-panel" role="tabpanel" aria-labelledby="dashboardStaffMainOverviewTab">
+          <div id="dashboardStaffOverviewPanel" class="dashboard-staff-main-panel">
           <div id="filterBarHostDashboardStaff"></div>
 
           <section class="dashboard-overview section-appear section-delay-1">
@@ -186,8 +164,42 @@
             </div>
           </section>
           </div>
+        </div>
+      </section>
 
-          <div id="dashboardStaffSourcesPanel" class="dashboard-staff-main-panel" role="tabpanel" aria-labelledby="dashboardStaffMainSourcesTab" hidden>
+      <!-- ============ SYSTEM DATA (STAFF) ============ -->
+      <section class="page-view" data-page="system-data-staff">
+        <div class="page">
+          <div class="page-header-flex">
+            <div>
+              <h1 class="page-title">ข้อมูลระบบ</h1>
+              <p class="page-meta">แหล่งข้อมูล Project Status คู่มือกรอกชีท และประวัติการทำรายการล่าสุด</p>
+            </div>
+            <div class="tabs dashboard-staff-main-tabs" role="tablist" aria-label="เลือกส่วนงานข้อมูลระบบ">
+              <button
+                id="dashboardStaffMainSourcesTab"
+                class="tab-btn view-toggle-btn is-active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="dashboardStaffSourcesPanel"
+              >
+                สารบัญ Project Status
+              </button>
+              <button
+                id="dashboardStaffMainAuditTab"
+                class="tab-btn view-toggle-btn"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="dashboardStaffAuditPanel"
+              >
+                Activity Log
+              </button>
+            </div>
+          </div>
+
+          <div id="dashboardStaffSourcesPanel" class="dashboard-staff-main-panel" role="tabpanel" aria-labelledby="dashboardStaffMainSourcesTab">
             <section class="management-link-panel section-appear section-delay-1" data-management-visibility="staff" hidden>
               <div class="management-link-copy">
                 <span class="management-link-kicker">แหล่งข้อมูลต้นทาง</span>
@@ -220,7 +232,7 @@
                   <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
                   <h3>Project Status</h3>
                 </div>
-                <p>เริ่มจากสารบัญกลางเพื่อเลือกปีและลิงก์ชีท จากนั้นแก้ข้อมูลโครงการจริงในชีท Project Status ของปีนั้น เว็บจะอ่านปีที่ active และใช้ข้อมูลโครงการไปแสดงใน Dashboard, กำกับสถานะโครงการ และปฏิทิน</p>
+                <p>เริ่มจากสารบัญกลางเพื่อเลือกปีและลิงก์ชีท จากนั้นแก้ข้อมูลโครงการจริงในชีท Project Status ของปีนั้น เว็บจะอ่านปีที่ active และใช้ข้อมูลโครงการไปแสดงใน Dashboard, เครื่องมือโครงการ และปฏิทิน</p>
               </div>
 
               <div class="sheet-guide-legend" aria-label="คำอธิบายสีแถว">
@@ -248,7 +260,7 @@
                         <tr class="is-required">
                           <td>A</td>
                           <td>ปีการศึกษา</td>
-                          <td>ใช้สร้างตัวเลือกปีในหน้า Dashboard และหน้ากำกับสถานะโครงการ เช่น 2568</td>
+                          <td>ใช้สร้างตัวเลือกปีในหน้า Dashboard และหน้าเครื่องมือโครงการ เช่น 2568</td>
                         </tr>
                         <tr class="is-required">
                           <td>B</td>
@@ -339,6 +351,56 @@
                     </table>
                   </div>
                 </article>
+              </div>
+            </section>
+          </div>
+
+          <div id="dashboardStaffAuditPanel" class="dashboard-staff-main-panel" role="tabpanel" aria-labelledby="dashboardStaffMainAuditTab" hidden>
+            <section class="panel section-appear section-delay-1">
+              <header class="panel-header">
+                <div>
+                  <h3 class="panel-title">Activity Log</h3>
+                  <p class="panel-caption">รายการเปลี่ยนแปลงล่าสุด พร้อมรายละเอียดห้อง วันที่ เวลา สถานะ และผู้เกี่ยวข้อง</p>
+                </div>
+                <button id="dashboardAuditLogExportCsvBtn" class="btn-ghost csv-export-btn" type="button" disabled>Export CSV</button>
+              </header>
+              <div id="dashboardAuditLogStatus" class="form-message" hidden></div>
+              <div class="filter-bar dashboard-audit-filter-bar" aria-label="ตัวกรอง Activity Log">
+                <div class="filter-group">
+                  <label for="dashboardAuditLogTypeFilter">หมวดงาน</label>
+                  <select id="dashboardAuditLogTypeFilter">
+                    <option value="all">ทุกหมวดงาน</option>
+                    <option value="budget">งบประมาณ</option>
+                    <option value="borrow">พัสดุ</option>
+                    <option value="booking">ห้องประชุม</option>
+                    <option value="content">เนื้อหาเว็บไซต์</option>
+                  </select>
+                </div>
+                <div class="filter-group filter-search">
+                  <label for="dashboardAuditLogSearchInput">ค้นหา</label>
+                  <div class="search-box">
+                    <input id="dashboardAuditLogSearchInput" type="search" placeholder="ค้นหา action / รหัส / อีเมล" />
+                    <button id="dashboardAuditLogSearchClear" class="search-clear" type="button" aria-label="ล้างคำค้น">✕</button>
+                  </div>
+                </div>
+              </div>
+              <div class="table-wrapper">
+                <div class="project-table-wrapper">
+                  <table id="dashboardAuditLogTable">
+                    <caption id="dashboardAuditLogCaption">แสดง 0 รายการล่าสุด</caption>
+                    <thead>
+                      <tr>
+                        <th>เวลา</th>
+                        <th>การกระทำ</th>
+                        <th>รายละเอียด</th>
+                        <th>ผู้ทำรายการ</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dashboardAuditLogBody">
+                      <tr><td colspan="4">กำลังโหลด Activity Log...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </section>
           </div>

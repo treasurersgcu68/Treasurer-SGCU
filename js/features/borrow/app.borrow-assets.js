@@ -2830,10 +2830,17 @@ function initBorrowAssetsApp() {
     borrowSubmitBtn.disabled = true;
     setBorrowMessage("กำลังส่งคำขอ...", "#374151");
     try {
-      await firestore.addDoc(
+      const docRef = await firestore.addDoc(
         firestore.collection(firestore.db, BORROW_REQUEST_COLLECTION),
         payload
       );
+      void window.sgcuAuditLog?.write?.({
+        action: "borrow.request.create",
+        entityType: "borrowAssetRequest",
+        entityId: docRef?.id || "",
+        after: payload,
+        source: "web_app"
+      });
       if (borrowRequestForm) borrowRequestForm.reset();
       toggleBorrowProjectNameOther();
       populateBorrowProjectDeptOptions();
@@ -2864,6 +2871,7 @@ function initBorrowAssetsApp() {
     if (!requestId) return;
     if (!resolveFirestoreBridge()) return;
     const requestItem = getBorrowRequestByKey(requestId, sourceCollection);
+    const beforeRequestSnapshot = requestItem ? { ...requestItem } : null;
     const targetCollection = requestItem?.sourceCollection || sourceCollection || BORROW_REQUEST_COLLECTION;
     const hasPickupDatePatch = Object.prototype.hasOwnProperty.call(datePatch, "pickupDate");
     const hasReturnDatePatch = Object.prototype.hasOwnProperty.call(datePatch, "returnDate");
@@ -2891,6 +2899,15 @@ function initBorrowAssetsApp() {
     }
     if (typeof firestore.runTransaction !== "function") {
       await firestore.updateDoc(docRef, payload);
+      void window.sgcuAuditLog?.write?.({
+        action: "borrow.request.status_update",
+        entityType: "borrowAssetRequest",
+        entityId: requestId,
+        before: beforeRequestSnapshot,
+        after: payload,
+        metadata: { sourceCollection: targetCollection },
+        source: "web_app_staff"
+      });
       return;
     }
 
@@ -2907,12 +2924,22 @@ function initBorrowAssetsApp() {
       await applyStockDeltasInTransaction(transaction, deltas, actorEmail);
       transaction.update(docRef, payload);
     });
+    void window.sgcuAuditLog?.write?.({
+      action: "borrow.request.status_update",
+      entityType: "borrowAssetRequest",
+      entityId: requestId,
+      before: beforeRequestSnapshot,
+      after: payload,
+      metadata: { sourceCollection: targetCollection },
+      source: "web_app_staff"
+    });
   };
 
   const deleteBorrowRequest = async (requestId, sourceCollection = "") => {
     if (!requestId) return;
     if (!resolveFirestoreBridge()) return;
     const requestItem = getBorrowRequestByKey(requestId, sourceCollection);
+    const beforeRequestSnapshot = requestItem ? { ...requestItem } : null;
     const targetCollection = requestItem?.sourceCollection || sourceCollection || BORROW_REQUEST_COLLECTION;
     const docRef = firestore.doc(firestore.db, targetCollection, requestId);
     const actorEmail = readCurrentUserEmail();
@@ -2937,6 +2964,15 @@ function initBorrowAssetsApp() {
         requestItem.status = STATUS_CANCELLED;
         requestItem.staffNote = "ลบคำขอโดยเจ้าหน้าที่";
       }
+      void window.sgcuAuditLog?.write?.({
+        action: "borrow.request.delete",
+        entityType: "borrowAssetRequest",
+        entityId: requestId,
+        before: beforeRequestSnapshot,
+        after: { isDeleted: true, status: STATUS_CANCELLED },
+        metadata: { sourceCollection: targetCollection, mode: "soft_delete" },
+        source: "web_app_staff"
+      });
       return;
     }
     try {
@@ -2944,6 +2980,14 @@ function initBorrowAssetsApp() {
       if (requestItem) {
         requestItem.isDeleted = true;
       }
+      void window.sgcuAuditLog?.write?.({
+        action: "borrow.request.delete",
+        entityType: "borrowAssetRequest",
+        entityId: requestId,
+        before: beforeRequestSnapshot,
+        metadata: { sourceCollection: targetCollection, mode: "hard_delete" },
+        source: "web_app_staff"
+      });
     } catch (error) {
       const code = (error?.code || "").toString().trim().toLowerCase();
       if (
@@ -2964,6 +3008,15 @@ function initBorrowAssetsApp() {
           requestItem.status = STATUS_CANCELLED;
           requestItem.staffNote = "ลบคำขอโดยเจ้าหน้าที่";
         }
+        void window.sgcuAuditLog?.write?.({
+          action: "borrow.request.delete",
+          entityType: "borrowAssetRequest",
+          entityId: requestId,
+          before: beforeRequestSnapshot,
+          after: { isDeleted: true, status: STATUS_CANCELLED },
+          metadata: { sourceCollection: targetCollection, mode: "soft_delete_fallback" },
+          source: "web_app_staff"
+        });
         return;
       }
       throw error;

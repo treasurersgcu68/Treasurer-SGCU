@@ -454,6 +454,7 @@ function initContentManagementStaffPage() {
       const payload = readFormPayload();
       const editorEmail = currentUser?.email || "";
       const id = fields.id.value.trim();
+      const beforeItem = id ? state.items.find((item) => item.id === id) || null : null;
       const savePayload = {
         ...payload,
         updatedAt: firestore.serverTimestamp(),
@@ -461,11 +462,26 @@ function initContentManagementStaffPage() {
       };
       if (id) {
         await firestore.setDoc(firestore.doc(firestore.db, NEWS_COLLECTION, id), savePayload, { merge: true });
+        void window.sgcuAuditLog?.write?.({
+          action: "content.news.update",
+          entityType: "newsItem",
+          entityId: id,
+          before: beforeItem,
+          after: payload,
+          source: "web_app_staff"
+        });
       } else {
-        await firestore.addDoc(firestore.collection(firestore.db, NEWS_COLLECTION), {
+        const docRef = await firestore.addDoc(firestore.collection(firestore.db, NEWS_COLLECTION), {
           ...savePayload,
           createdAt: firestore.serverTimestamp(),
           createdBy: editorEmail
+        });
+        void window.sgcuAuditLog?.write?.({
+          action: "content.news.create",
+          entityType: "newsItem",
+          entityId: docRef?.id || "",
+          after: payload,
+          source: "web_app_staff"
         });
       }
       clearNewsCache();
@@ -972,6 +988,8 @@ function initContentDocumentsStaffPage() {
       const payload = readFormPayload();
       const editorEmail = currentUser?.email || "";
       const id = fields.id.value.trim();
+      const beforeItem = id ? state.items.find((item) => item.id === id) || null : null;
+      const nextId = id || slugifyDocumentId(`${payload.category}-${payload.org}-${payload.name}`);
       const savePayload = {
         ...payload,
         updatedAt: firestore.serverTimestamp(),
@@ -979,12 +997,27 @@ function initContentDocumentsStaffPage() {
       };
       if (id) {
         await firestore.setDoc(firestore.doc(firestore.db, DOCUMENTS_COLLECTION, id), savePayload, { merge: true });
+        void window.sgcuAuditLog?.write?.({
+          action: "content.document.update",
+          entityType: "downloadDocument",
+          entityId: id,
+          before: beforeItem,
+          after: payload,
+          source: "web_app_staff"
+        });
       } else {
-        await firestore.setDoc(firestore.doc(firestore.db, DOCUMENTS_COLLECTION, slugifyDocumentId(`${payload.category}-${payload.org}-${payload.name}`)), {
+        await firestore.setDoc(firestore.doc(firestore.db, DOCUMENTS_COLLECTION, nextId), {
           ...savePayload,
           createdAt: firestore.serverTimestamp(),
           createdBy: editorEmail
         }, { merge: true });
+        void window.sgcuAuditLog?.write?.({
+          action: "content.document.create",
+          entityType: "downloadDocument",
+          entityId: nextId,
+          after: payload,
+          source: "web_app_staff"
+        });
       }
       clearDownloadsCache();
       resetForm();

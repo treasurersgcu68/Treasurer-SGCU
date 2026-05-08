@@ -435,13 +435,15 @@ function extractProjectsFromRows(dataRows, headerRow, sourceYear = "") {
   const COL_CLOSE_DUE = 36;
 
   const COL_DAYS = 48;
-  const COL_STATUS_CLOSE = 51;     // AZ
-  const COL_STATUS_CLOSE_DEC = 52; // BA
+  const COL_STATUS_CLOSE = 51;
+  const COL_STATUS_CLOSE_DEC = 52;
 
   const COL_REMAIN_BUDGET = 57;
   const COL_USAGE_PERCENT = 58;
   const COL_CLOSE_DURATION = 59;
   const COL_DECREE_NO = 60;
+  const COL_CLOSE_STATUS_ADVANCE = 61;
+  const COL_CLOSE_STATUS_DECREE = 62;
 
   return dataRows
     .filter((row) => {
@@ -458,8 +460,10 @@ function extractProjectsFromRows(dataRows, headerRow, sourceYear = "") {
       const orgBig = (row[COL_ORG_BIG] || "").toString();
 
       const statusMainRaw = (row[COL_STATUS_MAIN] || "").toString();
-      const statusCloseRaw = (row[COL_STATUS_CLOSE] || "").toString();       // AR
-      const statusCloseDec = (row[COL_STATUS_CLOSE_DEC] || "").toString();   // AS
+      const statusCloseRaw = (row[COL_STATUS_CLOSE] || "").toString();
+      const statusCloseDec = (row[COL_STATUS_CLOSE_DEC] || "").toString();
+      const closeStatusAdvanceRaw = (row[COL_CLOSE_STATUS_ADVANCE] || "").toString();
+      const closeStatusDecreeRaw = (row[COL_CLOSE_STATUS_DECREE] || "").toString();
 
       const daysRaw = row[COL_DAYS];
       let daysToDeadline = null;
@@ -598,8 +602,8 @@ function extractProjectsFromRows(dataRows, headerRow, sourceYear = "") {
         usagePercent,
         closeDurationText,
         decreeNo,
-        closeStatusAdvance: statusCloseRaw,
-        closeStatusDecree: statusCloseDec
+        closeStatusAdvance: closeStatusAdvanceRaw || statusCloseRaw,
+        closeStatusDecree: closeStatusDecreeRaw || statusCloseDec
       };
     });
 }

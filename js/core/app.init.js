@@ -149,11 +149,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   const appLoaderEl = document.getElementById("appLoader");
   const appLoaderPercentEl = document.getElementById("appLoaderPercent");
   const appLoaderBarEl = document.getElementById("appLoaderBar");
+  const appLoaderDetailEl = document.getElementById("appLoaderDetail");
+  const appLoaderStepEls = Array.from(document.querySelectorAll("[data-loader-step]"));
   appLoaderErrorEl = document.getElementById("appLoaderError");
   appLoaderErrorTextEl = document.getElementById("appLoaderErrorText");
   appLoaderRetryEl = document.getElementById("appLoaderRetry");
   scheduleIdleTask(() => runBackgroundTask(initDailyVisitorCounter, "visitors"));
   let loaderPercent = 0;
+  const loaderStepLabels = {
+    news: "กำลังโหลดข่าวสารล่าสุด",
+    scoreboard: "กำลังตรวจสอบข้อมูลโครงการ",
+    orgStructure: "กำลังเตรียมทำเนียบทีมเหรัญญิก"
+  };
 
   const setLoaderPercent = (value) => {
     const next = Math.max(loaderPercent, Math.min(100, Math.round(value)));
@@ -181,6 +188,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   const loaderStepProgress = new Map();
   loaderStepKeys.forEach((key) => loaderStepProgress.set(key, 0));
 
+  const syncLoaderStepUi = (activeKey = "") => {
+    if (!hasLoaderUi) return;
+    const nextActiveKey =
+      activeKey ||
+      Array.from(loaderStepKeys).find((key) => (loaderStepProgress.get(key) || 0) < 1) ||
+      "";
+    if (appLoaderDetailEl) {
+      appLoaderDetailEl.textContent = nextActiveKey
+        ? loaderStepLabels[nextActiveKey] || "กำลังเตรียมข้อมูล"
+        : "เตรียมข้อมูลเรียบร้อย";
+    }
+    appLoaderStepEls.forEach((el) => {
+      const key = el.dataset.loaderStep || "";
+      const progress = loaderStepProgress.get(key) || 0;
+      el.hidden = !loaderStepKeys.has(key);
+      el.classList.toggle("is-complete", progress >= 1);
+      el.classList.toggle("is-active", key === nextActiveKey && progress < 1);
+    });
+  };
+
   const updateLoaderTotal = () => {
     if (!hasLoaderUi) return;
     let sum = 0;
@@ -197,6 +224,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const next = Math.max(current, Math.min(1, value));
     loaderStepProgress.set(key, next);
     updateLoaderTotal();
+    syncLoaderStepUi(next < 1 ? key : "");
   };
 
   markLoaderStep = (key) => {
@@ -205,6 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (hasLoaderUi) {
     setLoaderPercent(5);
+    syncLoaderStepUi();
   }
 
   if (appAlertRetryEl) {
@@ -644,6 +673,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             preferredPage,
             "home",
             "dashboard-staff",
+            "system-data-staff",
             "project-status",
             "project-status-staff",
             "login"
@@ -686,7 +716,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await switchPage("home", { fromHash: true, bypassConsent: true });
       return;
     }
-    if (targetPage === "dashboard-staff" && staffViewMode !== "staff") {
+    if (["dashboard-staff", "system-data-staff"].includes(targetPage) && staffViewMode !== "staff") {
       await switchPage("project-status-staff", { fromHash });
       return;
     }
@@ -931,6 +961,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+  document.querySelectorAll("[data-home-scroll-next]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const homeSnapContainer = document.querySelector('.page-view[data-page="home"] .home-snap-container');
+      const newsPanel = document.querySelector('.page-view[data-page="home"] .home-snap-panel:nth-of-type(2)');
+      if (homeSnapContainer instanceof HTMLElement && newsPanel instanceof HTMLElement) {
+        homeSnapContainer.scrollTo({ top: newsPanel.offsetTop, left: 0, behavior: "smooth" });
+        return;
+      }
+      document.querySelector(".home-news")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
   // ===== 5) Modal รายละเอียดโครงการ =====
   if (projectModalCloseEl) {
     projectModalCloseEl.addEventListener("click", closeProjectModal);
@@ -1119,32 +1161,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
 
-  // ===== Dashboard Staff: Overview / Project Sources =====
-  const dashboardStaffMainOverviewTabEl = document.getElementById("dashboardStaffMainOverviewTab");
+  // ===== System Data Staff: Project Sources / Activity Log =====
   const dashboardStaffMainSourcesTabEl = document.getElementById("dashboardStaffMainSourcesTab");
-  const dashboardStaffOverviewPanelEl = document.getElementById("dashboardStaffOverviewPanel");
+  const dashboardStaffMainAuditTabEl = document.getElementById("dashboardStaffMainAuditTab");
   const dashboardStaffSourcesPanelEl = document.getElementById("dashboardStaffSourcesPanel");
-  const setDashboardStaffMainTab = (tab = "overview") => {
-    const showOverview = tab !== "sources";
-    if (dashboardStaffOverviewPanelEl) dashboardStaffOverviewPanelEl.hidden = !showOverview;
-    if (dashboardStaffSourcesPanelEl) dashboardStaffSourcesPanelEl.hidden = showOverview;
-    if (dashboardStaffMainOverviewTabEl) {
-      dashboardStaffMainOverviewTabEl.classList.toggle("is-active", showOverview);
-      dashboardStaffMainOverviewTabEl.setAttribute("aria-selected", showOverview ? "true" : "false");
-    }
+  const dashboardStaffAuditPanelEl = document.getElementById("dashboardStaffAuditPanel");
+  const setDashboardStaffMainTab = (tab = "sources") => {
+    const showSources = tab === "sources";
+    const showAudit = tab === "audit";
+    if (dashboardStaffSourcesPanelEl) dashboardStaffSourcesPanelEl.hidden = !showSources;
+    if (dashboardStaffAuditPanelEl) dashboardStaffAuditPanelEl.hidden = !showAudit;
     if (dashboardStaffMainSourcesTabEl) {
-      dashboardStaffMainSourcesTabEl.classList.toggle("is-active", !showOverview);
-      dashboardStaffMainSourcesTabEl.setAttribute("aria-selected", showOverview ? "false" : "true");
+      dashboardStaffMainSourcesTabEl.classList.toggle("is-active", showSources);
+      dashboardStaffMainSourcesTabEl.setAttribute("aria-selected", showSources ? "true" : "false");
+    }
+    if (dashboardStaffMainAuditTabEl) {
+      dashboardStaffMainAuditTabEl.classList.toggle("is-active", showAudit);
+      dashboardStaffMainAuditTabEl.setAttribute("aria-selected", showAudit ? "true" : "false");
+    }
+    if (showAudit) {
+      window.sgcuAuditLog?.initDashboard?.();
     }
   };
 
-  if (dashboardStaffMainOverviewTabEl) {
-    dashboardStaffMainOverviewTabEl.addEventListener("click", () => setDashboardStaffMainTab("overview"));
-  }
   if (dashboardStaffMainSourcesTabEl) {
     dashboardStaffMainSourcesTabEl.addEventListener("click", () => setDashboardStaffMainTab("sources"));
   }
-  setDashboardStaffMainTab("overview");
+  if (dashboardStaffMainAuditTabEl) {
+    dashboardStaffMainAuditTabEl.addEventListener("click", () => setDashboardStaffMainTab("audit"));
+  }
+  setDashboardStaffMainTab("sources");
 
 
   // ===== 10) Tabs Borrow & Return Assets =====

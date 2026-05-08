@@ -7,32 +7,8 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: radial-gradient(circle at top right, #fff1f5 0%, #fdf2f8 55%, #fff7fb 100%);
+  background: #ffffff;
   transition: opacity 600ms var(--motion-ease), visibility 600ms linear;
-}
-
-.app-loader::before, .app-loader::after {
-  content: "";
-  position: absolute;
-  border-radius: 999px;
-  opacity: 0.4;
-  filter: blur(0px);
-}
-
-.app-loader::before {
-  width: 320px;
-  height: 320px;
-  background: linear-gradient(135deg, rgba(255, 143, 177, 0.55), rgba(255, 255, 255, 0));
-  top: -110px;
-  right: -60px;
-}
-
-.app-loader::after {
-  width: 420px;
-  height: 420px;
-  background: radial-gradient(circle at top, rgba(255, 194, 214, 0.6), rgba(255, 255, 255, 0));
-  bottom: -160px;
-  left: -140px;
 }
 
 .app-loader-panel {
@@ -40,45 +16,24 @@
   z-index: 1;
   width: min(92vw, 420px);
   padding: 32px 28px 28px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
+  background: transparent;
   color: #111827;
   text-align: center;
-  box-shadow: 0 24px 50px rgba(255, 143, 177, 0.18);
-  backdrop-filter: blur(8px);
-  animation: loader-panel-float 3s ease-in-out infinite;
+  transform: translateY(-36px);
   overflow: hidden;
 }
 
-.app-loader-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    120deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.65) 20%,
-    transparent 45%
-  );
-  transform: translateX(-120%);
-  animation: loader-panel-shine 2.5s ease-in-out infinite;
-}
-
 .app-loader-logo {
-  width: 96px;
-  height: 96px;
-  margin: 0 auto 16px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 14px 28px rgba(255, 143, 177, 0.18);
+  width: 132px;
+  height: 132px;
+  margin: 0 auto 18px;
   display: grid;
   place-items: center;
-  animation: logo-pulse 2.5s ease-in-out infinite;
 }
 
 .app-loader-logo img {
-  width: 70px;
-  height: 70px;
+  width: 104px;
+  height: 104px;
   object-fit: contain;
 }
 
@@ -121,6 +76,57 @@
   transition: width 800ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.app-loader-detail {
+  min-height: 18px;
+  margin-top: 12px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.app-loader-steps {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.app-loader-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.app-loader-step::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.22);
+}
+
+.app-loader-step.is-active {
+  color: #6b7280;
+}
+
+.app-loader-step.is-active::before {
+  background: var(--theme-pink-400);
+}
+
+.app-loader-step.is-complete {
+  color: rgba(236, 72, 153, 0.85);
+}
+
+.app-loader-step.is-complete::before {
+  background: var(--theme-pink-600);
+}
+
 .app-loader-error {
   margin-top: 16px;
   padding: 12px;
@@ -160,72 +166,14 @@
 }
 
 .app-loader.is-hidden .app-loader-panel {
-  animation: none;
-  transform: scale(0.96) translateY(10px);
+  transform: scale(0.96) translateY(-26px);
   opacity: 0;
   transition: transform 500ms var(--motion-ease), opacity 400ms ease;
 }
 
-@keyframes loader-progress {
-  0% {
-    transform: translateX(-20%);
-  }
-  50% {
-    transform: translateX(120%);
-  }
-  100% {
-    transform: translateX(220%);
-  }
-}
-
-@keyframes loader-panel-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-@keyframes loader-panel-shine {
-  0% {
-    transform: translateX(-120%);
-  }
-  60% {
-    transform: translateX(120%);
-  }
-  100% {
-    transform: translateX(120%);
-  }
-}
-
-@keyframes logo-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 14px 28px rgba(255, 143, 177, 0.18);
-  }
-  50% {
-    transform: scale(1.03);
-    box-shadow: 0 18px 32px rgba(255, 143, 177, 0.25);
-  }
-}
-
-@keyframes loader-dots {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 18px 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-loader-panel, .app-loader-progress span {
-    animation: none;
-  }
-  .app-loader-panel::after, .app-loader-logo {
-    animation: none;
+@media (max-width: 420px) {
+  .app-loader-steps {
+    gap: 8px;
+    font-size: 10px;
   }
 }

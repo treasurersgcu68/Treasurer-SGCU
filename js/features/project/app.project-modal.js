@@ -54,7 +54,7 @@ function openProjectModal(project) {
     project.closeDurationText || formatDaysToDeadline(project.daysToDeadline);
   const decreeNo = project.decreeNo || "-";
   const closeStatusAdvance = project.closeStatusAdvance || "-";
-  const closeStatusDecree = project.closeStatusDecree || project.statusClose || "-";
+  const closeStatusDecree = project.closeStatusDecree || project.statusCloseDecree || "-";
 
   // ผู้สอบตรวจเอกสาร + contact box
   let closeCheckerHtml = "-";
@@ -314,11 +314,11 @@ function openProjectModal(project) {
             <div class="modal-item-value">${decreeNo}</div>
           </div>
           <div>
-            <div class="modal-item-label">สถานะปิดโครงการ (ยืมรองจ่าย)</div>
+            <div class="modal-item-label">สถานะปิดโครงการ (อบจ.)</div>
             <div class="modal-item-value">${closeStatusAdvance}</div>
           </div>
           <div>
-            <div class="modal-item-label">สถานะปิดโครงการ (ฎีกา)</div>
+            <div class="modal-item-label">สถานะปิดโครงการ (กิจการนิสิต)</div>
             <div class="modal-item-value">${closeStatusDecree}</div>
           </div>
         </div>

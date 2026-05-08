@@ -7,6 +7,12 @@ const lastProjectStatusProjectsRefByContext = {
   public: null,
   staff: null
 };
+let activeStaffProjectCheckType = "advance";
+let activeStaffProjectWorkflowTab = "checks";
+const lastStaffProjectCheckRows = {
+  advance: [],
+  transfer: []
+};
 
 function buildProjectStatusRefreshSignature(ctxKey) {
   const ctx = projectStatusContexts[ctxKey] || {};
@@ -207,62 +213,54 @@ function getProjectLastWorkDate(project) {
   return parseProjectDate(project?.lastWorkDate || "");
 }
 
-function getAdvanceBlockedReason(project) {
+function formatProjectCheckRemainingDays(days) {
+  if (typeof days !== "number" || !Number.isFinite(days)) return "-";
+  if (days < 0) return `เลยกำหนด ${Math.abs(days).toLocaleString("th-TH")} วัน`;
+  if (days === 0) return "วันนี้";
+  return `เหลือ ${days.toLocaleString("th-TH")} วัน`;
+}
+
+function getProjectCheckDateDiffDays(targetDate) {
+  if (!(targetDate instanceof Date) || isNaN(targetDate.getTime())) return null;
+  const today = getTodayStart();
+  const targetStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+  return Math.floor((targetStart.getTime() - today.getTime()) / 86400000);
+}
+
+function getAdvanceCheckMeta(project) {
   const advanceStatus = (project.advanceStatus || "").toString().trim();
-  if (advanceStatus !== "ยังไม่เริ่มดำเนินการ") return "";
+  if (advanceStatus !== "ยังไม่เริ่มดำเนินการ") return null;
 
   const lastWorkDate = getProjectLastWorkDate(project);
-  if (!lastWorkDate) return "";
+  if (!lastWorkDate) return null;
 
-  const cutoffDate = new Date(getTodayStart().getTime() + 8 * 86400000);
-  if (cutoffDate > lastWorkDate) {
-    return "คอลัมน์ Y ยังไม่เริ่มดำเนินการ และเหลือน้อยกว่า 8 วันก่อนวันปฏิบัติงาน";
-  }
+  const daysToWorkDate = getProjectCheckDateDiffDays(lastWorkDate);
+  if (daysToWorkDate === null) return null;
 
-  return "";
+  const remainingDays = daysToWorkDate - 8;
+  return remainingDays <= 7
+    ? { remainingDays, remainingText: formatProjectCheckRemainingDays(remainingDays) }
+    : null;
 }
 
-function getTransferBlockedReason(project) {
+function getTransferCheckMeta(project) {
   const transferStatus = (project.transferStatus || "").toString().trim();
   const days = getProjectDaysToDeadline(project);
-  if (days !== null && days < 0 && transferStatus === "") {
-    return `คอลัมน์ AW ติดลบ ${Math.abs(days)} วัน และคอลัมน์ Q ยังว่าง`;
-  }
-
-  return "";
+  return days !== null && days <= 7 && transferStatus === ""
+    ? { remainingDays: days, remainingText: formatProjectCheckRemainingDays(days) }
+    : null;
 }
 
-function getAdvancePendingReason(project) {
-  const advanceStatus = (project.advanceStatus || "").toString().trim();
-  if (advanceStatus === "ยังไม่เริ่มดำเนินการ" && hasProjectAdvanceDue(project)) {
-    return "คอลัมน์ AC มีข้อมูล และคอลัมน์ Y ยังไม่เริ่มดำเนินการ";
-  }
-  return "";
-}
-
-function hasProjectAdvanceDue(project) {
-  return (project?.advanceDueDate || project?.evidenceDueDate || "").toString().trim() !== "";
-}
-
-function getTransferPendingReason(project) {
-  const transferStatus = (project.transferStatus || "").toString().trim();
-  const days = getProjectDaysToDeadline(project);
-  if (days !== null && days > 0 && transferStatus === "") {
-    return `คอลัมน์ AW ยังเหลือ ${days} วัน และคอลัมน์ Q ยังว่าง`;
-  }
-  return "";
-}
-
-function buildProjectOpsRows(filtered, reasonGetter) {
+function buildProjectOpsRows(filtered, metaGetter) {
   return (filtered || [])
-    .map((project) => ({
-      project,
-      reason: reasonGetter(project)
-    }))
-    .filter((item) => item.reason)
+    .map((project) => {
+      const meta = metaGetter(project);
+      return meta ? { project, ...meta } : null;
+    })
+    .filter(Boolean)
     .sort((a, b) => {
-      const aDays = getProjectDaysToDeadline(a.project);
-      const bDays = getProjectDaysToDeadline(b.project);
+      const aDays = a.remainingDays;
+      const bDays = b.remainingDays;
       if (aDays === null && bDays === null) return 0;
       if (aDays === null) return 1;
       if (bDays === null) return -1;
@@ -272,37 +270,77 @@ function buildProjectOpsRows(filtered, reasonGetter) {
 
 function renderProjectOpsTable(tbody, rows) {
   if (!tbody) return;
+  const colSpan = 3;
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="3" class="project-staff-alert-empty">ยังไม่มีรายการที่ต้องตรวจ</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colSpan}" class="project-staff-alert-empty">ยังไม่มีรายการที่ต้องตรวจ</td></tr>`;
     return;
   }
 
   const visibleRows = rows.slice(0, 8);
   const extraCount = rows.length - visibleRows.length;
-  const html = visibleRows.map(({ project, reason }) => `
+  const html = visibleRows.map(({ project, remainingText }) => `
     <tr>
-      <td><span class="project-staff-alert-code">${escapeHtml(project.code || "")}</span></td>
-      <td>
+      <td class="project-staff-alert-code-cell"><span class="project-staff-alert-code">${escapeHtml(project.code || "")}</span></td>
+      <td class="project-staff-alert-project-cell">
         <div class="project-staff-alert-project">${escapeHtml(project.name || "")}</div>
         <div class="project-staff-alert-org">${escapeHtml(project.orgName || "")}</div>
       </td>
-      <td><span class="project-staff-alert-reason">${escapeHtml(reason)}</span></td>
+      <td class="project-staff-alert-meta-cell">${escapeHtml(remainingText || "-")}</td>
     </tr>
   `).join("");
 
   tbody.innerHTML = extraCount > 0
-    ? `${html}<tr><td colspan="3" class="project-staff-alert-more">และอีก ${extraCount} โครงการ</td></tr>`
+    ? `${html}<tr><td colspan="${colSpan}" class="project-staff-alert-more">และอีก ${extraCount} โครงการ</td></tr>`
     : html;
+}
+
+function syncStaffProjectCheckTabs() {
+  document.querySelectorAll("[data-project-check-type]").forEach((btn) => {
+    const type = btn.dataset.projectCheckType || "advance";
+    btn.classList.toggle("is-active", type === activeStaffProjectCheckType);
+    btn.setAttribute("aria-selected", type === activeStaffProjectCheckType ? "true" : "false");
+    if (btn.dataset.projectCheckBound === "true") return;
+    btn.dataset.projectCheckBound = "true";
+    btn.addEventListener("click", () => {
+      activeStaffProjectCheckType = type;
+      syncStaffProjectCheckTabs();
+      renderProjectOpsTable(
+        projectStatusContexts.staff?.projectAdvanceBlockedTableBodyEl,
+        lastStaffProjectCheckRows[activeStaffProjectCheckType] || []
+      );
+    });
+  });
+}
+
+function syncStaffProjectWorkflowTabs() {
+  document.querySelectorAll("[data-project-workflow-tab]").forEach((btn) => {
+    const tab = btn.dataset.projectWorkflowTab || "checks";
+    const isActive = tab === activeStaffProjectWorkflowTab;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    if (btn.dataset.projectWorkflowBound === "true") return;
+    btn.dataset.projectWorkflowBound = "true";
+    btn.addEventListener("click", () => {
+      activeStaffProjectWorkflowTab = tab;
+      syncStaffProjectWorkflowTabs();
+    });
+  });
+
+  document.querySelectorAll("[data-project-workflow-panel]").forEach((panel) => {
+    const tab = panel.dataset.projectWorkflowPanel || "checks";
+    panel.hidden = tab !== activeStaffProjectWorkflowTab;
+  });
 }
 
 function updateStaffProjectOperationsPanel(filtered) {
   const ctx = projectStatusContexts.staff || {};
   if (!ctx.projectStaffOpsPanelEl) return;
 
-  const data = Array.isArray(filtered) ? filtered : [];
+  const visibleData = Array.isArray(filtered) ? filtered : [];
+  const data = Array.isArray(projects) && projects.length ? projects : visibleData;
   ctx.projectStaffOpsPanelEl.hidden = !isUserAuthenticated;
   if (ctx.projectClosureMailMergeExportBtn) {
-    ctx.projectClosureMailMergeExportBtn.disabled = !isUserAuthenticated || data.length === 0 || !window.sgcuCsvExport?.download;
+    ctx.projectClosureMailMergeExportBtn.disabled = !isUserAuthenticated || visibleData.length === 0 || !window.sgcuCsvExport?.download;
   }
 
   const sheetUrl = (activeProjectSourceConfig?.projectUrl || "").toString().trim();
@@ -315,18 +353,15 @@ function updateStaffProjectOperationsPanel(filtered) {
     }
   }
 
-  const advanceRows = buildProjectOpsRows(data, getAdvanceBlockedReason);
-  const transferRows = buildProjectOpsRows(data, getTransferBlockedReason);
-  const advancePendingRows = buildProjectOpsRows(data, getAdvancePendingReason);
-  const transferPendingRows = buildProjectOpsRows(data, getTransferPendingReason);
+  const advanceRows = buildProjectOpsRows(data, getAdvanceCheckMeta);
+  const transferRows = buildProjectOpsRows(data, getTransferCheckMeta);
+  lastStaffProjectCheckRows.advance = advanceRows;
+  lastStaffProjectCheckRows.transfer = transferRows;
+  syncStaffProjectWorkflowTabs();
+  syncStaffProjectCheckTabs();
   if (ctx.projectAdvanceBlockedCountEl) ctx.projectAdvanceBlockedCountEl.textContent = advanceRows.length.toLocaleString("th-TH");
   if (ctx.projectTransferBlockedCountEl) ctx.projectTransferBlockedCountEl.textContent = transferRows.length.toLocaleString("th-TH");
-  if (ctx.projectAdvancePendingCountEl) ctx.projectAdvancePendingCountEl.textContent = advancePendingRows.length.toLocaleString("th-TH");
-  if (ctx.projectTransferPendingCountEl) ctx.projectTransferPendingCountEl.textContent = transferPendingRows.length.toLocaleString("th-TH");
-  renderProjectOpsTable(ctx.projectAdvanceBlockedTableBodyEl, advanceRows);
-  renderProjectOpsTable(ctx.projectTransferBlockedTableBodyEl, transferRows);
-  renderProjectOpsTable(ctx.projectAdvancePendingTableBodyEl, advancePendingRows);
-  renderProjectOpsTable(ctx.projectTransferPendingTableBodyEl, transferPendingRows);
+  renderProjectOpsTable(ctx.projectAdvanceBlockedTableBodyEl, lastStaffProjectCheckRows[activeStaffProjectCheckType] || []);
 }
 
 function getProjectBudget100(project) {
@@ -377,6 +412,12 @@ function buildClosureDecreeText(project) {
   return base ? `${base}/........` : "";
 }
 
+function formatCsvTextCell(value) {
+  const text = (value || "").toString().trim();
+  if (!text) return "";
+  return `="${text.replaceAll("\"", "\"\"")}"`;
+}
+
 function getOrgFilterEntryForProject(project) {
   const orgName = (project?.orgName || "").toString().trim();
   const orgGroup = (project?.orgGroup || "").toString().trim();
@@ -418,7 +459,7 @@ function exportClosureMailMergeCsv(ctxKey = "staff") {
       "ตามที่": resolveClosureMailMergeOrgName(project),
       "ฎีกา": buildClosureDecreeText(project),
       "โครงการ": project.name || "",
-      "ครั้งที่": project.councilMeetingNo || "",
+      "ครั้งที่": formatCsvTextCell(project.councilMeetingNo),
       "จำนวน": getProjectBudget100(project),
       "บัญชี": resolveClosureAccountName(project),
       "เลขที่": resolveClosureAccountNo(project)
@@ -596,6 +637,7 @@ const STAFF_HEAD_OVERRIDES = new Set([]);
 const STAFF_PAGE_OPTIONS = [
   "dashboard-staff",
   "project-status-staff",
+  "system-data-staff",
   "borrow-assets-staff",
   "meeting-room-staff",
   "budget-approval-staff",
@@ -709,7 +751,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
+    return new Set(["project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
   }
   return new Set(["login"]);
 }
@@ -789,6 +831,7 @@ function getAllowedPagesForCurrentState() {
       yyAllowed.add("content-documents-staff");
       yyAllowed.add("dashboard-staff");
       yyAllowed.add("project-status-staff");
+      yyAllowed.add("system-data-staff");
     }
     yyAllowed.add("budget-approval-staff");
     if (!isHeadStaffProfile(staffAuthUser)) {
@@ -804,6 +847,7 @@ function getAllowedPagesForCurrentState() {
 
   if (staffViewMode !== "staff") {
     allowed.delete("dashboard-staff");
+    allowed.delete("system-data-staff");
     allowed.delete("borrow-assets-staff");
     allowed.delete("project-status-staff");
     allowed.delete("meeting-room-staff");

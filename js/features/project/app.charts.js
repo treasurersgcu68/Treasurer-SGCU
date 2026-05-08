@@ -7,7 +7,7 @@ function initCharts(ctxKey = activeProjectStatusContext) {
   const budgetCanvas = ctx.budgetChartCanvas;
   const statusCanvas = ctx.statusPieCanvas;
   const trendCanvas = ctx.trendLineCanvas;
-  if (!budgetCanvas || !statusCanvas) return;
+  if (!budgetCanvas && !statusCanvas && !trendCanvas) return;
 
   if (ctx.budgetByMonthChart) {
     ctx.budgetByMonthChart.destroy();
@@ -22,8 +22,8 @@ function initCharts(ctxKey = activeProjectStatusContext) {
     ctx.trendLineChart = null;
   }
 
-  const budgetCtx = budgetCanvas.getContext("2d");
-  const statusCtx = statusCanvas.getContext("2d");
+  const budgetCtx = budgetCanvas ? budgetCanvas.getContext("2d") : null;
+  const statusCtx = statusCanvas ? statusCanvas.getContext("2d") : null;
   const trendCtx = trendCanvas ? trendCanvas.getContext("2d") : null;
   const makeStackDataset = (label, backgroundColor, datasetIndex) => ({
     label,
@@ -49,131 +49,135 @@ function initCharts(ctxKey = activeProjectStatusContext) {
     }
   });
 
-  budgetByMonthChart = new Chart(budgetCtx, {
-    type: "bar",
-    data: {
-      labels: [],
-      datasets: [
-        makeStackDataset("ยังไม่อนุมัติ", "#d1d5db", 0),
-        makeStackDataset("โครงการที่อนุมัติแล้ว", "#fbbf24", 1),
-        makeStackDataset("โครงการที่วันเลยจัดแล้ว", "#f97316", 2),
-        makeStackDataset("โครงการที่เลยกำหนดส่งปิดแล้ว", "#ef4444", 3),
-        makeStackDataset("โครงการที่ปิดแล้ว", "#22c55e", 4),
-        makeStackDataset("ยกเลิกโครงการ", "#6b7280", 5),
-        makeStackDataset("ไม่ส่งปิดโครงการ", "#111827", 6)
-      ]
-    },
-    options: {
-      indexAxis: "y",
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      plugins: {
-        legend: {
-          position: "bottom",
-          onClick(e, legendItem, legend) {
-            Chart.defaults.plugins.legend.onClick.call(this, e, legendItem, legend);
-            updateClosureXAxisMax(legend.chart);
-            legend.chart.update();
-          },
-          labels: {
-            font: { size: 11 },
-            usePointStyle: true,
-            boxWidth: 10,
-            boxHeight: 10
-          }
-        },
-        tooltip: { enabled: true }
+  if (budgetCtx) {
+    budgetByMonthChart = new Chart(budgetCtx, {
+      type: "bar",
+      data: {
+        labels: [],
+        datasets: [
+          makeStackDataset("ยังไม่อนุมัติ", "#d1d5db", 0),
+          makeStackDataset("โครงการที่อนุมัติแล้ว", "#fbbf24", 1),
+          makeStackDataset("โครงการที่วันเลยจัดแล้ว", "#f97316", 2),
+          makeStackDataset("โครงการที่เลยกำหนดส่งปิดแล้ว", "#ef4444", 3),
+          makeStackDataset("โครงการที่ปิดแล้ว", "#22c55e", 4),
+          makeStackDataset("ยกเลิกโครงการ", "#6b7280", 5),
+          makeStackDataset("ไม่ส่งปิดโครงการ", "#111827", 6)
+        ]
       },
-      scales: {
-        x: {
-          stacked: true,
-          ticks: { stepSize: 1 }
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            onClick(e, legendItem, legend) {
+              Chart.defaults.plugins.legend.onClick.call(this, e, legendItem, legend);
+              updateClosureXAxisMax(legend.chart);
+              legend.chart.update();
+            },
+            labels: {
+              font: { size: 11 },
+              usePointStyle: true,
+              boxWidth: 10,
+              boxHeight: 10
+            }
+          },
+          tooltip: { enabled: true }
         },
-        y: {
-          stacked: true,
-          ticks: {
-            autoSkip: false
-          }
-        }
-      }
-    }
-  });
-
-  statusPieChart = new Chart(statusCtx, {
-    type: "doughnut",
-    data: {
-      labels: [],
-      datasets: [
-        {
-          data: [],
-          backgroundColor: [
-            "#f9a8d4",
-            "#bfdbfe",
-            "#bbf7d0",
-            "#fed7aa",
-            "#fecaca",
-            "#ddd6fe",
-            "#fef3c7"
-          ],
-          borderColor: "#ffffff",
-          borderWidth: 1,
-          pointStyle: "circle"
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: {
-            font: { size: 11 },
-            usePointStyle: true,
-            boxWidth: 10,
-            boxHeight: 10
-          }
-        },
-        centerText: {
-          text: "0%",
-          subText: "",
-          color: "#111827",
-          fontSize: 22,
-          subFontSize: 11,
-          fontFamily: "Kanit"
-        },
-        tooltip: {
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
-          titleColor: "#111827",
-          bodyColor: "#374151",
-          borderColor: "#e5e7eb",
-          borderWidth: 1,
-          padding: 10,
-          cornerRadius: 6,
-          displayColors: false,
-          bodyFont: { family: "'Kanit', sans-serif", size: 12 },
-          callbacks: {
-            title: () => [],
-            label: (ctx) => {
-              const label = ctx.label || "";
-              const value = ctx.parsed || 0;
-              const dataset = ctx.dataset;
-              const total = dataset.data.reduce((a, b) => a + b, 0);
-              const percent = total > 0 ? (value / total) * 100 : 0;
-              const percentText = percent.toFixed(1);
-              return [
-                `• ${label}`,
-                `  งบอนุมัติ: ${formatMoney(value)} บาท (${percentText}%)`
-              ];
+        scales: {
+          x: {
+            stacked: true,
+            ticks: { stepSize: 1 }
+          },
+          y: {
+            stacked: true,
+            ticks: {
+              autoSkip: false
             }
           }
         }
+      }
+    });
+  }
+
+  if (statusCtx) {
+    statusPieChart = new Chart(statusCtx, {
+      type: "doughnut",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            data: [],
+            backgroundColor: [
+              "#f9a8d4",
+              "#bfdbfe",
+              "#bbf7d0",
+              "#fed7aa",
+              "#fecaca",
+              "#ddd6fe",
+              "#fef3c7"
+            ],
+            borderColor: "#ffffff",
+            borderWidth: 1,
+            pointStyle: "circle"
+          }
+        ]
       },
-      cutout: "65%"
-    }
-  });
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              font: { size: 11 },
+              usePointStyle: true,
+              boxWidth: 10,
+              boxHeight: 10
+            }
+          },
+          centerText: {
+            text: "0%",
+            subText: "",
+            color: "#111827",
+            fontSize: 22,
+            subFontSize: 11,
+            fontFamily: "Kanit"
+          },
+          tooltip: {
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            titleColor: "#111827",
+            bodyColor: "#374151",
+            borderColor: "#e5e7eb",
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 6,
+            displayColors: false,
+            bodyFont: { family: "'Kanit', sans-serif", size: 12 },
+            callbacks: {
+              title: () => [],
+              label: (ctx) => {
+                const label = ctx.label || "";
+                const value = ctx.parsed || 0;
+                const dataset = ctx.dataset;
+                const total = dataset.data.reduce((a, b) => a + b, 0);
+                const percent = total > 0 ? (value / total) * 100 : 0;
+                const percentText = percent.toFixed(1);
+                return [
+                  `• ${label}`,
+                  `  งบอนุมัติ: ${formatMoney(value)} บาท (${percentText}%)`
+                ];
+              }
+            }
+          }
+        },
+        cutout: "65%"
+      }
+    });
+  }
 
   if (trendCtx) {
     trendLineChart = new Chart(trendCtx, {

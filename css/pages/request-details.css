@@ -6,6 +6,11 @@
   .news-list,
   .news-list-skeleton {
     grid-template-columns: minmax(0, 1fr);
+    max-height: min(68vh, 620px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px;
   }
 
   .news-card {
@@ -67,6 +72,35 @@
 
   .page-news .page-meta {
     font-size: 11px;
+  }
+}
+
+@media (max-width: 960px) {
+  .page-view[data-page="news"] .news-list,
+  .page-view[data-page="news"] .news-list-skeleton,
+  .page-view[data-page="financial-docs"] #downloadList,
+  .page-view[data-page="financial-docs"] .download-skeleton,
+  .page-view[data-page="content-news-staff"] .content-news-table-wrapper,
+  .page-view[data-page="content-documents-staff"] .content-documents-table-wrapper,
+  .page-view[data-page="staff-approval"] .org-structure-admin-table-wrapper {
+    max-height: min(62dvh, 560px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .page-view[data-page="news"] .news-list,
+  .page-view[data-page="news"] .news-list-skeleton,
+  .page-view[data-page="financial-docs"] #downloadList,
+  .page-view[data-page="financial-docs"] .download-skeleton {
+    padding-right: 4px;
+  }
+
+  .page-view[data-page="content-news-staff"] .content-news-table-wrapper,
+  .page-view[data-page="content-documents-staff"] .content-documents-table-wrapper,
+  .page-view[data-page="staff-approval"] .org-structure-admin-table-wrapper {
+    padding-right: 4px !important;
   }
 }
 .modal-actions {

@@ -535,7 +535,7 @@
   /* แต่ละ level ไม่ต้องกางกว้างมาก */
   .org-level {
     flex-direction: column;
-    gap: 19px;
+    gap: 24px;
   }
 
   /* กลุ่ม main branches: จาก 2 คอลัมน์ → 1 คอลัมน์ */
@@ -555,7 +555,7 @@
   .org-right-branches {
     flex-direction: column;
     align-items: center;
-    gap: 26px;
+    gap: 32px;
     padding-top: 0;
   }
 
@@ -587,6 +587,22 @@
   .org-node {
     max-width: 160px;
     margin-inline: auto;
+    gap: 3px;
+  }
+
+  .org-node-role {
+    margin-top: 8px;
+    line-height: 1.35;
+  }
+
+  .org-node-name {
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
+  .org-node-nick {
+    margin-top: 2px;
+    line-height: 1.35;
   }
 
   .org-code-central-grid,
@@ -600,7 +616,9 @@
   }
 
   .org-node-code {
+    margin-top: 6px;
     font-size: 8px;
+    line-height: 1.35;
     padding-inline: 5px;
   }
 

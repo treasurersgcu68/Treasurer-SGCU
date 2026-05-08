@@ -41,7 +41,7 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css?v=20260504-24" />
+    <link rel="stylesheet" href="css/style.css?v=20260508-closure-meeting-text-1" />
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
     <script type="module" src="js/integrations/app.firebase-bootstrap.js?v=20260423-1"></script>
   </head>
@@ -56,6 +56,12 @@
           กำลังเชื่อมต่อข้อมูล <span id="appLoaderPercent" class="app-loader-percent">0</span>%
         </div>
         <div class="app-loader-progress" aria-hidden="true"><span id="appLoaderBar"></span></div>
+        <div id="appLoaderDetail" class="app-loader-detail">กำลังเตรียมข้อมูลข่าวสาร</div>
+        <div class="app-loader-steps" aria-hidden="true">
+          <span class="app-loader-step" data-loader-step="news">ข่าวสาร</span>
+          <span class="app-loader-step" data-loader-step="scoreboard">ข้อมูลโครงการ</span>
+          <span class="app-loader-step" data-loader-step="orgStructure">ทำเนียบทีม</span>
+        </div>
         <div id="appLoaderError" class="app-loader-error" role="alert" hidden>
           <div id="appLoaderErrorText" class="app-loader-error-text">
             ไม่สามารถเชื่อมต่อข้อมูลได้ในขณะนี้
@@ -119,8 +125,9 @@
             <div class="nav-group">
               <button class="nav-group-toggle" type="button" aria-expanded="false">ภาพรวม</button>
               <div class="nav-group-menu" aria-hidden="true">
-                <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมและสารบัญโครงการ</a>
-                <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ</a>
+                <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมโครงการ</a>
+                <a href="#" data-page="project-status-staff" data-visible="protected">เครื่องมือโครงการ</a>
+                <a href="#" data-page="system-data-staff" data-visible="protected">ข้อมูลระบบ</a>
               </div>
             </div>
 
@@ -202,8 +209,9 @@
           <details class="mobile-menu-group" data-mobile-nav="staff">
             <summary>ภาพรวม</summary>
             <div class="mobile-menu-links">
-              <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมและสารบัญโครงการ</a>
-              <a href="#" data-page="project-status-staff" data-visible="protected">กำกับสถานะโครงการ</a>
+              <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมโครงการ</a>
+              <a href="#" data-page="project-status-staff" data-visible="protected">เครื่องมือโครงการ</a>
+              <a href="#" data-page="system-data-staff" data-visible="protected">ข้อมูลระบบ</a>
             </div>
           </details>
 
@@ -972,6 +980,7 @@
     <script src="js/integrations/app.runtime-config.js?v=20260504-1" defer></script>
     <script src="js/core/app.core.js" defer></script>
     <script src="js/core/app.csv-export.js?v=20260504-1" defer></script>
+    <script src="js/core/app.audit-log.js?v=20260507-1" defer></script>
     <script src="js/core/app.dialog.js?v=20260501-1" defer></script>
     <script src="js/core/app.helpers.js?v=20260501-1" defer></script>
     <script src="js/features/docs/app.file-links.js?v=20260417-1" defer></script>
@@ -980,13 +989,13 @@
     <script src="js/features/project/app.project-modal.js" defer></script>
     <script src="js/features/project/app.charts.js" defer></script>
     <script src="js/features/project/app.pie.js" defer></script>
-    <script src="js/features/project/app.sorting-auth.js?v=20260504-2" defer></script>
+    <script src="js/features/project/app.sorting-auth.js?v=20260508-closure-meeting-text-1" defer></script>
     <script src="js/features/project/app.calendar.js" defer></script>
     <script src="js/features/org/app.org.js?v=20260503-1" defer></script>
     <script src="js/motion/app.motion.js" defer></script>
     <script>
-      window.sgcuAssetVersion = "20260507-3";
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260507-3";
+      window.sgcuAssetVersion = "20260508-closure-meeting-text-1";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260508-closure-meeting-text-1";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",

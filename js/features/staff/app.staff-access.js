@@ -177,8 +177,9 @@ function initStaffAccessPages() {
     { name: "เจ้าหน้าที่สำนักบริหารกิจการนิสิต", divisionCodeYY: "09", levelCodeZZ: "04" }
   ];
   const STAFF_PAGE_OPTIONS = [
-    { id: "dashboard-staff", label: "ภาพรวมและสารบัญโครงการ" },
-    { id: "project-status-staff", label: "กำกับสถานะโครงการ" },
+    { id: "dashboard-staff", label: "ภาพรวมโครงการ" },
+    { id: "project-status-staff", label: "เครื่องมือโครงการ" },
+    { id: "system-data-staff", label: "ข้อมูลระบบ" },
     { id: "borrow-assets-staff", label: "อนุมัติยืมทรัพย์สิน" },
     { id: "meeting-room-staff", label: "อนุมัติห้องประชุม" },
     { id: "budget-approval-staff", label: "จัดการคำของบ" },
@@ -913,7 +914,7 @@ function initStaffAccessPages() {
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
-      return ["project-status-staff", "dashboard-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"];
+      return ["project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"];
     }
     return ["login"];
   };

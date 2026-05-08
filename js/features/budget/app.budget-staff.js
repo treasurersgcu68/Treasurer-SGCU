@@ -1207,6 +1207,21 @@
       writeLocalBudgetGroupCeilings(groupCeilings);
       updateSummary();
       setMessage(actionMessageEl, "บันทึกการตั้งค่าเรียบร้อย", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "budget.settings.update",
+        entityType: "budgetApprovalSettings",
+        entityId: SETTINGS_DOC_ID,
+        after: {
+          budgetRequestDeadline: deadline,
+          budgetRoundYear: year,
+          budgetRoundNo: roundNo,
+          currentBudgetRoundId: roundId,
+          budgetCeiling: ceiling,
+          budgetGroupCeilings: groupCeilings
+        },
+        metadata: { activeRoundCount: nextActiveRounds.length },
+        source: "web_app_staff"
+      });
       await loadDeadline();
     } catch (error) {
       try {
@@ -1289,6 +1304,17 @@
       deadlineInputEl.value = nextCurrent.deadline || "";
       syncRoundStatus();
       setMessage(actionMessageEl, "ลบรอบเรียบร้อย", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "budget.round.delete",
+        entityType: "budgetApprovalSettings",
+        entityId: id,
+        before: round,
+        after: {
+          budgetActiveRounds: nextActiveRounds,
+          currentBudgetRoundId: nextCurrent.id || ""
+        },
+        source: "web_app_staff"
+      });
     } catch (error) {
       const code = normalizeText(error?.code);
       const detail = code ? ` (${code})` : "";
@@ -1387,6 +1413,14 @@
       }
 
       setMessage(actionMessageEl, `รันรหัสโครงการสำเร็จ ${updates.length} รายการ`, "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "budget.project_codes.run",
+        entityType: "budgetApprovalRequest",
+        entityId: "bulk",
+        after: { updates },
+        metadata: { count: updates.length },
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("run budget project code failed - app.budget-staff.js", error);
       setMessage(actionMessageEl, "รันรหัสโครงการไม่สำเร็จ", "#b91c1c");
@@ -1426,6 +1460,14 @@
         );
       }
       setMessage(actionMessageEl, `ยกเลิกรหัสโครงการสำเร็จ ${rowsToClear.length} รายการ`, "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "budget.project_codes.clear",
+        entityType: "budgetApprovalRequest",
+        entityId: "bulk",
+        before: rowsToClear.map((row) => ({ id: row.id, projectCodeGenerated: row.projectCodeGenerated })),
+        metadata: { count: rowsToClear.length },
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("clear budget project code failed - app.budget-staff.js", error);
       setMessage(actionMessageEl, "ยกเลิกรหัสโครงการไม่สำเร็จ", "#b91c1c");
@@ -1470,6 +1512,7 @@
 
     const payload = readFormPayload();
     const isEdit = !!editingId;
+    const beforeRow = isEdit ? requestRows.find((item) => item.id === editingId) || null : null;
 
     try {
       saveBtnEl.disabled = true;
@@ -1482,8 +1525,16 @@
           }
         );
         setMessage(formMessageEl, "บันทึกการแก้ไขเรียบร้อย", "#047857");
+        void window.sgcuAuditLog?.write?.({
+          action: "budget.request.update",
+          entityType: "budgetApprovalRequest",
+          entityId: editingId,
+          before: beforeRow,
+          after: payload,
+          source: "web_app_staff"
+        });
       } else {
-        await firestore.addDoc(
+        const docRef = await firestore.addDoc(
           firestore.collection(firestore.db, COLLECTION_REQUESTS),
           {
             requestType: "budget_approval",
@@ -1501,6 +1552,13 @@
           }
         );
         setMessage(formMessageEl, "เพิ่มรายการเรียบร้อย", "#047857");
+        void window.sgcuAuditLog?.write?.({
+          action: "budget.request.create",
+          entityType: "budgetApprovalRequest",
+          entityId: docRef?.id || "",
+          after: payload,
+          source: "web_app_staff"
+        });
       }
       resetForm();
     } catch (error) {
@@ -1519,6 +1577,7 @@
       return;
     }
 
+    const beforeRow = requestRows.find((item) => item.id === id) || null;
     try {
       await firestore.updateDoc(
         firestore.doc(firestore.db, COLLECTION_REQUESTS, id),
@@ -1529,6 +1588,14 @@
         }
       );
       setMessage(actionMessageEl, "ลดรายการเรียบร้อย", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "budget.request.cancel",
+        entityType: "budgetApprovalRequest",
+        entityId: id,
+        before: beforeRow,
+        after: { status: "cancelled" },
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("cancel budget request failed - app.budget-staff.js", error);
       setMessage(actionMessageEl, "ลดรายการไม่สำเร็จ", "#b91c1c");

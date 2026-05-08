@@ -299,7 +299,13 @@ async function loadProjectsFromSheet(sourceConfigOverride = null) {
     const isPublishedHtml = isPublishedHtmlSheetUrl(projectUrl);
     const projectCacheKey = getProjectCacheKey(sourceConfig);
     const cached = getCache(projectCacheKey, CACHE_TTL_MS);
-    if (cached && Array.isArray(cached) && cached.length) {
+    const hasCloseStatusBreakdown =
+      Array.isArray(cached) &&
+      cached.some((project) =>
+        Object.prototype.hasOwnProperty.call(project || {}, "closeStatusAdvance") &&
+        Object.prototype.hasOwnProperty.call(project || {}, "closeStatusDecree")
+      );
+    if (cached && Array.isArray(cached) && cached.length && hasCloseStatusBreakdown) {
       projects = applySourceYearToProjects(cached, selectedProjectSourceYear);
       hydrateProjectsCache(projects);
       clearLoadError("projects");

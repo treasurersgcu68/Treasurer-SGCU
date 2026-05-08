@@ -344,6 +344,15 @@
 /* Responsive download buttons */
 
 @media (max-width: 768px) {
+  #downloadList,
+  .download-skeleton {
+    max-height: min(68vh, 620px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px;
+  }
+
   .download-item {
     flex-direction: column;
     align-items: flex-start;

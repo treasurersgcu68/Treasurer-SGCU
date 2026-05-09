@@ -5,6 +5,7 @@
   const getFirestore = () => window.sgcuFirestore || {};
   const getAuthUser = () => window.sgcuAuth?.auth?.currentUser || null;
   const collectionName = () => getConfig().firestore?.collections?.auditLogs || "auditLogs";
+  const userProfileCollectionName = () => getConfig().firestore?.collections?.userProfiles || "userProfiles";
 
   const normalizeText = (value) => (value == null ? "" : String(value).trim());
   const escapeHtml = (value) =>
@@ -20,6 +21,97 @@
       return JSON.parse(JSON.stringify(value));
     } catch (_) {
       return { value: normalizeText(value) };
+    }
+  };
+
+  const actorNameCache = new Map();
+  const actorNameLoadingKeys = new Set();
+
+  const getProfileFullName = (profile = {}) => {
+    const firstName = normalizeText(profile.firstName);
+    const lastName = normalizeText(profile.lastName);
+    return [firstName, lastName].filter(Boolean).join(" ").trim();
+  };
+
+  const readLocalProfileByEmail = (email = "") => {
+    const normalizedEmail = normalizeText(email).toLowerCase();
+    if (!normalizedEmail) return null;
+    const storageKeys = ["sgcu_user_profile_by_email_v1", "sgcu_borrow_profile_by_email_v1"];
+    for (const key of storageKeys) {
+      try {
+        const parsed = JSON.parse(window.localStorage?.getItem(key) || "{}");
+        const profile = parsed && typeof parsed === "object" ? parsed[normalizedEmail] : null;
+        if (profile && typeof profile === "object") return profile;
+      } catch (_) {
+        // ignore malformed local profile data
+      }
+    }
+    return null;
+  };
+
+  const getActorCacheKey = (item = {}) => {
+    const uid = normalizeText(item.actorUid);
+    if (uid) return `uid:${uid}`;
+    const email = normalizeText(item.actorEmail).toLowerCase();
+    return email ? `email:${email}` : "";
+  };
+
+  const getActorDisplayName = (item = {}) => {
+    const storedName = normalizeText(item.actorName || item.actorDisplayName);
+    if (storedName) return storedName;
+
+    const cacheKey = getActorCacheKey(item);
+    if (cacheKey && actorNameCache.has(cacheKey)) {
+      const cachedName = normalizeText(actorNameCache.get(cacheKey));
+      if (cachedName) return cachedName;
+    }
+
+    const localName = getProfileFullName(readLocalProfileByEmail(item.actorEmail) || {});
+    if (localName) return localName;
+
+    const currentUser = getAuthUser();
+    if (normalizeText(currentUser?.uid) && normalizeText(currentUser?.uid) === normalizeText(item.actorUid)) {
+      const currentName = normalizeText(currentUser?.displayName);
+      if (currentName) return currentName;
+    }
+
+    return normalizeText(item.actorEmail) || "-";
+  };
+
+  const getCurrentActorDisplayName = () => {
+    const user = getAuthUser();
+    const email = normalizeText(user?.email).toLowerCase();
+    const localName = getProfileFullName(readLocalProfileByEmail(email) || {});
+    return localName || normalizeText(user?.displayName);
+  };
+
+  const hydrateActorNames = (rows = []) => {
+    const firestore = getFirestore();
+    if (!firestore.db || !firestore.doc || !firestore.getDoc) return;
+    const loadJobs = [];
+
+    rows.forEach((item) => {
+      const uid = normalizeText(item.actorUid);
+      if (!uid) return;
+      const cacheKey = `uid:${uid}`;
+      if (actorNameCache.has(cacheKey) || actorNameLoadingKeys.has(cacheKey)) return;
+      actorNameLoadingKeys.add(cacheKey);
+      const job = firestore.getDoc(firestore.doc(firestore.db, userProfileCollectionName(), uid))
+        .then((snap) => {
+          const profile = snap?.exists?.() ? (snap.data() || {}) : {};
+          actorNameCache.set(cacheKey, getProfileFullName(profile));
+        })
+        .catch(() => {
+          actorNameCache.set(cacheKey, "");
+        })
+        .finally(() => {
+          actorNameLoadingKeys.delete(cacheKey);
+        });
+      loadJobs.push(job);
+    });
+
+    if (loadJobs.length) {
+      Promise.allSettled(loadJobs).then(() => renderRows(state.rows));
     }
   };
 
@@ -139,7 +231,6 @@
     if (entityType === "meetingRoomBooking") {
       const room = normalizeText(data.roomName || data.roomDisplay || data.roomId) || "ไม่ระบุห้อง";
       const schedule = formatSchedule(data);
-      const requester = normalizeText(data.requester || data.requesterEmail);
       const status = getStatusChangeText(item);
       const reschedule = data.rescheduleRequestedDate
         ? `ขอเปลี่ยนเป็น ${[
@@ -147,7 +238,7 @@
             `${data.rescheduleRequestedStartTime || "-"}-${data.rescheduleRequestedEndTime || "-"}`
           ].filter(Boolean).join(" ")}`
         : "";
-      return [room, schedule, requester, status, reschedule].filter(Boolean).join(" | ");
+      return [room, schedule, status, reschedule].filter(Boolean).join(" | ");
     }
 
     if (entityType === "meetingRoom") {
@@ -176,8 +267,7 @@
       return [
         normalizeText(data.projectName),
         assets,
-        statusLabel(data.status),
-        normalizeText(data.requesterEmail)
+        statusLabel(data.status)
       ].filter(Boolean).join(" | ");
     }
 
@@ -190,6 +280,15 @@
     }
 
     return action ? entityLabel(entityType, item.entityId) : "";
+  };
+
+  const renderDetailHtml = (item = {}) => {
+    const text = detailText(item) || entityLabel(item.entityType, item.entityId);
+    const parts = normalizeText(text).split(" | ").map(normalizeText).filter(Boolean);
+    if (!parts.length) return escapeHtml("-");
+    return `<div class="dashboard-audit-detail-list">${parts.map((part) => (
+      `<span class="dashboard-audit-detail-item">${escapeHtml(part)}</span>`
+    )).join("")}</div>`;
   };
 
   const write = async ({
@@ -215,6 +314,7 @@
           after: normalizeSnapshotData(after),
           actorUid: normalizeText(user?.uid),
           actorEmail: normalizeText(user?.email).toLowerCase(),
+          actorDisplayName: getCurrentActorDisplayName(),
           actorRole: source.includes("staff") ? "staff" : "",
           source: normalizeText(source) || "web_app",
           metadata: normalizeSnapshotData(metadata) || {},
@@ -255,6 +355,7 @@
     actionLabel(item.action),
     entityLabel(item.entityType, item.entityId),
     detailText(item),
+    getActorDisplayName(item),
     item.actorEmail,
     item.source,
     item.action,
@@ -278,7 +379,7 @@
       "การกระทำ": actionLabel(item.action),
       "ประเภท/รหัส": entityLabel(item.entityType, item.entityId),
       "รายละเอียด": detailText(item),
-      "ผู้ทำรายการ": item.actorEmail || "-",
+      "ผู้ทำรายการ": getActorDisplayName(item),
       "ที่มา": item.source || "-",
       "Metadata": JSON.stringify(item.metadata || {})
     }));
@@ -300,15 +401,16 @@
     }
     if (exportBtn) exportBtn.disabled = rows.length === 0;
     if (!rows.length) {
-      body.innerHTML = `<tr><td colspan="4">ยังไม่มี Activity Log</td></tr>`;
+      body.innerHTML = `<tr class="dashboard-audit-empty-row"><td colspan="4">ยังไม่มี Activity Log</td></tr>`;
       return;
     }
+    hydrateActorNames(rows);
     body.innerHTML = rows.map((item) => `
-      <tr>
-        <td>${escapeHtml(toDisplayDateTime(item.timestamp))}</td>
-        <td>${escapeHtml(actionLabel(item.action))}</td>
-        <td>${escapeHtml(detailText(item) || entityLabel(item.entityType, item.entityId))}</td>
-        <td>${escapeHtml(normalizeText(item.actorEmail) || "-")}</td>
+      <tr class="dashboard-audit-row">
+        <td data-label="เวลา">${escapeHtml(toDisplayDateTime(item.timestamp))}</td>
+        <td data-label="การกระทำ">${escapeHtml(actionLabel(item.action))}</td>
+        <td class="dashboard-audit-detail-cell" data-label="รายละเอียด">${renderDetailHtml(item)}</td>
+        <td data-label="ผู้ทำรายการ">${escapeHtml(getActorDisplayName(item))}</td>
       </tr>
     `).join("");
   };

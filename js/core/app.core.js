@@ -236,6 +236,7 @@ let appLoaderErrorTextEl;
 let appLoaderRetryEl;
 let projectsLastUpdatedEl;
 let projectsLastUpdatedStaffEl;
+let projectsLastUpdatedDashboardStaffEl;
 
 // Motion globals
 let sectionObserver = null;

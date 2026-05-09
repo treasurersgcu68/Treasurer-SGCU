@@ -4,13 +4,61 @@
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">ภาพรวมโครงการ</h1>
-              <p class="page-meta">ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง | ผู้เข้าชมสะสม : <span id="dashboardVisitorAllTimeCount">-</span> ครั้ง</p>
+              <p class="page-meta">อัปเดตล่าสุด : <span id="projectsLastUpdatedDashboardStaff">-</span> | ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง | ผู้เข้าชมสะสม : <span id="dashboardVisitorAllTimeCount">-</span> ครั้ง</p>
+            </div>
+            <div class="tabs dashboard-staff-main-tabs" role="tablist" aria-label="เลือกมุมมองภาพรวมโครงการ">
+              <button type="button" class="tab-btn view-toggle-btn is-active" data-project-workflow-tab="overview">
+                สรุปภาพรวม
+              </button>
+              <button type="button" class="tab-btn view-toggle-btn" data-project-workflow-tab="checks">
+                ตรวจข้อมูล
+              </button>
             </div>
           </div>
 
-          <div id="dashboardStaffOverviewPanel" class="dashboard-staff-main-panel">
-          <div id="filterBarHostDashboardStaff"></div>
+          <div id="filterBarHostDashboardStaff">
+            <div id="filterBarStaff" class="filter-bar">
+              <div class="filter-group filter-year">
+                <label for="yearSelectStaff">ปีการศึกษา</label>
+                <select id="yearSelectStaff">
+                  <option value="all">ทุกปีการศึกษา</option>
+                  <option value="2568" selected>2568</option>
+                </select>
+              </div>
 
+              <div class="filter-group filter-orgtype">
+                <label for="orgTypeSelectStaff">ประเภทองค์กร</label>
+                <select id="orgTypeSelectStaff">
+                  <option value="all">ทุกประเภทองค์กร</option>
+                  <!-- JS จะเติมตัวเลือกฝ่าย/กลุ่มองค์กร -->
+                </select>
+              </div>
+
+              <div class="filter-group filter-org">
+                <label for="orgSelectStaff">ฝ่าย / ชมรม</label>
+                <select id="orgSelectStaff">
+                  <option value="all">ทุกฝ่าย / ทุกชมรม</option>
+                  <!-- JS จะเติมรายชื่อฝ่าย/ชมรม -->
+                </select>
+              </div>
+
+              <div class="filter-group filter-search">
+                <label for="projectSearchInputStaff">ค้นหาข้อความ (โค้ด / ชื่อ / ฝ่าย)</label>
+                <div class="search-box">
+                  <input
+                    id="projectSearchInputStaff"
+                    type="search"
+                    placeholder="พิมพ์คำค้น เช่น SGCU-01 หรือ ชมรมกีฬา"
+                  />
+                  <button id="projectSearchClearStaff" class="search-clear" type="button" aria-label="ล้างตัวกรองทั้งหมด">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="dashboardStaffOverviewPanel" class="dashboard-staff-main-panel" data-project-workflow-panel="overview">
           <section class="dashboard-overview section-appear section-delay-1">
             <header class="panel-header">
               <div>
@@ -76,7 +124,7 @@
             <div class="dashboard-charts-grid section-appear section-delay-2" style="margin-top:12px;">
               <article class="chart-card">
                   <header class="chart-header">
-                    <h3 class="chart-title">โครงการยังไม่ปิดตามเดือนสิ้นสุดงาน</h3>
+                    <h3 class="chart-title">โครงการครบกำหนดสิ้นสุดงาน แต่ยังไม่ปิดโครงการ</h3>
                   </header>
                 <div class="chart-inner">
                   <canvas id="trendLineChartStaff"></canvas>
@@ -174,6 +222,43 @@
             </div>
           </section>
           </div>
+
+          <section id="projectStaffOpsPanelStaff" class="project-staff-ops-panel section-appear section-delay-1" data-project-workflow-panel="checks" hidden>
+            <section class="panel project-staff-workflow-card project-staff-check-card">
+              <div class="project-staff-ops-section-head">
+                <div>
+                  <span class="project-staff-ops-kicker">Data checks</span>
+                  <h3 class="panel-title">ตรวจข้อมูลก่อนดำเนินงาน</h3>
+                  <p>แสดงโครงการที่ยังต้องติดตามในแต่ละกระบวนการ พร้อมระยะเวลาที่เหลือหรือเลยกำหนดแล้ว</p>
+                </div>
+                <div class="tabs project-staff-check-tabs" role="tablist" aria-label="เลือกกระบวนการที่ต้องตรวจ">
+                  <button type="button" class="tab-btn view-toggle-btn project-staff-check-tab is-active" data-project-check-type="advance">
+                    ยืมรองจ่าย <span id="projectAdvanceBlockedCountStaff">0</span>
+                  </button>
+                  <button type="button" class="tab-btn view-toggle-btn project-staff-check-tab" data-project-check-type="transfer">
+                    โอนงบประมาณ <span id="projectTransferBlockedCountStaff">0</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="project-staff-check-group is-critical">
+                <div class="project-staff-alert-table-wrap">
+                  <table class="project-staff-alert-table">
+                    <thead>
+                      <tr>
+                        <th>รหัส</th>
+                        <th>โครงการ</th>
+                        <th>ระยะเวลาที่เหลือ</th>
+                      </tr>
+                    </thead>
+                    <tbody id="projectAdvanceBlockedTableBodyStaff">
+                      <tr><td colspan="3">ยังไม่มีรายการ</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </section>
         </div>
       </section>
 
@@ -183,189 +268,11 @@
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">ข้อมูลระบบ</h1>
-              <p class="page-meta">แหล่งข้อมูล Project Status คู่มือกรอกชีท และประวัติการทำรายการล่าสุด</p>
-            </div>
-            <div class="tabs dashboard-staff-main-tabs" role="tablist" aria-label="เลือกส่วนงานข้อมูลระบบ">
-              <button
-                id="dashboardStaffMainSourcesTab"
-                class="tab-btn view-toggle-btn is-active"
-                type="button"
-                role="tab"
-                aria-selected="true"
-                aria-controls="dashboardStaffSourcesPanel"
-              >
-                สารบัญ Project Status
-              </button>
-              <button
-                id="dashboardStaffMainAuditTab"
-                class="tab-btn view-toggle-btn"
-                type="button"
-                role="tab"
-                aria-selected="false"
-                aria-controls="dashboardStaffAuditPanel"
-              >
-                Activity Log
-              </button>
+              <p class="page-meta">ประวัติการทำรายการล่าสุด</p>
             </div>
           </div>
 
-          <div id="dashboardStaffSourcesPanel" class="dashboard-staff-main-panel" role="tabpanel" aria-labelledby="dashboardStaffMainSourcesTab">
-            <section class="management-link-panel section-appear section-delay-1" data-management-visibility="staff" hidden>
-              <div class="management-link-copy">
-                <span class="management-link-kicker">แหล่งข้อมูลต้นทาง</span>
-                <h3>สารบัญ Project Status</h3>
-                <p>ข้อมูลโครงการมี 2 ชั้น คือสารบัญกลางที่เลือกปีการศึกษาและลิงก์ข้อมูล กับชีท Project Status ของปีนั้นที่เก็บรายการโครงการจริง</p>
-              </div>
-              <div class="management-link-steps" aria-label="คอลัมน์ที่ต้องแก้ในสารบัญ Project Status">
-                <span><strong>1</strong> สารบัญ Project Status</span>
-                <span><strong>2</strong> Project Status</span>
-              </div>
-              <a
-                class="btn-primary management-link-button"
-                href="#"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-management-link="managementLinks.projectSources"
-              >
-                เปิดสารบัญ Project Status
-              </a>
-              <p class="sheet-access-note">
-                ก่อนเปิด Google Sheet เพื่อแก้ไข ต้องเข้า
-                <a href="https://groups.google.com/g/treasurer-sgcu" target="_blank" rel="noopener noreferrer">Google Group treasurer-sgcu</a>
-                ก่อน เพื่อให้บัญชีมีสิทธิ์เข้าถึงไฟล์
-              </p>
-            </section>
-
-            <section class="sheet-guide-section section-appear section-delay-2" aria-label="คู่มือกรอกข้อมูล Project Status">
-              <div class="sheet-guide-header">
-                <div>
-                  <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
-                  <h3>Project Status</h3>
-                </div>
-                <p>เริ่มจากสารบัญกลางเพื่อเลือกปีและลิงก์ชีท จากนั้นแก้ข้อมูลโครงการจริงในชีท Project Status ของปีนั้น เว็บจะอ่านปีที่ active และใช้ข้อมูลโครงการไปแสดงใน Dashboard, เครื่องมือโครงการ และปฏิทิน</p>
-              </div>
-
-              <div class="sheet-guide-legend" aria-label="คำอธิบายสีแถว">
-                <span><i class="is-required"></i><strong>จำเป็น</strong> ถ้าว่างข้อมูลหลักจะไม่แสดงหรือจับคู่ผิด</span>
-                <span><i class="is-recommended"></i><strong>ควรกรอก</strong> ทำให้ dashboard และเอกสารครบถ้วน</span>
-                <span><i class="is-optional"></i><strong>ไม่จำเป็น</strong> เว้นว่างได้ตามสถานะงานของโครงการ</span>
-              </div>
-
-              <div class="sheet-guide-grid">
-                <article class="sheet-guide-card">
-                  <div class="sheet-guide-card-head">
-                    <h4>สารบัญ Project Status</h4>
-                    <span>เลือกปีและแหล่งข้อมูล</span>
-                  </div>
-                  <div class="sheet-guide-table-wrap">
-                    <table class="sheet-guide-table">
-                      <thead>
-                        <tr>
-                          <th>คอลัมน์</th>
-                          <th>หัวข้อ</th>
-                          <th>คำอธิบาย</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr class="is-required">
-                          <td>A</td>
-                          <td>ปีการศึกษา</td>
-                          <td>ใช้สร้างตัวเลือกปีในหน้า Dashboard และหน้าเครื่องมือโครงการ เช่น 2568</td>
-                        </tr>
-                        <tr class="is-required">
-                          <td>B</td>
-                          <td>CSV โครงการ</td>
-                          <td>ลิงก์ข้อมูล Project Status ของปีนั้น ถ้าต้องแก้รายการโครงการจริงให้เปิดชีทจากลิงก์นี้</td>
-                        </tr>
-                        <tr class="is-recommended">
-                          <td>C</td>
-                          <td>CSV ผู้ตรวจ</td>
-                          <td>ลิงก์ข้อมูลผู้รับผิดชอบตรวจ/ผู้ปิดโครงการ ใช้เติมข้อมูลติดต่อในรายละเอียดโครงการ</td>
-                        </tr>
-                        <tr class="is-required">
-                          <td>D</td>
-                          <td>active</td>
-                          <td>ตั้งเป็น TRUE หรือ active สำหรับปีที่ต้องการให้เว็บโหลดเป็นค่าเริ่มต้น</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
-
-                <article class="sheet-guide-card">
-                  <div class="sheet-guide-card-head">
-                    <h4>Project Status</h4>
-                    <span>ข้อมูลโครงการจริง</span>
-                  </div>
-                  <div class="sheet-guide-table-wrap">
-                    <table class="sheet-guide-table">
-                      <thead>
-                        <tr>
-                          <th>คอลัมน์</th>
-                          <th>หัวข้อ</th>
-                          <th>คำอธิบาย</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr class="is-required">
-                          <td>รหัสโครงการ</td>
-                          <td>รหัสโครงการ</td>
-                          <td>ใช้ระบุโครงการและค้นหาในตาราง ถ้าว่างแถวนั้นจะไม่ถูกนำไปใช้</td>
-                        </tr>
-                        <tr class="is-required">
-                          <td>ชื่อโครงการ</td>
-                          <td>ชื่อโครงการ</td>
-                          <td>ใช้แสดงชื่อในตาราง การ์ดรายละเอียด Dashboard และปฏิทิน</td>
-                        </tr>
-                        <tr class="is-required">
-                          <td>E</td>
-                          <td>ฝ่าย / ชมรม</td>
-                          <td>ใช้กรององค์กรและจับคู่ข้อมูลทะเบียนองค์กร เช่น เลขที่บัญชีในเอกสาร</td>
-                        </tr>
-                        <tr class="is-recommended">
-                          <td>F</td>
-                          <td>ฝ่ายใหญ่</td>
-                          <td>ใช้จัดกลุ่มประเภทองค์กรในตัวกรองและกราฟภาพรวม</td>
-                        </tr>
-                        <tr class="is-recommended">
-                          <td>H</td>
-                          <td>สถานะอนุมัติโครงการ</td>
-                          <td>ใช้คำนวณจำนวนโครงการที่รอ/อนุมัติ/ยกเลิก และแสดง badge สถานะหลัก</td>
-                        </tr>
-                        <tr class="is-recommended">
-                          <td>L-M</td>
-                          <td>วันที่อนุมัติ / วันปฏิบัติงานวันสุดท้าย</td>
-                          <td>ใช้สร้างปฏิทินและคำนวณสถานะปิดโครงการตรงเวลา</td>
-                        </tr>
-                        <tr class="is-recommended">
-                          <td>N-O</td>
-                          <td>แหล่งเงิน / งบประมาณ 100%</td>
-                          <td>ใช้แสดงข้อมูลการเงิน คำนวณ Dashboard และสร้างเอกสารยืมรองจ่าย</td>
-                        </tr>
-                        <tr class="is-recommended">
-                          <td>Y-AE</td>
-                          <td>ข้อมูลยืมเงินรองจ่าย</td>
-                          <td>ใช้แสดงสถานะเอกสารยืมเงิน วันครบกำหนด สัดส่วน และยอดยืม</td>
-                        </tr>
-                        <tr class="is-recommended">
-                          <td>AI-AK</td>
-                          <td>ผู้ตรวจ / งบใช้จริง / กำหนดปิด</td>
-                          <td>ใช้ติดตามผู้รับผิดชอบปิดโครงการ งบใช้จริง และวันครบกำหนดส่งปิดโครงการ</td>
-                        </tr>
-                        <tr class="is-recommended">
-                          <td>AZ-BA</td>
-                          <td>สถานะปิดโครงการ</td>
-                          <td>ใช้สรุปสถานะปิดโครงการในกราฟ ตาราง และปฏิทิน</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
-              </div>
-            </section>
-          </div>
-
-          <div id="dashboardStaffAuditPanel" class="dashboard-staff-main-panel" role="tabpanel" aria-labelledby="dashboardStaffMainAuditTab" hidden>
+          <div id="dashboardStaffAuditPanel" class="dashboard-staff-main-panel">
             <section class="panel section-appear section-delay-1">
               <header class="panel-header">
                 <div>
@@ -394,8 +301,8 @@
                   </div>
                 </div>
               </div>
-              <div class="table-wrapper">
-                <div class="project-table-wrapper">
+              <div class="table-wrapper dashboard-audit-table-wrapper">
+                <div class="project-table-wrapper dashboard-audit-table-scroll">
                   <table id="dashboardAuditLogTable">
                     <caption id="dashboardAuditLogCaption">แสดง 0 รายการล่าสุด</caption>
                     <thead>

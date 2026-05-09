@@ -1,10 +1,10 @@
-const CACHE_VERSION = "20260508-closure-meeting-text-1";
+const CACHE_VERSION = "20260509-mobile-scroll-hint-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260508-closure-meeting-text-1",
+  "./css/style.css?v=20260509-mobile-scroll-hint-1",
   "./css/core/base.css",
   "./css/core/prelude-layout.css",
   "./css/pages/operations.css",
@@ -36,21 +36,11 @@ const APP_SHELL_URLS = [
   "./js/features/project/app.project-modal.js",
   "./js/features/project/app.charts.js",
   "./js/features/project/app.pie.js",
-  "./js/features/project/app.sorting-auth.js?v=20260508-closure-meeting-text-1",
-  "./js/features/staff/app.staff-access.js?v=20260504-1",
-  "./js/features/borrow/app.borrow-assets.js",
-  "./js/features/news/app.news.js",
-  "./js/features/news/app.scoreboard.js",
-  "./js/features/docs/app.downloads.js",
-  "./js/features/booking/app.meeting-room-booking.js",
-  "./js/features/booking/app.meeting-room-staff.js",
-  "./js/features/budget/app.budget-request.js",
-  "./js/features/budget/app.budget-staff.js",
+  "./js/features/project/app.sorting-auth.js?v=20260509-mobile-scroll-hint-1",
   "./js/features/org/app.org.js?v=20260503-1",
   "./js/motion/app.motion.js",
   "./js/core/app.feature-loader.js?v=20260507-3",
   "./js/core/app.init.js?v=20260507-2",
-  "./js/features/content/app.content-management.js?v=20260507-2",
   "./js/features/project/app.calendar.js",
   "./js/integrations/app.web-push.js",
   "./manifest.webmanifest",

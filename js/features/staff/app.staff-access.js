@@ -178,15 +178,15 @@ function initStaffAccessPages() {
   ];
   const STAFF_PAGE_OPTIONS = [
     { id: "dashboard-staff", label: "ภาพรวมโครงการ" },
-    { id: "project-status-staff", label: "เครื่องมือโครงการ" },
+    { id: "project-status-staff", label: "สถานะโครงการ" },
     { id: "system-data-staff", label: "ข้อมูลระบบ" },
-    { id: "borrow-assets-staff", label: "อนุมัติยืมทรัพย์สิน" },
-    { id: "meeting-room-staff", label: "อนุมัติห้องประชุม" },
-    { id: "budget-approval-staff", label: "จัดการคำของบ" },
-    { id: "content-news-staff", label: "จัดการข่าวสาร" },
-    { id: "content-documents-staff", label: "จัดการเอกสารการเงิน" },
-    { id: "staff-approval", label: "อนุมัติสมาชิกสตาฟ" },
-    { id: "org-representative-approval-staff", label: "อนุมัติตัวแทนองค์กร" },
+    { id: "budget-approval-staff", label: "คำของบประมาณ" },
+    { id: "borrow-assets-staff", label: "ยืม-คืนพัสดุ" },
+    { id: "meeting-room-staff", label: "ห้องประชุม" },
+    { id: "staff-approval", label: "สมาชิกสตาฟ" },
+    { id: "org-representative-approval-staff", label: "ตัวแทนองค์กร" },
+    { id: "content-news-staff", label: "ข่าวสาร" },
+    { id: "content-documents-staff", label: "เอกสารการเงิน" },
     { id: "login", label: "หน้าเข้าสู่ระบบ" }
   ];
   const REQUIRED_ORG_REPRESENTATIVE_ROLES = [

@@ -161,11 +161,27 @@ function transformServiceWorker(source) {
     .replace(/(\.\/(?:css|js)\/[^"',]+?)(?:\?v=[^"',]*)?(["'])/g, `$1?v=${buildVersion}$2`);
 }
 
-function transformCssEntrypoint(source) {
-  return source.replace(
-    /(@import\s+url\(["']\.\/[^"']+?\.css)(?:\?v=[^"']*)?(["']\);)/g,
-    `$1?v=${buildVersion}$2`
-  );
+async function transformCssEntrypoint(source) {
+  const styleDir = path.join(distDir, "css");
+  const importRe = /@import\s+url\(["']\.\/([^"']+?\.css)(?:\?v=[^"']*)?["']\);/g;
+  let output = "";
+  let cursor = 0;
+  let match;
+
+  while ((match = importRe.exec(source)) !== null) {
+    output += source.slice(cursor, match.index);
+    const importPath = match[1];
+    const targetPath = path.resolve(styleDir, importPath);
+    if (!targetPath.startsWith(styleDir + path.sep)) {
+      throw new Error(`CSS import path escapes css directory: ${importPath}`);
+    }
+    const importedCss = await fs.readFile(targetPath, "utf8");
+    output += `\n/* ${importPath} */\n${importedCss.trim()}\n`;
+    cursor = importRe.lastIndex;
+  }
+
+  output += source.slice(cursor);
+  return output;
 }
 
 async function applyTextTransforms() {

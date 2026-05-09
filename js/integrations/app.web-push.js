@@ -213,6 +213,13 @@
       didRefreshForNewWorker = true;
       window.location.reload();
     });
-    void ensureServiceWorkerRegistration();
+    const registerWhenIdle = () => {
+      void ensureServiceWorkerRegistration();
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(registerWhenIdle, { timeout: 4000 });
+    } else {
+      window.setTimeout(registerWhenIdle, 2500);
+    }
   }
 })();

@@ -8,7 +8,7 @@ const lastProjectStatusProjectsRefByContext = {
   staff: null
 };
 let activeStaffProjectCheckType = "advance";
-let activeStaffProjectWorkflowTab = "checks";
+let activeStaffProjectWorkflowTab = "overview";
 const lastStaffProjectCheckRows = {
   advance: [],
   transfer: []
@@ -74,6 +74,10 @@ function getVisibleProjectsForContext(ctxKey = activeProjectStatusContext) {
   }
 
   return filtered;
+}
+
+function getAllLoadedProjects() {
+  return Array.isArray(projects) ? projects : [];
 }
 
 function syncProjectSortIndicators(ctxKey = activeProjectStatusContext) {
@@ -239,15 +243,13 @@ function getAdvanceCheckMeta(project) {
   if (daysToWorkDate === null) return null;
 
   const remainingDays = daysToWorkDate - 8;
-  return remainingDays <= 7
-    ? { remainingDays, remainingText: formatProjectCheckRemainingDays(remainingDays) }
-    : null;
+  return { remainingDays, remainingText: formatProjectCheckRemainingDays(remainingDays) };
 }
 
 function getTransferCheckMeta(project) {
   const transferStatus = (project.transferStatus || "").toString().trim();
   const days = getProjectDaysToDeadline(project);
-  return days !== null && days <= 7 && transferStatus === ""
+  return days !== null && transferStatus === ""
     ? { remainingDays: days, remainingText: formatProjectCheckRemainingDays(days) }
     : null;
 }
@@ -277,10 +279,8 @@ function renderProjectOpsTable(tbody, rows) {
     return;
   }
 
-  const visibleRows = rows.slice(0, 8);
-  const extraCount = rows.length - visibleRows.length;
-  const html = visibleRows.map(({ project, remainingText }) => `
-    <tr>
+  const html = rows.map(({ project, remainingDays, remainingText }) => `
+    <tr class="${remainingDays < 0 ? "is-overdue" : ""}">
       <td class="project-staff-alert-code-cell"><span class="project-staff-alert-code">${escapeHtml(project.code || "")}</span></td>
       <td class="project-staff-alert-project-cell">
         <div class="project-staff-alert-project">${escapeHtml(project.name || "")}</div>
@@ -290,9 +290,7 @@ function renderProjectOpsTable(tbody, rows) {
     </tr>
   `).join("");
 
-  tbody.innerHTML = extraCount > 0
-    ? `${html}<tr><td colspan="${colSpan}" class="project-staff-alert-more">และอีก ${extraCount} โครงการ</td></tr>`
-    : html;
+  tbody.innerHTML = html;
 }
 
 function syncStaffProjectCheckTabs() {
@@ -333,15 +331,23 @@ function syncStaffProjectWorkflowTabs() {
   });
 }
 
+function setStaffProjectWorkflowTab(tab = "overview") {
+  const normalized = (tab || "").toString().trim();
+  if (!normalized) return;
+  activeStaffProjectWorkflowTab = normalized;
+  syncStaffProjectWorkflowTabs();
+}
+
+window.sgcuSetStaffProjectWorkflowTab = setStaffProjectWorkflowTab;
+
 function updateStaffProjectOperationsPanel(filtered) {
   const ctx = projectStatusContexts.staff || {};
   if (!ctx.projectStaffOpsPanelEl) return;
 
-  const visibleData = Array.isArray(filtered) ? filtered : [];
-  const data = Array.isArray(projects) && projects.length ? projects : visibleData;
+  const data = Array.isArray(filtered) ? filtered : getAllLoadedProjects();
   ctx.projectStaffOpsPanelEl.hidden = !isUserAuthenticated;
   if (ctx.projectClosureMailMergeExportBtn) {
-    ctx.projectClosureMailMergeExportBtn.disabled = !isUserAuthenticated || visibleData.length === 0 || !window.sgcuCsvExport?.download;
+    ctx.projectClosureMailMergeExportBtn.disabled = !isUserAuthenticated || data.length === 0 || !window.sgcuCsvExport?.download;
   }
 
   const sheetUrl = (activeProjectSourceConfig?.projectUrl || "").toString().trim();
@@ -439,8 +445,8 @@ function resolveClosureAccountNo(project) {
 
 function exportClosureMailMergeCsv(ctxKey = "staff") {
   if (!isUserAuthenticated) return;
-  const visibleProjects = getVisibleProjectsForContext(ctxKey);
-  if (!visibleProjects.length || !window.sgcuCsvExport?.download) return;
+  const sourceProjects = ctxKey === "staff" ? getAllLoadedProjects() : getVisibleProjectsForContext(ctxKey);
+  if (!sourceProjects.length || !window.sgcuCsvExport?.download) return;
 
   const headers = [
     "รหัสโครงการ",
@@ -453,7 +459,7 @@ function exportClosureMailMergeCsv(ctxKey = "staff") {
     "เลขที่"
   ];
 
-  const rows = visibleProjects
+  const rows = sourceProjects
     .filter(shouldIncludeClosureMailMergeProject)
     .map((project) => ({
       "รหัสโครงการ": project.code || "",
@@ -533,8 +539,12 @@ function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatus
     ctx.projectStaffOpsPanelEl.hidden = !isAuthenticated;
   }
   if (ctx.projectClosureMailMergeExportBtn) {
-    const visibleProjects = isAuthenticated ? getVisibleProjectsForContext(ctxKey) : [];
-    ctx.projectClosureMailMergeExportBtn.disabled = !isAuthenticated || visibleProjects.length === 0;
+    const availableProjects = isAuthenticated && ctxKey === "staff"
+      ? getAllLoadedProjects()
+      : isAuthenticated
+        ? getVisibleProjectsForContext(ctxKey)
+        : [];
+    ctx.projectClosureMailMergeExportBtn.disabled = !isAuthenticated || availableProjects.length === 0;
   }
 }
 
@@ -559,6 +569,7 @@ function updateNavVisibility(isAuthenticated) {
   });
   syncDesktopNavGroupVisibility();
   syncMobileNavGroupVisibility();
+  syncMobileBottomNavVisibility();
   if (typeof window.syncManagementPanels === "function") {
     window.syncManagementPanels();
   }
@@ -608,6 +619,18 @@ function syncMobileNavGroupVisibility() {
   });
 }
 
+function syncMobileBottomNavVisibility() {
+  const bottomRoles = Array.from(document.querySelectorAll(".mobile-bottom-role"));
+  const isStaffMode = !!staffAuthUser && staffViewMode === "staff";
+  bottomRoles.forEach((role) => {
+    const navRole = role.dataset.mobileBottomNav || "common";
+    const roleHidden =
+      (navRole === "general" && isStaffMode) ||
+      (navRole === "staff" && !isStaffMode);
+    role.style.display = roleHidden ? "none" : "";
+  });
+}
+
 function syncRoleNavContainers() {
   const isStaffMode = !!staffAuthUser && staffViewMode === "staff";
   const desktopGeneral = document.getElementById("desktopNavGeneral");
@@ -615,6 +638,7 @@ function syncRoleNavContainers() {
 
   if (desktopGeneral) desktopGeneral.style.display = isStaffMode ? "none" : "flex";
   if (desktopStaff) desktopStaff.style.display = isStaffMode ? "flex" : "none";
+  syncMobileBottomNavVisibility();
 }
 
 function normalizeStaffRoleCode(role) {
@@ -992,6 +1016,7 @@ function updateNavForStaff(staffUser) {
 
   syncDesktopNavGroupVisibility();
   syncMobileNavGroupVisibility();
+  syncMobileBottomNavVisibility();
 }
 
 function getPreferredPageForState(isAuth) {

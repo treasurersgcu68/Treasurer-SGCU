@@ -38,11 +38,7 @@
       "content-documents-staff": "js/features/content/app.content-management.js?v=20260506-1",
       "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260504-11"
     },
-    idlePrefetchPages: [
-      "home",
-      "news",
-      "financial-docs"
-    ]
+    idlePrefetchPages: []
   };
 
   const loadedFeatureScripts = new Map();

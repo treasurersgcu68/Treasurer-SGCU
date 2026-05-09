@@ -63,10 +63,18 @@ async function initDailyVisitorCounter() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   if (window.sgcuRuntimeConfigReady) {
-    await window.sgcuRuntimeConfigReady;
     if (typeof window.applyRuntimeConfigAliases === "function") {
       window.applyRuntimeConfigAliases();
     }
+    window.sgcuRuntimeConfigReady
+      .then(() => {
+        if (typeof window.applyRuntimeConfigAliases === "function") {
+          window.applyRuntimeConfigAliases();
+        }
+      })
+      .catch(() => {
+        // Runtime config failures are already reported by app.runtime-config.js.
+      });
   }
   if (typeof window.syncManagementLinks === "function") {
     window.syncManagementLinks(document);
@@ -146,6 +154,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   appAlertRetryEl = document.getElementById("appAlertRetry");
   projectsLastUpdatedEl = document.getElementById("projectsLastUpdated");
   projectsLastUpdatedStaffEl = document.getElementById("projectsLastUpdatedStaff");
+  projectsLastUpdatedDashboardStaffEl = document.getElementById("projectsLastUpdatedDashboardStaff");
   const appLoaderEl = document.getElementById("appLoader");
   const appLoaderPercentEl = document.getElementById("appLoaderPercent");
   const appLoaderBarEl = document.getElementById("appLoaderBar");
@@ -155,38 +164,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   appLoaderErrorTextEl = document.getElementById("appLoaderErrorText");
   appLoaderRetryEl = document.getElementById("appLoaderRetry");
   scheduleIdleTask(() => runBackgroundTask(initDailyVisitorCounter, "visitors"));
-  let loaderPercent = 0;
   const loaderStepLabels = {
     news: "กำลังโหลดข่าวสารล่าสุด",
     scoreboard: "กำลังตรวจสอบข้อมูลโครงการ",
-    orgStructure: "กำลังเตรียมทำเนียบทีมเหรัญญิก"
+    orgStructure: "กำลังเตรียมแบบฟอร์มการเงิน"
   };
 
-  const setLoaderPercent = (value) => {
-    const next = Math.max(loaderPercent, Math.min(100, Math.round(value)));
-    loaderPercent = next;
-    if (appLoaderPercentEl) {
-      appLoaderPercentEl.textContent = next.toString();
-    }
-    if (appLoaderBarEl) {
-      appLoaderBarEl.style.width = `${next}%`;
-    }
-  };
-
-  const hasLoaderUi = Boolean(appLoaderPercentEl);
+  const hasLoaderUi = Boolean(appLoaderEl);
   const loaderStepKeys = new Set();
-  if (hasLoaderUi) {
-    loaderStepKeys.add("news");
-    if (document.getElementById("scorePodium") && document.getElementById("scoreRunners")) {
-      loaderStepKeys.add("scoreboard");
-    }
-    if (document.getElementById("org-structure-content")) {
-      loaderStepKeys.add("orgStructure");
-    }
-  }
-  const loaderStepTotal = Math.max(loaderStepKeys.size, 1);
   const loaderStepProgress = new Map();
-  loaderStepKeys.forEach((key) => loaderStepProgress.set(key, 0));
+  let shouldHoldAppLoaderForHome = false;
+  const simulatedLoaderDonePromise = window.sgcuAppLoaderReady || Promise.resolve();
+  const finishSimulatedLoaderPercent = () => {
+    if (typeof window.sgcuFinishAppLoaderPercent === "function") {
+      window.sgcuFinishAppLoaderPercent();
+      return;
+    }
+    if (appLoaderPercentEl) appLoaderPercentEl.textContent = "100";
+    if (appLoaderBarEl) appLoaderBarEl.style.width = "100%";
+  };
 
   const syncLoaderStepUi = (activeKey = "") => {
     if (!hasLoaderUi) return;
@@ -208,14 +204,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   };
 
-  const updateLoaderTotal = () => {
+  const configureLoaderForInitialPage = (page) => {
     if (!hasLoaderUi) return;
-    let sum = 0;
-    loaderStepKeys.forEach((key) => {
-      sum += loaderStepProgress.get(key) || 0;
-    });
-    const avg = sum / loaderStepTotal;
-    setLoaderPercent(5 + avg * 95);
+    loaderStepKeys.clear();
+    loaderStepProgress.clear();
+    shouldHoldAppLoaderForHome = page === "home";
+    if (shouldHoldAppLoaderForHome) {
+      loaderStepKeys.add("news");
+      if (document.getElementById("scorePodium") && document.getElementById("scoreRunners")) {
+        loaderStepKeys.add("scoreboard");
+      }
+      if (document.getElementById("org-structure-content")) {
+        loaderStepKeys.add("orgStructure");
+      }
+    }
+    loaderStepKeys.forEach((key) => loaderStepProgress.set(key, 0));
+    syncLoaderStepUi();
   };
 
   updateLoaderProgress = (key, value) => {
@@ -223,18 +227,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const current = loaderStepProgress.get(key) || 0;
     const next = Math.max(current, Math.min(1, value));
     loaderStepProgress.set(key, next);
-    updateLoaderTotal();
     syncLoaderStepUi(next < 1 ? key : "");
   };
 
   markLoaderStep = (key) => {
     updateLoaderProgress(key, 1);
   };
-
-  if (hasLoaderUi) {
-    setLoaderPercent(5);
-    syncLoaderStepUi();
-  }
 
   if (appAlertRetryEl) {
     appAlertRetryEl.addEventListener("click", () => window.location.reload());
@@ -763,21 +761,28 @@ document.addEventListener("DOMContentLoaded", async () => {
       setActiveProjectStatusContext("public");
     } else if (page === "project-status-staff") {
       setActiveProjectStatusContext("staff");
+      window.sgcuSetStaffProjectWorkflowTab?.("sources");
     } else if (page === "dashboard-staff") {
       setActiveProjectStatusContext("staff");
+      window.sgcuSetStaffProjectWorkflowTab?.("overview");
     }
 
     refreshMotionForActivePage();
 
     if (page === "home") {
-      scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("news", "loadNewsFromSheet"), "news"));
-      scheduleIdleTask(() => runBackgroundTask(() => runFeatureTask("home", "initScoreboard"), "scoreboard"));
+      const loadHomeData = () => Promise.allSettled([
+        runFeatureTask("news", "loadNewsFromSheet"),
+        runFeatureTask("home", "initScoreboard")
+      ]);
+      scheduleIdleTask(() => runBackgroundTask(loadHomeData, "home-loader-data"));
     } else if (page === "news") {
       await runFeatureTask("news", "loadNewsFromSheet");
     } else if (page === "financial-docs") {
       await runFeatureTask("financial-docs", "loadDownloadDocuments");
     } else if (["content-management-staff", "content-news-staff", "content-documents-staff"].includes(page)) {
       await runFeatureTask(page, "initContentManagementStaffPage");
+    } else if (page === "system-data-staff") {
+      window.sgcuAuditLog?.initDashboard?.();
     }
 
     if (shouldLoadProjectDataForPage(page)) {
@@ -835,25 +840,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // ตั้งค่าหน้าเริ่มจาก URL hash หรือจาก .page-view.active
-  const initialHash = window.location.hash.replace("#", "");
+  // ตั้งค่าหน้าเริ่มต้นให้กลับมาที่ Home เสมอหลัง loader ครบ 100%
   const defaultPage =
     document.querySelector(".page-view.active")?.dataset.page ||
     navLinks[0]?.dataset.page ||
     "home";
 
-  const storedPage = window.localStorage
-    ? localStorage.getItem("lastActivePage")
-    : "";
   const isValidPage = (page) =>
     Array.from(pageViews).some((sec) => sec.dataset.page === page);
 
-  const initialPage = isValidPage(initialHash)
-    ? initialHash
-    : isValidPage(storedPage)
-      ? storedPage
-      : defaultPage;
+  const initialPage = isValidPage("home") ? "home" : defaultPage;
 
+  configureLoaderForInitialPage(initialPage);
   await switchPage(initialPage, { fromHash: true });
   prefetchFeatureScriptsInIdle();
 
@@ -1195,7 +1193,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (dashboardStaffMainAuditTabEl) {
     dashboardStaffMainAuditTabEl.addEventListener("click", () => setDashboardStaffMainTab("audit"));
   }
-  setDashboardStaffMainTab("sources");
+  if (dashboardStaffMainSourcesTabEl || dashboardStaffMainAuditTabEl) {
+    setDashboardStaffMainTab("sources");
+  } else if (dashboardStaffAuditPanelEl) {
+    dashboardStaffAuditPanelEl.hidden = false;
+  }
 
 
   // ===== 10) Tabs Borrow & Return Assets =====
@@ -1381,8 +1383,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   refreshMotionForActivePage();
 
   if (appLoaderEl) {
+    await simulatedLoaderDonePromise;
+    if (currentPage !== "home" && isValidPage("home")) {
+      await switchPage("home", { fromHash: false, bypassConsent: true });
+    } else if (window.location.hash !== "#home" && isValidPage("home")) {
+      if (history.replaceState) {
+        history.replaceState(null, "", "#home");
+      } else {
+        window.location.hash = "#home";
+      }
+    }
     requestAnimationFrame(() => {
-      setLoaderPercent(100);
+      finishSimulatedLoaderPercent();
       appLoaderEl.classList.add("is-hidden");
       appLoaderEl.setAttribute("aria-busy", "false");
       markLoaderStep = null;

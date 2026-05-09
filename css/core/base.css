@@ -59,7 +59,7 @@ button, input, select, textarea {
 }
 
 /* Focus styles for keyboard navigation */
-a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .tab-btn:focus-visible, .scope-pill:focus-visible, .mobile-menu a:focus-visible {
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .tab-btn:focus-visible, .scope-pill:focus-visible, .mobile-menu a:focus-visible, .mobile-bottom-item:focus-visible {
   outline: 2px solid var(--theme-pink-500);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--theme-focus);

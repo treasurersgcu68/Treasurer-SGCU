@@ -527,6 +527,18 @@
     white-space: nowrap;
   }
 
+  .project-staff-ops-page .project-staff-workflow-tabs {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .project-staff-ops-page .project-staff-workflow-tabs .tab-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    white-space: normal;
+  }
+
   .table-wrapper,
   .calendar-grid-scroll,
   .borrow-request-assets-wrap,

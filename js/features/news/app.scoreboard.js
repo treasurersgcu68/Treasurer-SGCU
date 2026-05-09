@@ -15,7 +15,7 @@ function initScoreboard() {
   runnersEl.classList.remove("score-animate-in");
   renderScoreSkeleton(podiumEl, runnersEl);
 
-  Promise.resolve()
+  return Promise.resolve()
     .then(async () => {
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("scoreboard", 0.15);

@@ -325,10 +325,7 @@ async function loadProjectsFromSheet(sourceConfigOverride = null) {
       }
       console.log("[SGCU] ใช้ cache โครงการ (localStorage) - app.js:891");
       const cacheTs = getCacheTimestamp(projectCacheKey);
-      const cacheLabel = cacheTs
-        ? `ใช้ข้อมูลแคชปี ${selectedProjectSourceYear || "-"} ล่าสุดเมื่อ ${formatLastUpdated(cacheTs)}`
-        : `ใช้ข้อมูลแคชปี ${selectedProjectSourceYear || "-"}`;
-      updateProjectsLastUpdatedDisplay(cacheLabel);
+      updateProjectsLastUpdatedDisplay(cacheTs || Date.now());
       return;
     }
 

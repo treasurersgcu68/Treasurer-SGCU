@@ -217,10 +217,11 @@ function formatLastUpdated(ts) {
 }
 
 function updateProjectsLastUpdatedDisplay(value) {
-  if (!projectsLastUpdatedEl && !projectsLastUpdatedStaffEl) return;
+  if (!projectsLastUpdatedEl && !projectsLastUpdatedStaffEl && !projectsLastUpdatedDashboardStaffEl) return;
   const text = typeof value === "string" ? value : formatLastUpdated(value);
   if (projectsLastUpdatedEl) projectsLastUpdatedEl.textContent = text;
   if (projectsLastUpdatedStaffEl) projectsLastUpdatedStaffEl.textContent = text;
+  if (projectsLastUpdatedDashboardStaffEl) projectsLastUpdatedDashboardStaffEl.textContent = text;
 }
 
 const loadErrors = new Map();

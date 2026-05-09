@@ -276,6 +276,12 @@
   }
 }
 
+@media (max-width: 960px) {
+  .home-scroll-hint {
+    display: none;
+  }
+}
+
 /* common section header (home sections) */
 
 .home-section-header {

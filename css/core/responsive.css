@@ -32,6 +32,82 @@
     flex-direction: column;
     gap: 4px;
   }
+
+  .site-footer {
+    display: none;
+  }
+
+  .site-header {
+    background: rgba(255, 255, 255, 0.92);
+    border-bottom-color: rgba(236, 72, 153, 0.1);
+  }
+
+  .header-inner {
+    min-height: 56px;
+    padding: 7px max(12px, env(safe-area-inset-right, 0px)) 7px
+      max(12px, env(safe-area-inset-left, 0px));
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .logo {
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 7px;
+  }
+
+  .logo-mark {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+  }
+
+  .logo-mark a,
+  .logo-mark img {
+    display: block;
+    width: 30px;
+    height: 30px;
+  }
+
+  .logo-text {
+    min-width: 0;
+  }
+
+  .logo-title {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13.5px;
+    line-height: 1.15;
+  }
+
+  .logo-subtitle {
+    display: none;
+  }
+
+  .header-actions {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: auto;
+  }
+
+  .auth-panel {
+    max-width: 44vw;
+    justify-content: flex-end;
+  }
+
+  .auth-user {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .auth-user:empty {
+    display: none;
+  }
 }
 
 /* Filter & cards – responsive columns */
@@ -156,7 +232,7 @@
 @media (max-width: 720px) {
   .header-inner {
     padding: 8px 12px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
   .logo {
     min-width: 0;
@@ -219,7 +295,7 @@
     width: 100%;
     justify-content: center;
   }
-  .home-hero-badge-img {
+  .home-hero-highlight .home-hero-badge-img {
     width: 200px;
   }
   .home-news-grid, .home-scope-grid {

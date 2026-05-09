@@ -361,6 +361,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  const scrollPageToTop = (page, behavior = "smooth") => {
+    if (page === "home") {
+      const homeSnapContainer = document.querySelector('.page-view[data-page="home"] .home-snap-container');
+      if (homeSnapContainer instanceof HTMLElement) {
+        homeSnapContainer.scrollTo({ top: 0, left: 0, behavior });
+      }
+    }
+
+    if (mainContainerEl instanceof HTMLElement) {
+      mainContainerEl.scrollTo({ top: 0, left: 0, behavior });
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior });
+  };
+
   window.addEventListener("resize", () => {
     applyHomeShellState(currentPage);
   }, { passive: true });
@@ -750,11 +765,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     applyHomeShellState(page);
     if (page === "home") {
-      mainContainerEl?.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      const homeSnapContainer = document.querySelector('.page-view[data-page="home"] .home-snap-container');
-      if (homeSnapContainer instanceof HTMLElement) {
-        homeSnapContainer.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      }
+      scrollPageToTop(page, "auto");
     }
 
     if (page === "project-status") {
@@ -836,6 +847,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       e.preventDefault();
       const page = link.dataset.page;
       if (!page) return;
+      const activePage = document.querySelector(".page-view.active")?.dataset.page || "";
+      if (page === currentPage || page === activePage) {
+        scrollPageToTop(page);
+        return;
+      }
       void switchPage(page);
     });
   });

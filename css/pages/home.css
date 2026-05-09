@@ -100,14 +100,55 @@
 }
 
 .home-page-view .section-appear {
-  transform: translateY(12px);
+  transform: translateY(16px) scale(0.995);
   filter: none;
-  transition: opacity 0.35s var(--motion-ease), transform 0.35s var(--motion-ease);
+  transition: opacity 0.55s var(--motion-ease), transform 0.55s var(--motion-ease);
   will-change: opacity, transform;
 }
 
 .home-page-view .section-appear.section-visible {
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
+}
+
+.home-page-view .home-snap-content {
+  opacity: 0;
+  transform: translateY(18px) scale(0.992);
+  transition: opacity 0.62s var(--motion-ease), transform 0.62s var(--motion-ease);
+  will-change: opacity, transform;
+}
+
+.home-page-view .home-panel-visible .home-snap-content {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.home-page-view.section-visible .home-hero-eyebrow,
+.home-page-view.section-visible .home-hero-title,
+.home-page-view.section-visible .home-hero-subtitle,
+.home-page-view.section-visible .home-hero-actions,
+.home-page-view.section-visible .home-scroll-hint,
+.home-page-view.section-visible .home-hero-badge {
+  animation: home-hero-rise 0.72s var(--motion-ease) both;
+}
+
+.home-page-view.section-visible .home-hero-title {
+  animation-delay: 80ms;
+}
+
+.home-page-view.section-visible .home-hero-subtitle {
+  animation-delay: 150ms;
+}
+
+.home-page-view.section-visible .home-hero-actions {
+  animation-delay: 230ms;
+}
+
+.home-page-view.section-visible .home-scroll-hint {
+  animation-delay: 310ms;
+}
+
+.home-page-view.section-visible .home-hero-badge {
+  animation-delay: 170ms;
 }
 
 @media (max-width: 960px) {
@@ -211,6 +252,8 @@
 }
 
 .home-hero-actions .btn-primary, .home-hero-actions .btn-secondary {
+  position: relative;
+  overflow: hidden;
   border-radius: 999px;
   padding: 10px 20px;
   font-size: 14px;
@@ -218,17 +261,60 @@
   border: none;
   cursor: pointer;
   font-family: inherit;
+  transform: translateZ(0);
+  transition: transform 0.22s var(--motion-ease), box-shadow 0.22s var(--motion-ease),
+    border-color 0.22s var(--motion-ease), background 0.22s var(--motion-ease),
+    filter 0.22s var(--motion-ease);
 }
 
 .home-hero-actions .btn-primary {
   background: var(--theme-gradient);
   color: #fff;
+  box-shadow: 0 16px 36px rgba(236, 72, 153, 0.28);
+}
+
+.home-hero-actions .btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 22px 46px rgba(236, 72, 153, 0.34);
+  filter: saturate(1.05) brightness(1.02);
 }
 
 .home-hero-actions .btn-secondary {
   background: #ffffff;
   color: #111827;
   border: 1px solid rgba(236, 72, 153, 0.2);
+  box-shadow: 0 12px 28px rgba(148, 163, 184, 0.18);
+}
+
+.home-hero-actions .btn-secondary:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.015);
+  border-color: rgba(236, 72, 153, 0.34);
+  box-shadow: 0 18px 38px rgba(236, 72, 153, 0.15);
+}
+
+.home-hero-actions .btn-primary.is-pressing,
+.home-hero-actions .btn-secondary.is-pressing {
+  transform: translateY(1px) scale(0.985);
+}
+
+.motion-ripple {
+  position: absolute;
+  width: var(--ripple-size, 120px);
+  height: var(--ripple-size, 120px);
+  left: var(--ripple-x, 50%);
+  top: var(--ripple-y, 50%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.38);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  animation: motion-ripple-expand 620ms var(--motion-ease) forwards;
+  mix-blend-mode: screen;
+}
+
+.has-motion-ripple {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .home-scroll-hint {
@@ -624,12 +710,14 @@
   border: 1px solid rgba(236, 72, 153, 0.16);
   box-shadow: 0 12px 30px rgba(236, 72, 153, 0.08);
   font-size: 14px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transform: translateZ(0);
+  transition: transform 0.24s var(--motion-ease), box-shadow 0.24s var(--motion-ease),
+    border-color 0.24s var(--motion-ease), background 0.24s var(--motion-ease);
 }
 
 .home-news-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 38px rgba(236, 72, 153, 0.12);
+  transform: translateY(-5px) scale(1.01);
+  box-shadow: 0 22px 48px rgba(236, 72, 153, 0.14);
   border-color: rgba(236, 72, 153, 0.3);
 }
 
@@ -674,6 +762,12 @@
   cursor: pointer;
   margin-top: auto;
   align-self: flex-start;
+  transition: color 0.18s var(--motion-ease), transform 0.18s var(--motion-ease);
+}
+
+.home-news-link:hover {
+  color: #be185d;
+  transform: translateX(2px);
 }
 
 .home-news-more {
@@ -1025,14 +1119,86 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  perspective: 900px;
+  animation: home-badge-float 5.6s ease-in-out infinite;
 }
 
-/* รูปเหรียญกลมด้านขวา */
-.home-hero-badge-img {
+.home-hero-highlight a {
+  display: block;
+  border-radius: 24px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 252, 0.96));
+  border: 1px solid rgba(236, 72, 153, 0.16);
+  box-shadow: 0 22px 48px rgba(236, 72, 153, 0.16);
+  transform: translateZ(0);
+  transition: transform 0.45s var(--motion-ease), box-shadow 0.45s var(--motion-ease),
+    border-color 0.45s var(--motion-ease);
+}
+
+/* รูปโลโก้ด้านขวา */
+.home-hero-highlight .home-hero-badge-img {
   width: 260px;        /* ปรับได้ 230–280 ตามที่ชอบ */
   max-width: 100%;
   height: auto;
-  border-radius: 999px;
+  display: block;
+  border-radius: 18px;
+  box-shadow: none;
+  transition: filter 0.45s var(--motion-ease);
+}
+
+.home-hero-highlight a:hover,
+.home-hero-highlight a:focus-visible {
+  transform: translateY(-6px) rotateX(4deg) rotateY(-5deg) scale(1.025);
+  border-color: rgba(236, 72, 153, 0.24);
+  box-shadow: 0 28px 64px rgba(236, 72, 153, 0.22);
+}
+
+.home-hero-highlight a:hover .home-hero-badge-img,
+.home-hero-highlight a:focus-visible .home-hero-badge-img {
+  filter: saturate(1.04) brightness(1.02);
+}
+
+@keyframes home-hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes home-badge-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes motion-ripple-expand {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page-view .home-snap-content,
+  .home-page-view.section-visible .home-hero-eyebrow,
+  .home-page-view.section-visible .home-hero-title,
+  .home-page-view.section-visible .home-hero-subtitle,
+  .home-page-view.section-visible .home-hero-actions,
+  .home-page-view.section-visible .home-scroll-hint,
+  .home-page-view.section-visible .home-hero-badge,
+  .home-hero-highlight,
+  .home-hero-highlight .home-hero-badge-img {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Responsive ให้เหรียญลงกลางจอบนมือถือ */
@@ -1068,7 +1234,7 @@
     font-size: 28px;
   }
 
-  .home-hero-badge-img {
+  .home-hero-highlight .home-hero-badge-img {
     width: 220px;
   }
 }

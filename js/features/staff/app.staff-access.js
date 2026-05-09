@@ -178,7 +178,7 @@ function initStaffAccessPages() {
   ];
   const STAFF_PAGE_OPTIONS = [
     { id: "dashboard-staff", label: "ภาพรวมโครงการ" },
-    { id: "project-status-staff", label: "สถานะโครงการ" },
+    { id: "project-status-staff", label: "คู่มือถ่ายงาน" },
     { id: "system-data-staff", label: "ข้อมูลระบบ" },
     { id: "budget-approval-staff", label: "คำของบประมาณ" },
     { id: "borrow-assets-staff", label: "ยืม-คืนพัสดุ" },

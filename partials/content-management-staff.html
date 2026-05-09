@@ -61,6 +61,7 @@
                     <label class="login-label" for="contentNewsStatusFilter">สถานะ</label>
                     <select id="contentNewsStatusFilter" class="login-input">
                       <option value="all">ทุกสถานะ</option>
+                      <option value="scheduled">scheduled</option>
                       <option value="published">published</option>
                       <option value="draft">draft</option>
                       <option value="archived">archived</option>
@@ -126,8 +127,8 @@
                       <input id="contentNewsTitle" class="login-input" type="text" required />
                     </div>
                     <div class="borrow-form-field">
-                      <label class="login-label" for="contentNewsDate">วันที่ประกาศ</label>
-                      <input id="contentNewsDate" class="login-input" type="date" />
+                      <label class="login-label" for="contentNewsDate">วันที่และเวลาเผยแพร่</label>
+                      <input id="contentNewsDate" class="login-input" type="datetime-local" />
                     </div>
                     <div class="borrow-form-field">
                       <label class="login-label" for="contentNewsAcademicYear">ปีการศึกษา</label>

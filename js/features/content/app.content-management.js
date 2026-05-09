@@ -112,18 +112,78 @@ function initContentManagementStaffPage() {
     return "";
   };
 
+  const toDateFromStoredValue = (value) => {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+    if (typeof value.toDate === "function") {
+      const date = value.toDate();
+      return date instanceof Date && !Number.isNaN(date.getTime()) ? date : null;
+    }
+    if (typeof value === "string") {
+      const normalized = value.trim();
+      if (!normalized) return null;
+      const date = new Date(normalized);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    return null;
+  };
+
+  const toDatetimeLocalValue = (value) => {
+    const date = toDateFromStoredValue(value);
+    if (!date) return "";
+    const offsetMs = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+  };
+
+  const datetimeLocalToDate = (value) => {
+    const trimmed = (value || "").toString().trim();
+    if (!trimmed) return null;
+    const date = new Date(trimmed);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error("รูปแบบเวลาที่เผยแพร่ไม่ถูกต้อง");
+    }
+    return date;
+  };
+
+  const dateOnlyToDatetimeLocalValue = (value) => {
+    const dateText = normalizeDateValue(value);
+    return dateText ? `${dateText}T00:00` : "";
+  };
+
+  const dateInputToDisplayDate = (value) => {
+    const trimmed = (value || "").toString().trim();
+    if (!trimmed) return "";
+    return trimmed.slice(0, 10);
+  };
+
+  const maybeDatetimeLocalToDate = (value) => {
+    const trimmed = (value || "").toString().trim();
+    if (!trimmed || isTruthyCsvValue(trimmed)) return null;
+    const date = new Date(trimmed);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const getEffectiveNewsStatus = (item) => {
+    const status = item.status || "published";
+    const publishDate = toDateFromStoredValue(item.publishAt);
+    if (status === "published" && publishDate && publishDate.getTime() > Date.now()) return "scheduled";
+    return status;
+  };
+
   const normalizeNewsDoc = (docSnap) => {
     const data = docSnap.data() || {};
     return {
       id: docSnap.id,
       title: (data.title || "").toString(),
       summary: (data.summary || "").toString(),
-      date: normalizeDateValue(data.date || data.publishedAt || data.createdAt),
+      date: normalizeDateValue(data.date || data.publishAt || data.publishedAt || data.createdAt),
       academicYear: (data.academicYear || data.year || "").toString(),
       category: (data.category || "").toString(),
       audience: (data.audience || "").toString(),
       previewUrl: (data.previewUrl || data.url || "").toString(),
       expireDate: normalizeDateValue(data.expireDate),
+      publishAt: data.publishAt || "",
+      publishAtInput: toDatetimeLocalValue(data.publishAt) || dateOnlyToDatetimeLocalValue(data.date || data.publishedAt),
       pinned: data.pinned === true,
       status: (data.status || "published").toString()
     };
@@ -188,11 +248,11 @@ function initContentManagementStaffPage() {
   const getFilteredItems = () => {
     const query = normalizeFilterText(state.filters.query);
     return state.items.filter((item) => {
-      if (state.filters.status !== "all" && (item.status || "published") !== state.filters.status) return false;
+      if (state.filters.status !== "all" && getEffectiveNewsStatus(item) !== state.filters.status) return false;
       if (state.filters.category !== "all" && item.category !== state.filters.category) return false;
       if (state.filters.audience !== "all" && item.audience !== state.filters.audience) return false;
       if (!query) return true;
-      return normalizeFilterText([item.title, item.summary, item.category, item.audience, item.date, item.academicYear].join(" ")).includes(query);
+      return normalizeFilterText([item.title, item.summary, item.category, item.audience, item.date, item.publishAtInput, item.academicYear].join(" ")).includes(query);
     });
   };
 
@@ -208,7 +268,7 @@ function initContentManagementStaffPage() {
     form.reset();
     if (fields.id) fields.id.value = "";
     if (fields.status) fields.status.value = "published";
-    if (fields.date && !fields.date.value) fields.date.value = new Date().toISOString().slice(0, 10);
+    if (fields.date && !fields.date.value) fields.date.value = toDatetimeLocalValue(new Date());
     setMessage("");
   };
 
@@ -216,7 +276,7 @@ function initContentManagementStaffPage() {
     if (!item) return;
     fields.id.value = item.id || "";
     fields.title.value = item.title || "";
-    fields.date.value = item.date || "";
+    fields.date.value = item.publishAtInput || dateOnlyToDatetimeLocalValue(item.date);
     fields.academicYear.value = item.academicYear || "";
     fields.category.value = item.category || "";
     fields.audience.value = item.audience || "";
@@ -235,15 +295,17 @@ function initContentManagementStaffPage() {
     if (!title) {
       throw new Error("กรุณากรอกชื่อข่าว");
     }
+    const publishAt = datetimeLocalToDate(fields.date.value);
     return {
       title,
       summary: fields.summary.value.trim(),
-      date: fields.date.value.trim(),
+      date: dateInputToDisplayDate(fields.date.value),
       academicYear: fields.academicYear.value.trim(),
       category: fields.category.value.trim(),
       audience: fields.audience.value.trim(),
       previewUrl: fields.previewUrl.value.trim(),
       expireDate: fields.expireDate.value.trim(),
+      publishAt,
       pinned: fields.pinned.checked,
       status: fields.status.value || "published"
     };
@@ -252,7 +314,7 @@ function initContentManagementStaffPage() {
   const toExportRows = (items = state.items) =>
     items.map((item, index) => ({
       "เลขรันเอกสาร": item.id || `NEWS-${index + 1}`,
-      "วันที่ประกาศ": item.date || "",
+      "วันที่และเวลาเผยแพร่": item.publishAtInput || dateOnlyToDatetimeLocalValue(item.date),
       "ปีการศึกษา": item.academicYear || "",
       "ชื่อข่าว": item.title || "",
       "สรุปข่าว": item.summary || "",
@@ -261,7 +323,7 @@ function initContentManagementStaffPage() {
       "ฝ่ายที่รับผิดชอบ": item.audience || "",
       "วันหมดอายุ": item.expireDate || "",
       "ปักหมุด": item.pinned ? "TRUE" : "",
-      "สถานะ": item.status || "published"
+      "สถานะ": getEffectiveNewsStatus(item)
     }));
 
   const exportNewsCsv = () => {
@@ -271,7 +333,7 @@ function initContentManagementStaffPage() {
     }
     const headers = [
       "เลขรันเอกสาร",
-      "วันที่ประกาศ",
+      "วันที่และเวลาเผยแพร่",
       "ปีการศึกษา",
       "ชื่อข่าว",
       "สรุปข่าว",
@@ -305,21 +367,24 @@ function initContentManagementStaffPage() {
     const title = getCsvCell(row, ["ชื่อข่าว", "title", "Title"], 3);
     if (!title) return null;
     const rawStatus = getCsvCell(row, ["สถานะ", "status", "Status"], 10);
-    const status = ["published", "draft", "archived"].includes(rawStatus) ? rawStatus : "published";
+    const status = ["published", "scheduled", "draft", "archived"].includes(rawStatus) ? rawStatus : "published";
     const explicitId = getCsvCell(row, ["id", "docId", "เลขรันเอกสาร"], 0);
+    const publishAtRaw = getCsvCell(row, ["วันที่และเวลาเผยแพร่", "วันที่ประกาศ", "date", "Date"], 1);
+    const publishAt = maybeDatetimeLocalToDate(publishAtRaw);
     return {
-      docId: explicitId ? slugify(explicitId) : slugify(`${getCsvCell(row, ["วันที่ประกาศ", "date"], 1)}-${title}-${index + 1}`),
+      docId: explicitId ? slugify(explicitId) : slugify(`${publishAtRaw}-${title}-${index + 1}`),
       payload: {
         title,
-        date: getCsvCell(row, ["วันที่ประกาศ", "date", "Date"], 1),
+        date: dateInputToDisplayDate(publishAtRaw),
         academicYear: getCsvCell(row, ["ปีการศึกษา", "academicYear", "year"], 2),
         summary: getCsvCell(row, ["สรุปข่าว", "summary", "Summary"], 4),
         previewUrl: getCsvCell(row, ["ลิงก์แนบ", "previewUrl", "url"], 5),
         category: getCsvCell(row, ["หมวดข่าว", "category", "Category"], 6),
         audience: getCsvCell(row, ["ฝ่ายที่รับผิดชอบ", "กลุ่มเป้าหมาย", "audience", "Audience"], 7),
         expireDate: getCsvCell(row, ["วันหมดอายุ", "expireDate"], 8),
+        publishAt,
         pinned: isTruthyCsvValue(getCsvCell(row, ["ปักหมุด", "pinned", "Pinned"], 9)),
-        status
+        status: status === "scheduled" ? "published" : status
       }
     };
   };
@@ -393,18 +458,22 @@ function initContentManagementStaffPage() {
       return;
     }
     tableBody.innerHTML = visibleItems
-      .map((item) => `
-        <tr class="content-news-row" data-news-id="${esc(item.id)}" tabindex="0" role="button" aria-label="แก้ไขข่าว ${esc(item.title || "")}">
-          <td>
-            <strong>${esc(item.title || "-")}</strong>
-            ${item.pinned ? `<span class="content-admin-pill">PIN</span>` : ""}
-            ${item.summary ? `<small>${esc(item.summary)}</small>` : ""}
-          </td>
-          <td>${esc(item.date || "-")}</td>
-          <td>${esc(item.category || "-")}</td>
-          <td><span class="content-admin-status is-${esc(item.status || "published")}">${esc(item.status || "published")}</span></td>
-        </tr>
-      `)
+      .map((item) => {
+        const effectiveStatus = getEffectiveNewsStatus(item);
+        return `
+          <tr class="content-news-row" data-news-id="${esc(item.id)}" tabindex="0" role="button" aria-label="แก้ไขข่าว ${esc(item.title || "")}">
+            <td>
+              <strong>${esc(item.title || "-")}</strong>
+              ${item.pinned ? `<span class="content-admin-pill">PIN</span>` : ""}
+              ${item.publishAtInput ? `<span class="content-admin-pill content-admin-schedule-pill">${esc(item.publishAtInput.replace("T", " "))}</span>` : ""}
+              ${item.summary ? `<small>${esc(item.summary)}</small>` : ""}
+            </td>
+            <td>${esc(item.date || "-")}</td>
+            <td>${esc(item.category || "-")}</td>
+            <td><span class="content-admin-status is-${esc(effectiveStatus)}">${esc(effectiveStatus)}</span></td>
+          </tr>
+        `;
+      })
       .join("");
   };
 

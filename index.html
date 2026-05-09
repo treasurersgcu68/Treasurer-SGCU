@@ -41,7 +41,7 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css?v=20260509-mobile-header-1" />
+    <link rel="stylesheet" href="css/style.css?v=20260510-export-ui-1" />
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
     <script type="module" src="js/integrations/app.firebase-bootstrap.js?v=20260423-1"></script>
   </head>
@@ -159,7 +159,7 @@
               <button class="nav-group-toggle" type="button" aria-expanded="false">ภาพรวม</button>
               <div class="nav-group-menu" aria-hidden="true">
                 <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมโครงการ</a>
-                <a href="#" data-page="project-status-staff" data-visible="protected">สถานะโครงการ</a>
+                <a href="#" data-page="project-status-staff" data-visible="protected">คู่มือถ่ายงาน</a>
                 <a href="#" data-page="system-data-staff" data-visible="protected">ข้อมูลระบบ</a>
               </div>
             </div>
@@ -232,7 +232,7 @@
             <summary>ภาพรวม</summary>
             <div class="mobile-menu-links">
               <a href="#" data-page="dashboard-staff" data-visible="protected">ภาพรวมโครงการ</a>
-              <a href="#" data-page="project-status-staff" data-visible="protected">สถานะโครงการ</a>
+              <a href="#" data-page="project-status-staff" data-visible="protected">คู่มือถ่ายงาน</a>
               <a href="#" data-page="system-data-staff" data-visible="protected">ข้อมูลระบบ</a>
             </div>
           </details>
@@ -335,7 +335,7 @@
                 <path d="M5 4h14v3H5V4Zm0 5h9v3H5V9Zm0 5h14v3H5v-3Zm0 5h9v1H5v-1Z" />
               </svg>
             </span>
-            <span>โครงการ</span>
+            <span>คู่มือ</span>
           </a>
           <a href="#" data-page="budget-approval-staff" data-visible="protected" class="mobile-bottom-item">
             <span class="mobile-bottom-icon" aria-hidden="true">
@@ -424,8 +424,17 @@
 
     <footer class="site-footer">
       <div class="footer-inner">
-        <span>Treasurer SGCU 68</span>
-        <span>© <span id="footerYear"></span> All rights reserved.</span>
+        <div class="footer-info">
+          <span class="footer-brand">Treasurer SGCU 68</span>
+          <span class="footer-affiliation">องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย</span>
+          <address class="footer-address">
+            ชั้น 3 อาคาร จุลจักรพงษ์ จุฬาลงกรณ์มหาวิทยาลัย ถนนพญาไท แขวงวังใหม่ เขตปทุมวัน กรุงเทพฯ 10330
+          </address>
+        </div>
+        <span class="footer-copyright">
+          <span>© <span id="footerYear"></span> Treasurer SGCU</span>
+          <span>Platform architecture and development by Tuwanon Kimchiang.</span>
+        </span>
       </div>
     </footer>
 
@@ -1112,13 +1121,13 @@
     <script src="js/features/project/app.project-modal.js" defer></script>
     <script src="js/features/project/app.charts.js" defer></script>
     <script src="js/features/project/app.pie.js" defer></script>
-    <script src="js/features/project/app.sorting-auth.js?v=20260509-mobile-scroll-hint-1" defer></script>
+    <script src="js/features/project/app.sorting-auth.js?v=20260510-export-ui-1" defer></script>
     <script src="js/features/project/app.calendar.js" defer></script>
     <script src="js/features/org/app.org.js?v=20260503-1" defer></script>
     <script src="js/motion/app.motion.js" defer></script>
     <script>
-      window.sgcuAssetVersion = "20260509-mobile-scroll-hint-1";
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260509-mobile-scroll-hint-1";
+      window.sgcuAssetVersion = "20260510-export-ui-1";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260510-export-ui-1";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",
@@ -1127,6 +1136,6 @@
     </script>
     <script src="js/integrations/app.web-push.js" defer></script>
     <script src="js/core/app.feature-loader.js?v=20260507-3" defer></script>
-    <script src="js/core/app.init.js?v=20260507-2" defer></script>
+    <script src="js/core/app.init.js?v=20260510-export-ui-1" defer></script>
   </body>
 </html>

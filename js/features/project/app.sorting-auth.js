@@ -346,8 +346,12 @@ function updateStaffProjectOperationsPanel(filtered) {
 
   const data = Array.isArray(filtered) ? filtered : getAllLoadedProjects();
   ctx.projectStaffOpsPanelEl.hidden = !isUserAuthenticated;
+  const closureExportProjects = filterClosureMailMergeProjects(data, "staff");
   if (ctx.projectClosureMailMergeExportBtn) {
-    ctx.projectClosureMailMergeExportBtn.disabled = !isUserAuthenticated || data.length === 0 || !window.sgcuCsvExport?.download;
+    ctx.projectClosureMailMergeExportBtn.disabled = !isUserAuthenticated || closureExportProjects.length === 0 || !window.sgcuCsvExport?.download;
+  }
+  if (ctx.projectClosureExportMonthCaptionEl) {
+    ctx.projectClosureExportMonthCaptionEl.textContent = formatClosureExportMonthCaption(data, "staff");
   }
 
   const sheetUrl = (activeProjectSourceConfig?.projectUrl || "").toString().trim();
@@ -385,6 +389,51 @@ function shouldIncludeClosureMailMergeProject(project) {
     statusClose !== "ยกเลิกโครงการ" &&
     getProjectBudget100(project) !== 0
   );
+}
+
+function parseClosureExportUntilMonth(ctxKey = "staff") {
+  const value = (projectStatusContexts[ctxKey]?.projectClosureExportUntilMonthInput?.value || "").toString().trim();
+  const match = value.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || monthIndex < 0 || monthIndex > 11) return null;
+  return {
+    value,
+    endDate: new Date(year, monthIndex + 1, 0, 23, 59, 59, 999)
+  };
+}
+
+function getProjectClosureDueDate(project) {
+  if (project?.closeDueDateObj instanceof Date && !isNaN(project.closeDueDateObj.getTime())) {
+    return project.closeDueDateObj;
+  }
+  const parsed = parseProjectDate(project?.closeDueDate || "");
+  if (parsed && project) project.closeDueDateObj = parsed;
+  return parsed;
+}
+
+function filterClosureMailMergeProjects(sourceProjects, ctxKey = "staff") {
+  const monthFilter = parseClosureExportUntilMonth(ctxKey);
+  return (sourceProjects || [])
+    .filter(shouldIncludeClosureMailMergeProject)
+    .filter((project) => {
+      if (!monthFilter) return true;
+      const dueDate = getProjectClosureDueDate(project);
+      return !!dueDate && dueDate.getTime() <= monthFilter.endDate.getTime();
+    });
+}
+
+function formatClosureExportMonthCaption(projects, ctxKey = "staff") {
+  const monthFilter = parseClosureExportUntilMonth(ctxKey);
+  const count = filterClosureMailMergeProjects(projects, ctxKey).length.toLocaleString("th-TH");
+  if (!monthFilter) return `พร้อม export ${count} รายการจากทุกเดือน โดยอ้างอิงกำหนดปิดโครงการ`;
+  const [year, month] = monthFilter.value.split("-");
+  const monthText = new Date(Number(year), Number(month) - 1, 1).toLocaleDateString("th-TH", {
+    month: "long",
+    year: "numeric"
+  });
+  return `พร้อม export ${count} รายการที่มีกำหนดปิดโครงการถึง ${monthText}`;
 }
 
 function resolveClosureMailMergeOrgName(project) {
@@ -459,8 +508,8 @@ function exportClosureMailMergeCsv(ctxKey = "staff") {
     "เลขที่"
   ];
 
-  const rows = sourceProjects
-    .filter(shouldIncludeClosureMailMergeProject)
+  const monthFilter = parseClosureExportUntilMonth(ctxKey);
+  const rows = filterClosureMailMergeProjects(sourceProjects, ctxKey)
     .map((project) => ({
       "รหัสโครงการ": project.code || "",
       "ตามที่": resolveClosureMailMergeOrgName(project),
@@ -475,7 +524,9 @@ function exportClosureMailMergeCsv(ctxKey = "staff") {
   window.sgcuCsvExport.download({
     headers,
     rows,
-    fileName: "sgcu-project-closure-mail-merge"
+    fileName: monthFilter?.value
+      ? `sgcu-project-closure-mail-merge-until-${monthFilter.value}`
+      : "sgcu-project-closure-mail-merge"
   });
 }
 

@@ -28,12 +28,13 @@
 | `title` | string | yes | หัวข้อข่าว |
 | `summary` | string | no | รายละเอียดสั้น |
 | `body` | string | no | รายละเอียดเต็มในอนาคต |
-| `date` | string | yes | วันที่แสดงผล เช่น `2026-05-06` หรือรูปแบบไทยเดิม |
+| `date` | string | yes | วันที่แสดงผล เช่น `2026-05-06`; ในหน้า Staff ช่องนี้กรอกเป็นวันที่และเวลาเผยแพร่ |
 | `academicYear` | string | no | ปีการศึกษา |
 | `category` | string | no | หมวดข่าว |
 | `audience` | string | no | กลุ่มเป้าหมาย |
 | `previewUrl` | string | no | ลิงก์เอกสาร/รูป/ประกาศ |
 | `expireDate` | string | no | วันหมดอายุ |
+| `publishAt` | timestamp | no | เวลาที่ให้เริ่มแสดงข่าว สร้างจากช่องวันที่และเวลาเผยแพร่ ถ้าว่างจะแสดงทันทีเมื่อ `status` เป็น `published` |
 | `pinned` | boolean | yes | ใช้เรียงข่าวปักหมุด |
 | `status` | string | yes | `draft`, `published`, `archived` |
 | `createdAt` | timestamp | yes | server timestamp |

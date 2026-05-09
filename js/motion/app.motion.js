@@ -1,6 +1,9 @@
 /* Motion helpers: section appear + count up */
 let homePanelObserver = null;
 let hasInitPressMotion = false;
+let hasInitHomeScrollPolish = false;
+let homeScrollRaf = null;
+let homeScrollIdleTimer = null;
 
 function initSectionAppearObserver() {
   const sections = document.querySelectorAll(".section-appear");
@@ -27,9 +30,8 @@ function initSectionAppearObserver() {
 
 function initHomePanelMotion() {
   const homePage = document.querySelector('.page-view[data-page="home"]');
-  const homeSnapContainer = homePage?.querySelector(".home-snap-container");
   const panels = Array.from(homePage?.querySelectorAll(".home-snap-panel") || []);
-  if (!homePage || !homePage.classList.contains("active") || !homeSnapContainer || !panels.length) return;
+  if (!homePage || !homePage.classList.contains("active") || !panels.length) return;
 
   if (homePanelObserver) {
     homePanelObserver.disconnect();
@@ -51,7 +53,7 @@ function initHomePanelMotion() {
       });
     },
     {
-      root: homeSnapContainer,
+      root: null,
       threshold: 0.28,
       rootMargin: "0px 0px -8% 0px"
     }
@@ -61,6 +63,42 @@ function initHomePanelMotion() {
     if (index === 0) revealPanel(panel);
     homePanelObserver.observe(panel);
   });
+}
+
+function initHomeScrollPolish() {
+  if (hasInitHomeScrollPolish) return;
+  hasInitHomeScrollPolish = true;
+
+  const prefersReducedMotion = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prefersReducedMotion) return;
+
+  const updateHomeScrollState = () => {
+    homeScrollRaf = null;
+    const homePage = document.querySelector('.page-view[data-page="home"]');
+    if (!(homePage instanceof HTMLElement) || !homePage.classList.contains("active")) return;
+
+    const total = Math.max(homePage.offsetHeight - window.innerHeight, 1);
+    const pageTop = homePage.getBoundingClientRect().top;
+    const progress = Math.min(Math.max(-pageTop / total, 0), 1);
+    homePage.style.setProperty("--home-scroll-progress", progress.toFixed(4));
+    homePage.style.setProperty("--home-hero-depth", Math.min(progress * 1.35, 1).toFixed(4));
+  };
+
+  const requestHomeScrollUpdate = () => {
+    document.body.classList.add("home-is-scrolling");
+    window.clearTimeout(homeScrollIdleTimer);
+    homeScrollIdleTimer = window.setTimeout(() => {
+      document.body.classList.remove("home-is-scrolling");
+    }, 180);
+
+    if (homeScrollRaf !== null) return;
+    homeScrollRaf = window.requestAnimationFrame(updateHomeScrollState);
+  };
+
+  window.addEventListener("scroll", requestHomeScrollUpdate, { passive: true });
+  window.addEventListener("resize", requestHomeScrollUpdate, { passive: true });
+  requestHomeScrollUpdate();
 }
 
 function initPressMotion() {
@@ -145,6 +183,7 @@ function refreshMotionForActivePage() {
   initPressMotion();
   initSectionAppearObserver();
   initHomePanelMotion();
+  initHomeScrollPolish();
   if (!hasInitCountup) {
     initCountupOnVisible();
   }

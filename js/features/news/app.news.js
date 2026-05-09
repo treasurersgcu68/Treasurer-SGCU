@@ -13,6 +13,7 @@ let newsFilterInitialized = false;
 let newsVisibleCount = NEWS_PAGE_SIZE;
 const NEWS_CACHE_SOURCE_FIRESTORE = "firestore";
 const NEWS_CACHE_SOURCE_SHEETS = "sheets";
+let newsScheduleRefreshTimer = null;
 
 function toggleNewsSkeleton(isLoading) {
   const homePreview = document.getElementById("homeNewsPreview");
@@ -43,6 +44,62 @@ function normalizeNewsFirestoreDate(value) {
   return value.toString ? value.toString().trim() : "";
 }
 
+function normalizeNewsStoredDate(value) {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value.toDate === "function") {
+    const date = value.toDate();
+    return date instanceof Date && !Number.isNaN(date.getTime()) ? date : null;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const date = new Date(trimmed);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  return null;
+}
+
+function normalizeNewsPublishAt(value) {
+  const date = normalizeNewsStoredDate(value);
+  return date ? date.toISOString() : "";
+}
+
+function isNewsCurrentlyVisible(item, nowMs = Date.now()) {
+  const status = (item?.status || "published").toString();
+  if (status !== "published") return false;
+
+  const publishDate = normalizeNewsStoredDate(item.publishAt);
+  if (publishDate && publishDate.getTime() > nowMs) return false;
+
+  return true;
+}
+
+function getVisibleNewsItems() {
+  const nowMs = Date.now();
+  return newsItems.filter((item) => isNewsCurrentlyVisible(item, nowMs));
+}
+
+function scheduleNextNewsRefresh() {
+  if (newsScheduleRefreshTimer) {
+    clearTimeout(newsScheduleRefreshTimer);
+    newsScheduleRefreshTimer = null;
+  }
+
+  const nowMs = Date.now();
+  const nextPublishMs = newsItems
+    .map((item) => normalizeNewsStoredDate(item.publishAt)?.getTime() || 0)
+    .filter((timeMs) => timeMs > nowMs)
+    .sort((a, b) => a - b)[0];
+
+  if (!nextPublishMs) return;
+
+  newsScheduleRefreshTimer = setTimeout(() => {
+    newsScheduleRefreshTimer = null;
+    renderNewsList();
+  }, Math.max(1000, Math.min(nextPublishMs - nowMs + 1000, 2147483647)));
+}
+
 function normalizeNewsFirestoreItem(docSnap) {
   const data = docSnap?.data ? docSnap.data() : {};
   const title = (data.title || "").toString().trim();
@@ -57,7 +114,9 @@ function normalizeNewsFirestoreItem(docSnap) {
     summary: (data.summary || data.body || "").toString().trim(),
     previewUrl: (data.previewUrl || data.url || "").toString().trim(),
     expireDate: normalizeNewsFirestoreDate(data.expireDate),
-    pinned: data.pinned === true
+    publishAt: normalizeNewsPublishAt(data.publishAt),
+    pinned: data.pinned === true,
+    status: (data.status || "published").toString()
   };
 }
 
@@ -232,8 +291,11 @@ function renderNewsList() {
   initNewsFilters();
   syncNewsFilterOptions();
   updateNewsLoadMoreVisibility(false);
+  scheduleNextNewsRefresh();
 
-  if (!newsItems.length) {
+  const visibleNewsItems = getVisibleNewsItems();
+
+  if (!visibleNewsItems.length) {
     updateNewsFilterSummary(0, 0);
     newsListEl.innerHTML = `
       <div class="panel" style="background:#0f172a; color:#e5e7eb;">
@@ -247,7 +309,7 @@ function renderNewsList() {
 
   const processedItems = getProcessedNewsItems();
   const filteredItems = processedItems.slice(0, newsVisibleCount);
-  updateNewsFilterSummary(filteredItems.length, processedItems.length, newsItems.length);
+  updateNewsFilterSummary(filteredItems.length, processedItems.length, visibleNewsItems.length);
 
   if (!processedItems.length) {
     newsListEl.innerHTML = `
@@ -407,7 +469,7 @@ function syncNewsFilterSelect(selectId, values, defaultLabel) {
 function getUniqueNewsValues(field) {
   return Array.from(
     new Set(
-      newsItems
+      getVisibleNewsItems()
         .map((item) => (item[field] || "").toString().trim())
         .filter(Boolean)
     )
@@ -417,7 +479,7 @@ function getUniqueNewsValues(field) {
 function getFilteredNewsItems() {
   const query = newsFilterState.query.toLowerCase();
 
-  return newsItems.filter((item) => {
+  return getVisibleNewsItems().filter((item) => {
     if (newsFilterState.year !== "all" && (item.year || "").trim() !== newsFilterState.year) {
       return false;
     }
@@ -523,7 +585,7 @@ function escapeNewsHtml(text) {
 function openNewsModal(newsId) {
   if (!newsModalEl || !newsModalTitleEl || !newsModalBodyEl) return;
   const item = newsItems.find((n) => n.id === newsId);
-  if (!item) return;
+  if (!item || !isNewsCurrentlyVisible(item)) return;
 
   newsModalTitleEl.textContent = item.title || "รายละเอียดข่าว/ประกาศ";
 
@@ -562,7 +624,9 @@ function renderHomeNewsPreview() {
   const container = document.getElementById("homeNewsPreview");
   if (!container) return;
 
-  if (!newsItems.length) {
+  const visibleNewsItems = getVisibleNewsItems();
+
+  if (!visibleNewsItems.length) {
     container.innerHTML = `
       <article class="home-news-card">
         <div class="home-news-tag news-info">ประกาศ</div>
@@ -573,7 +637,7 @@ function renderHomeNewsPreview() {
     return;
   }
 
-  const topNews = newsItems.slice(0, HOME_NEWS_PREVIEW_LIMIT);
+  const topNews = visibleNewsItems.slice(0, HOME_NEWS_PREVIEW_LIMIT);
   const cardsHtml = topNews
     .map((item) => {
       const pinnedTag = item.pinned ? `<div class="home-news-tag">PIN</div>` : "";

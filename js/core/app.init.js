@@ -293,8 +293,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===== 4) ระบบสลับหน้าแบบ SPA =====
   const navLinks = document.querySelectorAll("header nav a[data-page]");
   const pageViews = document.querySelectorAll(".page-view");
-  const siteHeaderEl = document.querySelector(".site-header");
-  const siteFooterEl = document.querySelector(".site-footer");
   const mainContainerEl = document.querySelector("main.main");
   let currentPage = null;
   let pendingConsentPage = null;
@@ -335,50 +333,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  const syncHomeShellMetrics = () => {
-    if (!document.body.classList.contains("home-fixed-shell")) return;
-    const headerHeight = Math.max(0, Math.round(siteHeaderEl?.offsetHeight || 0));
-    const footerHeight = Math.max(0, Math.round(siteFooterEl?.offsetHeight || 0));
-    document.documentElement.style.setProperty("--home-shell-header-h", `${headerHeight}px`);
-    document.documentElement.style.setProperty("--home-shell-footer-h", `${footerHeight}px`);
-  };
-
-  const shouldUseFixedHomeShell = (pageName) => {
-    return pageName === "home" && window.matchMedia("(min-width: 961px)").matches;
-  };
-
-  const applyHomeShellState = (pageOverride = null) => {
-    const pageForState = typeof pageOverride === "string" && pageOverride
-      ? pageOverride
-      : currentPage;
-    const shouldUseFixedShell = shouldUseFixedHomeShell(pageForState);
-    document.body.classList.toggle("home-fixed-shell", shouldUseFixedShell);
-    if (shouldUseFixedShell) {
-      syncHomeShellMetrics();
-    } else {
-      document.documentElement.style.removeProperty("--home-shell-header-h");
-      document.documentElement.style.removeProperty("--home-shell-footer-h");
-    }
-  };
-
   const scrollPageToTop = (page, behavior = "smooth") => {
-    if (page === "home") {
-      const homeSnapContainer = document.querySelector('.page-view[data-page="home"] .home-snap-container');
-      if (homeSnapContainer instanceof HTMLElement) {
-        homeSnapContainer.scrollTo({ top: 0, left: 0, behavior });
-      }
-    }
-
     if (mainContainerEl instanceof HTMLElement) {
       mainContainerEl.scrollTo({ top: 0, left: 0, behavior });
     }
 
     window.scrollTo({ top: 0, left: 0, behavior });
   };
-
-  window.addEventListener("resize", () => {
-    applyHomeShellState(currentPage);
-  }, { passive: true });
 
   // ===== 2) โหลดข้อมูลหน้าแรกแบบ background หลัง route แรกพร้อมใช้งาน =====
 
@@ -763,7 +724,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       link.classList.toggle("active", link.dataset.page === page);
     });
 
-    applyHomeShellState(page);
     if (page === "home") {
       scrollPageToTop(page, "auto");
     }
@@ -977,10 +937,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.querySelectorAll("[data-home-scroll-next]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const homeSnapContainer = document.querySelector('.page-view[data-page="home"] .home-snap-container');
       const newsPanel = document.querySelector('.page-view[data-page="home"] .home-snap-panel:nth-of-type(2)');
-      if (homeSnapContainer instanceof HTMLElement && newsPanel instanceof HTMLElement) {
-        homeSnapContainer.scrollTo({ top: newsPanel.offsetTop, left: 0, behavior: "smooth" });
+      if (newsPanel instanceof HTMLElement) {
+        newsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
       document.querySelector(".home-news")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1097,6 +1056,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (ctx.projectClosureMailMergeExportBtn) {
       ctx.projectClosureMailMergeExportBtn.addEventListener("click", () => {
         exportClosureMailMergeCsv(key);
+      });
+    }
+    if (ctx.projectClosureExportUntilMonthInput) {
+      ctx.projectClosureExportUntilMonthInput.addEventListener("change", () => {
+        setActiveProjectStatusContext(key);
+        updateStaffProjectOperationsPanel(getVisibleProjectsForContext(key));
+      });
+    }
+    if (ctx.projectClosureExportClearMonthBtn && ctx.projectClosureExportUntilMonthInput) {
+      ctx.projectClosureExportClearMonthBtn.addEventListener("click", () => {
+        ctx.projectClosureExportUntilMonthInput.value = "";
+        setActiveProjectStatusContext(key);
+        updateStaffProjectOperationsPanel(getVisibleProjectsForContext(key));
       });
     }
     if (ctx.longestOpenAssistantFilterEl) {

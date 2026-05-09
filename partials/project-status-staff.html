@@ -4,15 +4,18 @@
           <!-- Header -->
           <div class="page-header-flex">
             <div>
-              <h1 class="page-title">สถานะโครงการ</h1>
-              <p class="page-subtitle">สารบัญข้อมูล Project Status และเครื่องมือเตรียมเอกสารปิดโครงการ</p>
+              <h1 class="page-title">คู่มือถ่ายงานเหรัญญิก</h1>
+              <p class="page-subtitle">สรุป workflow Project Status, Export CSV ปิดโครงการ และ template เลขรันเอกสารที่สตาฟต้องส่งต่อให้เหรัญญิกรุ่นถัดไป</p>
             </div>
-            <div class="tabs project-staff-workflow-tabs" role="tablist" aria-label="เลือกมุมมองสถานะโครงการ">
+            <div class="tabs project-staff-workflow-tabs" role="tablist" aria-label="เลือกหมวดคู่มือถ่ายงานเหรัญญิก">
               <button type="button" class="tab-btn view-toggle-btn is-active" data-project-workflow-tab="sources">
                 สารบัญ Project Status
               </button>
-              <button type="button" class="tab-btn view-toggle-btn" data-project-workflow-tab="closeout">
-                เอกสารปิดโครงการ
+              <button type="button" class="tab-btn view-toggle-btn" data-project-workflow-tab="export">
+                Export CSV
+              </button>
+              <button type="button" class="tab-btn view-toggle-btn" data-project-workflow-tab="templates">
+                Template เลขรัน
               </button>
             </div>
           </div>
@@ -46,7 +49,20 @@
                 </p>
               </section>
 
-              <section class="sheet-guide-section section-appear section-delay-2" aria-label="คู่มือกรอกข้อมูล Project Status">
+              <section class="project-handover-summary section-appear section-delay-2" aria-label="ภาพรวมการถ่ายงาน Project Status">
+                <article>
+                  <span class="project-staff-ops-kicker">Handover map</span>
+                  <h3>ใช้หน้านี้เป็นสารบัญส่งต่องาน</h3>
+                  <p>เริ่มจากตรวจสารบัญ Project Status ว่าปี active และลิงก์ CSV ถูกต้อง จากนั้น export รายการปิดโครงการ เก็บเลขรันเอกสาร และทำ checklist ก่อนส่งสิทธิ์ให้รุ่นถัดไป</p>
+                </article>
+                <ol class="project-handover-flow" aria-label="ลำดับงานถ่ายงาน">
+                  <li><span>1</span> ตรวจแหล่งข้อมูล</li>
+                  <li><span>2</span> Export CSV</li>
+                  <li><span>3</span> ส่งต่อเลขรัน</li>
+                </ol>
+              </section>
+
+              <section class="sheet-guide-section section-appear section-delay-3" aria-label="คู่มือกรอกข้อมูล Project Status">
                 <div class="sheet-guide-header">
                   <div>
                     <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
@@ -175,25 +191,186 @@
               </section>
             </section>
 
-            <section class="panel project-staff-workflow-card project-staff-closeout-card" data-project-workflow-panel="closeout" hidden>
-              <div>
-                <span class="project-staff-ops-kicker">Closeout documents</span>
-                <h3 class="panel-title">งานปิดโครงการ</h3>
-                <p class="panel-caption">
-                  ใช้ข้อมูล Project Status ที่โหลดอยู่เพื่อเตรียม CSV สำหรับ mail merge เอกสารปิดโครงการ
-                </p>
+            <section class="panel project-staff-workflow-card project-staff-closeout-card" data-project-workflow-panel="export" hidden>
+              <div class="project-closeout-guide">
+                <div class="project-closeout-hero">
+                  <div>
+                    <span class="project-staff-ops-kicker">CSV export</span>
+                    <h3 class="panel-title">Export CSV ปิดโครงการ</h3>
+                    <p class="panel-caption">
+                      ใช้ไฟล์จากระบบไปสร้างเอกสารปิดโครงการใน Microsoft Word แบบอัตโนมัติ
+                    </p>
+                  </div>
+                  <div class="project-closeout-hero-badges" aria-label="เงื่อนไขหลักของ Mail Merge">
+                    <span>1 row = 1 document</span>
+                    <span>ใช้ XLSX เป็นหลัก</span>
+                  </div>
+                </div>
+                <div class="project-closeout-file-map" aria-label="ไฟล์ที่ใช้ทำ Mail Merge">
+                  <article>
+                    <span class="project-closeout-file-type">Data source</span>
+                    <strong>ฐานข้อมูล</strong>
+                    <span>ใช้ไฟล์ CSV ที่ export จากระบบ แล้วแปลงเป็น <b>mailmerge.xlsx</b></span>
+                  </article>
+                  <article>
+                    <span class="project-closeout-file-type">Document</span>
+                    <strong>Word Template</strong>
+                    <span>ใช้ไฟล์ <b>template.docx</b> ที่ดาวน์โหลดจากปุ่มด้านขวา</span>
+                  </article>
+                </div>
+                <ol class="project-closeout-steps" aria-label="วิธีใช้ Export CSV ปิดโครงการ">
+                  <li>
+                    <span class="project-closeout-step-no">1</span>
+                    <div>
+                      <strong>เตรียมไฟล์ 2 ไฟล์</strong>
+                      <span>กด <b>ดาวน์โหลด Template</b> เพื่อได้ไฟล์ Word</span>
+                      <span>เลือก <b>Export ถึงเดือน</b> ถ้าต้องการจำกัดช่วงเวลา แล้วกด <b>Export CSV ปิดโครงการ</b></span>
+                    </div>
+                  </li>
+                  <li>
+                    <span class="project-closeout-step-no">2</span>
+                    <div>
+                      <strong>แปลง CSV เป็น XLSX</strong>
+                      <span>ใน Excel: เปิด CSV แล้วกด <b>File &gt; Save As &gt; Excel Workbook (*.xlsx)</b></span>
+                      <span>ใน Google Sheets: อัปโหลด CSV แล้วกด <b>File &gt; Download &gt; Microsoft Excel (.xlsx)</b></span>
+                    </div>
+                  </li>
+                  <li>
+                    <span class="project-closeout-step-no">3</span>
+                    <div>
+                      <strong>ทำ Mail Merge ใน Word</strong>
+                      <span>เปิดไฟล์ Template ที่ดาวน์โหลดไว้</span>
+                      <span>ไปที่ <b>Mailings &gt; Start Mail Merge &gt; Letters</b></span>
+                      <span>กด <b>Select Recipients &gt; Use an Existing List</b> แล้วเลือกไฟล์ XLSX</span>
+                    </div>
+                  </li>
+                  <li>
+                    <span class="project-closeout-step-no">4</span>
+                    <div>
+                      <strong>เลือก Sheet และใส่ Merge Fields</strong>
+                      <span>เลือก <b>Sheet1$</b> หรือ sheet ที่มีข้อมูล</span>
+                      <span>ติ๊ก <b>First row of data contains column headers</b></span>
+                      <span>ใช้ <b>Insert Merge Field</b> ใส่ช่องข้อมูล เช่น <b>«ฎีกา»</b>, <b>«โครงการ»</b>, <b>«จำนวน»</b>, <b>«บัญชี»</b>, <b>«เลขที่»</b></span>
+                    </div>
+                  </li>
+                  <li>
+                    <span class="project-closeout-step-no">5</span>
+                    <div>
+                      <strong>Preview และสร้างเอกสารจริง</strong>
+                      <span>กด <b>Preview Results</b> เพื่อตรวจข้อมูลทีละโครงการ</span>
+                      <span>ถ้าถูกต้องแล้วกด <b>Finish &amp; Merge &gt; Edit Individual Documents &gt; All</b></span>
+                    </div>
+                  </li>
+                  <li>
+                    <span class="project-closeout-step-no">6</span>
+                    <div>
+                      <strong>Export PDF</strong>
+                      <span>Word จะสร้างเอกสารใหม่ โดย 1 หน้า = 1 โครงการ</span>
+                      <span>กด <b>File &gt; Save As &gt; PDF</b> เพื่อส่งออกไฟล์สุดท้าย</span>
+                    </div>
+                  </li>
+                </ol>
+                <div class="project-closeout-command-box" aria-label="คำสั่งหลักใน Microsoft Word">
+                  <strong>คำสั่งหลักใน Word</strong>
+                  <span>Mailings &gt; Start Mail Merge &gt; Letters</span>
+                  <span>Mailings &gt; Select Recipients &gt; Use an Existing List</span>
+                  <span>Mailings &gt; Insert Merge Field</span>
+                  <span>Mailings &gt; Preview Results</span>
+                  <span>Mailings &gt; Finish &amp; Merge</span>
+                </div>
+                <div class="project-closeout-warning" role="note">
+                  <strong>จุดที่ต้องตรวจซ้ำ</strong>
+                  <span>แถวแรกของ XLSX ต้องเป็นชื่อคอลัมน์</span>
+                  <span>ห้าม merge cell และควรเก็บข้อมูลไว้ใน sheet เดียว</span>
+                  <span>หลังเชื่อมกับ Word แล้ว อย่าย้ายไฟล์ XLSX เพราะ Word จะจำ path ของไฟล์ไว้</span>
+                  <a href="https://support.microsoft.com/en-gb/office/use-mail-merge-in-word-to-send-bulk-email-messages-0f123521-20ce-4aa8-8b62-ac211dedefa4" target="_blank" rel="noopener noreferrer">Microsoft Support: Mail Merge</a>
+                </div>
               </div>
-              <div class="project-staff-closeout-actions">
-                <div class="project-staff-closeout-primary">
+              <div class="project-staff-closeout-actions project-closeout-merge-tools" aria-label="เตรียมไฟล์สำหรับ Mail Merge">
+                <div class="project-closeout-action-title">
+                  <span class="project-staff-ops-kicker">Actions</span>
+                  <strong>เตรียมไฟล์สำหรับ Mail Merge</strong>
+                  <span>ทำในเว็บหน้านี้ให้ครบก่อน แล้วค่อยไปแปลง XLSX และ merge ใน Word</span>
+                </div>
+                <div class="project-closeout-tool-block">
+                  <strong>1. ดาวน์โหลด Word Template</strong>
+                  <a
+                    class="btn-ghost"
+                    href="https://docs.google.com/document/d/1fg0VgYeLAAb3YtZ3P7-XJ1r12G8uFT_1/export?format=docx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    ดาวน์โหลด Template
+                  </a>
+                  <span>ได้ไฟล์ .docx สำหรับใช้เป็น Word Template ของเอกสารปิดโครงการ</span>
+                </div>
+                <div class="project-closeout-tool-block">
+                  <strong>2. Export CSV จากระบบ</strong>
+                  <div class="project-closeout-month-filter">
+                    <label for="projectClosureExportUntilMonthStaff">Export ถึงเดือน</label>
+                    <div class="project-closeout-month-row">
+                      <input id="projectClosureExportUntilMonthStaff" type="month" />
+                      <button id="projectClosureExportClearMonthStaff" class="btn-ghost" type="button">ทั้งหมด</button>
+                    </div>
+                    <span id="projectClosureExportMonthCaptionStaff">ค่าเริ่มต้น export ทุกเดือน โดยอ้างอิงกำหนดปิดโครงการ</span>
+                  </div>
                   <button id="projectClosureMailMergeExportCsvStaff" class="btn-primary csv-export-btn" type="button" disabled>
                     Export CSV ปิดโครงการ
                   </button>
-                  <span>ส่งออกเฉพาะโครงการที่อนุมัติแล้วหรือปิดแล้ว พร้อมผู้ตรวจ สถานะปิด งบใช้จริง และข้อมูลเอกสารที่ใช้กับ mail merge</span>
+                  <span>ได้ไฟล์ .csv ที่มีข้อมูลโครงการ ผู้ตรวจ สถานะปิด งบใช้จริง และข้อมูลบัญชีสำหรับ mail merge</span>
                 </div>
-                <div class="project-staff-closeout-placeholder" aria-label="พื้นที่สำหรับคู่มือและเทมเพลต">
-                  <strong>คู่มือและ Word Template</strong>
-                  <span>สามารถเพิ่มไฟล์เทมเพลตและคำอธิบายวิธีใช้ในส่วนนี้ภายหลัง</span>
+              </div>
+            </section>
+
+            <section class="panel project-staff-workflow-card project-template-card" data-project-workflow-panel="templates" hidden>
+              <header class="project-staff-ops-section-head">
+                <div>
+                  <span class="project-staff-ops-kicker">Document numbering</span>
+                  <h3 class="panel-title">Template เลขรันเอกสาร</h3>
+                  <p>ตารางนี้เป็นโครงสำหรับส่งต่อกติกาเลขเอกสาร ให้รุ่นถัดไปแก้ format และเลขเริ่มต้นตามเล่มทะเบียนจริงของปีนั้น</p>
                 </div>
+              </header>
+              <div class="project-template-table-wrap">
+                <table class="project-template-table">
+                  <thead>
+                    <tr>
+                      <th>ประเภทเอกสาร</th>
+                      <th>Format</th>
+                      <th>ตัวอย่าง</th>
+                      <th>สิ่งที่ต้องส่งต่อ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>ฎีกาปิดโครงการ</td>
+                      <td>หมวดองค์กร + ปี / เลขรัน</td>
+                      <td>SGCU68/001</td>
+                      <td>เลขล่าสุด, เล่ม/ไฟล์ทะเบียน, เคสเลขข้าม</td>
+                    </tr>
+                    <tr>
+                      <td>หนังสือส่งกิจการนิสิต</td>
+                      <td>เลขออกหนังสือ / ปี</td>
+                      <td>001/2568</td>
+                      <td>เลขล่าสุดและผู้มีสิทธิ์ออกเลข</td>
+                    </tr>
+                    <tr>
+                      <td>ใบยืมเงินรองจ่าย</td>
+                      <td>ADV-ปี-เลขรัน</td>
+                      <td>ADV-2568-001</td>
+                      <td>รายการที่ยังไม่คืนเงินและวันครบกำหนด</td>
+                    </tr>
+                    <tr>
+                      <td>ใบคืนเงิน / ปรับยอด</td>
+                      <td>REF-ปี-เลขรัน</td>
+                      <td>REF-2568-001</td>
+                      <td>บัญชีรับคืนและหลักฐานโอนประกอบ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="project-template-note">
+                <strong>กติกาที่ควรเขียนเพิ่ม</strong>
+                <span>เลขรันรีเซ็ตทุกปีหรือไม่, ใครเป็นคนออกเลข, ถ้าเลขผิดต้องยกเลิกหรือใช้หมายเหตุ และต้องเก็บไฟล์ต้นฉบับไว้ที่ใด</span>
               </div>
             </section>
           </section>

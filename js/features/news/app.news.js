@@ -1,6 +1,8 @@
 /* ข่าวและประกาศจากฝ่ายเหรัญญิก */
 
-const HOME_NEWS_PREVIEW_LIMIT = 4;
+const HOME_NEWS_PREVIEW_DESKTOP_LIMIT = 4;
+const HOME_NEWS_PREVIEW_MOBILE_LIMIT = 2;
+const HOME_NEWS_PREVIEW_MOBILE_QUERY = "(max-width: 640px)";
 const NEWS_PAGE_SIZE = 9;
 const newsFilterState = {
   query: "",
@@ -14,6 +16,35 @@ let newsVisibleCount = NEWS_PAGE_SIZE;
 const NEWS_CACHE_SOURCE_FIRESTORE = "firestore";
 const NEWS_CACHE_SOURCE_SHEETS = "sheets";
 let newsScheduleRefreshTimer = null;
+let homeNewsPreviewViewportHandlerInitialized = false;
+
+function getHomeNewsPreviewLimit() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return HOME_NEWS_PREVIEW_DESKTOP_LIMIT;
+  }
+  return window.matchMedia(HOME_NEWS_PREVIEW_MOBILE_QUERY).matches
+    ? HOME_NEWS_PREVIEW_MOBILE_LIMIT
+    : HOME_NEWS_PREVIEW_DESKTOP_LIMIT;
+}
+
+function initHomeNewsPreviewViewportHandler() {
+  if (
+    homeNewsPreviewViewportHandlerInitialized ||
+    typeof window === "undefined" ||
+    typeof window.matchMedia !== "function"
+  ) {
+    return;
+  }
+
+  const viewportQuery = window.matchMedia(HOME_NEWS_PREVIEW_MOBILE_QUERY);
+  const renderOnViewportChange = () => renderHomeNewsPreview();
+  if (typeof viewportQuery.addEventListener === "function") {
+    viewportQuery.addEventListener("change", renderOnViewportChange);
+  } else if (typeof viewportQuery.addListener === "function") {
+    viewportQuery.addListener(renderOnViewportChange);
+  }
+  homeNewsPreviewViewportHandlerInitialized = true;
+}
 
 function toggleNewsSkeleton(isLoading) {
   const homePreview = document.getElementById("homeNewsPreview");
@@ -623,6 +654,7 @@ function closeNewsModal() {
 function renderHomeNewsPreview() {
   const container = document.getElementById("homeNewsPreview");
   if (!container) return;
+  initHomeNewsPreviewViewportHandler();
 
   const visibleNewsItems = getVisibleNewsItems();
 
@@ -637,7 +669,7 @@ function renderHomeNewsPreview() {
     return;
   }
 
-  const topNews = visibleNewsItems.slice(0, HOME_NEWS_PREVIEW_LIMIT);
+  const topNews = visibleNewsItems.slice(0, getHomeNewsPreviewLimit());
   const cardsHtml = topNews
     .map((item) => {
       const pinnedTag = item.pinned ? `<div class="home-news-tag">PIN</div>` : "";

@@ -254,9 +254,20 @@
 .meeting-booking-form .login-input {
   background: #ffffff;
   border-color: rgba(236, 72, 153, 0.2);
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
   max-width: 100%;
+}
+
+.meeting-room-page input[type="date"],
+.meeting-room-page input[type="time"],
+.page-view[data-page="meeting-room-staff"] input[type="date"],
+.page-view[data-page="meeting-room-staff"] input[type="time"] {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
 }
 
 .meeting-booking-form .borrow-form-field {
@@ -692,6 +703,21 @@
   color: #b91c1c;
 }
 
+@media (max-width: 840px) {
+  .meeting-booking-form .borrow-form-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .meeting-booking-form .borrow-form-field,
+  .meeting-booking-form .login-input,
+  .meeting-booking-form input[type="date"],
+  .meeting-booking-form input[type="time"] {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 720px) {
   .borrow-detail-section {
     padding: 10px;
@@ -796,11 +822,6 @@
   }
 
   .meeting-form-secondary-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .meeting-booking-form .borrow-form-row {
     grid-template-columns: 1fr;
     gap: 10px;
   }

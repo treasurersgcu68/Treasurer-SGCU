@@ -75,28 +75,28 @@
             <div id="projectDataLoadState" class="project-data-load-state" hidden></div>
 
             <!-- การ์ดสรุป -->
-            <div class="cards section-appear section-delay-1">
-              <article class="card card-hover">
+            <div class="cards project-summary-cards section-appear section-delay-1">
+              <article class="card card-hover project-summary-card project-summary-card-total">
                 <div class="card-title">จำนวนโครงการทั้งหมด</div>
                 <div id="totalProjects" class="card-value">0</div>
               </article>
 
-              <article class="card card-hover">
+              <article class="card card-hover project-summary-card project-summary-card-pending">
                 <div class="card-title">โครงการอยู่ระหว่างดำเนินการ</div>
                 <div id="pendingProjects" class="card-value">0</div>
               </article>
 
-              <article class="card card-hover">
+              <article class="card card-hover project-summary-card project-summary-card-approved">
                 <div class="card-title">โครงการที่อนุมัติแล้ว</div>
                 <div id="approvedProjects" class="card-value">0</div>
               </article>
 
-              <article class="card card-hover">
+              <article class="card card-hover project-summary-card project-summary-card-closed">
                 <div class="card-title">โครงการที่ปิดโครงการแล้ว</div>
                 <div id="closedProjects" class="card-value">0</div>
               </article>
 
-              <article class="card card-hover">
+              <article class="card card-hover project-summary-card project-summary-card-budget">
                 <div class="card-title">วงเงินโครงการรวม (บาท)</div>
                 <div id="totalBudget" class="card-value">0</div>
                 <div class="card-caption">บาท</div>
@@ -136,6 +136,7 @@
               <header class="panel-header">
                 <div>
                   <h3 class="panel-title">รายการโครงการ</h3>
+                  <p id="tableCaption" class="panel-caption">แสดง 0 โครงการ</p>
                 </div>
                 <button id="projectExportCsv" class="btn-ghost csv-export-btn" type="button" disabled>Export CSV</button>
               </header>
@@ -143,7 +144,6 @@
               <div class="table-wrapper" id="projectTableArea">
                 <div class="project-table-wrapper">
                   <table id="projectTable">
-                    <caption id="tableCaption">แสดง 0 โครงการ</caption>
                     <thead>
                       <tr>
                         <th style="text-align:center;">รหัสโครงการ</th>

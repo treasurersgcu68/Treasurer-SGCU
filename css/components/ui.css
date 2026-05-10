@@ -948,6 +948,17 @@ th.sortable.sort-desc::after {
   max-height: 70vh;
 }
 
+#projectTableArea {
+  overflow: hidden;
+  max-height: none;
+}
+
+#projectTableArea > .project-table-wrapper {
+  max-height: 70vh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 #projectTable, #projectTableStaff {
   width: 100%;
   table-layout: auto;

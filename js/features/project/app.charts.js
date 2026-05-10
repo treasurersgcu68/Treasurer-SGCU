@@ -1,4 +1,70 @@
 /* Charts: status summary + trends (Chart.js) */
+function wrapChartAxisLabel(label, maxChars = 22, maxLines = 3) {
+  const text = (label || "").toString().replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  if (text.length <= maxChars) return text;
+
+  const words =
+    typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
+      ? text
+          .split(/(\s+)/)
+          .flatMap((part) => {
+            if (!part) return [];
+            if (/^\s+$/.test(part)) return [" "];
+            return Array.from(new Intl.Segmenter("th", { granularity: "word" }).segment(part))
+              .map((segment) => segment.segment)
+              .filter(Boolean);
+          })
+      : text.split(/(\s+)/).filter(Boolean);
+  const lines = [];
+  let current = "";
+
+  const pushCurrent = () => {
+    if (current) {
+      lines.push(current.trim());
+      current = "";
+    }
+  };
+
+  words.forEach((word) => {
+    if (!word) return;
+    if (/^\s+$/.test(word)) {
+      if (current && !current.endsWith(" ")) current += " ";
+      return;
+    }
+    if (word.length > maxChars) {
+      pushCurrent();
+      lines.push(word);
+      return;
+    }
+    const next = current ? `${current}${word}` : word;
+    if (next.length > maxChars) {
+      pushCurrent();
+      current = word;
+    } else {
+      current = next;
+    }
+  });
+
+  pushCurrent();
+  if (lines.length <= maxLines) return lines;
+
+  const visible = lines.slice(0, maxLines);
+  const last = visible[visible.length - 1] || "";
+  visible[visible.length - 1] =
+    last.length >= maxChars * 1.5 ? `${last.slice(0, Math.max(1, maxChars - 1))}…` : `${last}…`;
+  return visible;
+}
+
+function getClosureAxisWrappedLabel(label) {
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  return wrapChartAxisLabel(label, isMobile ? 22 : 30, isMobile ? 3 : 2);
+}
+
+function getWrappedLineCount(wrappedLabel) {
+  return Array.isArray(wrappedLabel) ? wrappedLabel.length : 1;
+}
+
 function initCharts(ctxKey = activeProjectStatusContext) {
   setActiveProjectStatusContext(ctxKey);
   const ctx = projectStatusContexts[ctxKey];
@@ -34,11 +100,11 @@ function initCharts(ctxKey = activeProjectStatusContext) {
     pointStyle: "rectRounded",
     borderRadius(ctx) {
       const i = ctx.dataIndex;
+      const chart = ctx.chart;
       const ds = ctx.chart.data.datasets;
       const curr = ds[datasetIndex]?.data?.[i] || 0;
       const hasRightSegment = ds
-        .slice(datasetIndex + 1)
-        .some((s) => (s?.data?.[i] || 0) > 0);
+        .some((s, idx) => idx > datasetIndex && chart.isDatasetVisible(idx) && (s?.data?.[i] || 0) > 0);
       const isRight = curr > 0 && !hasRightSegment;
       return {
         topLeft: 0,
@@ -94,7 +160,11 @@ function initCharts(ctxKey = activeProjectStatusContext) {
           y: {
             stacked: true,
             ticks: {
-              autoSkip: false
+              autoSkip: false,
+              padding: 6,
+              callback(value) {
+                return getClosureAxisWrappedLabel(this.getLabelForValue(value));
+              }
             }
           }
         }
@@ -228,8 +298,14 @@ function resizeClosureChart(numLabels) {
   if (!container) return;
 
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  const labels = budgetByMonthChart?.data?.labels || [];
+  const maxWrappedLines = labels.reduce((max, label) => {
+    return Math.max(max, getWrappedLineCount(getClosureAxisWrappedLabel(label)));
+  }, 1);
   const baseHeight = isMobile ? 340 : 260;
-  const perLabel = isMobile ? 34 : 26;
+  const perLabel = isMobile
+    ? Math.max(34, 20 + maxWrappedLines * 14)
+    : Math.max(26, 14 + maxWrappedLines * 13);
   const newHeight = Math.max(baseHeight, numLabels * perLabel);
   container.style.height = newHeight + "px";
 

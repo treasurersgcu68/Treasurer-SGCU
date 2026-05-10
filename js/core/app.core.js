@@ -140,7 +140,6 @@ let lastLongestOpenProjects = [];
 let tableBodyEl;
 let tableCaptionEl;
 let lastTableProjects = [];
-let footerYearEl;
 let projectSearchInput;
 let projectSearchClearBtn;
 let budgetByMonthChart;

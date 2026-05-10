@@ -257,14 +257,16 @@ function initProjectMobileActionBar() {
     const exportAction = actionByName("export");
     const calendarExtraAction = actionByName("calendar-extra");
     bar.classList.toggle("is-calendar-actions", activeView === "calendar");
+    bar.classList.toggle("is-summary-actions", activeView !== "calendar");
 
     if (activeView === "calendar") {
       if (calendarExtraAction) calendarExtraAction.hidden = false;
+      if (exportAction) exportAction.hidden = false;
       setMobileActionButton(filtersAction, "status", "▦", "สรุป", "กลับไปหน้าสรุปสถานะโครงการ");
       setMobileActionButton(statusAction, "calendar-prev", "‹", "ก่อนหน้า", "เดือนก่อนหน้า");
-      setMobileActionButton(calendarAction, "filters", "⌕", "ตัวกรอง", "เปิดตัวกรองปฏิทิน");
-      setMobileActionButton(exportAction, "calendar-today", "◎", "วันนี้", "กลับไปเดือนปัจจุบัน");
-      setMobileActionButton(calendarExtraAction, "calendar-next", "›", "ถัดไป", "เดือนถัดไป");
+      setMobileActionButton(calendarAction, "calendar-today", "◎", "วันนี้", "กลับไปเดือนปัจจุบัน");
+      setMobileActionButton(exportAction, "calendar-next", "›", "ถัดไป", "เดือนถัดไป");
+      setMobileActionButton(calendarExtraAction, "filters", "⌕", "ตัวกรอง", "เปิดตัวกรองปฏิทิน");
       actionBtns.forEach((btn) => {
         btn.classList.remove("is-active");
         btn.disabled = false;
@@ -272,18 +274,14 @@ function initProjectMobileActionBar() {
       });
     } else {
       if (calendarExtraAction) calendarExtraAction.hidden = true;
+      if (exportAction) exportAction.hidden = true;
       setMobileActionButton(filtersAction, "filters", "⌕", "ตัวกรอง", "เปิดตัวกรอง");
       setMobileActionButton(statusAction, "status", "▦", "สรุป", "แสดงสรุปสถานะโครงการ");
       setMobileActionButton(calendarAction, "calendar", "◷", "ปฏิทิน", "แสดงปฏิทินโครงการ");
-      setMobileActionButton(exportAction, "export", "↓", "Export", "Export CSV");
       actionBtns.forEach((btn) => {
         const action = btn.dataset.projectMobileEffectiveAction;
         btn.classList.toggle("is-active", action === activeView);
       });
-      if (exportAction && exportBtn) {
-        exportAction.disabled = exportBtn.disabled;
-        exportAction.setAttribute("aria-disabled", exportBtn.disabled ? "true" : "false");
-      }
     }
 
     actionBtns.forEach((btn) => {
@@ -359,6 +357,16 @@ function initProjectMobileActionBar() {
     sync();
   };
 
+  const openStatusSearchSheet = () => {
+    if (isCalendarVisible()) {
+      statusTab?.click();
+    }
+    openFilterSheet();
+    window.setTimeout(() => {
+      document.getElementById("projectSearchInput")?.focus({ preventScroll: true });
+    }, 300);
+  };
+
   const scrollToFilters = () => {
     const target = getFilterTarget();
     if (!target) return;
@@ -381,6 +389,10 @@ function initProjectMobileActionBar() {
         if (exportBtn && !exportBtn.disabled) {
           exportBtn.click();
         }
+      } else if (action === "clear-filters") {
+        resetCurrentFilters();
+      } else if (action === "search") {
+        openStatusSearchSheet();
       } else if (action === "calendar-prev") {
         closeFilterSheet();
         shiftCalendarMonth(-1);
@@ -473,8 +485,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   totalBudgetEl = document.getElementById("totalBudget");
   tableBodyEl = document.getElementById("projectTableBody");
   tableCaptionEl = document.getElementById("tableCaption");
-  footerYearEl = document.getElementById("footerYear");
-
   projectModalEl = document.getElementById("projectModal");
   projectModalTitleEl = document.getElementById("projectModalTitle");
   projectModalTitleBadgeEl = document.getElementById("projectModalTitleBadge");
@@ -639,10 +649,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     staffModeToggleEl.style.display = "none";
   }
 
-  // ===== 3) ตั้งปีใน footer =====
-  if (footerYearEl) {
-    footerYearEl.textContent = new Date().getFullYear();
-  }
   const resolveCurrentAcademicYearBE = () => {
     if (typeof getCurrentAcademicYearBE === "function") {
       return getCurrentAcademicYearBE();

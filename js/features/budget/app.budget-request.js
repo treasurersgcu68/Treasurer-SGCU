@@ -11,6 +11,17 @@ function initBudgetApprovalRequestPage() {
   const myRequestsTableBodyEl = document.getElementById("budgetApprovalMyRequestsTableBody");
   const myRequestsCaptionEl = document.getElementById("budgetApprovalListCaption");
   const exportCsvBtnEl = document.getElementById("budgetApprovalExportCsvBtn");
+  const requestViewBtnEls = Array.from(document.querySelectorAll("[data-budget-request-view]"));
+  const requestViewPanelEls = Array.from(document.querySelectorAll("[data-budget-request-view-panel]"));
+  const orgTotalsCaptionEl = document.getElementById("budgetOrgTotalsCaption");
+  const orgTotalsOrgCountEl = document.getElementById("budgetOrgTotalsOrgCount");
+  const orgTotalsProjectCountEl = document.getElementById("budgetOrgTotalsProjectCount");
+  const orgTotalsRequestedAmountEl = document.getElementById("budgetOrgTotalsRequestedAmount");
+  const orgTotalsApprovedAmountEl = document.getElementById("budgetOrgTotalsApprovedAmount");
+  const orgTotalsChartCanvasEl = document.getElementById("budgetOrgTotalsChart");
+  const orgTotalsTableBodyEl = document.getElementById("budgetOrgTotalsTableBody");
+  const orgTotalsRoundSelectEl = document.getElementById("budgetOrgTotalsRoundSelect");
+  const orgTotalsExportCsvBtnEl = document.getElementById("budgetOrgTotalsExportCsvBtn");
   const orgTypeEl = document.getElementById("budgetOrgType");
   const orgDeptEl = document.getElementById("budgetOrgDept");
   const orgTypeDisplayEl = document.getElementById("budgetOrgTypeDisplay");
@@ -81,6 +92,7 @@ function initBudgetApprovalRequestPage() {
   const SETTINGS_COLLECTION = firestoreCollections.budgetApprovalSettings || "budgetApprovalSettings";
   const SETTINGS_DOC_ID = firestoreDocs.budgetApprovalSettings || "global";
   let unsubscribeMyRequests = null;
+  let unsubscribeOrgBudgetTotals = null;
   let unsubscribeRepresentativeApplications = null;
   let unsubscribeBudgetSettings = null;
   let currentRepresentativeApplications = [];
@@ -89,6 +101,11 @@ function initBudgetApprovalRequestPage() {
   let editingRequestId = "";
   let latestMyBudgetRequests = [];
   let latestBudgetRequestRows = [];
+  let latestOrgBudgetRows = [];
+  let latestOrgBudgetSummaryRows = [];
+  let latestOrgBudgetTotalsSource = "loading";
+  let orgTotalsChartInstance = null;
+  let selectedOrgTotalsRoundId = "";
   let budgetRequestDeadline = "";
   let isBudgetRequestClosed = false;
   let budgetRoundYear = "";
@@ -191,7 +208,16 @@ function initBudgetApprovalRequestPage() {
     return Number.isFinite(endTime) && Date.now() <= endTime;
   });
 
+  const isBudgetRoundClosed = (round) => {
+    const endTime = new Date(`${round?.deadline || ""}T23:59:59`).getTime();
+    return Number.isFinite(endTime) && Date.now() > endTime;
+  };
+
+  const getClosedBudgetRounds = () => activeBudgetRounds.filter(isBudgetRoundClosed);
+
   const findActiveRoundById = (id = "") => activeBudgetRounds.find((round) => round.id === id);
+
+  const findBudgetRoundById = (id = "") => activeBudgetRounds.find((round) => round.id === id);
 
   const isRequestRoundOpen = (item) => {
     const round = findActiveRoundById(getRequestRoundId(item));
@@ -253,6 +279,37 @@ function initBudgetApprovalRequestPage() {
   const toBudgetAmount = (value) => {
     const num = Number(value || 0);
     return Number.isFinite(num) ? num : 0;
+  };
+
+  const getCurrentRepresentativeOrgType = () =>
+    normalizeOrgText(getPrimaryApprovedRepresentative()?.organizationType);
+
+  const isSameRepresentativeOrgType = (item) =>
+    normalizeOrgText(item?.organizationType) === getCurrentRepresentativeOrgType();
+
+  const getBudgetRoundLabelById = (roundId = "") => {
+    const id = normalizeOrgText(roundId);
+    if (!id) return "ไม่ระบุรอบ";
+    const round = findBudgetRoundById(id);
+    return round?.label || id;
+  };
+
+  const getOrgTotalsClosedRoundOptions = () => {
+    const options = new Map();
+    getClosedBudgetRounds().forEach((round) => {
+      options.set(round.id, {
+        id: round.id,
+        label: round.label || round.id,
+        deadline: round.deadline || "",
+        source: "settings"
+      });
+    });
+    return Array.from(options.values()).sort((a, b) => {
+      const timeA = Date.parse(`${a.deadline || ""}T00:00:00`) || 0;
+      const timeB = Date.parse(`${b.deadline || ""}T00:00:00`) || 0;
+      if (timeA !== timeB) return timeB - timeA;
+      return a.label.localeCompare(b.label, "th");
+    });
   };
 
   const updateBudgetOrgSummary = () => {
@@ -390,6 +447,7 @@ function initBudgetApprovalRequestPage() {
     budgetRoundNo = normalizeRoundName(data.budgetRoundNo);
     currentBudgetRoundId = (data.currentBudgetRoundId || buildBudgetRoundId(budgetRoundYear, budgetRoundNo)).toString().trim();
     activeBudgetRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);
+    populateOrgTotalsRoundOptions();
     const openRounds = getOpenBudgetRounds();
     const selectedRoundId = requestRoundSelectEl.value;
     requestRoundSelectEl.innerHTML = "";
@@ -443,8 +501,9 @@ function initBudgetApprovalRequestPage() {
       return;
     }
     if (requestDeadlineCaptionEl) {
+      const totalRounds = activeBudgetRounds.length;
       requestDeadlineCaptionEl.textContent = isBudgetRequestClosed
-        ? "หมดเขตรับคำของบแล้วทุกผลัด"
+        ? (totalRounds > 1 ? `ปิดรับคำของบแล้วทั้ง ${totalRounds} รอบ` : "ปิดรับคำของบแล้ว")
         : `ยังเปิดรับคำของบอยู่ ${openRounds.length} รอบ`;
       requestDeadlineCaptionEl.style.color = isBudgetRequestClosed ? "#b91c1c" : "#047857";
     }
@@ -760,6 +819,10 @@ function initBudgetApprovalRequestPage() {
       ? sourceRows.filter((item) => hasApprovedRepresentativeForRequest(item))
       : [];
     latestMyBudgetRequests = items;
+    if (latestOrgBudgetTotalsSource === "fallback") {
+      latestOrgBudgetRows = sourceRows.filter(isSameRepresentativeOrgType);
+      renderOrgBudgetTotals(latestOrgBudgetRows, "fallback");
+    }
     if (!representativeOptions.length) {
       myRequestsTableBodyEl.innerHTML = `
         <tr>
@@ -811,6 +874,314 @@ function initBudgetApprovalRequestPage() {
     }).join("");
     myRequestsCaptionEl.textContent = `แสดง ${items.length} รายการ`;
     updateBudgetOrgSummary();
+  };
+
+  const summarizeOrgBudgetRows = (rows) => {
+    const roundId = normalizeOrgText(selectedOrgTotalsRoundId);
+    const map = new Map();
+    (Array.isArray(rows) ? rows : [])
+      .filter((item) => (item?.requestType || "budget_approval").toString().trim() === "budget_approval")
+      .filter(isSameRepresentativeOrgType)
+      .filter((item) => roundId && getRequestRoundId(item) === roundId)
+      .forEach((item) => {
+        const orgName = normalizeOrgText(item.organizationName) || "ไม่ระบุองค์กร";
+        const current = map.get(orgName) || {
+          organizationName: orgName,
+          projectCount: 0,
+          requestedAmount: 0,
+          approvedAmount: 0,
+          pendingAmount: 0
+        };
+        const requestedAmount = toBudgetAmount(item.estimatedExpense);
+        const approvedAmount = toBudgetAmount(item.approvedAmount);
+        current.projectCount += 1;
+        current.requestedAmount += requestedAmount;
+        current.approvedAmount += approvedAmount;
+        if ((item.status || "pending").toString().trim().toLowerCase() === "pending") {
+          current.pendingAmount += requestedAmount;
+        }
+        map.set(orgName, current);
+      });
+
+    return Array.from(map.values()).sort((a, b) => {
+      if (b.requestedAmount !== a.requestedAmount) return b.requestedAmount - a.requestedAmount;
+      return a.organizationName.localeCompare(b.organizationName, "th");
+    });
+  };
+
+  const setOrgTotalsEmptyState = (message, caption = message) => {
+    if (orgTotalsChartInstance) {
+      orgTotalsChartInstance.destroy();
+      orgTotalsChartInstance = null;
+    }
+    if (orgTotalsTableBodyEl) {
+      orgTotalsTableBodyEl.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; color:#6b7280;">${escapeHtml(message)}</td>
+        </tr>
+      `;
+    }
+    if (orgTotalsCaptionEl) orgTotalsCaptionEl.textContent = caption;
+    if (orgTotalsOrgCountEl) orgTotalsOrgCountEl.textContent = "0";
+    if (orgTotalsProjectCountEl) orgTotalsProjectCountEl.textContent = "0";
+    if (orgTotalsRequestedAmountEl) orgTotalsRequestedAmountEl.textContent = "0.00 บาท";
+    if (orgTotalsApprovedAmountEl) orgTotalsApprovedAmountEl.textContent = "0.00 บาท";
+    latestOrgBudgetSummaryRows = [];
+  };
+
+  const populateOrgTotalsRoundOptions = () => {
+    if (!orgTotalsRoundSelectEl) return;
+    const previousValue = selectedOrgTotalsRoundId || orgTotalsRoundSelectEl.value;
+    const rounds = getOrgTotalsClosedRoundOptions();
+    orgTotalsRoundSelectEl.innerHTML = "";
+    if (!rounds.length) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "ยังไม่มีรอบที่ปิดแล้ว";
+      opt.disabled = true;
+      opt.selected = true;
+      orgTotalsRoundSelectEl.appendChild(opt);
+      selectedOrgTotalsRoundId = "";
+      orgTotalsRoundSelectEl.disabled = true;
+      return;
+    }
+    rounds.forEach((round) => {
+      const opt = document.createElement("option");
+      opt.value = round.id;
+      opt.textContent = round.deadline
+        ? `${round.label} (ปิด ${formatDateDisplay(round.deadline)})`
+        : round.label;
+      orgTotalsRoundSelectEl.appendChild(opt);
+    });
+    selectedOrgTotalsRoundId = rounds.some((round) => round.id === previousValue)
+      ? previousValue
+      : rounds[0].id;
+    orgTotalsRoundSelectEl.value = selectedOrgTotalsRoundId;
+    orgTotalsRoundSelectEl.disabled = false;
+  };
+
+  const renderOrgBudgetTotalsChart = async (summaryRows) => {
+    if (!orgTotalsChartCanvasEl) return;
+    await window.sgcuVendorLoader?.ensureChart?.();
+    if (orgTotalsChartInstance) {
+      orgTotalsChartInstance.destroy();
+      orgTotalsChartInstance = null;
+    }
+    if (!Array.isArray(summaryRows) || !summaryRows.length || typeof window.Chart !== "function") {
+      return;
+    }
+
+    const sortedRows = summaryRows
+      .slice()
+      .sort((a, b) => b.requestedAmount - a.requestedAmount || b.approvedAmount - a.approvedAmount);
+    const limit = 10;
+    const visibleRows = sortedRows.slice(0, limit);
+    const hiddenRows = sortedRows.slice(limit);
+    const chartRows = visibleRows.slice();
+    if (hiddenRows.length) {
+      chartRows.push({
+        organizationName: "อื่น ๆ",
+        projectCount: hiddenRows.reduce((sum, row) => sum + row.projectCount, 0),
+        requestedAmount: hiddenRows.reduce((sum, row) => sum + row.requestedAmount, 0),
+        approvedAmount: hiddenRows.reduce((sum, row) => sum + row.approvedAmount, 0)
+      });
+    }
+
+    orgTotalsChartInstance = new window.Chart(orgTotalsChartCanvasEl.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: chartRows.map((row) => row.organizationName),
+        datasets: [
+          {
+            label: "ยอดที่ขอ",
+            data: chartRows.map((row) => row.requestedAmount),
+            backgroundColor: "#f472b6",
+            borderRadius: { topRight: 8, bottomRight: 8 },
+            borderSkipped: false
+          },
+          {
+            label: "ยอดอนุมัติ",
+            data: chartRows.map((row) => row.approvedAmount),
+            backgroundColor: "#34d399",
+            borderRadius: { topRight: 8, bottomRight: 8 },
+            borderSkipped: false
+          }
+        ]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              afterBody: (items) => {
+                const row = chartRows[items?.[0]?.dataIndex || 0];
+                return `โครงการ ${Number(row?.projectCount || 0).toLocaleString("th-TH")} รายการ`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              callback: (value) => Number(value || 0).toLocaleString("th-TH")
+            }
+          },
+          y: {
+            ticks: {
+              autoSkip: false
+            }
+          }
+        }
+      }
+    });
+  };
+
+  const renderOrgBudgetTotals = (rows, source = latestOrgBudgetTotalsSource) => {
+    if (!orgTotalsTableBodyEl) return;
+    const orgType = getCurrentRepresentativeOrgType();
+    populateOrgTotalsRoundOptions();
+    if (!orgType) {
+      setOrgTotalsEmptyState(
+        "ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงยังไม่สามารถดูยอดแยกตามองค์กรได้",
+        "ต้องมีสิทธิ์ตัวแทนองค์กรก่อน"
+      );
+      return;
+    }
+    const selectedRound = findBudgetRoundById(selectedOrgTotalsRoundId);
+    if (!selectedOrgTotalsRoundId || !selectedRound || !isBudgetRoundClosed(selectedRound)) {
+      setOrgTotalsEmptyState(
+        "ยอดของบแยกตามองค์กรจะแสดงได้เฉพาะรอบที่ปิดรับคำขอแล้ว",
+        "เลือกดูได้เฉพาะรอบที่ปิดแล้ว"
+      );
+      return;
+    }
+
+    const summaryRows = summarizeOrgBudgetRows(rows);
+    latestOrgBudgetSummaryRows = summaryRows;
+    const totalProjectCount = summaryRows.reduce((sum, item) => sum + item.projectCount, 0);
+    const totalRequested = summaryRows.reduce((sum, item) => sum + item.requestedAmount, 0);
+    const totalApproved = summaryRows.reduce((sum, item) => sum + item.approvedAmount, 0);
+
+    if (orgTotalsOrgCountEl) orgTotalsOrgCountEl.textContent = String(summaryRows.length);
+    if (orgTotalsProjectCountEl) orgTotalsProjectCountEl.textContent = String(totalProjectCount);
+    if (orgTotalsRequestedAmountEl) orgTotalsRequestedAmountEl.textContent = `${formatCurrency(totalRequested)} บาท`;
+    if (orgTotalsApprovedAmountEl) orgTotalsApprovedAmountEl.textContent = `${formatCurrency(totalApproved)} บาท`;
+
+    if (!summaryRows.length) {
+      const roundLabel = getBudgetRoundLabelById(selectedOrgTotalsRoundId);
+      setOrgTotalsEmptyState(`ยังไม่มีรายการคำของบใน${orgType} สำหรับ${roundLabel}`, `ยังไม่มีรายการใน${roundLabel}`);
+      return;
+    }
+
+    void renderOrgBudgetTotalsChart(summaryRows);
+
+    orgTotalsTableBodyEl.innerHTML = summaryRows.map((item) => `
+      <tr>
+        <td style="text-align:left;" data-label="องค์กร">
+          <div class="budget-request-history-project-name">${escapeHtml(item.organizationName)}</div>
+          <div class="section-text-sm budget-request-history-project-meta">${escapeHtml(orgType)}</div>
+        </td>
+        <td style="text-align:right;" data-label="จำนวนโครงการ">${item.projectCount}</td>
+        <td style="text-align:right;" data-label="ยอดขอ">${formatCurrency(item.requestedAmount)}</td>
+        <td style="text-align:right;" data-label="ยอดอนุมัติ">${formatCurrency(item.approvedAmount)}</td>
+        <td style="text-align:right;" data-label="รออนุมัติ">${formatCurrency(item.pendingAmount)}</td>
+      </tr>
+    `).join("");
+
+    if (orgTotalsCaptionEl) {
+      const visibleCount = Math.min(summaryRows.length, 10);
+      const hiddenCount = Math.max(summaryRows.length - visibleCount, 0);
+      const chartCaption = `กราฟ Top ${visibleCount}${hiddenCount ? ` + อื่น ๆ ${hiddenCount}` : ""} จาก ${summaryRows.length} องค์กร`;
+      const roundLabel = getBudgetRoundLabelById(selectedOrgTotalsRoundId);
+      orgTotalsCaptionEl.textContent = source === "fallback"
+        ? `แสดงเฉพาะรายการที่บัญชีนี้อ่านได้ใน${orgType} · ${roundLabel} · ${chartCaption}`
+        : `${roundLabel} · ${chartCaption}ใน${orgType}`;
+    }
+  };
+
+  const exportOrgBudgetTotalsCsv = () => {
+    const orgType = getCurrentRepresentativeOrgType();
+    const roundLabel = getBudgetRoundLabelById(selectedOrgTotalsRoundId);
+    const rows = latestOrgBudgetSummaryRows.map((item) => ({
+      "รอบรับคำขอ": roundLabel,
+      "ประเภทองค์กร": orgType,
+      "องค์กร": item.organizationName,
+      "จำนวนโครงการ": item.projectCount,
+      "ยอดขอ": item.requestedAmount,
+      "ยอดอนุมัติ": item.approvedAmount,
+      "รออนุมัติ": item.pendingAmount
+    }));
+    window.sgcuCsvExport?.download({
+      fileName: "budget-approval-org-totals",
+      headers: ["รอบรับคำขอ", "ประเภทองค์กร", "องค์กร", "จำนวนโครงการ", "ยอดขอ", "ยอดอนุมัติ", "รออนุมัติ"],
+      rows
+    });
+  };
+
+  const subscribeOrgBudgetTotals = () => {
+    if (typeof unsubscribeOrgBudgetTotals === "function") {
+      try {
+        unsubscribeOrgBudgetTotals();
+      } catch (_) {
+        // ignore
+      }
+      unsubscribeOrgBudgetTotals = null;
+    }
+
+    const orgType = getCurrentRepresentativeOrgType();
+    if (!readCurrentUserEmail()) {
+      latestOrgBudgetRows = [];
+      latestOrgBudgetTotalsSource = "empty";
+      setOrgTotalsEmptyState("กรุณาเข้าสู่ระบบเพื่อดูยอดของบแยกตามองค์กร", "ต้องเข้าสู่ระบบก่อน");
+      return;
+    }
+    if (!orgType) {
+      latestOrgBudgetRows = [];
+      latestOrgBudgetTotalsSource = "empty";
+      renderOrgBudgetTotals([]);
+      return;
+    }
+
+    const firestore = window.sgcuFirestore || {};
+    const canRead = !!(
+      firestore.db &&
+      firestore.collection &&
+      firestore.onSnapshot &&
+      firestore.query &&
+      firestore.where
+    );
+    if (!canRead) {
+      latestOrgBudgetRows = latestBudgetRequestRows.filter(isSameRepresentativeOrgType);
+      latestOrgBudgetTotalsSource = "fallback";
+      renderOrgBudgetTotals(latestOrgBudgetRows, "fallback");
+      return;
+    }
+
+    if (orgTotalsCaptionEl) orgTotalsCaptionEl.textContent = `กำลังโหลดรายการใน${orgType}...`;
+    const listQuery = firestore.query(
+      firestore.collection(firestore.db, REQUEST_COLLECTION),
+      firestore.where("organizationType", "==", orgType)
+    );
+    unsubscribeOrgBudgetTotals = firestore.onSnapshot(
+      listQuery,
+      (snapshot) => {
+        const rows = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() || {};
+          rows.push({ id: docSnap.id, ...data });
+        });
+        latestOrgBudgetRows = rows;
+        latestOrgBudgetTotalsSource = "organizationType";
+        renderOrgBudgetTotals(latestOrgBudgetRows, "organizationType");
+      },
+      () => {
+        latestOrgBudgetRows = latestBudgetRequestRows.filter(isSameRepresentativeOrgType);
+        latestOrgBudgetTotalsSource = "fallback";
+        renderOrgBudgetTotals(latestOrgBudgetRows, "fallback");
+      }
+    );
   };
 
   const subscribeMyRequests = () => {
@@ -961,6 +1332,7 @@ function initBudgetApprovalRequestPage() {
       populateBudgetOrgTypeOptions();
       populateBudgetOrgDeptOptions();
       renderMyRequestsRows(latestBudgetRequestRows);
+      subscribeOrgBudgetTotals();
       return;
     }
 
@@ -984,6 +1356,7 @@ function initBudgetApprovalRequestPage() {
       if (representativeStatusCaptionEl) representativeStatusCaptionEl.textContent = "ไม่สามารถโหลดสิทธิ์ตัวแทนได้";
       setRepresentativeMessage("ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b45309");
       renderMyRequestsRows(latestBudgetRequestRows);
+      subscribeOrgBudgetTotals();
       return;
     }
 
@@ -1019,6 +1392,7 @@ function initBudgetApprovalRequestPage() {
         populateBudgetOrgTypeOptions();
         populateBudgetOrgDeptOptions();
         renderMyRequestsRows(latestBudgetRequestRows);
+        subscribeOrgBudgetTotals();
         if (editingRequestId) {
           const editingItem = latestBudgetRequestRows.find((item) => item.id === editingRequestId);
           if (!editingItem || !hasApprovedRepresentativeForRequest(editingItem)) {
@@ -1041,6 +1415,7 @@ function initBudgetApprovalRequestPage() {
         if (representativeStatusCaptionEl) representativeStatusCaptionEl.textContent = "โหลดสิทธิ์ตัวแทนไม่สำเร็จ";
         setRepresentativeMessage("ไม่สามารถโหลดสิทธิ์ตัวแทนองค์กรได้ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
         renderMyRequestsRows(latestBudgetRequestRows);
+        subscribeOrgBudgetTotals();
       }
     );
   };
@@ -1392,6 +1767,32 @@ function initBudgetApprovalRequestPage() {
     setFormMessage("");
     updateBudgetDescriptionCounter();
   };
+
+  const setBudgetRequestView = (view = "normal") => {
+    const nextView = view === "org-totals" ? "org-totals" : "normal";
+    requestViewBtnEls.forEach((btn) => {
+      const isActive = btn.getAttribute("data-budget-request-view") === nextView;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    requestViewPanelEls.forEach((panel) => {
+      const isActive = panel.getAttribute("data-budget-request-view-panel") === nextView;
+      panel.hidden = !isActive;
+    });
+    if (nextView === "org-totals") {
+      renderOrgBudgetTotals(latestOrgBudgetRows, latestOrgBudgetTotalsSource);
+      window.setTimeout(() => {
+        if (orgTotalsChartInstance) orgTotalsChartInstance.resize();
+      }, 0);
+    }
+  };
+
+  requestViewBtnEls.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setBudgetRequestView(btn.getAttribute("data-budget-request-view") || "normal");
+    });
+  });
+
   [projectNameEl, locationEl, estimatedExpenseEl, descriptionEl].forEach((inputEl) => {
     inputEl.addEventListener("input", () => {
       setFormMessage("");
@@ -1570,6 +1971,11 @@ function initBudgetApprovalRequestPage() {
     setRepresentativeApplicationMessage("");
   });
   exportCsvBtnEl?.addEventListener("click", exportMyBudgetRequestsCsv);
+  orgTotalsExportCsvBtnEl?.addEventListener("click", exportOrgBudgetTotalsCsv);
+  orgTotalsRoundSelectEl?.addEventListener("change", () => {
+    selectedOrgTotalsRoundId = normalizeOrgText(orgTotalsRoundSelectEl.value);
+    renderOrgBudgetTotals(latestOrgBudgetRows, latestOrgBudgetTotalsSource);
+  });
   representativeFormEl?.addEventListener("submit", async (event) => {
     event.preventDefault();
     setRepresentativeApplicationMessage("");
@@ -1730,6 +2136,18 @@ function initBudgetApprovalRequestPage() {
         // ignore
       }
       unsubscribeMyRequests = null;
+    }
+    if (typeof unsubscribeOrgBudgetTotals === "function") {
+      try {
+        unsubscribeOrgBudgetTotals();
+      } catch (_) {
+        // ignore
+      }
+      unsubscribeOrgBudgetTotals = null;
+    }
+    if (orgTotalsChartInstance) {
+      orgTotalsChartInstance.destroy();
+      orgTotalsChartInstance = null;
     }
     if (typeof unsubscribeRepresentativeApplications === "function") {
       try {

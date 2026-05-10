@@ -135,7 +135,8 @@ function initProjectMobileActionBar() {
       const calendarYear = document.getElementById("calendarYearSelect")?.value || "all";
       const calendarOrg = document.getElementById("calendarOrgSelect")?.value || "all";
       const calendarStatus = document.getElementById("calendarStatusSelect")?.value || "all";
-      return [calendarYear !== "all", calendarOrg !== "all", calendarStatus !== "all"].filter(Boolean).length;
+      const hasCalendarYearFilter = calendarYear !== "all" && calendarYear !== initialStatusYear;
+      return [hasCalendarYearFilter, calendarOrg !== "all", calendarStatus !== "all"].filter(Boolean).length;
     }
 
     const year = document.getElementById("yearSelect")?.value || "all";
@@ -161,8 +162,9 @@ function initProjectMobileActionBar() {
       const calendarYear = document.getElementById("calendarYearSelect")?.value || "all";
       const calendarOrg = document.getElementById("calendarOrgSelect")?.value || "all";
       const calendarStatus = document.getElementById("calendarStatusSelect")?.value || "all";
+      const hasCalendarYearFilter = calendarYear !== "all" && calendarYear !== initialStatusYear;
       return [
-        calendarYear !== "all" ? `ปี ${getSelectedText("calendarYearSelect")}` : "",
+        hasCalendarYearFilter ? `ปี ${getSelectedText("calendarYearSelect")}` : "",
         calendarOrg !== "all" ? getSelectedText("calendarOrgSelect") : "",
         calendarStatus !== "all" ? getSelectedText("calendarStatusSelect") : ""
       ].filter(Boolean);
@@ -182,13 +184,20 @@ function initProjectMobileActionBar() {
 
   const resetCurrentFilters = () => {
     if (isCalendarVisible()) {
-      ["calendarYearSelect", "calendarOrgSelect", "calendarStatusSelect"].forEach((id) => {
+      ["calendarOrgSelect", "calendarStatusSelect"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) {
           el.value = "all";
           el.dispatchEvent(new Event("change", { bubbles: true }));
         }
       });
+      const calendarYearEl = document.getElementById("calendarYearSelect");
+      if (calendarYearEl) {
+        calendarYearEl.value = Array.from(calendarYearEl.options).some((option) => option.value === initialStatusYear)
+          ? initialStatusYear
+          : "all";
+        calendarYearEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }
     } else {
       resetProjectFilters("public");
     }
@@ -244,6 +253,10 @@ function initProjectMobileActionBar() {
 
   const sync = () => {
     const activePage = document.querySelector(".page-view.active")?.dataset.page || "";
+    document.body.classList.toggle(
+      "has-mobile-context-actions",
+      activePage === "project-status" || activePage === "meeting-room-staff"
+    );
     if (activePage !== "project-status" && sheet.classList.contains("is-open")) {
       closeFilterSheet();
       return;
@@ -515,6 +528,10 @@ function initMeetingRoomMobileActionBar() {
 
   const sync = () => {
     const activePage = document.querySelector(".page-view.active")?.dataset.page || "";
+    document.body.classList.toggle(
+      "has-mobile-context-actions",
+      activePage === "project-status" || activePage === "meeting-room-staff"
+    );
     if (activePage !== "meeting-room-staff" && sheet.classList.contains("is-open")) {
       closeFilterSheet();
       return;
@@ -1228,6 +1245,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Route guard: กันการเข้าหน้า protected/staff ผ่าน hash โดยตรง
     if (!isNavPageVisible(targetPage)) {
       const preferredPage = getPreferredPageForState(isUserAuthenticated);
+      const targetRequiresAuth = navLinksAll.some(
+        (link) => link.dataset.page === targetPage && link.dataset.visible === "protected"
+      );
       const fallbackCandidates = isUserAuthenticated
         ? [
             currentPage,
@@ -1239,7 +1259,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             "project-status-staff",
             "login"
           ]
-        : ["home", "login"];
+        : targetRequiresAuth
+          ? ["login", "home"]
+          : ["home", "login"];
       const fallback =
         fallbackCandidates.find((candidate) => isNavPageVisible(candidate)) ||
         navLinksAll.find((link) => link.style.display !== "none")?.dataset.page;
@@ -1415,7 +1437,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const isValidPage = (page) =>
     Array.from(pageViews).some((sec) => sec.dataset.page === page);
 
-  const initialPage = isValidPage("home") ? "home" : defaultPage;
+  const initialHashPage = window.location.hash.replace("#", "");
+  const hasValidInitialHash = !!initialHashPage && isValidPage(initialHashPage);
+  const initialPage = hasValidInitialHash ? initialHashPage : isValidPage("home") ? "home" : defaultPage;
 
   configureLoaderForInitialPage(initialPage);
   await switchPage(initialPage, { fromHash: true });
@@ -1967,9 +1991,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (appLoaderEl) {
     await simulatedLoaderDonePromise;
-    if (currentPage !== "home" && isValidPage("home")) {
+    if (!hasValidInitialHash && currentPage !== "home" && isValidPage("home")) {
       await switchPage("home", { fromHash: false, bypassConsent: true });
-    } else if (window.location.hash !== "#home" && isValidPage("home")) {
+    } else if (!hasValidInitialHash && window.location.hash !== "#home" && isValidPage("home")) {
       if (history.replaceState) {
         history.replaceState(null, "", "#home");
       } else {

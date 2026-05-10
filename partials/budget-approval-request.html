@@ -8,6 +8,30 @@
                 กรอกข้อมูลเพื่อยื่นคำขออนุมัติงบประมาณสำหรับโครงการหรือกิจกรรม
               </p>
             </div>
+            <div class="tabs budget-request-view-toggle" role="tablist" aria-label="เลือกมุมมองหน้ายื่นของบประมาณ">
+              <button
+                id="budgetRequestNormalViewBtn"
+                class="tab-btn view-toggle-btn is-active"
+                type="button"
+                data-budget-request-view="normal"
+                role="tab"
+                aria-selected="true"
+                aria-controls="budgetRequestNormalView"
+              >
+                หน้าปกติ
+              </button>
+              <button
+                id="budgetRequestOrgTotalsViewBtn"
+                class="tab-btn view-toggle-btn"
+                type="button"
+                data-budget-request-view="org-totals"
+                role="tab"
+                aria-selected="false"
+                aria-controls="budgetRequestOrgTotalsView"
+              >
+                ยอดของบแยกตามองค์กร
+              </button>
+            </div>
           </div>
 
           <div class="separator-gradient"></div>
@@ -51,7 +75,8 @@
               </div>
             </div>
 
-            <form id="budgetApprovalForm" class="borrow-request-form budget-request-form" aria-label="แบบฟอร์มขออนุมัติงบประมาณ">
+            <div id="budgetRequestNormalView" data-budget-request-view-panel="normal">
+              <form id="budgetApprovalForm" class="borrow-request-form budget-request-form" aria-label="แบบฟอร์มขออนุมัติงบประมาณ">
               <div class="panel panel-hover">
                 <div class="panel-header">
                   <div>
@@ -208,7 +233,7 @@
                   </div>
                 </div>
               </div>
-            </form>
+              </form>
 
             <div class="panel panel-hover section-appear section-delay-2" style="margin-top:18px;">
               <div class="panel-header">
@@ -235,6 +260,68 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+            </div>
+
+            <div id="budgetRequestOrgTotalsView" data-budget-request-view-panel="org-totals" hidden>
+              <div class="panel panel-hover">
+                <div class="panel-header budget-org-totals-header">
+                  <div>
+                    <div class="panel-title">ยอดของบแยกตามองค์กร</div>
+                    <div class="panel-caption" id="budgetOrgTotalsCaption">กำลังโหลดข้อมูล...</div>
+                  </div>
+                  <div class="budget-org-totals-actions">
+                    <div class="borrow-form-field budget-org-totals-round-field">
+                      <label class="login-label" for="budgetOrgTotalsRoundSelect">รอบที่แสดง</label>
+                      <select id="budgetOrgTotalsRoundSelect" class="login-input">
+                        <option value="" selected disabled>กำลังโหลดรอบ...</option>
+                      </select>
+                    </div>
+                    <button id="budgetOrgTotalsExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
+                  </div>
+                </div>
+                <div class="budget-org-totals-summary" aria-label="สรุปยอดรวมในฝ่าย">
+                  <article class="budget-org-summary-card">
+                    <span class="budget-org-summary-label">องค์กรในฝ่าย</span>
+                    <strong id="budgetOrgTotalsOrgCount" class="budget-org-summary-value">0</strong>
+                  </article>
+                  <article class="budget-org-summary-card">
+                    <span class="budget-org-summary-label">โครงการรวม</span>
+                    <strong id="budgetOrgTotalsProjectCount" class="budget-org-summary-value">0</strong>
+                  </article>
+                  <article class="budget-org-summary-card">
+                    <span class="budget-org-summary-label">ยอดขอรวม</span>
+                    <strong id="budgetOrgTotalsRequestedAmount" class="budget-org-summary-value">0.00 บาท</strong>
+                  </article>
+                  <article class="budget-org-summary-card">
+                    <span class="budget-org-summary-label">ยอดอนุมัติรวม</span>
+                    <strong id="budgetOrgTotalsApprovedAmount" class="budget-org-summary-value">0.00 บาท</strong>
+                  </article>
+                </div>
+                <div class="chart-card budget-staff-chart-card budget-org-totals-chart-card">
+                  <div class="chart-inner">
+                    <canvas id="budgetOrgTotalsChart"></canvas>
+                  </div>
+                </div>
+                <div class="table-wrapper budget-org-totals-table-wrapper">
+                  <table id="budgetOrgTotalsTable" class="budget-org-totals-table">
+                    <thead>
+                      <tr>
+                        <th style="text-align:left;">องค์กร</th>
+                        <th style="text-align:right;">จำนวนโครงการ</th>
+                        <th style="text-align:right;">ยอดขอ</th>
+                        <th style="text-align:right;">ยอดอนุมัติ</th>
+                        <th style="text-align:right;">รออนุมัติ</th>
+                      </tr>
+                    </thead>
+                    <tbody id="budgetOrgTotalsTableBody">
+                      <tr>
+                        <td colspan="5" style="text-align:center; color:#6b7280;">กำลังโหลดข้อมูล...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

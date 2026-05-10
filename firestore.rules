@@ -185,6 +185,7 @@ service cloud.firestore {
         ) &&
         validBudgetStatus(request.resource.data.status);
       allow read: if isStaff() ||
+        signedIn() ||
         isOwnerByEmail(resource.data.requester.email) ||
         isOwnerByEmail(resource.data.requesterEmail);
       allow update: if isStaff() ||

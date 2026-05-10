@@ -330,7 +330,13 @@
     if (!budgetActiveRounds.length) {
       setMessage(deadlineStatusEl, "ยังไม่มีรอบที่เปิดรับ", "#6b7280");
     } else if (!openRounds.length) {
-      setMessage(deadlineStatusEl, `หมดเขตรับคำขอแล้วทุก ${budgetActiveRounds.length} รอบ`, "#b91c1c");
+      setMessage(
+        deadlineStatusEl,
+        budgetActiveRounds.length > 1
+          ? `ปิดรับคำขอแล้วทั้ง ${budgetActiveRounds.length} รอบ`
+          : "ปิดรับคำขอแล้ว",
+        "#b91c1c"
+      );
     } else {
       setMessage(deadlineStatusEl, `เปิดรับ ${openRounds.length} รอบ`, "#047857");
     }

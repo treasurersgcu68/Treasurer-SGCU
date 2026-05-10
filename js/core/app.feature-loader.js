@@ -22,21 +22,21 @@
         "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
         "js/features/booking/app.meeting-room-staff.js?v=20260504-6"
       ],
-      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260504-8",
+      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260510-closed-round-view-1",
       login: [
         "js/features/staff/app.staff-access.js?v=20260504-1",
-        "js/features/budget/app.budget-request.js?v=20260504-8"
+        "js/features/budget/app.budget-request.js?v=20260510-closed-round-view-1"
       ],
       "staff-application": "js/features/staff/app.staff-access.js?v=20260504-1",
       "staff-approval": [
         "js/features/staff/app.staff-access.js?v=20260504-1",
-        "js/features/budget/app.budget-staff.js?v=20260504-11"
+        "js/features/budget/app.budget-staff.js?v=20260510-round-wording-1"
       ],
       "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260504-1",
       "content-management-staff": "js/features/content/app.content-management.js?v=20260506-1",
       "content-news-staff": "js/features/content/app.content-management.js?v=20260506-1",
       "content-documents-staff": "js/features/content/app.content-management.js?v=20260506-1",
-      "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260504-11"
+      "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260510-round-wording-1"
     },
     idlePrefetchPages: []
   };

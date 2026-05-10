@@ -745,11 +745,11 @@
 
   .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody {
     display: grid;
-    gap: 10px;
+    gap: 14px;
   }
 
   .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody tr {
-    padding: 12px;
+    padding: 14px;
     border: 1px solid rgba(236, 72, 153, 0.16);
     border-radius: 14px;
     background: linear-gradient(180deg, #ffffff, #fffafb);
@@ -758,7 +758,7 @@
 
   .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td {
     min-width: 0;
-    padding: 7px 0;
+    padding: 8px 0;
     border: 0;
     color: #111827;
     white-space: normal;
@@ -793,7 +793,10 @@
   }
 
   .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td:last-child {
+    margin-top: 4px;
+    padding-top: 12px;
     padding-bottom: 0;
+    border-top: 1px solid rgba(226, 232, 240, 0.88);
   }
 
   .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td[colspan] {

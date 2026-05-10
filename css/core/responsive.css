@@ -1414,4 +1414,35 @@
     width: 100%;
     justify-content: center;
   }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody {
+    gap: 12px !important;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody tr {
+    margin: 0 0 12px;
+    padding: 15px;
+    border-color: rgba(236, 72, 153, 0.22);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll .table-wrapper {
+    padding: 2px;
+    border-radius: 16px;
+    background: #f8fafc;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td {
+    padding: 9px 0;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td:last-child {
+    margin-top: 6px;
+    padding-top: 13px;
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+  }
 }

@@ -44,8 +44,8 @@ function sortProjects(projects, key, direction) {
         v2 = Number(b.year || 0);
         break;
       case "status":
-        v1 = (a.statusMain || "").toString();
-        v2 = (b.statusMain || "").toString();
+        v1 = (getDisplayStatusForList(a).text || "").toString();
+        v2 = (getDisplayStatusForList(b).text || "").toString();
         if (v1.localeCompare(v2, "th-TH") < 0) return direction === "asc" ? -1 : 1;
         if (v1.localeCompare(v2, "th-TH") > 0) return direction === "asc" ? 1 : -1;
         return 0;
@@ -542,7 +542,7 @@ function setLoading(isLoading, ctxKey = activeProjectStatusContext) {
   const calendarSkel = ctx.calendarSkeletonEl;
 
   if (budgetSkel) budgetSkel.style.display = isLoading ? "block" : "none";
-  if (statusSkel) statusSkel.style.display = isLoading ? "block" : "none";
+  if (statusSkel) statusSkel.style.display = isLoading ? "flex" : "none";
   if (tableSkel) tableSkel.style.display = isLoading ? "block" : "none";
   if (calendarSkel) calendarSkel.style.display = isLoading ? "grid" : "none";
 
@@ -550,6 +550,21 @@ function setLoading(isLoading, ctxKey = activeProjectStatusContext) {
   if (statusCanvas) statusCanvas.style.visibility = isLoading ? "hidden" : "visible";
   if (ctx.tableBodyEl) ctx.tableBodyEl.style.visibility = isLoading ? "hidden" : "visible";
   if (ctx.calendarContainerEl) ctx.calendarContainerEl.style.visibility = isLoading ? "hidden" : "visible";
+
+  budgetCanvas?.parentElement?.classList.toggle("is-loading", isLoading);
+  statusCanvas?.parentElement?.classList.toggle("is-loading", isLoading);
+  ctx.projectTableAreaEl?.classList.toggle("is-loading", isLoading);
+
+  budgetCanvas?.parentElement?.setAttribute("aria-busy", isLoading ? "true" : "false");
+  statusCanvas?.parentElement?.setAttribute("aria-busy", isLoading ? "true" : "false");
+  ctx.projectTableAreaEl?.setAttribute("aria-busy", isLoading ? "true" : "false");
+
+  if (isLoading) {
+    if (ctx.projectTableAreaEl) ctx.projectTableAreaEl.style.display = "block";
+    if (ctx.projectTableLockEl) ctx.projectTableLockEl.style.display = "none";
+  } else {
+    toggleProjectStatusAccess(isUserAuthenticated, ctxKey);
+  }
 }
 
 function setProjectDataLoadState(type = "", message = "", options = {}) {

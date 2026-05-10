@@ -41,7 +41,7 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css?v=20260510-meeting-mobile-datetime-fit-1" />
+    <link rel="stylesheet" href="css/style.css?v=20260510-meeting-action-icons-1" />
     <!-- Firebase Auth (เข้าสู่ระบบ/สิทธิ์ผู้ใช้) -->
     <script type="module" src="js/integrations/app.firebase-bootstrap.js?v=20260423-1"></script>
   </head>
@@ -336,16 +336,15 @@
             </span>
             <span>ภาพรวม</span>
           </a>
-          <a href="#" data-page="project-status-staff" data-visible="protected" class="mobile-bottom-item">
+          <a href="#" data-page="staff-approval" data-visible="protected" class="mobile-bottom-item">
             <span class="mobile-bottom-icon mobile-bottom-icon-outline" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7 4h8l2 2v14H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-                <path d="M15 4v4h4" />
-                <path d="M8 11h7" />
-                <path d="M8 15h5" />
+                <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                <path d="M3 21v-1a6 6 0 0 1 12 0v1" />
+                <path d="m16 11 2 2 4-5" />
               </svg>
             </span>
-            <span>คู่มือ</span>
+            <span>สิทธิ์</span>
           </a>
           <a href="#" data-page="budget-approval-staff" data-visible="protected" class="mobile-bottom-item">
             <span class="mobile-bottom-icon mobile-bottom-icon-outline" aria-hidden="true">
@@ -358,27 +357,17 @@
             </span>
             <span>คำขอ</span>
           </a>
-          <a href="#" data-page="staff-approval" data-visible="protected" class="mobile-bottom-item">
+          <a href="#" data-page="meeting-room-staff" data-visible="protected" class="mobile-bottom-item">
             <span class="mobile-bottom-icon mobile-bottom-icon-outline" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
-                <path d="M3 21v-1a6 6 0 0 1 12 0v1" />
-                <path d="m16 11 2 2 4-5" />
+                <path d="M6 3h2v2h8V3h2v2h2v16H4V5h2V3Z" />
+                <path d="M4 9h16" />
+                <path d="M8 13h3v3H8z" />
+                <path d="M14 13h2" />
+                <path d="M14 16h2" />
               </svg>
             </span>
-            <span>สิทธิ์</span>
-          </a>
-          <a href="#" data-page="content-news-staff" data-visible="protected" class="mobile-bottom-item">
-            <span class="mobile-bottom-icon mobile-bottom-icon-outline" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M4 5h16v14H4z" />
-                <path d="M7 8h5" />
-                <path d="M7 12h10" />
-                <path d="M7 16h6" />
-                <path d="m15 8 2 2 3-4" />
-              </svg>
-            </span>
-            <span>เนื้อหา</span>
+            <span>ห้องประชุม</span>
           </a>
         </div>
 
@@ -421,6 +410,25 @@
         <button class="mobile-project-action" type="button" data-project-mobile-action="calendar-extra" hidden>
           <span class="mobile-project-action-icon" aria-hidden="true">›</span>
           <span>ถัดไป</span>
+        </button>
+      </nav>
+
+      <nav class="mobile-meeting-action-bar" aria-label="คำสั่งอนุมัติห้องประชุมบนมือถือ">
+        <button class="mobile-meeting-action is-active" type="button" data-meeting-mobile-action="requests">
+          <span class="mobile-meeting-action-icon" aria-hidden="true">▤</span>
+          <span>คำขอ</span>
+        </button>
+        <button class="mobile-meeting-action" type="button" data-meeting-mobile-action="history">
+          <span class="mobile-meeting-action-icon" aria-hidden="true">≡</span>
+          <span>ประวัติ</span>
+        </button>
+        <button class="mobile-meeting-action" type="button" data-meeting-mobile-action="calendar">
+          <span class="mobile-meeting-action-icon" aria-hidden="true">▣</span>
+          <span>ปฏิทิน</span>
+        </button>
+        <button class="mobile-meeting-action" type="button" data-meeting-mobile-action="filters">
+          <span class="mobile-meeting-action-icon" aria-hidden="true">⌕</span>
+          <span>ตัวกรอง</span>
         </button>
       </nav>
     </header>
@@ -1169,8 +1177,8 @@
     <script src="js/features/org/app.org.js?v=20260503-1" defer></script>
     <script src="js/motion/app.motion.js" defer></script>
     <script>
-      window.sgcuAssetVersion = "20260510-meeting-mobile-datetime-fit-1";
-      window.sgcuServiceWorkerUrl = "./sw.js?v=20260510-meeting-mobile-datetime-fit-1";
+      window.sgcuAssetVersion = "20260510-meeting-action-icons-1";
+      window.sgcuServiceWorkerUrl = "./sw.js?v=20260510-meeting-action-icons-1";
       window.sgcuPushConfig = window.sgcuPushConfig || {
         applicationServerKey: "",
         subscribeEndpoint: "",
@@ -1179,6 +1187,6 @@
     </script>
     <script src="js/integrations/app.web-push.js" defer></script>
     <script src="js/core/app.feature-loader.js?v=20260507-3" defer></script>
-    <script src="js/core/app.init.js?v=20260510-meeting-mobile-datetime-fit-1" defer></script>
+    <script src="js/core/app.init.js?v=20260510-meeting-action-icons-1" defer></script>
   </body>
 </html>

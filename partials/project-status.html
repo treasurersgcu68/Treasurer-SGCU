@@ -114,7 +114,35 @@
                   </button>
                 </header>
                 <div class="chart-inner">
-                  <div id="budgetChartSkeleton" class="chart-skeleton"></div>
+                  <div id="budgetChartSkeleton" class="chart-skeleton chart-skeleton-bars" aria-hidden="true">
+                    <div class="chart-skeleton-axis">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <div class="chart-skeleton-bar-row">
+                      <span class="chart-skeleton-label"></span>
+                      <span class="chart-skeleton-bar chart-skeleton-bar-lg"></span>
+                    </div>
+                    <div class="chart-skeleton-bar-row">
+                      <span class="chart-skeleton-label"></span>
+                      <span class="chart-skeleton-bar chart-skeleton-bar-md"></span>
+                    </div>
+                    <div class="chart-skeleton-bar-row">
+                      <span class="chart-skeleton-label"></span>
+                      <span class="chart-skeleton-bar chart-skeleton-bar-sm"></span>
+                    </div>
+                    <div class="chart-skeleton-bar-row">
+                      <span class="chart-skeleton-label"></span>
+                      <span class="chart-skeleton-bar chart-skeleton-bar-xl"></span>
+                    </div>
+                    <div class="chart-skeleton-legend">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  </div>
                   <canvas id="budgetByMonthChart"></canvas>
                 </div>
               </article>
@@ -125,7 +153,20 @@
                   <h3 class="chart-title">สัดส่วนงบประมาณโครงการที่ได้รับอนุมัติ</h3>
                 </header>
                 <div class="chart-inner">
-                  <div id="statusPieSkeleton" class="chart-skeleton"></div>
+                  <div id="statusPieSkeleton" class="chart-skeleton chart-skeleton-donut" aria-hidden="true">
+                    <div class="chart-skeleton-donut-shape"></div>
+                    <div class="chart-skeleton-donut-copy">
+                      <span class="chart-skeleton-copy-wide"></span>
+                      <span class="chart-skeleton-copy-mid"></span>
+                      <span class="chart-skeleton-copy-short"></span>
+                    </div>
+                    <div class="chart-skeleton-legend chart-skeleton-legend-wrap">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  </div>
                   <canvas id="statusPieChart"></canvas>
                 </div>
               </article>
@@ -162,7 +203,38 @@
                   </table>
                 </div>
 
-                <div id="projectTableSkeleton" class="table-skeleton"></div>
+                <div id="projectTableSkeleton" class="table-skeleton project-table-skeleton" aria-hidden="true">
+                  <div class="project-table-skeleton-head">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <div class="project-table-skeleton-row">
+                    <span class="project-table-skeleton-code"></span>
+                    <span class="project-table-skeleton-name"></span>
+                    <span class="project-table-skeleton-status"></span>
+                    <span class="project-table-skeleton-budget"></span>
+                  </div>
+                  <div class="project-table-skeleton-row">
+                    <span class="project-table-skeleton-code"></span>
+                    <span class="project-table-skeleton-name project-table-skeleton-name-lg"></span>
+                    <span class="project-table-skeleton-status"></span>
+                    <span class="project-table-skeleton-budget"></span>
+                  </div>
+                  <div class="project-table-skeleton-row">
+                    <span class="project-table-skeleton-code"></span>
+                    <span class="project-table-skeleton-name"></span>
+                    <span class="project-table-skeleton-status"></span>
+                    <span class="project-table-skeleton-budget"></span>
+                  </div>
+                  <div class="project-table-skeleton-row">
+                    <span class="project-table-skeleton-code"></span>
+                    <span class="project-table-skeleton-name project-table-skeleton-name-sm"></span>
+                    <span class="project-table-skeleton-status"></span>
+                    <span class="project-table-skeleton-budget"></span>
+                  </div>
+                </div>
               </div>
 
               <div id="projectTableLock" class="panel project-lock-panel">

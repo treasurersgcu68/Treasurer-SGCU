@@ -1485,34 +1485,73 @@ function initMeetingRoomStaffApproval() {
   };
 
   const getStatusDropdown = (booking, suffix = "") => `
-    <select
-      class="staff-status-select ${statusSelectClass(booking.status)}"
-      data-role="status-select"
-      data-id="${booking.id}"
-      aria-label="จัดการสถานะคำขอ${suffix ? ` (${suffix})` : ""}"
-    >
-      <option value="pending" ${booking.status === "pending" ? "selected" : ""}>
-        ${getStatusOptionLabel("pending")}
-      </option>
-      <option value="approved" ${booking.status === "approved" ? "selected" : ""}>
-        ${getStatusOptionLabel("approved")}
-      </option>
-      <option value="rejected" ${booking.status === "rejected" ? "selected" : ""}>
-        ${getStatusOptionLabel("rejected")}
-      </option>
-      <option value="cancel_requested" ${booking.status === "cancel_requested" ? "selected" : ""}>
-        ${getStatusOptionLabel("cancel_requested")}
-      </option>
-      <option value="no_show" ${booking.status === "no_show" ? "selected" : ""}>
-        ${getStatusOptionLabel("no_show")}
-      </option>
-      ${booking.status === "reschedule_requested"
-        ? `<option value="reschedule_requested" selected>${getStatusOptionLabel("reschedule_requested")}</option>`
-        : ""
-      }
-      <option value="delete">ลบคำขอ</option>
-    </select>
+    <div class="meeting-status-select-wrap">
+      <select
+        class="staff-status-select ${statusSelectClass(booking.status)}"
+        data-role="status-select"
+        data-id="${booking.id}"
+        aria-label="จัดการสถานะคำขอ${suffix ? ` (${suffix})` : ""}"
+      >
+        <option value="pending" ${booking.status === "pending" ? "selected" : ""}>
+          ${getStatusOptionLabel("pending")}
+        </option>
+        <option value="approved" ${booking.status === "approved" ? "selected" : ""}>
+          ${getStatusOptionLabel("approved")}
+        </option>
+        <option value="rejected" ${booking.status === "rejected" ? "selected" : ""}>
+          ${getStatusOptionLabel("rejected")}
+        </option>
+        <option value="cancel_requested" ${booking.status === "cancel_requested" ? "selected" : ""}>
+          ${getStatusOptionLabel("cancel_requested")}
+        </option>
+        <option value="no_show" ${booking.status === "no_show" ? "selected" : ""}>
+          ${getStatusOptionLabel("no_show")}
+        </option>
+        ${booking.status === "reschedule_requested"
+          ? `<option value="reschedule_requested" selected>${getStatusOptionLabel("reschedule_requested")}</option>`
+          : ""
+        }
+        <option value="delete">ลบคำขอ</option>
+      </select>
+    </div>
   `;
+
+  const getMobileStatusActions = (booking) => {
+    const id = escapeText(booking.id || "");
+    if (!id) return "";
+    if (booking.status === "pending") {
+      return `
+        <div class="meeting-mobile-status-actions" aria-label="คำสั่งหลัก">
+          <button class="btn-primary meeting-mobile-status-btn" type="button" data-action="approve" data-id="${id}">อนุมัติ</button>
+          <button class="btn-ghost meeting-mobile-status-btn" type="button" data-action="reject" data-id="${id}">ปฏิเสธ</button>
+        </div>
+      `;
+    }
+    if (booking.status === "cancel_requested") {
+      return `
+        <div class="meeting-mobile-status-actions" aria-label="คำสั่งคำขอยกเลิก">
+          <button class="btn-primary meeting-mobile-status-btn" type="button" data-action="approve-cancel" data-id="${id}">อนุมัติยกเลิก</button>
+          <button class="btn-ghost meeting-mobile-status-btn" type="button" data-action="reject-cancel" data-id="${id}">ไม่อนุมัติ</button>
+        </div>
+      `;
+    }
+    if (booking.status === "reschedule_requested") {
+      return `
+        <div class="meeting-mobile-status-actions" aria-label="คำสั่งคำขอเปลี่ยนเวลา">
+          <button class="btn-primary meeting-mobile-status-btn" type="button" data-action="approve" data-id="${id}">อนุมัติเปลี่ยนเวลา</button>
+          <button class="btn-ghost meeting-mobile-status-btn" type="button" data-action="reject" data-id="${id}">ไม่อนุมัติ</button>
+        </div>
+      `;
+    }
+    if (booking.status === "approved") {
+      return `
+        <div class="meeting-mobile-status-actions" aria-label="คำสั่งรายการที่อนุมัติแล้ว">
+          <button class="btn-ghost meeting-mobile-status-btn" type="button" data-action="cancel" data-id="${id}">คืนเป็นรออนุมัติ</button>
+        </div>
+      `;
+    }
+    return "";
+  };
 
   const updateTabUI = (nextTab) => {
     activeTab = nextTab === "history" ? "history" : "requests";
@@ -1524,11 +1563,11 @@ function initMeetingRoomStaffApproval() {
     }
     if (panelCaptionEl) {
       panelCaptionEl.textContent = activeTab === "history"
-        ? "แสดงรายการที่อนุมัติแล้วหรือเลยวันแล้ว"
-        : "แสดงรายการที่ยังไม่อนุมัติและยังไม่เลยวัน";
+        ? "แสดงรายการที่อนุมัติแล้วหรือเลยวันแล้ว ใช้ตัวกรองเพื่อค้นหารายการย้อนหลัง"
+        : "แสดงรายการที่ยังไม่อนุมัติและยังไม่เลยวัน ใช้ตัวกรองเพื่อหาเฉพาะวัน ห้อง หรือผู้ขอ";
     }
     if (historySearchWrapEl) {
-      historySearchWrapEl.style.display = activeTab === "history" ? "grid" : "none";
+      historySearchWrapEl.style.display = "grid";
     }
     syncHistorySearchUI();
   };
@@ -1568,18 +1607,22 @@ function initMeetingRoomStaffApproval() {
       .map((value) => (value || "").toString().trim().toLowerCase())
       .join(" ");
 
+  const hasActiveBookingFilters = () =>
+    !!historySearchQuery || !!historyDateFilter || historyRoomFilter !== "all";
+
+  const bookingMatchesFilters = (booking) => {
+    if (historyDateFilter && booking.date !== historyDateFilter) return false;
+    if (historyRoomFilter !== "all") {
+      const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName).trim();
+      if (roomName !== historyRoomFilter) return false;
+    }
+    if (historySearchQuery && !buildSearchText(booking).includes(historySearchQuery)) return false;
+    return true;
+  };
+
   const getDisplayRowsForActiveTab = (source = []) => {
     const rowsForTab = getVisibleRowsForActiveTab(source);
-    if (activeTab !== "history") return rowsForTab;
-    return rowsForTab.filter((booking) => {
-      if (historyDateFilter && booking.date !== historyDateFilter) return false;
-      if (historyRoomFilter !== "all") {
-        const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName).trim();
-        if (roomName !== historyRoomFilter) return false;
-      }
-      if (historySearchQuery && !buildSearchText(booking).includes(historySearchQuery)) return false;
-      return true;
-    });
+    return hasActiveBookingFilters() ? rowsForTab.filter(bookingMatchesFilters) : rowsForTab;
   };
 
   const exportMeetingRoomCsv = () => {
@@ -1799,23 +1842,12 @@ function initMeetingRoomStaffApproval() {
 
     syncHistoryRoomFilterOptions();
     const rowsForTab = getVisibleRowsForActiveTab(sorted);
-    const displayRows = activeTab === "history"
-      ? rowsForTab.filter((booking) => {
-          if (historyDateFilter && booking.date !== historyDateFilter) return false;
-          if (historyRoomFilter !== "all") {
-            const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName).trim();
-            if (roomName !== historyRoomFilter) return false;
-          }
-          if (historySearchQuery && !buildSearchText(booking).includes(historySearchQuery)) return false;
-          return true;
-        })
-      : rowsForTab;
+    const hasFilters = hasActiveBookingFilters();
+    const displayRows = hasFilters ? rowsForTab.filter(bookingMatchesFilters) : rowsForTab;
     const calendarRows = getCalendarRows(sorted);
-    const hasHistoryFilters =
-      !!historySearchQuery || !!historyDateFilter || historyRoomFilter !== "all";
     const emptyText = activeTab === "history"
-      ? (hasHistoryFilters ? "ไม่พบประวัติการขอตามตัวกรองที่เลือก" : "ยังไม่มีประวัติการขอ")
-      : "ยังไม่มีรายการคำขอที่ยังไม่เลยวัน";
+      ? (hasFilters ? "ไม่พบประวัติการขอตามตัวกรองที่เลือก" : "ยังไม่มีประวัติการขอ")
+      : (hasFilters ? "ไม่พบรายการคำขอตามตัวกรองที่เลือก" : "ยังไม่มีรายการคำขอที่ยังไม่เลยวัน");
 
     if (allCountEl) allCountEl.textContent = `พบ ${displayRows.length} รายการ`;
 
@@ -1841,6 +1873,7 @@ function initMeetingRoomStaffApproval() {
                   <div class="meeting-staff-purpose-cell">${escapeText(booking.purpose || "-")}${rescheduleLine}${rejectedLine}</div>
                 </td>
                 <td data-label="สถานะ">
+                  ${getMobileStatusActions(booking)}
                   ${getStatusDropdown(booking, activeTab === "history" ? "ประวัติการขอ" : "รายการคำขอ")}
                 </td>
               </tr>
@@ -1863,9 +1896,17 @@ function initMeetingRoomStaffApproval() {
   };
 
   const setStatusById = async (id, status, options = {}) => {
-    if (!hasFirestore || !id) return;
+    if (!id) return;
+    if (!hasFirestore) {
+      setStaffActionMessage("ระบบฐานข้อมูลยังไม่พร้อม กรุณารอสักครู่แล้วลองใหม่", "#b91c1c");
+      return;
+    }
     const booking = bookings.find((item) => item.id === id);
-    if (!booking) return;
+    if (!booking) {
+      setStaffActionMessage("ไม่พบคำขอที่ต้องการอัปเดต", "#b91c1c");
+      return;
+    }
+    setStaffActionMessage("กำลังอัปเดตสถานะคำขอ...", "#6b7280");
     const payload = {
       status,
       updatedAt: firestore.serverTimestamp()
@@ -2171,14 +2212,24 @@ function initMeetingRoomStaffApproval() {
         return;
       }
       if (!id) return;
+      button.disabled = true;
+      const restoreButton = () => {
+        button.disabled = false;
+      };
       if (action === "approve") {
-        setStatusById(id, "approved");
+        void setStatusById(id, "approved").finally(restoreButton);
       } else if (action === "reject") {
-        setStatusById(id, "rejected");
+        void setStatusById(id, "rejected").finally(restoreButton);
+      } else if (action === "approve-cancel") {
+        void setStatusById(id, "rejected", { rejectionReason: "อนุมัติคำขอยกเลิก" }).finally(restoreButton);
+      } else if (action === "reject-cancel") {
+        void setStatusById(id, "approved").finally(restoreButton);
       } else if (action === "cancel") {
-        setStatusById(id, "pending");
+        void setStatusById(id, "pending").finally(restoreButton);
       } else if (action === "delete") {
-        deleteById(id);
+        void deleteById(id).finally(restoreButton);
+      } else {
+        restoreButton();
       }
     });
 

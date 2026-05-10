@@ -149,7 +149,16 @@
                   <div class="budget-staff-form-section-title">เนื้อหาและลิงก์</div>
                   <div class="staff-application-position-grid budget-staff-form-grid">
                     <div class="borrow-form-field budget-staff-form-field-full">
-                      <label class="login-label" for="contentNewsSummary">สรุปข่าว</label>
+                      <div class="content-news-summary-label-row">
+                        <label class="login-label" for="contentNewsSummary">สรุปข่าว</label>
+                        <details class="content-news-summary-tip">
+                          <summary aria-label="ดู prompt สำหรับสรุปข่าวด้วย ChatGPT">!</summary>
+                          <div class="content-news-summary-tip-body">
+                            <div class="content-news-summary-tip-title">Prompt สำหรับใช้กับ ChatGPT</div>
+                            <textarea class="content-news-summary-prompt" rows="7" readonly>ให้คุณเป็นนักเขียนเอกสารทางการ ช่วยสรุปข้อมูลจากไฟล์ที่ฉันอัปโหลด โดยให้คุณสกัดออกมาเป็น 3 ส่วนคือ 1. หัวข้อ ของประกาศหรือหนังสือ 2. เนื้อหาแบบสั้น กระชับ 1–2 บรรทัด 3. วันที่ออกเอกสาร เช่น 27/5/2567 ในการตอบแต่ละข้อให้คุณตอบแบบที่สามารถกด copy ได้เลย ขอให้คุณใช้ภาษาทางการ อ่านง่าย และอ้างอิงจากเนื้อหาในไฟล์เท่านั้น</textarea>
+                          </div>
+                        </details>
+                      </div>
                       <textarea id="contentNewsSummary" class="login-input" rows="5"></textarea>
                     </div>
                     <div class="borrow-form-field budget-staff-form-field-full">

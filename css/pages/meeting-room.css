@@ -703,7 +703,148 @@
   color: #b91c1c;
 }
 
+.meeting-mobile-status-actions {
+  display: none;
+}
+
 @media (max-width: 840px) {
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll .panel-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll .panel-header-tabs,
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomExportCsvBtn {
+    display: none;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomHistorySearchWrap:not([data-mobile-filter-mounted]) {
+    display: none !important;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll .table-wrapper {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll table,
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll thead,
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll tbody,
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll tr,
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll td {
+    display: block;
+    width: 100%;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #staffMeetingAll thead {
+    display: none;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody tr {
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.16);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff, #fffafb);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td {
+    min-width: 0;
+    padding: 7px 0;
+    border: 0;
+    color: #111827;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td[data-label] {
+    display: grid;
+    grid-template-columns: minmax(74px, 0.34fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td[data-label]::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td[data-label] > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td:first-child {
+    padding-top: 0;
+    font-weight: 800;
+    color: #9d174d;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td:last-child {
+    padding-bottom: 0;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomAllTableBody td[colspan] {
+    display: block;
+    padding: 16px 8px;
+    text-align: center;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active .meeting-staff-purpose-cell,
+  .page-view[data-page="meeting-room-staff"].active .meeting-row-meta {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active .staff-status-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active .meeting-mobile-status-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active .meeting-mobile-status-actions .meeting-mobile-status-btn:only-child {
+    grid-column: 1 / -1;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active .meeting-mobile-status-btn {
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 9px;
+    border-radius: 11px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active .meeting-status-select-wrap {
+    margin-top: 4px;
+  }
+
+  .page-view[data-page="meeting-room-staff"].active #meetingRoomStaffCalendarPanel {
+    scroll-margin-top: 16px;
+  }
+
   .meeting-booking-form .borrow-form-row {
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;

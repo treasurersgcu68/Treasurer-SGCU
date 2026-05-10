@@ -227,6 +227,7 @@ function fillProjectYearSelect(selectEl, selectedYear = selectedProjectSourceYea
 function syncProjectYearSelects(selectedYear = selectedProjectSourceYear) {
   Object.values(projectStatusContexts || {}).forEach((ctx) => {
     fillProjectYearSelect(ctx?.yearSelect, selectedYear);
+    fillProjectYearSelect(ctx?.calendarYearSelectEl, selectedYear);
   });
 }
 
@@ -408,6 +409,7 @@ function refreshProjectFiltersForContext(ctxKey, selectedYear = selectedProjectS
   if (!ctx) return;
   setActiveProjectStatusContext(ctxKey);
   fillProjectYearSelect(yearSelect, selectedYear);
+  fillProjectYearSelect(calendarYearSelectEl, selectedYear);
   if (orgTypeSelect) orgTypeSelect.value = "all";
   initOrgTypeOptions();
   initOrgOptions();

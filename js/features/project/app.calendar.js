@@ -94,18 +94,8 @@ function initCalendarFilters() {
 
   if (!yearSelect || !orgSelect) return;
 
-  // reset options (เหลือค่า all ไว้)
-  yearSelect.innerHTML = `<option value="all">ทุกปีการศึกษา</option>`;
+  fillProjectYearSelect(yearSelect, selectedProjectSourceYear);
   orgSelect.innerHTML = `<option value="all">ทุกฝ่าย / ทุกชมรม</option>`;
-
-  const years = Array.from(new Set(calendarEvents.map((e) => e.year).filter(Boolean)));
-  years.sort();
-  years.forEach((y) => {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = y;
-    yearSelect.appendChild(opt);
-  });
 
   const orgs = Array.from(new Set(calendarEvents.map((e) => e.org).filter(Boolean)));
   orgs.sort();
@@ -639,13 +629,24 @@ function initCalendar(ctxKey = activeProjectStatusContext) {
     });
   }
 
-  [calendarYearSelectEl, calendarOrgSelectEl, calendarStatusSelectEl].forEach((el) => {
-    if (el) {
-      el.addEventListener("change", () => {
-        setActiveProjectStatusContext(ctxKey);
-        generateCalendar();
-      });
-    }
+  if (calendarYearSelectEl) {
+    calendarYearSelectEl.addEventListener("change", async () => {
+      setActiveProjectStatusContext(ctxKey);
+      const selectedYear = calendarYearSelectEl.value;
+      if (typeof switchProjectSourceYear === "function" && selectedYear && selectedYear !== "all") {
+        await switchProjectSourceYear(selectedYear);
+        return;
+      }
+      generateCalendar();
+    });
+  }
+
+  [calendarOrgSelectEl, calendarStatusSelectEl].forEach((el) => {
+    if (!el) return;
+    el.addEventListener("change", () => {
+      setActiveProjectStatusContext(ctxKey);
+      generateCalendar();
+    });
   });
 
   if (modalClose) {

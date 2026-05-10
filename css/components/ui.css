@@ -626,12 +626,22 @@
 /* Tables (global) */
 
 .table-wrapper {
+  position: relative;
   overflow: auto;
   max-height: 70vh;
   margin-top: 6px;
   border-radius: 12px;
   border: 1px solid rgba(243, 244, 246, 0.8);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+}
+
+.table-wrapper.is-loading {
+  min-height: 288px;
+  overflow: hidden;
+}
+
+.table-wrapper.is-loading .project-table-wrapper {
+  display: none;
 }
 
 table {
@@ -710,16 +720,83 @@ th.sortable.sort-desc::after {
 
 .table-skeleton {
   display: none;
-  height: 160px;
-  border-radius: 12px;
+}
+
+.project-table-skeleton {
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: inherit;
+  background: #ffffff;
+}
+
+.project-table-skeleton-head,
+.project-table-skeleton-row {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.7fr) minmax(220px, 2.2fr) minmax(130px, 1fr) minmax(130px, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.project-table-skeleton-head {
+  padding: 2px 2px 12px;
+}
+
+.project-table-skeleton-row {
+  min-height: 48px;
+  padding: 10px 2px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.project-table-skeleton span,
+.chart-skeleton span,
+.chart-skeleton-donut-shape,
+.chart-skeleton-bar {
   background: linear-gradient(
     90deg,
-    #f3f4f6 0%,
-    #e5e7eb 40%,
-    #f3f4f6 80%
+    #eef2f7 0%,
+    #d8dee8 42%,
+    #eef2f7 82%
   );
-  background-size: 200% 100%;
+  background-size: 220% 100%;
   animation: shimmer 1.2s infinite;
+}
+
+.project-table-skeleton-head span,
+.project-table-skeleton-row span {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.project-table-skeleton-head span {
+  height: 10px;
+  background: #eef2f7;
+}
+
+.project-table-skeleton-code {
+  width: 74px;
+}
+
+.project-table-skeleton-name {
+  width: 72%;
+}
+
+.project-table-skeleton-name-lg {
+  width: 86%;
+}
+
+.project-table-skeleton-name-sm {
+  width: 56%;
+}
+
+.project-table-skeleton-status {
+  width: 104px;
+  height: 24px !important;
+}
+
+.project-table-skeleton-budget {
+  justify-self: end;
+  width: 112px;
 }
 
 .skeleton-grid {
@@ -1094,21 +1171,235 @@ th.sortable.sort-desc::after {
 }
 
 .chart-inner {
+  position: relative;
   height: 260px;
+}
+
+.chart-inner canvas {
+  position: relative;
+  z-index: 1;
+}
+
+.chart-inner.is-loading {
+  overflow: hidden;
 }
 
 .chart-skeleton {
   display: none;
-  height: 260px;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   border-radius: 12px;
-  background: linear-gradient(
-    90deg,
-    #f3f4f6 0%,
-    #e5e7eb 40%,
-    #f3f4f6 80%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.2s infinite;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.chart-skeleton-bars {
+  padding: 18px 14px 12px;
+}
+
+.chart-skeleton-axis {
+  position: absolute;
+  inset: 18px 14px 44px 112px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  pointer-events: none;
+}
+
+.chart-skeleton-axis span {
+  width: 1px;
+  height: 100%;
+  border-radius: 0;
+  opacity: 0.6;
+}
+
+.chart-skeleton-bar-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.chart-skeleton-label {
+  display: block;
+  width: 78px;
+  height: 11px;
+  border-radius: 999px;
+}
+
+.chart-skeleton-bar {
+  display: block;
+  height: 22px;
+  border-radius: 0 999px 999px 0;
+}
+
+.chart-skeleton-bar-sm {
+  width: 42%;
+}
+
+.chart-skeleton-bar-md {
+  width: 62%;
+}
+
+.chart-skeleton-bar-lg {
+  width: 78%;
+}
+
+.chart-skeleton-bar-xl {
+  width: 92%;
+}
+
+.chart-skeleton-legend {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.chart-skeleton-legend span {
+  display: block;
+  width: 72px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.chart-skeleton-donut {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 16px 42px;
+}
+
+.chart-skeleton-donut-shape {
+  width: min(150px, 52%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  -webkit-mask: radial-gradient(circle, transparent 0 44%, #000 45%);
+  mask: radial-gradient(circle, transparent 0 44%, #000 45%);
+}
+
+.chart-skeleton-donut-copy {
+  width: 34%;
+  min-width: 110px;
+  display: grid;
+  gap: 10px;
+  margin-left: 20px;
+}
+
+.chart-skeleton-donut-copy span {
+  display: block;
+  height: 11px;
+  border-radius: 999px;
+}
+
+.chart-skeleton-copy-wide {
+  width: 100%;
+}
+
+.chart-skeleton-copy-mid {
+  width: 78%;
+}
+
+.chart-skeleton-copy-short {
+  width: 52%;
+}
+
+.chart-skeleton-legend-wrap {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+@media (max-width: 720px) {
+  .chart-skeleton-bars {
+    padding: 16px 12px 12px;
+  }
+
+  .chart-skeleton-axis {
+    inset: 18px 12px 44px 88px;
+  }
+
+  .chart-skeleton-bar-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .chart-skeleton-label {
+    width: 58px;
+  }
+
+  .chart-skeleton-donut {
+    flex-direction: column;
+    padding: 14px 14px 44px;
+  }
+
+  .chart-skeleton-donut-shape {
+    width: min(136px, 56%);
+  }
+
+  .chart-skeleton-donut-copy {
+    width: 68%;
+    min-width: 0;
+    margin: 14px 0 0;
+  }
+
+  .chart-skeleton-legend {
+    gap: 10px;
+  }
+
+  .chart-skeleton-legend span {
+    width: 58px;
+  }
+
+  .table-wrapper.is-loading {
+    min-height: 342px;
+  }
+
+  .project-table-skeleton {
+    padding: 12px;
+  }
+
+  .project-table-skeleton-head {
+    display: none;
+  }
+
+  .project-table-skeleton-row {
+    grid-template-columns: minmax(0, 1fr) 88px;
+    gap: 10px 12px;
+    min-height: 72px;
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(148, 163, 184, 0.14);
+  }
+
+  .project-table-skeleton-code {
+    width: 82px;
+  }
+
+  .project-table-skeleton-name,
+  .project-table-skeleton-name-lg,
+  .project-table-skeleton-name-sm {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .project-table-skeleton-status {
+    width: 88px;
+  }
+
+  .project-table-skeleton-budget {
+    align-self: center;
+    width: 78px;
+  }
 }
 
 /* Calendar */

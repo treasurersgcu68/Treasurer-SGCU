@@ -403,7 +403,8 @@
   min-width: 0;
 }
 
-.mobile-project-action-bar {
+.mobile-project-action-bar,
+.mobile-meeting-action-bar {
   display: none;
 }
 
@@ -545,7 +546,8 @@
     stroke-linejoin: round;
   }
 
-  .page-view[data-page="project-status"].active {
+  .page-view[data-page="project-status"].active,
+  .page-view[data-page="meeting-room-staff"].active {
     padding-bottom: 66px;
   }
 
@@ -681,7 +683,8 @@
     padding: 4px 10px;
   }
 
-  .mobile-project-action-bar.is-visible {
+  .mobile-project-action-bar.is-visible,
+  .mobile-meeting-action-bar.is-visible {
     position: fixed;
     left: max(10px, env(safe-area-inset-left, 0px));
     right: max(10px, env(safe-area-inset-right, 0px));
@@ -715,7 +718,8 @@
     transform: none;
   }
 
-  .mobile-project-action {
+  .mobile-project-action,
+  .mobile-meeting-action {
     appearance: none;
     position: relative;
     min-width: 0;
@@ -749,31 +753,37 @@
     padding-inline: 2px;
   }
 
-  .mobile-project-action-icon {
+  .mobile-project-action-icon,
+  .mobile-meeting-action-icon {
     font-size: 17px;
     line-height: 1;
   }
 
   .mobile-project-action:hover,
-  .mobile-project-action:focus-visible {
+  .mobile-project-action:focus-visible,
+  .mobile-meeting-action:hover,
+  .mobile-meeting-action:focus-visible {
     background: rgba(255, 241, 242, 0.72);
     color: #be185d;
     outline: none;
   }
 
-  .mobile-project-action.is-active {
+  .mobile-project-action.is-active,
+  .mobile-meeting-action.is-active {
     background: linear-gradient(135deg, #fff7fb 0%, #ffe4f1 100%);
     color: #9d174d;
     box-shadow: 0 8px 18px rgba(157, 23, 77, 0.12);
   }
 
-  .mobile-project-action:disabled {
+  .mobile-project-action:disabled,
+  .mobile-meeting-action:disabled {
     opacity: 0.42;
     cursor: not-allowed;
     box-shadow: none;
   }
 
-  .mobile-project-action.has-active-filters::after {
+  .mobile-project-action.has-active-filters::after,
+  .mobile-meeting-action.has-active-filters::after {
     content: attr(data-filter-count);
     position: absolute;
     top: 4px;
@@ -959,6 +969,10 @@
   }
 
   .mobile-project-action-bar.is-visible {
+    bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-meeting-action-bar.is-visible {
     bottom: calc(82px + env(safe-area-inset-bottom, 0px));
   }
 }

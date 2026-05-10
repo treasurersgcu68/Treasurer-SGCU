@@ -6,6 +6,7 @@
 let calendarEvents = [];
 let calendarEventsByDate = new Map();
 let currentCalendarDate = new Date();
+let selectedCalendarDate = new Date();
 
 /**
  * แปลง status จากข้อมูลโครงการ → pending / approved / closed / cancelled
@@ -142,6 +143,122 @@ function getEventsForDate(date) {
   });
 }
 
+function getCalendarDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+}
+
+function isSameCalendarDate(a, b) {
+  return (
+    a &&
+    b &&
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function getCalendarStatusText(status) {
+  if (status === "closed") return "ปิดโครงการแล้ว";
+  if (status === "approved") return "อนุมัติโครงการแล้ว";
+  if (status === "cancelled") return "ยกเลิกโครงการ";
+  return "อยู่ระหว่างดำเนินการ";
+}
+
+function getProjectCalendarSelectedEls() {
+  return {
+    panel: document.getElementById("calendarSelectedDayPanel"),
+    title: document.getElementById("calendarSelectedDayTitle"),
+    count: document.getElementById("calendarSelectedDayCount"),
+    list: document.getElementById("calendarSelectedDayList")
+  };
+}
+
+function getFilteredCalendarEventsForMonth(year, month) {
+  const events = [];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    events.push(...getEventsForDate(new Date(year, month, day)));
+  }
+  return events;
+}
+
+function syncSelectedCalendarDateToMonth(year, month) {
+  if (
+    selectedCalendarDate &&
+    selectedCalendarDate.getFullYear() === year &&
+    selectedCalendarDate.getMonth() === month
+  ) {
+    return;
+  }
+
+  const today = new Date();
+  if (today.getFullYear() === year && today.getMonth() === month) {
+    selectedCalendarDate = new Date(year, month, today.getDate());
+    return;
+  }
+
+  const firstEvent = getFilteredCalendarEventsForMonth(year, month)
+    .sort((a, b) => a.start - b.start)[0];
+  selectedCalendarDate = firstEvent
+    ? new Date(firstEvent.start.getFullYear(), firstEvent.start.getMonth(), firstEvent.start.getDate())
+    : new Date(year, month, 1);
+}
+
+function renderSelectedCalendarDay() {
+  const { panel, title, count, list } = getProjectCalendarSelectedEls();
+  if (!panel || !title || !count || !list || !selectedCalendarDate) return;
+
+  const events = getEventsForDate(selectedCalendarDate);
+  const dateText = selectedCalendarDate.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+
+  title.textContent = dateText;
+  count.textContent = `${events.length} โครงการ`;
+  list.innerHTML = "";
+
+  if (!events.length) {
+    const empty = document.createElement("div");
+    empty.className = "calendar-selected-empty";
+    empty.textContent = "ไม่มีรายการโครงการในวันนี้";
+    list.appendChild(empty);
+    return;
+  }
+
+  events.forEach((ev) => {
+    const item = document.createElement("button");
+    item.className = "calendar-selected-item";
+    item.type = "button";
+    item.addEventListener("click", () => openCalendarModal(ev));
+
+    const main = document.createElement("span");
+    main.className = "calendar-selected-main";
+
+    const titleEl = document.createElement("span");
+    titleEl.className = "calendar-selected-title";
+    titleEl.textContent = ev.title;
+
+    const meta = document.createElement("span");
+    meta.className = "calendar-selected-meta";
+    meta.textContent = `${ev.code || "-"} · ${ev.org || "-"}`;
+
+    main.appendChild(titleEl);
+    main.appendChild(meta);
+
+    const status = document.createElement("span");
+    status.className = `status-pill status-${ev.status}`;
+    status.textContent = getCalendarStatusText(ev.status);
+
+    item.appendChild(main);
+    item.appendChild(status);
+    list.appendChild(item);
+  });
+}
+
 /**
  * อัปเดตหัวปฏิทิน (ชื่อเดือน + ปี)
  */
@@ -235,6 +352,13 @@ function generateCalendar() {
 
   const year = currentCalendarDate.getFullYear();
   const month = currentCalendarDate.getMonth();
+  syncSelectedCalendarDateToMonth(year, month);
+
+  const monthEvents = getFilteredCalendarEventsForMonth(year, month);
+  const maxEventsInDay = monthEvents.reduce((max, ev) => {
+    const dayCount = getEventsForDate(ev.start).length;
+    return Math.max(max, dayCount);
+  }, 0);
 
   // วันแรกของเดือน
   const firstDay = new Date(year, month, 1);
@@ -261,6 +385,21 @@ function generateCalendar() {
     cell.appendChild(header);
 
     const thisDate = new Date(year, month, day);
+    const todaysEvents = getEventsForDate(thisDate);
+    const heatLevel = getHeatmapLevel(todaysEvents.length, maxEventsInDay);
+    cell.dataset.date = getCalendarDateKey(thisDate);
+    cell.dataset.eventCount = String(todaysEvents.length);
+    cell.classList.add(`calendar-heat-${heatLevel}`);
+    cell.setAttribute("role", "button");
+    cell.setAttribute("tabindex", "0");
+    cell.setAttribute(
+      "aria-label",
+      `${thisDate.toLocaleDateString("th-TH")} มี ${todaysEvents.length} โครงการ`
+    );
+    if (isSameCalendarDate(thisDate, selectedCalendarDate)) {
+      cell.classList.add("calendar-day-selected");
+    }
+
     const isToday =
       thisDate.getFullYear() === todayY &&
       thisDate.getMonth() === todayM &&
@@ -273,7 +412,6 @@ function generateCalendar() {
       header.appendChild(pill);
     }
 
-    const todaysEvents = getEventsForDate(thisDate);
     const MAX_EVENTS = getCalendarMaxEvents();
     const visibleEvents = todaysEvents.slice(0, MAX_EVENTS);
 
@@ -287,7 +425,10 @@ function generateCalendar() {
       evDiv.textContent = ev.title;
       evDiv.title = ev.title;
 
-      evDiv.addEventListener("click", () => openCalendarModal(ev));
+      evDiv.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openCalendarModal(ev);
+      });
 
       cell.appendChild(evDiv);
     });
@@ -297,13 +438,30 @@ function generateCalendar() {
       const moreDiv = document.createElement("div");
       moreDiv.className = "calendar-event calendar-more";
       moreDiv.textContent = `และอื่น ๆ อีก ${remaining} โครงการ`;
-      moreDiv.addEventListener("click", () => openCalendarDayModal(thisDate, todaysEvents));
+      moreDiv.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openCalendarDayModal(thisDate, todaysEvents);
+      });
       cell.appendChild(moreDiv);
     }
 
-    // คลิกที่หัววันเพื่อดูรายการทั้งหมดของวันนั้น
+    const selectDate = () => {
+      selectedCalendarDate = new Date(year, month, day);
+      generateCalendar();
+    };
+    cell.addEventListener("click", selectDate);
+    cell.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectDate();
+      }
+    });
+
+    // คลิกที่หัววันบน desktop เพื่อดูรายการทั้งหมดของวันนั้น
     if (todaysEvents.length > 0) {
-      header.addEventListener("click", () => {
+      header.addEventListener("click", (event) => {
+        if (window.matchMedia && window.matchMedia("(max-width: 640px)").matches) return;
+        event.stopPropagation();
         openCalendarDayModal(thisDate, todaysEvents);
       });
     }
@@ -312,6 +470,7 @@ function generateCalendar() {
   }
 
   updateCalendarHeader();
+  renderSelectedCalendarDay();
 }
 
 /**
@@ -331,13 +490,7 @@ function openCalendarModal(ev) {
       : "-";
 
   const statusText =
-    ev.status === "closed"
-      ? "ปิดโครงการแล้ว"
-      : ev.status === "approved"
-      ? "อนุมัติโครงการแล้ว"
-      : ev.status === "cancelled"
-      ? "ยกเลิกโครงการ"
-      : "อยู่ระหว่างดำเนินการ";
+    getCalendarStatusText(ev.status);
 
   bodyEl.innerHTML = `
     <div class="modal-section">
@@ -402,14 +555,7 @@ function openCalendarDayModal(dateObj, events) {
 
   const rows = events
     .map((ev, idx) => {
-      const statusText =
-        ev.status === "closed"
-          ? "ปิดโครงการแล้ว"
-          : ev.status === "approved"
-          ? "อนุมัติโครงการแล้ว"
-          : ev.status === "cancelled"
-          ? "ยกเลิกโครงการ"
-          : "อยู่ระหว่างดำเนินการ";
+      const statusText = getCalendarStatusText(ev.status);
       return `
         <tr data-day-idx="${idx}">
           <td>

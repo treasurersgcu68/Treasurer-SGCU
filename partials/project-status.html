@@ -27,6 +27,8 @@
             </div>
           </div>
 
+          <div id="projectMobileFilterSummary" class="project-mobile-filter-summary" aria-live="polite" hidden></div>
+
           <!-- ================= STATUS VIEW (SUMMARY) ================= -->
           <div id="statusView">
             <!-- Filter หลัก -->
@@ -265,6 +267,17 @@
                 <!-- กริดปฏิทิน (JS เติมวัน/รายการ) -->
                 <div id="calendarContainer" class="calendar-grid"></div>
               </div>
+
+              <section id="calendarSelectedDayPanel" class="calendar-selected-day-panel" aria-live="polite">
+                <header class="calendar-selected-day-header">
+                  <div>
+                    <h4 id="calendarSelectedDayTitle" class="calendar-selected-day-title">-</h4>
+                    <p class="calendar-selected-day-caption">รายการโครงการในวันที่เลือก</p>
+                  </div>
+                  <span id="calendarSelectedDayCount" class="calendar-selected-day-count">0 โครงการ</span>
+                </header>
+                <div id="calendarSelectedDayList" class="calendar-selected-day-list"></div>
+              </section>
 
               <div class="home-timeline-footer" style="margin-top:12px;">
                 <span class="pill pill-soft-gray">อยู่ระหว่างดำเนินการ</span>

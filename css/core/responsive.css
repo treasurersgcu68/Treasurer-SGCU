@@ -187,38 +187,131 @@
     grid-column: 1 / -1;
   }
 
-  /* ปฏิทิน: เพิ่มพื้นที่แตะ + เลื่อนแนวนอน */
-  .calendar-controls {
+  /* ปฏิทินโครงการ: mobile heat map + รายการวันที่เลือก */
+  #calendarView .calendar-controls {
     width: 100%;
   }
-  .calendar-grid-scroll {
+  #calendarView .calendar-grid-scroll {
     margin: 0 -12px;
-    padding: 0 12px 6px;
+    padding: 0 12px 2px;
+    overflow-x: visible;
   }
-  .calendar-grid {
-    min-width: 560px;
+  #calendarView .calendar-grid {
+    min-width: 0;
+    grid-auto-rows: 46px;
+    font-size: 11px;
+    gap: 5px;
+  }
+  #calendarView .calendar-weekday-row {
+    min-width: 0;
+    gap: 5px;
+  }
+  #calendarView .calendar-weekday {
     font-size: 10px;
-    gap: 3px;
   }
-  .calendar-weekday-row {
-    min-width: 560px;
-    gap: 3px;
+  #calendarView .calendar-skeleton {
+    min-width: 0;
+    gap: 5px;
   }
-  .calendar-weekday {
-    font-size: 10px;
+  #calendarView .calendar-skeleton-cell {
+    height: 46px;
+    border-radius: 8px;
   }
-  .calendar-skeleton {
-    min-width: 560px;
+  #calendarView .calendar-day {
+    min-height: 46px;
+    border-radius: 8px;
+    padding: 4px;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
   }
-  .calendar-day {
-    min-height: 80px;
-    padding: 6px;
-  }
-  .calendar-day-header {
+  #calendarView .calendar-day-header {
+    width: 100%;
+    justify-content: center;
+    margin: 0;
     font-size: 12px;
   }
-  .calendar-event {
+  #calendarView .calendar-event {
+    display: none;
+  }
+  #calendarView .calendar-today-pill {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    overflow: hidden;
+    padding: 0;
+    border-radius: 999px;
+    color: transparent;
+    transform: translate(13px, -12px);
+  }
+  #calendarView .calendar-day-empty {
+    visibility: visible;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #calendarView .calendar-day-has-events::after {
+    content: attr(data-event-count);
+    margin-top: 2px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.78);
+    color: #831843;
     font-size: 10px;
+    font-weight: 800;
+  }
+  #calendarView .calendar-heat-0 {
+    background: #f9fafb;
+  }
+  #calendarView .calendar-heat-1 {
+    background: #fce7f3;
+    border-color: #fbcfe8;
+  }
+  #calendarView .calendar-heat-2 {
+    background: #f9a8d4;
+    border-color: #f472b6;
+  }
+  #calendarView .calendar-heat-3 {
+    background: #ec4899;
+    border-color: #db2777;
+  }
+  #calendarView .calendar-heat-4,
+  #calendarView .calendar-heat-5 {
+    background: #be185d;
+    border-color: #9d174d;
+  }
+  #calendarView .calendar-heat-3 .calendar-day-header,
+  #calendarView .calendar-heat-4 .calendar-day-header,
+  #calendarView .calendar-heat-5 .calendar-day-header {
+    color: #ffffff;
+  }
+  #calendarView .calendar-heat-3.calendar-day-has-events::after,
+  #calendarView .calendar-heat-4.calendar-day-has-events::after,
+  #calendarView .calendar-heat-5.calendar-day-has-events::after {
+    color: #9d174d;
+  }
+  #calendarView .calendar-day-selected {
+    border-color: #111827;
+    box-shadow: 0 0 0 2px #111827;
+  }
+  #calendarView .calendar-day-today {
+    box-shadow: inset 0 0 0 2px rgba(236, 72, 153, 0.42);
+  }
+  #calendarView .calendar-selected-day-panel {
+    display: block;
+    margin-top: 14px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+  }
+  #calendarView .calendar-selected-item {
+    align-items: flex-start;
+  }
+  #calendarView .calendar-selected-item .status-pill {
+    white-space: nowrap;
   }
 
   .meeting-booking-detail-item {

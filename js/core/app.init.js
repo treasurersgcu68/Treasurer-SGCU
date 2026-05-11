@@ -1341,7 +1341,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       setActiveProjectStatusContext("public");
     } else if (page === "project-status-staff") {
       setActiveProjectStatusContext("staff");
-      window.sgcuSetStaffProjectWorkflowTab?.("sources");
     } else if (page === "dashboard-staff") {
       setActiveProjectStatusContext("staff");
       window.sgcuSetStaffProjectWorkflowTab?.("overview");

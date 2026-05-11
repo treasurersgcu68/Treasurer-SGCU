@@ -1,29 +1,664 @@
       <!-- ============ PROJECT STATUS (STAFF) ============ -->
       <section class="page-view" data-page="project-status-staff">
         <div class="page project-staff-ops-page">
-          <!-- @include treasurer-handover.html -->
-
-          <div class="page-header-flex">
-            <div>
-              <h1 class="page-title">คู่มือระบบงานและ Project Status</h1>
-              <p class="page-subtitle">ส่วนต่อจากบทนำสำหรับการรับงานจริง อ่านจากบนลงล่างแล้วจะรู้ว่าต้องเปิดไฟล์ไหน ตรวจอะไร ทำอะไรก่อน และส่งต่องานอย่างไร</p>
+          <nav class="handover-global-toc" aria-label="สารบัญคู่มือถ่ายงานเหรัญญิก">
+            <a href="#handover-part-1"><span>1</span> บทนำ</a>
+            <a href="#handover-part-2"><span>2</span> งบประมาณ</a>
+            <a href="#handover-part-3"><span>3</span> Project Status</a>
+            <a href="#handover-part-4"><span>4</span> กายภาพ</a>
+            <a href="#handover-part-5"><span>5</span> หาทุน</a>
+            <a href="#project-handover-closeout"><span>6</span> ปิดโครงการ</a>
+            <a href="#project-handover-numbering"><span>7</span> เลขรันเอกสาร</a>
+          </nav>
+          <!-- ============ TREASURER HANDOVER PART 1 ============ -->
+          <div class="handover-page handover-part-one">
+          <section id="handover-part-1" class="handover-hero section-appear">
+            <div class="handover-hero-copy">
+              <span class="handover-part-badge">ส่วนที่ 1</span>
+              <h1>คู่มือถ่ายงานเหรัญญิก อบจ.68</h1>
+              <p>
+                คู่มือฉบับนี้จัดทำขึ้นเพื่อส่งต่อประสบการณ์ แนวทางการทำงาน และข้อควรระวังสำคัญของฝ่ายเหรัญญิก
+                ให้เหรัญญิกรุ่นถัดไปสามารถเริ่มต้นงานได้อย่างมั่นใจ เป็นระบบ และทำงานต่อเนื่องจากรุ่นก่อนหน้าได้อย่างราบรื่น
+              </p>
             </div>
-            <div class="tabs project-staff-workflow-tabs" role="tablist" aria-label="เลือกหมวดคู่มือถ่ายงานเหรัญญิก">
-              <button type="button" class="tab-btn view-toggle-btn is-active" data-project-workflow-tab="sources">
-                เริ่มรับงาน
-              </button>
-              <button type="button" class="tab-btn view-toggle-btn" data-project-workflow-tab="export">
-                ปิดโครงการ
-              </button>
-              <button type="button" class="tab-btn view-toggle-btn" data-project-workflow-tab="templates">
-                เลขรันเอกสาร
-              </button>
+            <div class="handover-hero-card handover-hero-logo-card" aria-label="โลโก้ฝ่ายเหรัญญิก">
+              <img src="img/icons/treasurer-icon-512.png" alt="โลโก้ฝ่ายเหรัญญิก Treasurer SGCU">
+            </div>
+          </section>
+
+          <section class="handover-letter section-appear section-delay-1" aria-label="ข้อความเปิดเล่ม">
+            <div class="handover-section-kicker">Opening note</div>
+            <h2>ข้อความเปิดเล่ม</h2>
+            <p>
+              ขอแสดงความยินดีกับผู้ที่ได้รับหน้าที่เหรัญญิกและผู้ร่วมงานทุกคน
+              ขอให้การทำงานตลอดวาระเต็มไปด้วยความสุข ความภาคภูมิใจ
+              และความตั้งใจที่จะดูแลงบประมาณและทรัพย์สินของนิสิตอย่างดีที่สุด
+            </p>
+            <p>
+              ขอให้ทุกคนสามารถดำเนินงานได้อย่างราบรื่น จบวาระด้วยการปิดโครงการครบถ้วน โปร่งใส
+              และส่งต่องานให้รุ่นถัดไปได้อย่างสมบูรณ์ คู่มือฉบับนี้จึงตั้งใจเขียนให้เป็นทั้งภาพรวม วิธีคิด
+              และแนวทางเริ่มต้นงานที่นำไปใช้ได้จริงในช่วงแรกของการรับตำแหน่ง
+            </p>
+            <div class="handover-signature">
+              <span>ด้วยความปรารถนาดี</span>
+              <strong>นายธุวานนท์ กิ้มเฉี้ยง</strong>
+              <span>(พี่แทน เหรัญญิก อบจ.68)</span>
+            </div>
+          </section>
+
+          <section class="handover-section section-appear section-delay-2" aria-labelledby="handoverStructureTitle">
+            <div class="handover-section-head">
+              <div>
+                <span class="handover-section-kicker">Structure</span>
+                <h2 id="handoverStructureTitle">ภาพรวมโครงสร้างฝ่ายเหรัญญิก</h2>
+              </div>
+              <p>
+                โดยปกติฝ่ายเหรัญญิกประกอบด้วย 1 ตำแหน่งหลัก และ 3 ฝ่ายย่อย
+                ซึ่งทำงานร่วมกันในเรื่องงบประมาณ รายได้ ทรัพย์สิน และระบบสนับสนุนทางการเงินของสโมสร
+              </p>
+            </div>
+            <div class="handover-org-layout">
+              <article class="handover-org-main">
+                <span>ตำแหน่งหลัก</span>
+                <h3>เหรัญญิก</h3>
+                <p>กำกับภาพรวมด้านการเงิน เอกสาร งบประมาณ รายได้ พัสดุ และการประสานงานกับฝ่ายต่าง ๆ</p>
+              </article>
+              <div class="handover-org-branches" aria-label="ฝ่ายย่อยภายใต้เหรัญญิก">
+                <article>
+                  <span>ฝ่ายย่อย 01</span>
+                  <h3>ฝ่ายบริหารและพัฒนางบประมาณ</h3>
+                  <p>ดูแลการวิเคราะห์ ตรวจสอบ และพัฒนาระบบติดตามงบประมาณ</p>
+                </article>
+                <article>
+                  <span>ฝ่ายย่อย 02</span>
+                  <h3>ฝ่ายหาทุนและสิทธิประโยชน์</h3>
+                  <p>ดูแลแผนรายได้ ผู้สนับสนุน และสิทธิประโยชน์ของสโมสร</p>
+                </article>
+                <article>
+                  <span>ฝ่ายย่อย 03</span>
+                  <h3>ฝ่ายกายภาพและพัสดุ</h3>
+                  <p>ดูแลคลังพัสดุ ครุภัณฑ์ การยืมคืน และราคากลาง</p>
+                </article>
+              </div>
+            </div>
+            <div class="handover-note">
+              3 ฝ่ายย่อยนี้อยู่ภายใต้เหรัญญิก เพราะเกี่ยวข้องกับการดูแลงบประมาณ รายได้ ทรัพย์สิน พัสดุ
+              และระบบสนับสนุนทางการเงินของสโมสรโดยตรง เป็นกลุ่มงานที่มีภาระมากและต้องเริ่มดำเนินการก่อนฝ่ายอื่น
+            </div>
+          </section>
+
+          <section class="handover-section section-appear section-delay-3" aria-labelledby="handoverElectionTitle">
+            <div class="handover-section-head">
+              <div>
+                <span class="handover-section-kicker">First steps</span>
+                <h2 id="handoverElectionTitle">ขั้นตอนหลังการเลือกตั้ง</h2>
+              </div>
+            </div>
+            <ol class="handover-timeline">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>ประชุม 10 ตำแหน่งส่วนกลาง</h3>
+                  <p>หลังประกาศผลเลือกตั้ง จะมีการประชุม 10 ตำแหน่งส่วนกลางเพื่อเริ่มวางระบบการทำงานร่วมกัน</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>วางนโยบายและแบ่งฝ่ายย่อย</h3>
+                  <p>วาระสำคัญคือการวางนโยบาย ทิศทางการทำงาน และแบ่งฝ่ายย่อยที่แต่ละตำแหน่งจะรับผิดชอบ</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>ยกฝ่ายเหรัญญิกขึ้นพิจารณาเร็ว</h3>
+                  <p>โดยปกติฝ่ายเหรัญญิกมักถูกยกขึ้นพิจารณาเป็นฝ่ายแรก เพราะมีภาระงานสูงและต้องใช้ความรู้เฉพาะ</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>เสนอแต่งตั้งประธานฝ่ายย่อย</h3>
+                  <p>เหรัญญิกควรใช้ช่วงประชุมแรกในการเสนอให้แต่งตั้งประธานฝ่ายย่อยของตนโดยเร็ว</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="handover-section handover-split section-appear section-delay-4" aria-labelledby="handoverAppointmentTitle">
+            <div>
+              <span class="handover-section-kicker">Appointments</span>
+              <h2 id="handoverAppointmentTitle">การแต่งตั้งประธานฝ่ายย่อย</h2>
+              <p>
+                ประธานฝ่ายย่อยตามระเบียบอาจเรียกว่า “เจ้าหน้าที่สโมสร” และควรได้รับความเห็นชอบจากคณะกรรมการบริหาร
+                หรือ 30 ตำแหน่ง แต่ในทางปฏิบัติเพื่อให้เริ่มงานได้ทัน อาจเริ่มจากความเห็นชอบของ 10 ตำแหน่งส่วนกลางก่อน
+              </p>
+              <p>
+                เหรัญญิกควรต่อรองและเสนอเหตุผลให้แต่งตั้งฝ่ายย่อยของตนก่อน
+                โดยชี้ให้เห็นว่างานเหล่านี้มีผลต่อการเปิดระบบงบประมาณและโครงการใหญ่ช่วงต้นปีโดยตรง
+              </p>
+            </div>
+            <div class="handover-reason-list" aria-label="เหตุผลที่ควรแต่งตั้งฝ่ายย่อยก่อน">
+              <div><strong>งานงบประมาณ</strong><span>ต้องเริ่มเตรียมกระบวนการพิจารณางบประมาณ</span></div>
+              <div><strong>งานกายภาพ</strong><span>ต้องอัปเดตราคากลาง ตรวจคลังพัสดุ และตรวจครุภัณฑ์</span></div>
+              <div><strong>งานหาทุน</strong><span>ต้องเตรียมแผนรายได้และสิทธิประโยชน์</span></div>
+              <div><strong>งานเหรัญญิก</strong><span>ต้องรองรับโครงการใหญ่ช่วงต้นปี</span></div>
+            </div>
+          </section>
+
+          <section class="handover-section section-appear section-delay-5" aria-labelledby="handoverRecruitTitle">
+            <div class="handover-section-head">
+              <div>
+                <span class="handover-section-kicker">Recruitment</span>
+                <h2 id="handoverRecruitTitle">รอบการรับสมัครคนทำงาน</h2>
+              </div>
+              <p>แบ่งการรับสมัครเป็น 3 รอบ เพื่อให้ได้ทั้งคนที่เริ่มงานได้ทันทีและกำลังคนระยะยาวของฝ่าย</p>
+            </div>
+            <div class="handover-accordion">
+              <details open>
+                <summary><span>รอบที่ 1</span> รอบเริ่มต้นหลังเลือกตั้ง</summary>
+                <p>
+                  เป็นช่วงหลังประกาศผลเลือกตั้งหรือช่วงสอบปลายภาคของปีการศึกษาก่อน คนสมัครอาจไม่มาก
+                  แต่เหมาะสำหรับรับคนที่มีประสบการณ์ ทำงานได้ทันที หรือคนที่ต้องเข้ามาช่วยโครงการใหญ่ช่วงต้นปี
+                </p>
+              </details>
+              <details>
+                <summary><span>รอบที่ 2</span> รอบรับสมัครใหญ่ของสโมสร</summary>
+                <p>
+                  เป็นช่วงหลังสอบหรือช่วงปิดเทอม คนสมัครมาก โดยเฉพาะนิสิตปี 1 ขึ้นปี 2
+                  เหมาะสำหรับรับกำลังคนจำนวนมากและวางระบบทีมระยะยาว
+                </p>
+              </details>
+              <details>
+                <summary><span>รอบที่ 3</span> รอบเก็บตก</summary>
+                <p>
+                  เป็นรอบหลังจากรอบหลัก โดยเฉพาะช่วงเปิดเทอม 1 ที่นิสิตปี 1 เริ่มสนใจทำกิจกรรม
+                  แต่รอบหลังจากนี้ไม่ควรพึ่งพามาก เพราะจำนวนผู้สมัครและตัวเลือกอาจลดลง
+                </p>
+              </details>
+            </div>
+          </section>
+
+          <section class="handover-section section-appear section-delay-6" aria-labelledby="handoverRecruitTableTitle">
+            <div class="handover-section-head">
+              <div>
+                <span class="handover-section-kicker">Team plan</span>
+                <h2 id="handoverRecruitTableTitle">ตารางแผนรับสมัครแต่ละฝ่าย</h2>
+              </div>
+            </div>
+            <div class="handover-table-wrap">
+              <table class="handover-table">
+                <thead>
+                  <tr>
+                    <th>ฝ่าย</th>
+                    <th>จำนวนที่ควรเปิดรับ</th>
+                    <th>รอบแรก</th>
+                    <th>รอบสอง</th>
+                    <th>รอบเก็บตก</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td data-label="ฝ่าย">เหรัญญิก</td>
+                    <td data-label="จำนวนที่ควรเปิดรับ">อย่างน้อย 20 คน</td>
+                    <td data-label="รอบแรก">20%</td>
+                    <td data-label="รอบสอง">40%</td>
+                    <td data-label="รอบเก็บตก">40%</td>
+                  </tr>
+                  <tr>
+                    <td data-label="ฝ่าย">บริหารและพัฒนางบประมาณ</td>
+                    <td data-label="จำนวนที่ควรเปิดรับ">อย่างน้อย 5 คน</td>
+                    <td data-label="รอบแรก">100%</td>
+                    <td data-label="รอบสอง">0%</td>
+                    <td data-label="รอบเก็บตก">0%</td>
+                  </tr>
+                  <tr>
+                    <td data-label="ฝ่าย">หาทุนและสิทธิประโยชน์</td>
+                    <td data-label="จำนวนที่ควรเปิดรับ">อย่างน้อย 10 คน</td>
+                    <td data-label="รอบแรก">20%</td>
+                    <td data-label="รอบสอง">40%</td>
+                    <td data-label="รอบเก็บตก">40%</td>
+                  </tr>
+                  <tr>
+                    <td data-label="ฝ่าย">กายภาพและพัสดุ</td>
+                    <td data-label="จำนวนที่ควรเปิดรับ">อย่างน้อย 15 คน</td>
+                    <td data-label="รอบแรก">40%</td>
+                    <td data-label="รอบสอง">30%</td>
+                    <td data-label="รอบเก็บตก">30%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="handover-section section-appear section-delay-7" aria-labelledby="handoverJobsTitle">
+            <div class="handover-section-head">
+              <div>
+                <span class="handover-section-kicker">Job descriptions</span>
+                <h2 id="handoverJobsTitle">Job Description แต่ละฝ่าย</h2>
+              </div>
+            </div>
+            <div class="handover-card-grid handover-card-grid-four">
+              <article class="handover-job-card">
+                <h3>เหรัญญิก</h3>
+                <p>
+                  ดูแลเอกสารการเงิน การเบิกจ่าย การยืมรองจ่าย การคืนเงิน การตรวจความถูกต้องของเอกสาร
+                  และประสานงานกับฝ่ายต่าง ๆ โดยเฉพาะโครงการใหญ่ของ อบจ. ได้แก่ วันแรกพบนิสิตใหม่
+                  ต้อนรับและสานสัมพันธ์นิสิตใหม่ และกีฬาเพื่อนใหม่
+                </p>
+              </article>
+              <article class="handover-job-card">
+                <h3>บริหารและพัฒนางบประมาณ</h3>
+                <p>
+                  วิเคราะห์ ตรวจสอบ และเสนอแนวทางการจัดสรรงบประมาณ พิจารณาความเหมาะสมของงบแต่ละโครงการ
+                  ตัดงบอย่างมีเหตุผล และพัฒนาระบบติดตามงบประมาณ
+                </p>
+              </article>
+              <article class="handover-job-card">
+                <h3>หาทุนและสิทธิประโยชน์</h3>
+                <p>
+                  จัดหารายได้ สนับสนุนการหาผู้สนับสนุน ประสานงานสิทธิประโยชน์ ดูแลข้อเสนอ sponsorship
+                  และช่วยสร้างทรัพยากรเพิ่มเติมให้สโมสร
+                </p>
+              </article>
+              <article class="handover-job-card">
+                <h3>กายภาพและพัสดุ</h3>
+                <p>
+                  ดูแลพัสดุ ครุภัณฑ์ คลังของ อบจ. การยืมคืนพัสดุ การตรวจสภาพทรัพย์สิน
+                  และการอัปเดตราคากลางก่อนการพิจารณางบประมาณ
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section class="handover-section section-appear section-delay-8" aria-labelledby="handoverQuestionsTitle">
+            <div class="handover-section-head">
+              <div>
+                <span class="handover-section-kicker">Interview guide</span>
+                <h2 id="handoverQuestionsTitle">คำถามสัมภาษณ์</h2>
+              </div>
+              <p>ใช้เป็นชุดคำถามตั้งต้น สามารถปรับน้ำหนักตามลักษณะงานและจำนวนผู้สมัครในแต่ละรอบได้</p>
+            </div>
+            <div class="handover-question-grid">
+              <details open>
+                <summary>เหรัญญิก</summary>
+                <ol>
+                  <li>เคยทำเอกสารการเงินหรือเอกสารเบิกจ่ายมาก่อนหรือไม่</li>
+                  <li>หากเอกสารโครงการส่งมาผิดหลายจุด จะจัดการอย่างไร</li>
+                  <li>ถ้าฝ่ายกิจกรรมต้องการเงินด่วน แต่เอกสารยังไม่ครบ จะทำอย่างไร</li>
+                  <li>คุณรับมือกับงานละเอียดและซ้ำ ๆ ได้ดีแค่ไหน</li>
+                  <li>ถ้ามีโครงการใหญ่ 3 โครงการเข้ามาพร้อมกัน จะจัดลำดับงานอย่างไร</li>
+                  <li>เคยใช้ Google Sheets หรือ Excel ระดับใด</li>
+                  <li>หากต้องทวงเอกสารหรือเงินคืนจากเพื่อน จะสื่อสารอย่างไร</li>
+                  <li>คุณคิดว่าความโปร่งใสทางการเงินสำคัญอย่างไร</li>
+                  <li>หากพบตัวเลขผิดหลังอนุมัติไปแล้ว จะทำอย่างไร</li>
+                  <li>ทำไมถึงอยากทำงานฝ่ายเหรัญญิก</li>
+                </ol>
+              </details>
+              <details>
+                <summary>บริหารและพัฒนางบประมาณ</summary>
+                <ol>
+                  <li>คุณคิดว่าการตัดงบควรพิจารณาจากอะไร</li>
+                  <li>หากโครงการเสนอของบสูงเกินความจำเป็น จะอธิบายอย่างไร</li>
+                  <li>ถ้าฝ่ายที่ถูกตัดงบไม่พอใจ คุณจะรับมืออย่างไร</li>
+                  <li>คุณแยก “จำเป็น” กับ “อยากได้” ในงบประมาณอย่างไร</li>
+                  <li>เคยวิเคราะห์ข้อมูลหรือตารางงบประมาณมาก่อนหรือไม่</li>
+                  <li>ถ้างบรวมมีจำกัด แต่ทุกฝ่ายบอกว่าจำเป็น จะจัดลำดับอย่างไร</li>
+                  <li>คุณคิดว่าความยุติธรรมในการจัดสรรงบคืออะไร</li>
+                  <li>ถ้าต้องอ่านงบจำนวนมากในเวลาจำกัด จะจัดการอย่างไร</li>
+                  <li>มีแนวคิดอะไรในการพัฒนาระบบติดตามงบประมาณ</li>
+                  <li>ทำไมถึงสนใจงานบริหารและพัฒนางบประมาณ</li>
+                </ol>
+              </details>
+              <details>
+                <summary>หาทุนและสิทธิประโยชน์</summary>
+                <ol>
+                  <li>เคยติดต่อผู้สนับสนุนหรือองค์กรภายนอกมาก่อนหรือไม่</li>
+                  <li>หากผู้สนับสนุนปฏิเสธ จะทำอย่างไรต่อ</li>
+                  <li>คุณคิดว่า sponsor ต้องการอะไรจากกิจกรรมนิสิต</li>
+                  <li>ถ้าต้องเขียน proposal ขอสนับสนุน จะเน้นประเด็นใด</li>
+                  <li>คุณสื่อสารกับคนแปลกหน้าได้ดีแค่ไหน</li>
+                  <li>หากผู้สนับสนุนเสนอเงื่อนไขที่ไม่เหมาะสม จะจัดการอย่างไร</li>
+                  <li>คุณคิดว่าสิทธิประโยชน์ที่ดีควรเป็นอย่างไร</li>
+                  <li>ถ้ามีเวลาจำกัดก่อนโครงการใหญ่ จะหาทุนอย่างไร</li>
+                  <li>เคยทำงานขาย ประสานงาน หรือเจรจามาก่อนหรือไม่</li>
+                  <li>ทำไมถึงอยากทำงานหาทุนและสิทธิประโยชน์</li>
+                </ol>
+              </details>
+              <details>
+                <summary>กายภาพและพัสดุ</summary>
+                <ol>
+                  <li>คุณเคยดูแลของส่วนกลางหรือคลังพัสดุมาก่อนหรือไม่</li>
+                  <li>หากพัสดุเสียหายหลังคืน จะจัดการอย่างไร</li>
+                  <li>ถ้ามีคนขอยืมของด่วนโดยไม่ทำตามขั้นตอน จะทำอย่างไร</li>
+                  <li>คุณคิดว่าการตรวจนับพัสดุควรทำอย่างไรให้แม่นยำ</li>
+                  <li>เคยเปรียบเทียบราคาหรือหาราคากลางมาก่อนหรือไม่</li>
+                  <li>ถ้าราคากลางของเดิมไม่ตรงกับราคาปัจจุบัน จะทำอย่างไร</li>
+                  <li>หากคลังพัสดุไม่เป็นระบบ คุณจะเริ่มแก้จากอะไร</li>
+                  <li>คุณรับงานที่ต้องใช้แรง ตรวจของ หรือจัดของได้หรือไม่</li>
+                  <li>ถ้าฝ่ายอื่นทำของหายแต่ไม่ยอมรับผิด จะทำอย่างไร</li>
+                  <li>ทำไมถึงอยากทำงานกายภาพและพัสดุ</li>
+                </ol>
+              </details>
+            </div>
+          </section>
+
+          <section class="handover-next section-appear section-delay-9" aria-label="ไปยังส่วนที่ 2">
+            <div>
+              <span class="handover-section-kicker">Next</span>
+              <h2>ส่วนที่ 2</h2>
+              <p>รายละเอียดกระบวนการงบประมาณ เอกสารการเงิน และการติดตามโครงการ</p>
+            </div>
+            <a class="handover-next-link" href="#handover-part-2">อ่านส่วนที่ 2</a>
+          </section>
+
+          <section id="handover-part-2" class="budget-guide section-appear section-delay-9" aria-labelledby="budgetGuideTitle">
+            <div class="budget-guide-content">
+              <header class="budget-guide-hero">
+                <div>
+                  <span class="handover-part-badge">ส่วนที่ 2</span>
+                  <h2 id="budgetGuideTitle">การพิจารณางบประมาณ</h2>
+                  <p>
+                    ส่วนนี้อธิบายระบบการพิจารณางบประมาณทั้งหมดของ อบจ. ตั้งแต่ประเภทของงบประมาณ
+                    กระบวนการของบ การกำหนดเพดานงบ การพิจารณาแต่ละขั้น จนถึงการ export ส่งสภานิสิต
+                  </p>
+                </div>
+                <div class="budget-progress-card">
+                  <strong>2 / ? Sections</strong>
+                  <span>Budget consideration workflow</span>
+                </div>
+              </header>
+
+              <details id="budget-overview" class="budget-collapsible" open>
+                <summary>ภาพรวมงานพิจารณางบประมาณ</summary>
+                <div class="budget-collapsible-body">
+                  <article class="budget-intro-card">
+                    <div>
+                      <span class="handover-section-kicker">Core mission</span>
+                      <h3>ภารกิจหลักของฝ่ายบริหารและพัฒนางบประมาณ</h3>
+                      <p>
+                        การพิจารณางบประมาณถือเป็นภารกิจหลักของฝ่ายบริหารและพัฒนางบประมาณ
+                        โดยจะมีผู้ช่วยเหรัญญิกเข้ามาช่วยดำเนินงานในหลายส่วน เนื่องจากเป็นกระบวนการที่ใช้เวลานาน
+                        ต้องอาศัยความละเอียด และเกี่ยวข้องกับทุกองค์กรภายในสโมสรนิสิต
+                      </p>
+                    </div>
+                    <ul>
+                      <li>ควบคุมงบประมาณให้อยู่ภายในเพดาน</li>
+                      <li>กระจายทรัพยากรอย่างเหมาะสม</li>
+                      <li>ทำให้ทุกองค์กรสามารถดำเนินโครงการได้</li>
+                      <li>ป้องกันการใช้งบประมาณเกินความจำเป็น</li>
+                      <li>สร้างความโปร่งใสในการใช้งบประมาณนิสิต</li>
+                    </ul>
+                  </article>
+                </div>
+              </details>
+
+              <details id="budget-types" class="budget-collapsible" open>
+                <summary>ประเภทของงบประมาณ</summary>
+                <div class="budget-collapsible-body">
+                  <div class="budget-large-card-grid">
+                    <article class="budget-large-card">
+                      <h3>งบดำเนินการสโมสร</h3>
+                      <ul>
+                        <li>เป็นงบประจำปีการศึกษานั้น</li>
+                        <li>ใช้สำหรับโครงการทั่วไป</li>
+                        <li>สามารถจัดเป็น Year Plan หรือ Term Plan</li>
+                        <li>ต้องหารือรูปแบบร่วมกับสภานิสิต</li>
+                        <li>หากไม่มีสภานิสิต ให้หารือกับ 10 ตำแหน่งส่วนกลาง</li>
+                        <li>ต้องกันงบฉุกเฉินอย่างน้อย 5%</li>
+                      </ul>
+                      <div class="budget-callout budget-callout-info">
+                        งบฉุกเฉินเป็นส่วนสำคัญที่ไม่ควรถูกใช้ตั้งแต่ต้นปี
+                        เพราะต้องรองรับเหตุจำเป็นที่อาจเกิดขึ้นระหว่างปีการศึกษา
+                      </div>
+                    </article>
+                    <article class="budget-large-card">
+                      <h3>งบเงินทุนสโมสร</h3>
+                      <ul>
+                        <li>เป็นงบคงเหลือจากปีการศึกษาก่อน</li>
+                        <li>ใช้สำหรับจัดซื้อครุภัณฑ์หรือทรัพย์สิน</li>
+                        <li>ต้องสอบถามยอดจากเหรัญญิกปีก่อน</li>
+                        <li>ต้องรอปิดโครงการและยืนยันยอดจากกิจการนิสิตฝ่ายการเงิน</li>
+                      </ul>
+                    </article>
+                  </div>
+                </div>
+              </details>
+
+              <details id="budget-request-flow" class="budget-collapsible" open>
+                <summary>ขั้นตอนการของบประมาณจากหน้า “ยื่นของบประมาณ”</summary>
+                <div class="budget-collapsible-body">
+                  <div class="budget-system-map">
+                    <article>
+                      <strong>ไฟล์ / หน้าอ้างอิง</strong>
+                      <span>partials/budget-approval-request.html</span>
+                    </article>
+                    <article>
+                      <strong>สคริปต์ที่ทำงาน</strong>
+                      <span>js/features/budget/app.budget-request.js</span>
+                    </article>
+                    <article>
+                      <strong>ฐานข้อมูลหลัก</strong>
+                      <span>budgetApprovalRequests และ budgetApprovalSettings</span>
+                    </article>
+                  </div>
+                  <ol class="budget-flow">
+                    <li><span>1</span><div><h3>ยืนยันสิทธิ์ตัวแทนองค์กร</h3><p>ผู้ยื่นต้องมีสิทธิ์ตัวแทนฝ่ายหรือชมรมที่ได้รับอนุมัติแล้ว ระบบจึงจะแสดงฝ่าย/ชมรม ประเภทองค์กร และอนุญาตให้เพิ่ม แก้ไข หรือลดรายการคำของบขององค์กรนั้นได้</p></div></li>
+                    <li><span>2</span><div><h3>เลือก “รอบรับคำขอ”</h3><p>หน้าแบบฟอร์มดึงรอบจากการตั้งค่าของ staff เช่น รอบทั่วไปหรือรอบครุภัณฑ์ พร้อมแสดงกำหนดส่งคำของบและสถานะว่ารอบยังเปิดรับอยู่หรือปิดรับแล้ว</p></div></li>
+                    <li><span>3</span><div><h3>กรอกข้อมูลโครงการ</h3><p>ข้อมูลที่ระบบบังคับใช้ประกอบด้วยชื่อโครงการ สถานที่ วันเริ่มเตรียมงาน วันสุดท้ายปฏิบัติงาน จำนวนนิสิตผู้ปฏิบัติงาน จำนวนนิสิตผู้เข้าร่วม ประมาณการรายจ่าย และคำอธิบายประกอบคำขอ</p></div></li>
+                    <li><span>4</span><div><h3>ตรวจรายการที่ยื่นแล้ว</h3><p>องค์กรเห็นตารางรายการของตนเองพร้อมรหัสโครงการ ยอดขอ ยอดอนุมัติ และสถานะ หากรายการยังอยู่ในสถานะรออนุมัติและรอบยังเปิดอยู่ จึงแก้ไขหรือลดรายการได้</p></div></li>
+                    <li><span>5</span><div><h3>Export CSV ฝั่งองค์กร</h3><p>ปุ่ม Export CSV ในหน้ายื่นของบประมาณส่งออกคอลัมน์ รหัสโครงการ รอบรับคำขอ ประเภทองค์กร ฝ่าย/ชมรม ชื่อโครงการ สถานที่ วันที่ จำนวนคน ยอดขอ ยอดอนุมัติ สถานะ และคำอธิบาย</p></div></li>
+                  </ol>
+                  <div class="budget-callout budget-callout-info">
+                    ในเชิงถ่ายงาน ให้ย้ำรุ่นถัดไปว่า “ยื่นของบประมาณ” ไม่ใช่แค่แบบฟอร์มรับข้อมูล แต่เป็นระบบผูกสิทธิ์ตัวแทนองค์กรกับรอบรับคำขอ และเป็นแหล่งข้อมูลต้นทางก่อน staff นำไปตั้งเพดาน รันรหัส และพิจารณายอดอนุมัติ
+                  </div>
+                </div>
+              </details>
+
+              <details id="budget-staff-workflow" class="budget-collapsible" open>
+                <summary>กระบวนการจากหน้า “จัดการคำขออนุมัติงบประมาณ”</summary>
+                <div class="budget-collapsible-body">
+                  <div class="budget-system-map">
+                    <article>
+                      <strong>ไฟล์ / หน้าอ้างอิง</strong>
+                      <span>partials/budget-approval-staff.html</span>
+                    </article>
+                    <article>
+                      <strong>สคริปต์ที่ทำงาน</strong>
+                      <span>js/features/budget/app.budget-staff.js</span>
+                    </article>
+                    <article>
+                      <strong>หน้าที่หลัก</strong>
+                      <span>ตั้งรอบ กำหนดเพดาน รันรหัส ตรวจรายการ และ export</span>
+                    </article>
+                  </div>
+                  <div class="budget-process-grid">
+                    <article>
+                      <span>Overview</span>
+                      <h3>ดูภาพรวมคำขอ</h3>
+                      <p>หน้า overview แสดงจำนวนองค์กรที่ยื่นขอ จำนวนโครงการ ยอดของบรวม ยอดอนุมัติรวม เพดานงบประมาณ และยอดที่ควรพิจารณาลดเพิ่ม</p>
+                    </article>
+                    <article>
+                      <span>Rounds</span>
+                      <h3>ตั้งค่ารอบรับคำขอ</h3>
+                      <p>staff กรอกปีงบประมาณ รอบที่ และวันสิ้นสุดการเปิดรับคำของบ ระบบเก็บเป็นรอบรับคำขอเพื่อให้ฝั่งองค์กรเลือกตอนยื่น</p>
+                    </article>
+                    <article>
+                      <span>Ceiling</span>
+                      <h3>กำหนดเพดานรวมและเพดานย่อย</h3>
+                      <p>ระบบมีช่องเพดานงบประมาณรวม และเพดานย่อยตามฝ่ายใหญ่ พร้อมคำแนะนำเพดานจากสัดส่วนยอดขอของแต่ละกลุ่ม</p>
+                    </article>
+                    <article>
+                      <span>Code</span>
+                      <h3>รันรหัสโครงการ</h3>
+                      <p>ปุ่ม “รันรหัสโครงการ” ใช้สร้างรหัสกลางให้รายการคำขอ ส่วน “ยกเลิกรหัสที่รันแล้ว” ใช้ล้างรหัสเมื่อจำเป็นต้องจัดลำดับใหม่</p>
+                    </article>
+                    <article>
+                      <span>Review</span>
+                      <h3>พิจารณารายการโครงการ</h3>
+                      <p>tab review ใช้เพิ่มรายการแทนผู้ยื่นหรือแก้ไขรายการเดิม โดยแก้ประเภทธุรกิจ/องค์กร ชื่อโครงการ วันที่ จำนวนคน ยอดขอ ยอดอนุมัติ สถานะ และคำอธิบาย</p>
+                    </article>
+                    <article>
+                      <span>Export</span>
+                      <h3>Export CSV สำหรับส่งต่อ</h3>
+                      <p>ปุ่ม Export CSV ในหน้า staff ส่งออกข้อมูลรูปแบบเดียวกับฝั่งองค์กร แต่ใช้รายการที่กรองในหน้า review และตั้งชื่อไฟล์เป็น budget-staff-requests</p>
+                    </article>
+                  </div>
+                  <div class="budget-callout budget-callout-warning">
+                    ก่อนลบรอบรับคำขอ ระบบมี modal เตือนให้ Export CSV ของข้อมูลรอบนั้นก่อน เพราะเมื่อลบรอบ รายการคำขอในรอบนั้นจะถูกลบตามไปด้วย จุดนี้ควรถ่ายงานเป็นข้อควรระวังหลัก
+                  </div>
+                </div>
+              </details>
+
+              <details id="budget-ceiling" class="budget-collapsible" open>
+                <summary>หลักการกำหนดเพดานงบประมาณ</summary>
+                <div class="budget-collapsible-body">
+                  <div class="budget-principle-grid">
+                    <article>ตัดเปอร์เซ็นต์เท่ากันทุกฝ่าย</article>
+                    <article>อิงงบที่ใช้จริงของปีก่อน</article>
+                    <article>อิงประวัติการปิดโครงการ</article>
+                    <article>อิงความรับผิดชอบในการส่งเอกสาร</article>
+                    <article>อิงจำนวนโครงการและภารกิจ</article>
+                  </div>
+                  <blockquote class="budget-quote">
+                    “การจัดสรรงบประมาณไม่ใช่เพียงการแบ่งเงิน แต่คือการประเมินความพร้อมและความรับผิดชอบของแต่ละองค์กร”
+                  </blockquote>
+                </div>
+              </details>
+
+              <details class="budget-collapsible" open>
+                <summary>เอกสารประกอบการพิจารณา</summary>
+                <div class="budget-collapsible-body">
+                  <div class="budget-callout budget-callout-info">
+                    ก่อนเริ่มพิจารณางบประมาณ เหรัญญิกควรหารือกับเลขานุการเพื่อเปิดระบบให้องค์กรส่งเอกสารประกอบการพิจารณา
+                    เช่น เอกสารโครงการ รายละเอียดงบประมาณ และเอกสารประกอบอื่น ๆ โดยกำหนดให้ตั้งชื่อไฟล์อิงจาก “รหัสโครงการ”
+                  </div>
+                </div>
+              </details>
+
+              <details id="budget-review-structure" class="budget-collapsible" open>
+                <summary>โครงสร้างการพิจารณา 3 ขั้น</summary>
+                <div class="budget-collapsible-body">
+                  <div class="budget-step-card-grid">
+                    <article><span>1</span><h3>ขั้นเหรัญญิก</h3><p>พิจารณาให้งบไม่เกินเพดาน และควบคุมภาพรวมงบประมาณ</p></article>
+                    <article><span>2</span><h3>ขั้นคณะกรรมการบริหาร / อนุกรรมการ</h3><p>พิจารณาหลักการโครงการ เพื่อลดภาระการพิจารณางบประมาณซ้ำ</p></article>
+                    <article><span>3</span><h3>ขั้นสภานิสิต</h3><p>พิจารณาหลักการ พิจารณางบประมาณ และพิจารณาครั้งสุดท้าย</p></article>
+                  </div>
+                  <div class="budget-callout budget-callout-experience">
+                    เหรัญญิกมีหน้าที่ควบคุมงบประมาณให้อยู่ในเพดาน ส่วนสภานิสิตมีหน้าที่ควบคุมความเหมาะสมของงบประมาณ
+                    การที่เหรัญญิกเข้าไปเป็นกรรมาธิการพิจารณางบประมาณอีกอาจทำให้เกิดความซ้ำซ้อนในการทำหน้าที่
+                    แต่หากสภาต้องการข้อมูลเพิ่มเติม เหรัญญิกสามารถเข้าชี้แจงในฐานะอนุกรรมาธิการได้ตามระเบียบมหาวิทยาลัย
+                  </div>
+                </div>
+              </details>
+
+              <details id="budget-plan-review" class="budget-collapsible" open>
+                <summary>การพิจารณา Year Plan / Term Plan</summary>
+                <div class="budget-collapsible-body">
+                  <div class="budget-tabs">
+                    <input id="budgetTabClubs" type="radio" name="budget-plan-tabs" checked>
+                    <input id="budgetTabAdmin" type="radio" name="budget-plan-tabs">
+                    <input id="budgetTabCouncil" type="radio" name="budget-plan-tabs">
+                    <div class="budget-tab-labels" role="tablist" aria-label="รูปแบบการพิจารณา Year Plan หรือ Term Plan">
+                      <label for="budgetTabClubs">ชมรม 4 ฝ่าย</label>
+                      <label for="budgetTabAdmin">องค์การบริหาร</label>
+                      <label for="budgetTabCouncil">สภานิสิต</label>
+                    </div>
+                    <article class="budget-tab-panel budget-tab-clubs">
+                      <h3>ชมรม 4 ฝ่าย</h3>
+                      <p>รวมขั้นเหรัญญิกและอนุกรรมการเข้าด้วยกัน แต่ละฝ่ายมีประธานอนุกรรมการ และฝ่ายเหรัญญิกส่งผู้ช่วยเข้าไปช่วยให้คำปรึกษา ตรวจรายการเบิกได้/ไม่ได้ และจดงบประมาณ</p>
+                      <div class="budget-mini-grid">
+                        <span>กรอกยอดอนุมัติลงเว็บ</span>
+                        <span>สำเนาเอกสารรายละเอียดงบประมาณและแก้ไขตามมติ</span>
+                      </div>
+                      <div class="budget-callout budget-callout-warning">
+                        การพิจารณางบประมาณอาจเริ่มตั้งแต่เช้าและสิ้นสุดหลังเที่ยงคืน จึงควรแบ่งเวรและกระจายงานให้เหมาะสม
+                      </div>
+                    </article>
+                    <article class="budget-tab-panel budget-tab-admin">
+                      <h3>องค์การบริหาร</h3>
+                      <p>ระบบ Pitching ของปีการศึกษา 68 เริ่มจากตัดเปอร์เซ็นต์เท่ากัน ทุกฝ่ายเสนอเหตุผลของโครงการ ฝ่ายอื่นสามารถลงมติ “ลดงบ” หรือ “คงงบ” หากลด งบจะถูกเฉลี่ยให้ฝ่ายอื่น ดำเนินต่อจนฝ่ายส่วนใหญ่พอใจ โดยเหรัญญิกเป็นประธานประชุม</p>
+                      <div class="budget-callout budget-callout-info">ทุกฝ่ายต้องแก้งบให้ไม่เกินเพดานก่อนเข้าสู่ขั้นถัดไป</div>
+                    </article>
+                    <article class="budget-tab-panel budget-tab-council">
+                      <h3>สภานิสิต</h3>
+                      <p>เหรัญญิกแจ้งเพดานให้สภา สภาต้องแก้งบให้ไม่เกินเพดาน หากเกิน จะไม่มีสิทธิ์เข้าสู่ขั้นถัดไป และขั้นต่อไปให้เลขานุการรับผิดชอบ</p>
+                    </article>
+                  </div>
+                </div>
+              </details>
+
+              <details id="budget-export" class="budget-collapsible" open>
+                <summary>Export CSV และการต่อข้อมูลเข้า Project Status</summary>
+                <div class="budget-collapsible-body">
+                  <ol class="budget-export-flow">
+                    <li><span>องค์กร</span></li>
+                    <li><span>เหรัญญิก</span></li>
+                    <li><span>อนุกรรมการ</span></li>
+                    <li><span>สภา</span></li>
+                    <li><span>Project Status</span></li>
+                  </ol>
+                  <div class="budget-data-flow">
+                    <article><strong>1. Export จากหน้า staff</strong><p>ใช้ข้อมูลหลังรันรหัสและแก้ยอดอนุมัติแล้ว ส่งออกคอลัมน์รหัสโครงการ รอบรับคำขอ องค์กร วันที่ จำนวนคน ยอดขอ ยอดอนุมัติ สถานะ และคำอธิบาย</p></article>
+                    <article><strong>2. ส่งให้สภาพิจารณา</strong><p>สภาใช้ CSV และเอกสารประกอบเพื่อพิจารณาหลักการและงบประมาณ พร้อมระบุผลการพิจารณากลับมา</p></article>
+                    <article><strong>3. รับข้อมูลผลสภา</strong><p>ข้อมูลที่ต้องรับกลับคือผ่านสมัยใด ครั้งที่เท่าใด ยอดอนุมัติสุดท้าย และสถานะที่ต้องใช้ต่อใน Project Status</p></article>
+                    <article><strong>4. Update Project Status</strong><p>ย้ายข้อมูลเข้า Project Status เพื่อให้หน้า dashboard ตารางโครงการ export CSV และงานปิดโครงการใช้ข้อมูลชุดเดียวกัน</p></article>
+                  </div>
+                  <section class="budget-project-status-bridge" aria-label="Project Status หลังพิจารณางบประมาณ">
+                    <div>
+                      <span class="handover-section-kicker">Project Status bridge</span>
+                      <h3>ส่วน Project Status ที่ต้องต่อหลังพิจารณางบประมาณ</h3>
+                      <p>
+                        เมื่อสภาส่งผลกลับมา ให้ถือ Project Status เป็นฐานกลางต่อจากระบบคำของบ
+                        โดยย้ายรหัสโครงการ ชื่อโครงการ ประเภทองค์กร ฝ่าย/ชมรม สถานะ งบประมาณ แหล่งเงิน
+                        วันสิ้นสุดการปฏิบัติงาน และกำหนดปิดโครงการเข้าไปให้ครบ
+                      </p>
+                    </div>
+                    <div class="budget-project-status-fields">
+                      <span>รหัสโครงการ</span>
+                      <span>ชื่อโครงการ</span>
+                      <span>ประเภทองค์กร</span>
+                      <span>ฝ่าย/ชมรม</span>
+                      <span>สถานะ</span>
+                      <span>งบประมาณ</span>
+                      <span>แหล่งเงิน</span>
+                      <span>วันสิ้นสุดการปฏิบัติงาน</span>
+                      <span>กำหนดปิดโครงการ</span>
+                    </div>
+                  </section>
+                  <div class="budget-callout budget-callout-info">
+                    ในหน้า Project Status เดิม ปุ่ม Export CSV ใช้ข้อมูลที่กรองอยู่และส่งออกหัวคอลัมน์หลักเหล่านี้:
+                    รหัสโครงการ, ชื่อโครงการ, ประเภทองค์กร, ฝ่าย/ชมรม, สถานะ, งบประมาณ, แหล่งเงิน, วันสิ้นสุดการปฏิบัติงาน และกำหนดปิดโครงการ
+                    ดังนั้นหลังการพิจารณางบประมาณควรกรอกข้อมูลให้ครบก่อนใช้ข้อมูลชุดนี้ต่อในงาน dashboard หรือการส่งต่อเอกสารอื่น
+                  </div>
+                </div>
+              </details>
+            </div>
+          </section>
+
+          <section class="handover-next section-appear section-delay-9" aria-label="ส่วนถัดไป">
+            <div>
+              <span class="handover-section-kicker">Next</span>
+              <h2>ส่วนที่ 3</h2>
+              <p>สารบัญ Project Status และวิธีใช้ไฟล์กลางสำหรับรับงานต่อ</p>
+            </div>
+            <a class="handover-next-link" href="#handover-part-3">อ่านส่วนที่ 3</a>
+          </section>
+          </div>
+
+          <section id="handover-part-3" class="handover-project-status-part section-appear" aria-labelledby="handoverProjectStatusTitle">
+          <div class="page-header-flex handover-project-status-head">
+            <div>
+              <span class="handover-part-badge">ส่วนที่ 3</span>
+              <h1 id="handoverProjectStatusTitle" class="page-title">สารบัญ Project Status</h1>
+              <p class="page-subtitle">ส่วนต่อจากการพิจารณางบประมาณสำหรับรับงานจริง เริ่มจากสารบัญ Project Status เพื่อตรวจปี active ลิงก์ CSV ไฟล์ต้นทาง และจุดที่ต้องดูแลก่อนส่งต่องาน</p>
             </div>
           </div>
           <div id="projectDataLoadStateStaff" class="project-data-load-state" hidden></div>
 
           <section class="project-staff-ops-panel section-appear section-delay-1">
-            <section id="dashboardStaffSourcesPanel" class="dashboard-staff-main-panel" data-project-workflow-panel="sources">
+            <section id="dashboardStaffSourcesPanel" class="dashboard-staff-main-panel">
               <section class="management-link-panel section-appear section-delay-1" data-management-visibility="staff" hidden>
                 <div class="management-link-copy">
                   <span class="management-link-kicker">ไฟล์แรกที่ต้องเปิด</span>
@@ -61,8 +696,8 @@
                   <a href="#project-handover-routine"><span>2</span><strong>งานประจำ</strong><em>สิ่งที่ต้องดูทุกวัน ทุกสัปดาห์ ทุกเดือน</em></a>
                   <a href="#project-handover-project-status"><span>3</span><strong>Project Status</strong><em>คอลัมน์สำคัญ วิธีเพิ่มและตามโครงการ</em></a>
                   <a href="#project-handover-critical-path"><span>4</span><strong>ทำงาน 1 โครงการ</strong><em>รับเข้าไฟล์ อนุมัติ ยืมรองจ่าย ปิด ฎีกา</em></a>
-                  <button type="button" data-project-workflow-toc="export"><span>5</span><strong>ปิดโครงการ</strong><em>กรอกข้อมูล export CSV และ Mail Merge</em></button>
-                  <button type="button" data-project-workflow-toc="templates"><span>6</span><strong>เลขรันเอกสาร</strong><em>ออกเลข ยกเลิกเลข และไล่ปัญหาเลขไม่ขึ้น</em></button>
+                  <a href="#project-handover-closeout"><span>6</span><strong>ปิดโครงการ</strong><em>กรอกข้อมูล export CSV และ Mail Merge</em></a>
+                  <a href="#project-handover-numbering"><span>7</span><strong>เลขรันเอกสาร</strong><em>ออกเลข ยกเลิกเลข และไล่ปัญหาเลขไม่ขึ้น</em></a>
                   <a href="#project-handover-warnings"><span>7</span><strong>ปัญหาที่พบบ่อย</strong><em>สูตรพัง IMPORTRANGE ไม่ขึ้น sort ผิด</em></a>
                   <a href="#project-handover-final"><span>8</span><strong>ก่อนส่งต่อรุ่นถัดไป</strong><em>งานค้าง ไฟล์ตัวจริง คนรับผิดชอบ จุดเสี่ยง</em></a>
                 </div>
@@ -210,11 +845,32 @@
                 </div>
               </section>
             </section>
+          </section>
+          </section>
 
-            <section id="project-handover-closeout" class="panel project-staff-workflow-card project-staff-closeout-card" data-project-workflow-panel="export" hidden>
+              <section id="handover-part-4" class="handover-placeholder-section" aria-label="ส่วนที่ 4 กายภาพและพัสดุ">
+                <div>
+                  <span class="handover-part-badge">ส่วนที่ 4</span>
+                  <h2>กายภาพและพัสดุ</h2>
+                  <p>เว้นไว้ก่อนสำหรับคู่มือการตรวจคลังพัสดุ ครุภัณฑ์ การยืมคืน และการอัปเดตราคากลาง</p>
+                </div>
+                <span class="handover-placeholder-status">กำลังจัดทำ</span>
+              </section>
+
+              <section id="handover-part-5" class="handover-placeholder-section" aria-label="ส่วนที่ 5 หาทุนและสิทธิประโยชน์">
+                <div>
+                  <span class="handover-part-badge">ส่วนที่ 5</span>
+                  <h2>หาทุนและสิทธิประโยชน์</h2>
+                  <p>เว้นไว้ก่อนสำหรับคู่มือการจัดหารายได้ sponsorship การประสานผู้สนับสนุน และการดูแลสิทธิประโยชน์</p>
+                </div>
+                <span class="handover-placeholder-status">กำลังจัดทำ</span>
+              </section>
+
+            <section id="project-handover-closeout" class="panel project-staff-workflow-card project-staff-closeout-card handover-standalone-section">
               <div class="project-closeout-guide">
                 <div class="project-closeout-hero">
                   <div>
+                    <span class="handover-part-badge">ส่วนที่ 6</span>
                     <span class="project-staff-ops-kicker">Closeout</span>
                     <h3 class="panel-title">ปิดโครงการและ Export CSV</h3>
                     <p class="panel-caption">ใช้เมื่อต้องสรุปโครงการที่ถึงรอบปิด ทำเอกสาร Word หลายโครงการพร้อมกัน และตรวจยอดเบิก/คืนก่อนส่งต่อ</p>
@@ -353,9 +1009,10 @@
               </div>
             </section>
 
-            <section id="project-handover-numbering" class="panel project-staff-workflow-card project-template-card" data-project-workflow-panel="templates" hidden>
+            <section id="project-handover-numbering" class="panel project-staff-workflow-card project-template-card handover-standalone-section">
               <header class="project-staff-ops-section-head">
                 <div>
+                  <span class="handover-part-badge">ส่วนที่ 7</span>
                   <span class="project-staff-ops-kicker">Document numbering</span>
                   <h3 class="panel-title">เลขรันเอกสาร</h3>
                   <p>ระบบเลขรันคือสมุดทะเบียนเอกสารของฝ่ายเหรัญญิก ใช้คุมว่าเอกสารใดออกเลขแล้ว อยู่สถานะไหน และเชื่อมกลับไป Project Status อย่างไร</p>
@@ -473,6 +1130,5 @@
                 </div>
               </section>
             </section>
-          </section>
         </div>
       </section>

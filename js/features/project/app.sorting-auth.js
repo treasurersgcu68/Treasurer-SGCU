@@ -736,7 +736,8 @@ function hasStaffRoleToken(roleValue, roleToken) {
 }
 
 const STAFF_HEAD_OVERRIDES = new Set([
-  "tuwanon.kimchiang@gmail.com"
+  "tuwanon.kimchiang@gmail.com",
+  "treasurer.sgcu68@gmail.com"
 ]);
 const STAFF_PAGE_OPTIONS = [
   "treasurer-handover",

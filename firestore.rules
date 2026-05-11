@@ -18,7 +18,8 @@ service cloud.firestore {
 
     function isBootstrapHeadStaff() {
       return userEmail() in [
-        "tuwanon.kimchiang@gmail.com"
+        "tuwanon.kimchiang@gmail.com",
+        "treasurer.sgcu68@gmail.com"
       ];
     }
 
@@ -58,6 +59,10 @@ service cloud.firestore {
             (
               staffProfile().divisionCodesYY is list &&
               staffProfile().divisionCodesYY.hasAny(["00"])
+            ) ||
+            (
+              staffProfile().position is string &&
+              staffProfile().position.matches(".*เหรัญญิก.*")
             )
           )
         );

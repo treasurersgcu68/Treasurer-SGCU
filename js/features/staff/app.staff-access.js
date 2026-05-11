@@ -135,7 +135,8 @@ function initStaffAccessPages() {
   const COLLECTION_POSITION_CODE_COUNTERS =
     firestoreCollections.staffPositionCodeCounters || "staffPositionCodeCounters";
   const STAFF_HEAD_EMAIL_OVERRIDES = new Set([
-    "tuwanon.kimchiang@gmail.com"
+    "tuwanon.kimchiang@gmail.com",
+    "treasurer.sgcu68@gmail.com"
   ]);
   const LOGIN_PROFILE_STORAGE_KEY = "sgcu_user_profile_by_email_v1";
   const LEGACY_LOGIN_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
@@ -888,10 +889,24 @@ function initStaffAccessPages() {
     if (!staffAuthUser) return false;
     const staffEmail = (staffAuthUser.email || "").toString().trim().toLowerCase();
     if (staffEmail && STAFF_HEAD_EMAIL_OVERRIDES.has(staffEmail)) return true;
-    const yyList = Array.isArray(staffAuthUser.divisionCodesYY)
-      ? staffAuthUser.divisionCodesYY.map((item) => normalizeCode2(item))
-      : [normalizeCode2(staffAuthUser.divisionCodeYY || staffAuthUser.positionCodeYY || "")];
-    return yyList.includes("00") || hasRoleToken(staffAuthUser.role, "0");
+    const yyList = new Set();
+    if (Array.isArray(staffAuthUser.divisionCodesYY)) {
+      staffAuthUser.divisionCodesYY.forEach((item) => {
+        const code = normalizeCode2(item);
+        if (code) yyList.add(code);
+      });
+    }
+    [staffAuthUser.divisionCodeYY, staffAuthUser.positionCodeYY].forEach((item) => {
+      const code = normalizeCode2(item);
+      if (code) yyList.add(code);
+    });
+    if (Array.isArray(staffAuthUser.positions)) {
+      staffAuthUser.positions.forEach((entry) => {
+        const code = normalizeCode2(entry?.yy || entry?.positionCodeYY || entry?.divisionCodeYY || "");
+        if (code) yyList.add(code);
+      });
+    }
+    return yyList.has("00") || hasRoleToken(staffAuthUser.role, "0");
   };
 
   const toSafeText = (value) =>
@@ -1237,7 +1252,8 @@ function initStaffAccessPages() {
       position: primary?.name || "",
       positionCode: primary?.code || "",
       positionCodeYY: primary?.yy || "",
-      divisionCodeYY: primary?.yy || ""
+      divisionCodeYY: primary?.yy || "",
+      divisionCodesYY: Array.from(new Set(normalized.map((item) => normalizeCode2(item.yy)).filter(Boolean)))
     };
   };
 

@@ -739,6 +739,7 @@ const STAFF_HEAD_OVERRIDES = new Set([
   "tuwanon.kimchiang@gmail.com"
 ]);
 const STAFF_PAGE_OPTIONS = [
+  "treasurer-handover",
   "dashboard-staff",
   "project-status-staff",
   "system-data-staff",
@@ -855,7 +856,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
+    return new Set(["treasurer-handover", "project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
   }
   return new Set(["login"]);
 }
@@ -967,11 +968,11 @@ function getAllowedPagesForCurrentState() {
 function getStaffProfileByEmail(email) {
   const normalized = (email || "").toString().trim().toLowerCase();
   if (!normalized) return null;
+  const isOverrideHead = STAFF_HEAD_OVERRIDES.has(normalized);
   const isCurrentUserApproved =
     currentStaffApprovalState.email === normalized && currentStaffApprovalState.hasApproved === true;
-  if (!isCurrentUserApproved) return null;
+  if (!isOverrideHead && !isCurrentUserApproved) return null;
   const hasRealProfile = staffEmails.has(normalized);
-  const isOverrideHead = STAFF_HEAD_OVERRIDES.has(normalized);
   if (!isOverrideHead && !hasRealProfile) return null;
   const profile = staffProfilesByEmail[normalized] || {};
   if (isOverrideHead) {

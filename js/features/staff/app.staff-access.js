@@ -178,6 +178,7 @@ function initStaffAccessPages() {
   ];
   const STAFF_PAGE_OPTIONS = [
     { id: "dashboard-staff", label: "ภาพรวมโครงการ" },
+    { id: "treasurer-handover", label: "คู่มือถ่ายงานส่วนที่ 1" },
     { id: "project-status-staff", label: "คู่มือถ่ายงานเหรัญญิก อบจ.68" },
     { id: "system-data-staff", label: "ข้อมูลระบบ" },
     { id: "budget-approval-staff", label: "คำของบประมาณ" },
@@ -913,7 +914,7 @@ function initStaffAccessPages() {
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
-      return ["project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"];
+      return ["treasurer-handover", "project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"];
     }
     return ["login"];
   };

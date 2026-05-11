@@ -178,13 +178,14 @@ function initStaffAccessPages() {
   ];
   const STAFF_PAGE_OPTIONS = [
     { id: "dashboard-staff", label: "ภาพรวมโครงการ" },
-    { id: "project-status-staff", label: "คู่มือถ่ายงาน" },
+    { id: "project-status-staff", label: "คู่มือถ่ายงานเหรัญญิก อบจ.68" },
     { id: "system-data-staff", label: "ข้อมูลระบบ" },
     { id: "budget-approval-staff", label: "คำของบประมาณ" },
     { id: "borrow-assets-staff", label: "ยืม-คืนพัสดุ" },
     { id: "meeting-room-staff", label: "ห้องประชุม" },
     { id: "staff-approval", label: "สมาชิกสตาฟ" },
     { id: "org-representative-approval-staff", label: "ตัวแทนองค์กร" },
+    { id: "content-management-staff", label: "จัดการเนื้อหา" },
     { id: "content-news-staff", label: "ข่าวสาร" },
     { id: "content-documents-staff", label: "เอกสารการเงิน" },
     { id: "login", label: "หน้าเข้าสู่ระบบ" }
@@ -882,12 +883,10 @@ function initStaffAccessPages() {
 
   const isSuperStaff = () => {
     const currentUserEmail = getCurrentAuthEmail();
-    const currentUserHasRealProfile = !!(currentUserEmail && staffProfilesByEmail?.[currentUserEmail]);
-    if (currentUserEmail && STAFF_HEAD_EMAIL_OVERRIDES.has(currentUserEmail) && !currentUserHasRealProfile) return true;
+    if (currentUserEmail && STAFF_HEAD_EMAIL_OVERRIDES.has(currentUserEmail)) return true;
     if (!staffAuthUser) return false;
     const staffEmail = (staffAuthUser.email || "").toString().trim().toLowerCase();
-    const staffHasRealProfile = !!(staffEmail && staffProfilesByEmail?.[staffEmail]);
-    if (staffEmail && STAFF_HEAD_EMAIL_OVERRIDES.has(staffEmail) && !staffHasRealProfile) return true;
+    if (staffEmail && STAFF_HEAD_EMAIL_OVERRIDES.has(staffEmail)) return true;
     const yyList = Array.isArray(staffAuthUser.divisionCodesYY)
       ? staffAuthUser.divisionCodesYY.map((item) => normalizeCode2(item))
       : [normalizeCode2(staffAuthUser.divisionCodeYY || staffAuthUser.positionCodeYY || "")];

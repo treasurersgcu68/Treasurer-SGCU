@@ -54,7 +54,11 @@ service cloud.firestore {
           (
             staffProfile().role == "0" ||
             staffProfile().positionCodeYY == "00" ||
-            staffProfile().divisionCodeYY == "00"
+            staffProfile().divisionCodeYY == "00" ||
+            (
+              staffProfile().divisionCodesYY is list &&
+              staffProfile().divisionCodesYY.hasAny(["00"])
+            )
           )
         );
     }
@@ -199,7 +203,7 @@ service cloud.firestore {
           unchanged("requester") &&
           unchanged("requesterEmail")
         );
-      allow delete: if false;
+      allow delete: if isStaff();
     }
 
     match /budgetApprovalSettings/{settingsId} {

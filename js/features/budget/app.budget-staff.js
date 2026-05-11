@@ -55,6 +55,15 @@
 
   const tableBodyEl = document.getElementById("budgetStaffRequestsBody");
   const exportCsvBtnEl = document.getElementById("budgetStaffExportCsvBtn");
+  const roundDeleteModalEl = document.getElementById("budgetRoundDeleteModal");
+  const roundDeleteCloseBtnEl = document.getElementById("budgetRoundDeleteCloseBtn");
+  const roundDeleteCancelBtnEl = document.getElementById("budgetRoundDeleteCancelBtn");
+  const roundDeleteConfirmBtnEl = document.getElementById("budgetRoundDeleteConfirmBtn");
+  const roundDeleteExportBtnEl = document.getElementById("budgetRoundDeleteExportBtn");
+  const roundDeleteConfirmCheckEl = document.getElementById("budgetRoundDeleteConfirmCheck");
+  const roundDeleteLabelEl = document.getElementById("budgetRoundDeleteLabel");
+  const roundDeleteSummaryEl = document.getElementById("budgetRoundDeleteSummary");
+  const roundDeleteMessageEl = document.getElementById("budgetRoundDeleteMessage");
 
   if (
     !summaryCaptionEl ||
@@ -104,9 +113,22 @@
     !approvedAmountInputEl ||
     !statusInputEl ||
     !descriptionInputEl ||
-    !tableBodyEl
+    !tableBodyEl ||
+    !roundDeleteModalEl ||
+    !roundDeleteCloseBtnEl ||
+    !roundDeleteCancelBtnEl ||
+    !roundDeleteConfirmBtnEl ||
+    !roundDeleteExportBtnEl ||
+    !roundDeleteConfirmCheckEl ||
+    !roundDeleteLabelEl ||
+    !roundDeleteSummaryEl ||
+    !roundDeleteMessageEl
   ) {
     return;
+  }
+
+  if (roundDeleteModalEl.parentElement !== document.body) {
+    document.body.appendChild(roundDeleteModalEl);
   }
 
   const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
@@ -129,6 +151,8 @@
   let budgetRoundYear = "";
   let budgetRoundNo = "";
   let budgetActiveRounds = [];
+  let roundDeleteResolve = null;
+  let roundDeleteContext = null;
 
   const formatMoney = (value) => {
     const num = Number(value || 0);
@@ -370,8 +394,14 @@
     });
   };
 
-  const exportBudgetStaffCsv = () => {
-    const rows = sortForDisplay(getReviewFilteredRows()).map((item) => ({
+  const sanitizeCsvNamePart = (value) => normalizeText(value)
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const exportBudgetStaffCsv = (rowsOverride = null, fileNameSuffix = "") => {
+    const sourceRows = Array.isArray(rowsOverride) ? rowsOverride : getReviewFilteredRows();
+    const rows = sortForDisplay(sourceRows).map((item) => ({
       "รหัสโครงการ": item.projectCodeGenerated || "",
       "รอบรับคำขอ": formatBudgetRoundLabel(item.budgetRoundYear, item.budgetRoundNo) || normalizeText(item.budgetRoundId) || "",
       "ประเภทองค์กร": item.organizationType || "",
@@ -387,8 +417,9 @@
       "สถานะ": statusLabel(item.status),
       "คำอธิบาย": item.projectDescription || item.description || ""
     }));
+    const suffix = sanitizeCsvNamePart(fileNameSuffix);
     window.sgcuCsvExport?.download({
-      fileName: "budget-staff-requests",
+      fileName: suffix ? `budget-staff-requests-${suffix}` : "budget-staff-requests",
       headers: [
         "รหัสโครงการ",
         "รอบรับคำขอ",
@@ -1271,37 +1302,126 @@
     }
   };
 
+  const getRowsForBudgetRound = (roundId = "") => {
+    const id = normalizeText(roundId);
+    if (!id) return [];
+    return requestRows.filter((item) => normalizeText(item.budgetRoundId) === id);
+  };
+
+  const setRoundDeleteModalBusy = (isBusy) => {
+    roundDeleteConfirmBtnEl.disabled = isBusy || !roundDeleteConfirmCheckEl.checked;
+    roundDeleteCancelBtnEl.disabled = isBusy;
+    roundDeleteCloseBtnEl.disabled = isBusy;
+    roundDeleteExportBtnEl.disabled = isBusy || !roundDeleteContext?.rows?.length;
+    roundDeleteConfirmCheckEl.disabled = isBusy;
+  };
+
+  const closeRoundDeleteModal = (result = false) => {
+    if (!roundDeleteResolve) return;
+    const resolve = roundDeleteResolve;
+    roundDeleteResolve = null;
+    roundDeleteContext = null;
+    closeDialog(roundDeleteModalEl);
+    resolve(result);
+  };
+
+  const openRoundDeleteModal = (round, rows) => {
+    roundDeleteContext = { round, rows: Array.isArray(rows) ? rows : [] };
+    roundDeleteLabelEl.textContent = round?.label || "รอบรับคำขอ";
+    roundDeleteSummaryEl.textContent = roundDeleteContext.rows.length
+      ? `พบรายการคำขอในรอบนี้ ${roundDeleteContext.rows.length.toLocaleString("th-TH")} รายการ ระบบจะลบรายการเหล่านี้พร้อมรอบ`
+      : "ไม่พบรายการคำขอในรอบนี้ ระบบจะลบเฉพาะข้อมูลรอบ";
+    roundDeleteMessageEl.textContent = "";
+    roundDeleteConfirmCheckEl.checked = false;
+    setRoundDeleteModalBusy(false);
+    openDialog(roundDeleteModalEl, { focusSelector: "#budgetRoundDeleteExportBtn" });
+    return new Promise((resolve) => {
+      roundDeleteResolve = resolve;
+    });
+  };
+
+  const deleteRoundRequests = async (firestore, rows) => {
+    const requestRowsToDelete = (Array.isArray(rows) ? rows : []).filter((row) => normalizeText(row.id));
+    if (!requestRowsToDelete.length) return 0;
+    if (!firestore.deleteDoc || !firestore.doc) {
+      throw new Error("deleteDoc unavailable");
+    }
+    if (firestore.writeBatch) {
+      for (let index = 0; index < requestRowsToDelete.length; index += 450) {
+        const batch = firestore.writeBatch(firestore.db);
+        requestRowsToDelete.slice(index, index + 450).forEach((row) => {
+          batch.delete(firestore.doc(firestore.db, COLLECTION_REQUESTS, row.id));
+        });
+        await batch.commit();
+      }
+      return requestRowsToDelete.length;
+    }
+    for (const row of requestRowsToDelete) {
+      await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_REQUESTS, row.id));
+    }
+    return requestRowsToDelete.length;
+  };
+
+  const persistRoundDeletion = async (firestore, nextActiveRounds, nextCurrent, rowsForRound) => {
+    const settingsPayload = {
+      budgetActiveRounds: nextActiveRounds,
+      budgetRoundYear: nextCurrent.year || "",
+      budgetRoundNo: nextCurrent.roundNo || "",
+      currentBudgetRoundId: nextCurrent.id || "",
+      budgetRequestDeadline: nextCurrent.deadline || "",
+      updatedAt: firestore.serverTimestamp()
+    };
+    const requestRowsToDelete = (Array.isArray(rowsForRound) ? rowsForRound : []).filter((row) => normalizeText(row.id));
+    if (firestore.writeBatch) {
+      const settingsRef = firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID);
+      let deletedCount = 0;
+      let cursor = 0;
+      const firstBatch = firestore.writeBatch(firestore.db);
+      firstBatch.set(settingsRef, settingsPayload, { merge: true });
+      requestRowsToDelete.slice(0, 449).forEach((row) => {
+        firstBatch.delete(firestore.doc(firestore.db, COLLECTION_REQUESTS, row.id));
+        deletedCount += 1;
+      });
+      await firstBatch.commit();
+      cursor = 449;
+      while (cursor < requestRowsToDelete.length) {
+        const batch = firestore.writeBatch(firestore.db);
+        requestRowsToDelete.slice(cursor, cursor + 450).forEach((row) => {
+          batch.delete(firestore.doc(firestore.db, COLLECTION_REQUESTS, row.id));
+          deletedCount += 1;
+        });
+        await batch.commit();
+        cursor += 450;
+      }
+      return deletedCount;
+    }
+    await firestore.setDoc(
+      firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID),
+      settingsPayload,
+      { merge: true }
+    );
+    return deleteRoundRequests(firestore, requestRowsToDelete);
+  };
+
   const removeBudgetRound = async (roundId = "") => {
     const id = normalizeText(roundId);
     if (!id) return;
     const round = budgetActiveRounds.find((item) => item.id === id);
     if (!round) return;
-    const ok = window.confirm(`ยืนยันลบ ${round.label} ? คนทั่วไปจะไม่สามารถยื่นหรือแก้ไขรายการในรอบนี้ได้`);
+    const rowsForRound = getRowsForBudgetRound(id);
+    const ok = await openRoundDeleteModal(round, rowsForRound);
     if (!ok) return;
     const nextActiveRounds = budgetActiveRounds.filter((item) => item.id !== id);
     const nextCurrent = nextActiveRounds[0] || {};
     const firestore = getFirestore();
-    const canWrite = !!(firestore.db && firestore.doc && firestore.setDoc && firestore.serverTimestamp);
+    const canWrite = !!(firestore.db && firestore.doc && firestore.setDoc && firestore.serverTimestamp && firestore.deleteDoc);
     if (!canWrite) {
-      budgetActiveRounds = nextActiveRounds;
-      syncRoundStatus();
-      setMessage(actionMessageEl, "ลบรอบเฉพาะเครื่องนี้แล้ว แต่ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b45309");
+      setMessage(actionMessageEl, "ลบรอบไม่สำเร็จ เพราะระบบฐานข้อมูลยังไม่พร้อมลบรายการคำขอ", "#b91c1c");
       return;
     }
-    setMessage(actionMessageEl, "กำลังลบรอบ...", "#1d4ed8");
+    setMessage(actionMessageEl, `กำลังลบรอบและรายการคำขอ ${rowsForRound.length.toLocaleString("th-TH")} รายการ...`, "#1d4ed8");
     try {
-      await firestore.setDoc(
-        firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID),
-        {
-          budgetActiveRounds: nextActiveRounds,
-          budgetRoundYear: nextCurrent.year || "",
-          budgetRoundNo: nextCurrent.roundNo || "",
-          currentBudgetRoundId: nextCurrent.id || "",
-          budgetRequestDeadline: nextCurrent.deadline || "",
-          updatedAt: firestore.serverTimestamp()
-        },
-        { merge: true }
-      );
+      const deletedRequestCount = await persistRoundDeletion(firestore, nextActiveRounds, nextCurrent, rowsForRound);
       budgetActiveRounds = nextActiveRounds;
       budgetRoundYear = nextCurrent.year || "";
       budgetRoundNo = nextCurrent.roundNo || "";
@@ -1309,7 +1429,7 @@
       roundNoInputEl.value = budgetRoundNo;
       deadlineInputEl.value = nextCurrent.deadline || "";
       syncRoundStatus();
-      setMessage(actionMessageEl, "ลบรอบเรียบร้อย", "#047857");
+      setMessage(actionMessageEl, `ลบรอบและรายการคำขอ ${deletedRequestCount.toLocaleString("th-TH")} รายการเรียบร้อย`, "#047857");
       void window.sgcuAuditLog?.write?.({
         action: "budget.round.delete",
         entityType: "budgetApprovalSettings",
@@ -1318,6 +1438,10 @@
         after: {
           budgetActiveRounds: nextActiveRounds,
           currentBudgetRoundId: nextCurrent.id || ""
+        },
+        metadata: {
+          deletedRequestCount,
+          deletedRequestIdSample: rowsForRound.map((row) => row.id).filter(Boolean).slice(0, 20)
         },
         source: "web_app_staff"
       });
@@ -1636,6 +1760,32 @@
   formEl.addEventListener("submit", saveForm);
   deadlineSaveBtnEl.addEventListener("click", () => { void saveDeadline(); });
   roundAddBtnEl.addEventListener("click", () => { void saveDeadline(); });
+  roundDeleteCloseBtnEl.addEventListener("click", () => closeRoundDeleteModal(false));
+  roundDeleteCancelBtnEl.addEventListener("click", () => closeRoundDeleteModal(false));
+  roundDeleteConfirmBtnEl.addEventListener("click", () => closeRoundDeleteModal(true));
+  roundDeleteConfirmCheckEl.addEventListener("change", () => setRoundDeleteModalBusy(false));
+  roundDeleteExportBtnEl.addEventListener("click", () => {
+    const rows = roundDeleteContext?.rows || [];
+    const round = roundDeleteContext?.round || {};
+    if (!rows.length) {
+      setMessage(roundDeleteMessageEl, "รอบนี้ไม่มีรายการคำขอให้ Export", "#6b7280");
+      return;
+    }
+    if (typeof window.sgcuCsvExport?.download !== "function") {
+      setMessage(roundDeleteMessageEl, "ระบบ Export CSV ยังไม่พร้อมใช้งาน กรุณาลองใหม่อีกครั้ง", "#b91c1c");
+      return;
+    }
+    exportBudgetStaffCsv(rows, round.label || round.id || "round");
+    roundDeleteConfirmCheckEl.checked = true;
+    setRoundDeleteModalBusy(false);
+    setMessage(roundDeleteMessageEl, "Export CSV ของรอบนี้แล้ว ตรวจไฟล์ดาวน์โหลดก่อนยืนยันลบ", "#047857");
+  });
+  roundDeleteModalEl.addEventListener("click", (event) => {
+    if (event.target === roundDeleteModalEl) closeRoundDeleteModal(false);
+  });
+  roundDeleteModalEl.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeRoundDeleteModal(false);
+  });
   activeRoundListEl.addEventListener("click", (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     const editBtn = target?.closest("[data-budget-round-edit]");

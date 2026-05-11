@@ -326,4 +326,47 @@
             </div>
           </div>
         </div>
+
+        <div
+          id="budgetRoundDeleteModal"
+          class="modal budget-round-delete-modal"
+          aria-hidden="true"
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="budgetRoundDeleteTitle"
+        >
+          <div class="modal-dialog budget-round-delete-dialog">
+            <div class="modal-header">
+              <div>
+                <div id="budgetRoundDeleteTitle" class="modal-title">ยืนยันการลบรอบรับคำขอ</div>
+                <div class="modal-subtitle">ลบรอบแล้วจะลบรายการคำขอในรอบนั้นออกจากระบบด้วย</div>
+              </div>
+              <button id="budgetRoundDeleteCloseBtn" class="modal-close" type="button" aria-label="ปิด">×</button>
+            </div>
+            <div class="modal-body budget-round-delete-body">
+              <div class="budget-round-delete-warning">
+                <div>
+                  <div id="budgetRoundDeleteLabel" class="budget-round-delete-name">-</div>
+                  <div id="budgetRoundDeleteSummary" class="budget-round-delete-summary">กำลังตรวจสอบรายการคำขอ...</div>
+                </div>
+              </div>
+              <div class="budget-round-delete-export">
+                <div>
+                  <div class="budget-round-delete-step-title">สำรองข้อมูลก่อนลบ</div>
+                  <div class="budget-round-delete-step-text">กรุณา Export CSV ของข้อมูลรอบนี้เก็บไว้ก่อนกดยืนยัน เพราะหลังลบแล้วข้อมูลคำขอในรอบนี้จะถูกลบตามไปด้วย</div>
+                </div>
+                <button id="budgetRoundDeleteExportBtn" class="btn-ghost csv-export-btn" type="button">Export CSV รอบนี้</button>
+              </div>
+              <label class="budget-round-delete-check">
+                <input id="budgetRoundDeleteConfirmCheck" type="checkbox" />
+                <span>ฉันดาวน์โหลด CSV หรือยืนยันว่าไม่ต้องสำรองข้อมูลแล้ว และเข้าใจว่ารายการคำขอในรอบนี้จะถูกลบถาวร</span>
+              </label>
+              <div id="budgetRoundDeleteMessage" class="section-text-sm budget-round-delete-message" aria-live="polite"></div>
+            </div>
+            <div class="modal-actions budget-round-delete-actions">
+              <button id="budgetRoundDeleteCancelBtn" class="btn-ghost" type="button">ยกเลิก</button>
+              <button id="budgetRoundDeleteConfirmBtn" class="btn-primary budget-round-delete-confirm" type="button" disabled>ลบรอบและรายการคำขอ</button>
+            </div>
+          </div>
+        </div>
       </section>

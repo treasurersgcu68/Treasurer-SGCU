@@ -735,7 +735,9 @@ function hasStaffRoleToken(roleValue, roleToken) {
   return tokens.includes(target);
 }
 
-const STAFF_HEAD_OVERRIDES = new Set([]);
+const STAFF_HEAD_OVERRIDES = new Set([
+  "tuwanon.kimchiang@gmail.com"
+]);
 const STAFF_PAGE_OPTIONS = [
   "dashboard-staff",
   "project-status-staff",
@@ -969,7 +971,7 @@ function getStaffProfileByEmail(email) {
     currentStaffApprovalState.email === normalized && currentStaffApprovalState.hasApproved === true;
   if (!isCurrentUserApproved) return null;
   const hasRealProfile = staffEmails.has(normalized);
-  const isOverrideHead = STAFF_HEAD_OVERRIDES.has(normalized) && !hasRealProfile;
+  const isOverrideHead = STAFF_HEAD_OVERRIDES.has(normalized);
   if (!isOverrideHead && !hasRealProfile) return null;
   const profile = staffProfilesByEmail[normalized] || {};
   if (isOverrideHead) {

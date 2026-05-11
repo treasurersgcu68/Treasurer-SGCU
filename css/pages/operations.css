@@ -2821,6 +2821,99 @@
   padding: 10px 12px;
 }
 
+.budget-round-delete-dialog {
+  max-width: min(560px, calc(100vw - 28px));
+}
+
+.budget-round-delete-body {
+  display: grid;
+  gap: 14px;
+}
+
+.budget-round-delete-warning {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 14px;
+  background: #fff7f7;
+  padding: 14px;
+}
+
+.budget-round-delete-name {
+  color: #991b1b;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.budget-round-delete-summary {
+  margin-top: 4px;
+  color: #7f1d1d;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.budget-round-delete-export {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 14px;
+  background: #f8fbff;
+  padding: 14px;
+}
+
+.budget-round-delete-step-title {
+  color: #0f172a;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.budget-round-delete-step-text {
+  margin-top: 3px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.budget-round-delete-check {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.budget-round-delete-check input {
+  margin-top: 3px;
+  accent-color: #be185d;
+}
+
+.budget-round-delete-message {
+  min-height: 20px;
+}
+
+.budget-round-delete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 0 22px 22px;
+}
+
+.budget-round-delete-confirm {
+  background: #be123c;
+  box-shadow: 0 12px 28px rgba(190, 18, 60, 0.22);
+}
+
+.budget-round-delete-confirm:hover {
+  background: #9f1239;
+}
+
 .staff-application-position-grid.budget-staff-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 12px;

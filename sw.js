@@ -1,10 +1,10 @@
-const CACHE_VERSION = "20260511-pwa-bottom-nav-1";
+const CACHE_VERSION = "20260511-context-nav-hide-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260511-pwa-bottom-nav-1",
+  "./css/style.css?v=20260511-context-nav-hide-1",
   "./css/core/base.css",
   "./css/core/prelude-layout.css",
   "./css/pages/operations.css",
@@ -15,6 +15,7 @@ const APP_SHELL_URLS = [
   "./css/components/ui.css",
   "./css/pages/home.css",
   "./css/pages/about-org.css",
+  "./css/pages/treasurer-handover.css",
   "./css/pages/financial-docs.css",
   "./css/components/modals-motion.css",
   "./css/core/responsive.css",
@@ -39,8 +40,8 @@ const APP_SHELL_URLS = [
   "./js/features/project/app.sorting-auth.js?v=20260510-export-ui-1",
   "./js/features/org/app.org.js?v=20260503-1",
   "./js/motion/app.motion.js",
-  "./js/core/app.feature-loader.js?v=20260511-pwa-bottom-nav-1",
-  "./js/core/app.init.js?v=20260511-pwa-bottom-nav-1",
+  "./js/core/app.feature-loader.js?v=20260511-context-nav-hide-1",
+  "./js/core/app.init.js?v=20260511-context-nav-hide-1",
   "./js/features/project/app.calendar.js",
   "./js/integrations/app.web-push.js",
   "./manifest.webmanifest",

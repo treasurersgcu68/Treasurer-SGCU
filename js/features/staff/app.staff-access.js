@@ -232,6 +232,9 @@ function initStaffAccessPages() {
   let currentStaffApprovalMainTab = "approval";
   let currentOrgRepresentativeView = "overview";
   let currentApprovalDetailRequestKey = "";
+  let currentAccessProfile = null;
+  let currentAccessProfileEmail = "";
+  let currentAccessProfileLoadingEmail = "";
   let lastKnownAuthState = {
     isAuthenticated: false,
     uid: "",
@@ -886,27 +889,45 @@ function initStaffAccessPages() {
   const isSuperStaff = () => {
     const currentUserEmail = getCurrentAuthEmail();
     if (currentUserEmail && STAFF_HEAD_EMAIL_OVERRIDES.has(currentUserEmail)) return true;
-    if (!staffAuthUser) return false;
-    const staffEmail = (staffAuthUser.email || "").toString().trim().toLowerCase();
-    if (staffEmail && STAFF_HEAD_EMAIL_OVERRIDES.has(staffEmail)) return true;
+    const profiles = [];
+    if (typeof staffAuthUser !== "undefined" && staffAuthUser) profiles.push(staffAuthUser);
+    if (currentAccessProfile && currentAccessProfileEmail === currentUserEmail) profiles.push(currentAccessProfile);
+    if (
+      currentUserEmail &&
+      typeof staffProfilesByEmail !== "undefined" &&
+      staffProfilesByEmail &&
+      staffProfilesByEmail[currentUserEmail]
+    ) {
+      profiles.push(staffProfilesByEmail[currentUserEmail]);
+    }
+    return profiles.some(isHeadStaffProfileData);
+  };
+
+  const isHeadStaffProfileData = (profile = {}) => {
+    if (!profile || typeof profile !== "object") return false;
+    const profileEmail = (profile.email || "").toString().trim().toLowerCase();
+    if (profileEmail && STAFF_HEAD_EMAIL_OVERRIDES.has(profileEmail)) return true;
+    if (hasRoleToken(profile.role, "0")) return true;
+
     const yyList = new Set();
-    if (Array.isArray(staffAuthUser.divisionCodesYY)) {
-      staffAuthUser.divisionCodesYY.forEach((item) => {
+    if (Array.isArray(profile.divisionCodesYY)) {
+      profile.divisionCodesYY.forEach((item) => {
         const code = normalizeCode2(item);
         if (code) yyList.add(code);
       });
     }
-    [staffAuthUser.divisionCodeYY, staffAuthUser.positionCodeYY].forEach((item) => {
+    [profile.divisionCodeYY, profile.positionCodeYY].forEach((item) => {
       const code = normalizeCode2(item);
       if (code) yyList.add(code);
     });
-    if (Array.isArray(staffAuthUser.positions)) {
-      staffAuthUser.positions.forEach((entry) => {
+    if (Array.isArray(profile.positions)) {
+      profile.positions.forEach((entry) => {
         const code = normalizeCode2(entry?.yy || entry?.positionCodeYY || entry?.divisionCodeYY || "");
         if (code) yyList.add(code);
       });
     }
-    return yyList.has("00") || hasRoleToken(staffAuthUser.role, "0");
+    const positionText = normalizePositionText(profile.position || "");
+    return yyList.has("00") || positionText.includes("เหรัญญิก");
   };
 
   const toSafeText = (value) =>
@@ -1280,6 +1301,51 @@ function initStaffAccessPages() {
     if (!el) return;
     el.textContent = text;
     el.style.color = color;
+  };
+
+  const refreshAccessProfileForCurrentUser = async ({ force = false } = {}) => {
+    const email = getCurrentAuthEmail();
+    if (!email) {
+      currentAccessProfile = null;
+      currentAccessProfileEmail = "";
+      currentAccessProfileLoadingEmail = "";
+      return null;
+    }
+    if (!force && currentAccessProfileEmail === email) {
+      return currentAccessProfile;
+    }
+    if (currentAccessProfileLoadingEmail === email) {
+      return currentAccessProfile;
+    }
+    if (!resolveStore() || !firestore.getDoc || !firestore.doc || !firestore.db) {
+      return currentAccessProfile;
+    }
+
+    currentAccessProfileLoadingEmail = email;
+    try {
+      const profileRef = firestore.doc(firestore.db, COLLECTION_PROFILES, email);
+      const snap = await firestore.getDoc(profileRef);
+      const data = snap?.exists?.() ? (snap.data() || {}) : null;
+      currentAccessProfile = data ? { email, ...data } : null;
+      currentAccessProfileEmail = email;
+      if (
+        data &&
+        typeof staffProfilesByEmail !== "undefined" &&
+        staffProfilesByEmail &&
+        typeof staffProfilesByEmail === "object"
+      ) {
+        staffProfilesByEmail[email] = { ...(staffProfilesByEmail[email] || {}), ...data };
+      }
+      setApprovalAvailabilityByRole();
+      return currentAccessProfile;
+    } catch (error) {
+      console.warn("load current staff access profile failed - app.staff-access.js", error);
+      return currentAccessProfile;
+    } finally {
+      if (currentAccessProfileLoadingEmail === email) {
+        currentAccessProfileLoadingEmail = "";
+      }
+    }
   };
 
   const escapeStaffHtml = (value) =>
@@ -3563,6 +3629,9 @@ function initStaffAccessPages() {
     }
     if (!allowManage) {
       setMessage(positionManageMessageEl, "ส่วนจัดการตำแหน่งสำหรับหัวหน้าสตาฟเท่านั้น", "#b45309");
+      if (getCurrentAuthEmail() && currentAccessProfileEmail !== getCurrentAuthEmail()) {
+        void refreshAccessProfileForCurrentUser();
+      }
     } else if (!positionManageMessageEl?.textContent) {
       setMessage(positionManageMessageEl, "เพิ่มหรือลบตำแหน่งได้จากส่วนนี้", "#6b7280");
     }
@@ -4137,6 +4206,7 @@ function initStaffAccessPages() {
     }
     prefillApplicationForm();
     setApplicationAvailabilityByAuth();
+    void refreshAccessProfileForCurrentUser({ force: true });
     if (!readCurrentUser()?.email) {
       closeApplicationModal();
     }

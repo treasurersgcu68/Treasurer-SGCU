@@ -740,7 +740,6 @@ const STAFF_HEAD_OVERRIDES = new Set([
   "treasurer.sgcu68@gmail.com"
 ]);
 const STAFF_PAGE_OPTIONS = [
-  "treasurer-handover",
   "dashboard-staff",
   "project-status-staff",
   "system-data-staff",
@@ -857,7 +856,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["treasurer-handover", "project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
+    return new Set(["project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
   }
   return new Set(["login"]);
 }
@@ -929,6 +928,7 @@ function getAllowedPagesForCurrentState() {
 
   if (staffAuthUser && staffViewMode === "staff") {
     const yyAllowed = getAllowedStaffPagesByProfile(staffAuthUser);
+    yyAllowed.add("project-status-staff");
     if (isHeadStaffProfile(staffAuthUser)) {
       yyAllowed.add("staff-approval");
       yyAllowed.add("org-representative-approval-staff");
@@ -936,7 +936,6 @@ function getAllowedPagesForCurrentState() {
       yyAllowed.add("content-news-staff");
       yyAllowed.add("content-documents-staff");
       yyAllowed.add("dashboard-staff");
-      yyAllowed.add("project-status-staff");
       yyAllowed.add("system-data-staff");
     }
     yyAllowed.add("budget-approval-staff");

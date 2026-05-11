@@ -179,8 +179,6 @@ function initStaffAccessPages() {
   ];
   const STAFF_PAGE_OPTIONS = [
     { id: "dashboard-staff", label: "ภาพรวมโครงการ" },
-    { id: "treasurer-handover", label: "คู่มือถ่ายงานส่วนที่ 1" },
-    { id: "project-status-staff", label: "คู่มือถ่ายงานเหรัญญิก อบจ.68" },
     { id: "system-data-staff", label: "ข้อมูลระบบ" },
     { id: "budget-approval-staff", label: "คำของบประมาณ" },
     { id: "borrow-assets-staff", label: "ยืม-คืนพัสดุ" },
@@ -191,7 +189,7 @@ function initStaffAccessPages() {
     { id: "content-news-staff", label: "ข่าวสาร" },
     { id: "content-documents-staff", label: "เอกสารการเงิน" }
   ];
-  const STAFF_IMPLICIT_ALLOWED_PAGES = ["login"];
+  const STAFF_IMPLICIT_ALLOWED_PAGES = ["login", "project-status-staff"];
   const REQUIRED_ORG_REPRESENTATIVE_ROLES = [
     { key: "president", label: "ประธาน" },
     { key: "vice_president", label: "รองประธาน" },
@@ -953,7 +951,7 @@ function initStaffAccessPages() {
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
-      return ["treasurer-handover", "project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"];
+      return ["dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"];
     }
     return ["login"];
   };

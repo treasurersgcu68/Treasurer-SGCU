@@ -157,13 +157,15 @@
   min-height: 250px;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .handover-hero-logo-card img {
   display: block;
   width: min(220px, 100%);
   height: auto;
-  border-radius: 8px;
 }
 
 .handover-hero-card strong {
@@ -778,9 +780,9 @@
 }
 
 .budget-callout-warning {
-  border-left: 4px solid #b45309;
-  background: #fff7ed;
-  color: #7c2d12;
+  border-left: 4px solid var(--handover-pink);
+  background: #fdf2f8;
+  color: #9d174d;
 }
 
 .budget-callout-experience {
@@ -1052,59 +1054,73 @@
   scroll-margin-top: 110px;
 }
 
-.handover-project-status-part .handover-project-status-head {
-  margin-bottom: 18px;
-  padding: 0 0 18px;
-  border-bottom: 1px solid var(--handover-line);
+.handover-project-status-part .project-status-hero {
+  margin: 0 0 14px;
 }
 
-.handover-project-status-part .page-title {
-  margin-top: 0;
-  color: var(--handover-ink);
-  font-size: clamp(30px, 5vw, 46px);
-  line-height: 1.12;
+.project-status-metrics {
+  display: grid;
+  gap: 8px;
+  align-content: end;
 }
 
-.handover-project-status-part .page-subtitle {
-  max-width: 760px;
-  margin-top: 12px;
-  color: #475569;
-  font-size: 15.5px;
-  line-height: 1.8;
-}
-
-.handover-project-status-part .project-staff-workflow-tabs {
-  align-self: end;
+.operation-status-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
   border: 1px solid var(--handover-line);
-  border-radius: 8px;
-  background: #f8fafc;
-  padding: 6px;
-}
-
-.handover-project-status-part .project-staff-workflow-tabs .tab-btn {
-  border-radius: 8px;
-}
-
-.handover-project-status-part .project-staff-workflow-tabs .tab-btn.is-active {
+  border-radius: 999px;
+  padding: 5px 10px;
   background: #ffffff;
-  color: var(--handover-pink);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
 }
 
-.handover-project-status-part .project-staff-ops-panel {
-  margin-top: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+.operation-status-badge.is-critical {
+  border-color: rgba(157, 23, 77, 0.18);
+  background: #fdf2f8;
+  color: var(--handover-pink);
+}
+
+.operation-status-badge.is-daily {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.operation-status-badge.is-weekly {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.operation-status-badge.is-monthly {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.operation-status-badge.is-warning {
+  border-color: rgba(157, 23, 77, 0.18);
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.project-status-collapsible {
+  margin-top: 14px;
+}
+
+.project-status-collapsible .budget-collapsible-body {
+  display: grid;
+  gap: 14px;
+}
+
+.project-status-source-panel {
+  display: block;
 }
 
 .handover-project-status-part .management-link-panel,
-.handover-project-status-part .project-learning-toc,
-.handover-project-status-part .project-handover-summary,
-.handover-project-status-part .project-onboarding-card,
-.handover-project-status-part .sheet-guide-section,
-.handover-project-status-part .project-staff-workflow-card,
 .handover-standalone-section .project-closeout-file-map article,
 .handover-standalone-section .project-closeout-routine,
 .handover-standalone-section .project-closeout-command-box,
@@ -1120,11 +1136,6 @@
   box-shadow: none;
 }
 
-.handover-project-status-part .handover-standalone-section {
-  margin-top: 22px;
-  scroll-margin-top: 110px;
-}
-
 .handover-project-status-part .management-link-kicker,
 .handover-project-status-part .project-staff-ops-kicker {
   color: var(--handover-pink);
@@ -1134,6 +1145,175 @@
 .handover-project-status-part .projectClosureMailMergeExportCsvStaff,
 .handover-project-status-part .btn-primary {
   border-radius: 8px;
+}
+
+.project-status-quick-steps,
+.project-status-routine-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-status-quick-steps li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  color: #334155;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.project-status-quick-steps span {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fdf2f8;
+  color: var(--handover-pink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.project-status-process-grid article ul,
+.project-status-process-grid article ol {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+
+.project-status-mini-dl {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.project-status-mini-dl div {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.project-status-mini-dl dt,
+.project-status-mini-dl dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.project-status-mini-dl dt {
+  color: var(--handover-pink);
+  font-weight: 800;
+}
+
+.project-status-mini-dl dd {
+  color: #475569;
+}
+
+.project-status-routine-list li {
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.project-status-routine-list strong {
+  color: #334155;
+  font-size: 13.5px;
+}
+
+.project-status-routine-list span {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.project-status-system-map {
+  margin-bottom: 0;
+}
+
+.project-status-field-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.project-status-field-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.project-status-field-grid article {
+  background: #ffffff;
+}
+
+.project-status-workflow {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.project-status-workflow > strong {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  border: 1px solid rgba(157, 23, 77, 0.16);
+  border-radius: 8px;
+  background: #fdf2f8;
+  color: var(--handover-pink);
+  font-size: 20px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.project-status-workflow > div {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.project-status-workflow span {
+  position: relative;
+  display: flex;
+  min-height: 90px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.project-status-lifecycle {
+  margin-top: 0;
+}
+
+.project-status-troubleshooting article {
+  background: #ffffff;
+}
+
+.budget-callout strong,
+.budget-callout span {
+  display: block;
+}
+
+.budget-callout span {
+  margin-top: 6px;
+  font-weight: 600;
 }
 
 .handover-placeholder-section {
@@ -1206,6 +1386,24 @@
 
 .handover-standalone-section .handover-part-badge {
   margin-bottom: 10px;
+}
+
+.handover-part-titleline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.handover-part-titleline .handover-part-badge {
+  margin-bottom: 0;
+}
+
+.handover-part-titleline strong {
+  color: var(--handover-ink);
+  font-size: 17px;
+  line-height: 1.35;
 }
 
 .handover-standalone-section .panel-title {
@@ -1331,6 +1529,751 @@
   background: #ffffff;
 }
 
+.physical-handbook {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.physical-handbook .physical-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: end;
+  margin: 0;
+  padding: 28px;
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.physical-handbook .physical-hero .panel-title {
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.12;
+}
+
+.physical-handbook .physical-hero .panel-caption {
+  max-width: 780px;
+  margin-top: 12px;
+  font-size: 15.5px;
+}
+
+.physical-hero-badges {
+  display: grid;
+  gap: 8px;
+}
+
+.physical-hero-badges span {
+  display: block;
+  border: 1px solid rgba(157, 23, 77, 0.14);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fdf2f8;
+  color: var(--handover-pink);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.physical-block {
+  margin-top: 0;
+}
+
+.physical-block .budget-collapsible-body {
+  display: grid;
+  gap: 14px;
+}
+
+.physical-responsibility-grid article,
+.physical-policy-grid article,
+.physical-handover-grid article {
+  min-height: 0;
+}
+
+.physical-flow {
+  gap: 12px;
+}
+
+.physical-flow li {
+  align-items: start;
+}
+
+.physical-flow li > span {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(157, 23, 77, 0.14);
+  border-radius: 50%;
+  background: #fdf2f8 !important;
+  color: var(--handover-pink) !important;
+  box-shadow: none;
+}
+
+.physical-flow h3,
+.physical-status-grid h3,
+.physical-price-process h3 {
+  margin: 0;
+  color: var(--handover-ink) !important;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.physical-flow p,
+.physical-status-grid p,
+.physical-price-process p {
+  margin: 7px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.physical-status-grid article > span,
+.physical-price-process article > span {
+  width: fit-content;
+  min-width: 34px;
+  border: 1px solid rgba(157, 23, 77, 0.14);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: #fdf2f8;
+  color: var(--handover-pink);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.physical-room-map {
+  margin: 0;
+}
+
+.physical-audit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+  gap: 14px;
+}
+
+.physical-checklist-card,
+.physical-status-panel {
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.physical-checklist-card h3,
+.physical-status-panel h3 {
+  margin: 0 0 12px;
+  color: var(--handover-ink);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.physical-checklist-card ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 14px;
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.physical-inventory-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.physical-inventory-statuses span {
+  border: 1px solid var(--handover-line);
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.physical-inventory-statuses .is-ready {
+  border-color: rgba(22, 163, 74, 0.22);
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.physical-inventory-statuses .is-repair {
+  border-color: rgba(2, 132, 199, 0.22);
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+.physical-inventory-statuses .is-broken {
+  border-color: rgba(217, 119, 6, 0.25);
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.physical-inventory-statuses .is-missing,
+.physical-inventory-statuses .is-dispose {
+  border-color: rgba(157, 23, 77, 0.2);
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.physical-danger-zone {
+  display: grid;
+  gap: 10px;
+}
+
+.physical-danger-zone details {
+  border: 1px solid rgba(157, 23, 77, 0.16);
+  border-left: 4px solid var(--handover-pink);
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.physical-danger-zone summary {
+  padding: 14px 16px;
+  color: var(--handover-ink);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.physical-danger-zone summary::-webkit-details-marker {
+  display: none;
+}
+
+.physical-danger-zone p {
+  margin: 0;
+  padding: 0 16px 16px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.project-closeout-handbook {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.project-closeout-handbook .project-closeout-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: end;
+  margin: 0;
+  padding: 28px;
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.project-closeout-handbook .project-closeout-hero .panel-title {
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.12;
+}
+
+.project-closeout-handbook .project-closeout-hero .panel-caption {
+  max-width: 760px;
+  margin-top: 12px;
+  font-size: 15.5px;
+}
+
+.project-closeout-handbook .project-closeout-hero-badges {
+  display: grid;
+  gap: 8px;
+}
+
+.project-closeout-handbook .project-closeout-hero-badges span {
+  display: block;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.project-closeout-block {
+  margin-top: 0;
+}
+
+.project-closeout-block .budget-collapsible-body {
+  display: grid;
+  gap: 14px;
+}
+
+.project-closeout-principles {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.project-closeout-handbook .project-closeout-file-map {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.project-closeout-handbook .project-closeout-file-map article {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.project-closeout-handbook .project-closeout-file-map strong {
+  color: var(--handover-ink);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.project-closeout-handbook .project-closeout-file-map article > span:not(.project-closeout-file-type) {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.project-closeout-handbook .project-closeout-file-type {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.project-closeout-handbook .project-closeout-steps {
+  gap: 12px;
+}
+
+.project-closeout-handbook .project-closeout-steps li {
+  align-items: start;
+}
+
+.project-closeout-handbook .project-closeout-steps .project-closeout-step-no {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(157, 23, 77, 0.14);
+  border-radius: 50%;
+  background: #fdf2f8 !important;
+  color: var(--handover-pink) !important;
+  box-shadow: none;
+}
+
+.project-closeout-handbook .project-closeout-steps h3,
+.project-closeout-handbook .project-closeout-mail-grid h3 {
+  margin: 0;
+  color: var(--handover-ink) !important;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.project-closeout-handbook .project-closeout-steps p,
+.project-closeout-handbook .project-closeout-mail-grid p {
+  margin: 7px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.project-closeout-handbook .project-closeout-mail-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.project-closeout-handbook .project-closeout-command-box {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--handover-line);
+  border-left: 4px solid var(--handover-pink);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.project-closeout-handbook .project-closeout-command-box a {
+  width: fit-content;
+  color: var(--handover-pink);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.project-closeout-handbook .project-closeout-action-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.project-closeout-handbook .project-closeout-action-title,
+.project-closeout-handbook .project-closeout-tool-block {
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.project-closeout-handbook .project-closeout-action-title {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.project-closeout-handbook .project-closeout-action-title strong,
+.project-closeout-handbook .project-closeout-tool-block strong {
+  color: var(--handover-ink);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.project-closeout-handbook .project-closeout-action-title span:not(.project-staff-ops-kicker),
+.project-closeout-handbook .project-closeout-tool-block > span {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.project-closeout-handbook .project-closeout-tool-block {
+  display: grid;
+  gap: 12px;
+}
+
+.project-closeout-handbook .project-closeout-month-filter {
+  display: grid;
+  gap: 8px;
+}
+
+.project-closeout-handbook .project-closeout-month-filter label {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.project-closeout-handbook .project-closeout-month-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.project-closeout-handbook .project-closeout-month-filter > span {
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.project-closeout-handbook .project-closeout-tool-check {
+  border-left: 4px solid var(--handover-pink);
+  background: #f8fafc;
+}
+
+.project-numbering-handbook {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.project-numbering-handbook .project-numbering-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 18px;
+  align-items: end;
+  margin: 0;
+  padding: 28px;
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.project-numbering-handbook .project-numbering-hero .panel-title {
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.12;
+}
+
+.project-numbering-handbook .project-numbering-hero .panel-caption {
+  max-width: 760px;
+  margin-top: 12px;
+  font-size: 15.5px;
+}
+
+.project-numbering-hero-badges {
+  display: grid;
+  gap: 8px;
+}
+
+.project-numbering-hero-badges span {
+  display: block;
+  border: 1px solid rgba(157, 23, 77, 0.14);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fdf2f8;
+  color: var(--handover-pink);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.project-numbering-handbook .project-numbering-guide {
+  display: grid;
+  gap: 14px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.project-numbering-block {
+  margin-top: 0;
+}
+
+.project-numbering-block .budget-collapsible-body {
+  display: grid;
+  gap: 14px;
+}
+
+.project-numbering-handbook .project-numbering-steps {
+  gap: 12px;
+  margin: 0;
+}
+
+.project-numbering-handbook .project-numbering-steps li {
+  align-items: start;
+}
+
+.project-numbering-handbook .project-numbering-steps li > span,
+.project-numbering-handbook .project-numbering-steps article > span {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(157, 23, 77, 0.14);
+  border-radius: 50%;
+  background: #fdf2f8 !important;
+  color: var(--handover-pink) !important;
+  box-shadow: none;
+}
+
+.project-numbering-handbook .project-numbering-steps h3 {
+  margin: 0;
+  color: var(--handover-ink);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.project-numbering-handbook .project-numbering-steps p {
+  margin: 7px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.project-numbering-workflow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.project-numbering-workflow span {
+  position: relative;
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.project-numbering-workflow span:not(:last-child)::after {
+  content: "v";
+  position: absolute;
+  right: -10px;
+  color: #94a3b8;
+  transform: rotate(-90deg);
+}
+
+.project-numbering-handbook .project-numbering-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.project-numbering-handbook .project-numbering-detail-card {
+  padding: 18px;
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.project-numbering-handbook .project-numbering-detail-card h5 {
+  margin: 0;
+  color: var(--handover-ink);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.project-numbering-handbook .project-numbering-detail-card p {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.project-numbering-handbook .project-numbering-detail-card dl,
+.project-numbering-warnings dl {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.project-numbering-handbook .project-numbering-detail-card dl > div,
+.project-numbering-warnings dl > div {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.project-numbering-handbook .project-numbering-detail-card dt,
+.project-numbering-handbook .project-numbering-detail-card dd,
+.project-numbering-warnings dt,
+.project-numbering-warnings dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.project-numbering-handbook .project-numbering-detail-card dt,
+.project-numbering-warnings dt {
+  color: var(--handover-pink);
+  font-weight: 800;
+}
+
+.project-numbering-handbook .project-numbering-detail-card dd,
+.project-numbering-warnings dd {
+  color: #475569;
+}
+
+.project-numbering-critical-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.project-numbering-critical-grid article {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(157, 23, 77, 0.18);
+  border-left: 4px solid var(--handover-pink);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff1f2;
+}
+
+.project-numbering-critical-grid strong {
+  color: #9f1239;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.project-numbering-critical-grid span {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.project-numbering-handbook .project-numbering-money-case {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--handover-line);
+  border-left: 4px solid var(--handover-pink);
+  border-radius: 8px;
+  padding: 18px;
+  background: #f8fafc;
+}
+
+.project-numbering-handbook .project-numbering-money-case > strong {
+  color: var(--handover-ink);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.project-numbering-handbook .project-numbering-money-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.project-numbering-handbook .project-numbering-money-grid span {
+  display: block;
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.project-numbering-handbook .project-numbering-money-grid b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--handover-pink);
+}
+
+.project-numbering-handbook .project-numbering-money-case p {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.project-numbering-handbook .project-numbering-warnings {
+  display: grid;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.project-numbering-warnings details {
+  border: 1px solid var(--handover-line);
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.project-numbering-warnings summary {
+  padding: 14px 16px;
+  color: var(--handover-ink);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.project-numbering-warnings summary::-webkit-details-marker {
+  display: none;
+}
+
+.project-numbering-warnings dl {
+  padding: 0 16px 16px;
+}
+
 .handover-project-status-part .project-closeout-hero .handover-part-badge,
 .handover-project-status-part .project-staff-ops-section-head .handover-part-badge {
   margin-bottom: 10px;
@@ -1370,7 +2313,35 @@
   .budget-data-flow,
   .budget-system-map,
   .budget-process-grid,
+  .project-status-field-grid,
   .budget-project-status-bridge {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .project-status-workflow {
+    grid-template-columns: 1fr;
+  }
+
+  .project-status-workflow > div {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .project-closeout-handbook .project-closeout-hero,
+  .project-closeout-handbook .project-closeout-file-map,
+  .project-closeout-handbook .project-closeout-action-panel,
+  .project-numbering-handbook .project-numbering-hero,
+  .physical-handbook .physical-hero,
+  .physical-audit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-closeout-handbook .project-closeout-mail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .project-numbering-workflow,
+  .project-numbering-critical-grid,
+  .physical-checklist-card ul {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1495,9 +2466,53 @@
   .budget-mini-grid,
   .budget-system-map,
   .budget-process-grid,
+  .project-status-field-grid,
   .budget-project-status-bridge,
   .budget-project-status-fields {
     grid-template-columns: 1fr;
+  }
+
+  .handover-project-status-part {
+    padding: 18px;
+  }
+
+  .project-status-metrics,
+  .project-status-workflow > div,
+  .project-closeout-handbook .project-closeout-mail-grid,
+  .project-closeout-handbook .project-closeout-month-row,
+  .project-numbering-workflow,
+  .project-numbering-critical-grid,
+  .project-numbering-handbook .project-numbering-detail-grid,
+  .project-numbering-handbook .project-numbering-money-grid,
+  .physical-checklist-card ul {
+    grid-template-columns: 1fr;
+  }
+
+  .project-status-workflow > strong,
+  .project-status-workflow span {
+    min-height: 68px;
+  }
+
+  .project-status-mini-dl div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .project-numbering-workflow span {
+    min-height: 62px;
+  }
+
+  .project-numbering-workflow span:not(:last-child)::after {
+    content: "v";
+    right: auto;
+    bottom: -14px;
+    transform: none;
+  }
+
+  .project-numbering-handbook .project-numbering-detail-card dl > div,
+  .project-numbering-warnings dl > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
   }
 
   .budget-tab-labels {

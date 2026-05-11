@@ -736,11 +736,11 @@
   }
 
   .mobile-project-action-bar.is-summary-actions {
-    left: 50%;
-    right: auto;
-    width: min(330px, calc(100vw - 20px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+    width: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    transform: translateX(-50%);
+    transform: none;
   }
 
   .mobile-project-action-bar.is-calendar-actions {
@@ -1123,11 +1123,11 @@
   }
 
   html.sgcu-standalone .mobile-project-action-bar.is-summary-actions {
-    left: 50%;
-    right: auto;
-    width: min(330px, calc(100vw - 20px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+    width: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    transform: translateX(-50%);
+    transform: none;
   }
 
   html.sgcu-standalone .mobile-project-action-bar.is-calendar-actions {

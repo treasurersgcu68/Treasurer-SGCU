@@ -1164,6 +1164,10 @@
     transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
   }
 
+  html.sgcu-standalone .mobile-project-action[hidden] {
+    display: none;
+  }
+
   html.sgcu-standalone .mobile-bottom-item {
     appearance: none;
     border: 0;

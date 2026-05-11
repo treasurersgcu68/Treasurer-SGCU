@@ -189,9 +189,9 @@ function initStaffAccessPages() {
     { id: "org-representative-approval-staff", label: "ตัวแทนองค์กร" },
     { id: "content-management-staff", label: "จัดการเนื้อหา" },
     { id: "content-news-staff", label: "ข่าวสาร" },
-    { id: "content-documents-staff", label: "เอกสารการเงิน" },
-    { id: "login", label: "หน้าเข้าสู่ระบบ" }
+    { id: "content-documents-staff", label: "เอกสารการเงิน" }
   ];
+  const STAFF_IMPLICIT_ALLOWED_PAGES = ["login"];
   const REQUIRED_ORG_REPRESENTATIVE_ROLES = [
     { key: "president", label: "ประธาน" },
     { key: "vice_president", label: "รองประธาน" },
@@ -946,7 +946,10 @@ function initStaffAccessPages() {
   };
   const isValidDivisionCodeYY = (value) => /^\d{2}$/.test(normalizeCode2(value));
   const isValidLevelCodeZZ = (value) => ["01", "02", "03", "04"].includes(normalizeCode2(value));
-  const isKnownStaffPage = (page) => STAFF_PAGE_OPTIONS.some((item) => item.id === (page || "").toString().trim());
+  const isKnownStaffPage = (page) => {
+    const id = (page || "").toString().trim();
+    return STAFF_PAGE_OPTIONS.some((item) => item.id === id) || STAFF_IMPLICIT_ALLOWED_PAGES.includes(id);
+  };
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
@@ -1994,13 +1997,14 @@ function initStaffAccessPages() {
 
   const renderAllowedPageBadges = (allowedPages = []) => {
     const pages = Array.isArray(allowedPages) ? allowedPages : [];
-    if (!pages.length) return '<span class="staff-position-page-badge is-summary">ไม่มีหน้าที่อนุญาต</span>';
-    if (STAFF_PAGE_OPTIONS.every((item) => pages.includes(item.id))) {
+    const visiblePages = pages.filter((page) => STAFF_PAGE_OPTIONS.some((entry) => entry.id === page));
+    if (!visiblePages.length) return '<span class="staff-position-page-badge is-summary">ไม่มีหน้าฝั่ง Staff</span>';
+    if (STAFF_PAGE_OPTIONS.every((item) => visiblePages.includes(item.id))) {
       return `<span class="staff-position-page-badge is-summary">ทุกหน้า (${toSafeText(STAFF_PAGE_OPTIONS.length)} หน้า)</span>`;
     }
-    const visiblePages = pages.slice(0, 4);
-    const hiddenCount = Math.max(0, pages.length - visiblePages.length);
-    const visibleBadges = visiblePages.map((page) => {
+    const shownPages = visiblePages.slice(0, 4);
+    const hiddenCount = Math.max(0, visiblePages.length - shownPages.length);
+    const visibleBadges = shownPages.map((page) => {
       const label = STAFF_PAGE_OPTIONS.find((entry) => entry.id === page)?.label || page;
       return `<span class="staff-position-page-badge">${toSafeText(label)}</span>`;
     });

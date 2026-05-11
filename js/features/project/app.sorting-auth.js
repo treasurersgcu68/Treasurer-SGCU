@@ -325,6 +325,17 @@ function syncStaffProjectWorkflowTabs() {
     });
   });
 
+  document.querySelectorAll("[data-project-workflow-toc]").forEach((btn) => {
+    const tab = btn.dataset.projectWorkflowToc || "";
+    if (!tab) return;
+    if (btn.dataset.projectWorkflowTocBound === "true") return;
+    btn.dataset.projectWorkflowTocBound = "true";
+    btn.addEventListener("click", () => {
+      activeStaffProjectWorkflowTab = tab;
+      syncStaffProjectWorkflowTabs();
+    });
+  });
+
   document.querySelectorAll("[data-project-workflow-panel]").forEach((panel) => {
     const tab = panel.dataset.projectWorkflowPanel || "checks";
     panel.hidden = tab !== activeStaffProjectWorkflowTab;
@@ -342,6 +353,7 @@ window.sgcuSetStaffProjectWorkflowTab = setStaffProjectWorkflowTab;
 
 function updateStaffProjectOperationsPanel(filtered) {
   const ctx = projectStatusContexts.staff || {};
+  syncStaffProjectWorkflowTabs();
   if (!ctx.projectStaffOpsPanelEl) return;
 
   const data = Array.isArray(filtered) ? filtered : getAllLoadedProjects();
@@ -368,7 +380,6 @@ function updateStaffProjectOperationsPanel(filtered) {
   const transferRows = buildProjectOpsRows(data, getTransferCheckMeta);
   lastStaffProjectCheckRows.advance = advanceRows;
   lastStaffProjectCheckRows.transfer = transferRows;
-  syncStaffProjectWorkflowTabs();
   syncStaffProjectCheckTabs();
   if (ctx.projectAdvanceBlockedCountEl) ctx.projectAdvanceBlockedCountEl.textContent = advanceRows.length.toLocaleString("th-TH");
   if (ctx.projectTransferBlockedCountEl) ctx.projectTransferBlockedCountEl.textContent = transferRows.length.toLocaleString("th-TH");

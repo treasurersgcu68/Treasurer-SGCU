@@ -709,6 +709,289 @@
   font-size: 12px;
 }
 
+.project-learning-toc {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.34fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid rgba(20, 184, 166, 0.22);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f8fffd 0%, #ffffff 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.project-learning-toc-head {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.project-learning-toc-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.project-learning-toc-head p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.project-learning-toc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.project-learning-toc-grid a,
+.project-learning-toc-grid button {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 3px 9px;
+  align-items: start;
+  min-width: 0;
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 8px;
+  background: #ffffff;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.project-learning-toc-grid button {
+  font: inherit;
+}
+
+.project-learning-toc-grid a:hover,
+.project-learning-toc-grid button:hover {
+  border-color: rgba(20, 184, 166, 0.34);
+  background: #f0fdfa;
+}
+
+.project-learning-toc-grid span {
+  grid-row: span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.project-learning-toc-grid strong {
+  color: #0f172a;
+  font-size: 12.5px;
+  line-height: 1.25;
+}
+
+.project-learning-toc-grid em {
+  color: #64748b;
+  font-size: 11.5px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.project-onboarding-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.project-onboarding-card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.project-onboarding-card.is-primary {
+  border-color: rgba(20, 184, 166, 0.24);
+  background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 76%);
+}
+
+.project-onboarding-card h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.project-onboarding-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.project-onboarding-card ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.project-onboarding-card b {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.project-onboarding-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.project-onboarding-card dl > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 9px;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.project-onboarding-card dt {
+  color: #0f766e;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.project-onboarding-card dd {
+  margin: 0;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.project-action-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-action-list li {
+  display: grid;
+  grid-template-columns: 94px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.project-action-list strong {
+  color: #0f766e;
+  font-size: 12px;
+}
+
+.project-action-list span {
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.project-critical-path {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(20, 184, 166, 0.22);
+  border-radius: 8px;
+  background: #f8fffd;
+}
+
+.project-critical-path > strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.project-critical-path ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: criticalPath;
+}
+
+.project-critical-path li {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 12px 12px 12px 48px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 8px;
+  background: #ffffff;
+  counter-increment: criticalPath;
+}
+
+.project-critical-path li::before {
+  content: counter(criticalPath);
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.project-critical-path span {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.project-critical-path p {
+  margin: 0;
+  color: #475569;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.project-closeout-routine h4 {
+  margin: 16px 0 -4px;
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.project-closeout-tool-check {
+  border-color: rgba(245, 158, 11, 0.24) !important;
+  background: #fffbeb !important;
+}
+
+.project-closeout-tool-check span {
+  color: #78350f;
+}
+
 .project-template-card {
   display: grid;
   gap: 14px;
@@ -1287,6 +1570,27 @@
 
   .project-handover-flow {
     grid-template-columns: 1fr;
+  }
+
+  .project-learning-toc {
+    grid-template-columns: 1fr;
+  }
+
+  .project-learning-toc-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-onboarding-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-onboarding-card dl > div,
+  .project-action-list li {
+    grid-template-columns: 1fr;
+  }
+
+  .project-critical-path li {
+    padding-left: 44px;
   }
 
   .project-numbering-steps,

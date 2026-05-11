@@ -1,21 +1,20 @@
       <!-- ============ PROJECT STATUS (STAFF) ============ -->
       <section class="page-view" data-page="project-status-staff">
         <div class="page project-staff-ops-page">
-          <!-- Header -->
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">คู่มือถ่ายงานเหรัญญิก</h1>
-              <p class="page-subtitle">สรุป workflow Project Status, Export CSV ปิดโครงการ และ template เลขรันเอกสารที่สตาฟต้องส่งต่อให้เหรัญญิกรุ่นถัดไป</p>
+              <p class="page-subtitle">คู่มือเริ่มงานสำหรับเหรัญญิกวาระถัดไป อ่านจากบนลงล่างแล้วจะรู้ว่าต้องเปิดไฟล์ไหน ตรวจอะไร ทำอะไรก่อน และส่งต่องานอย่างไร</p>
             </div>
             <div class="tabs project-staff-workflow-tabs" role="tablist" aria-label="เลือกหมวดคู่มือถ่ายงานเหรัญญิก">
               <button type="button" class="tab-btn view-toggle-btn is-active" data-project-workflow-tab="sources">
-                สารบัญ Project Status
+                เริ่มรับงาน
               </button>
               <button type="button" class="tab-btn view-toggle-btn" data-project-workflow-tab="export">
-                Export CSV
+                ปิดโครงการ
               </button>
               <button type="button" class="tab-btn view-toggle-btn" data-project-workflow-tab="templates">
-                Template เลขรัน
+                เลขรันเอกสาร
               </button>
             </div>
           </div>
@@ -25,13 +24,13 @@
             <section id="dashboardStaffSourcesPanel" class="dashboard-staff-main-panel" data-project-workflow-panel="sources">
               <section class="management-link-panel section-appear section-delay-1" data-management-visibility="staff" hidden>
                 <div class="management-link-copy">
-                  <span class="management-link-kicker">แหล่งข้อมูลต้นทาง</span>
+                  <span class="management-link-kicker">ไฟล์แรกที่ต้องเปิด</span>
                   <h3>สารบัญ Project Status</h3>
-                  <p>ข้อมูลโครงการมี 2 ชั้น คือสารบัญกลางที่เลือกปีการศึกษาและลิงก์ข้อมูล กับชีท Project Status ของปีนั้นที่เก็บรายการโครงการจริง</p>
+                  <p>เริ่มจากไฟล์นี้เสมอ เพราะเป็นตัวบอกว่าเว็บกำลังใช้ Project Status ปีไหน และดึงข้อมูล CSV จากลิงก์ใด</p>
                 </div>
-                <div class="management-link-steps" aria-label="คอลัมน์ที่ต้องแก้ในสารบัญ Project Status">
+                <div class="management-link-steps" aria-label="ลำดับไฟล์หลัก">
                   <span><strong>1</strong> สารบัญ Project Status</span>
-                  <span><strong>2</strong> Project Status</span>
+                  <span><strong>2</strong> Project Status ปีปัจจุบัน</span>
                 </div>
                 <a
                   class="btn-primary management-link-button"
@@ -49,280 +48,249 @@
                 </p>
               </section>
 
-              <section class="project-handover-summary section-appear section-delay-2" aria-label="ภาพรวมการถ่ายงาน Project Status">
+              <section class="project-learning-toc section-appear section-delay-2" aria-label="สารบัญการเรียนงานเหรัญญิก">
+                <div class="project-learning-toc-head">
+                  <span class="project-staff-ops-kicker">Learning map</span>
+                  <h3>สารบัญการเรียนงาน</h3>
+                  <p>เริ่มอ่านตามลำดับนี้ ถ้ามีเวลาน้อยให้อ่าน 1-4 ก่อน แล้วค่อยไปหัวข้อปิดโครงการและเลขรันเอกสาร</p>
+                </div>
+                <div class="project-learning-toc-grid">
+                  <a href="#project-handover-start"><span>1</span><strong>เริ่มจากศูนย์</strong><em>สิทธิ์ ไฟล์หลัก ปี active และลิงก์ CSV</em></a>
+                  <a href="#project-handover-routine"><span>2</span><strong>งานประจำ</strong><em>สิ่งที่ต้องดูทุกวัน ทุกสัปดาห์ ทุกเดือน</em></a>
+                  <a href="#project-handover-project-status"><span>3</span><strong>Project Status</strong><em>คอลัมน์สำคัญ วิธีเพิ่มและตามโครงการ</em></a>
+                  <a href="#project-handover-critical-path"><span>4</span><strong>ทำงาน 1 โครงการ</strong><em>รับเข้าไฟล์ อนุมัติ ยืมรองจ่าย ปิด ฎีกา</em></a>
+                  <button type="button" data-project-workflow-toc="export"><span>5</span><strong>ปิดโครงการ</strong><em>กรอกข้อมูล export CSV และ Mail Merge</em></button>
+                  <button type="button" data-project-workflow-toc="templates"><span>6</span><strong>เลขรันเอกสาร</strong><em>ออกเลข ยกเลิกเลข และไล่ปัญหาเลขไม่ขึ้น</em></button>
+                  <a href="#project-handover-warnings"><span>7</span><strong>ปัญหาที่พบบ่อย</strong><em>สูตรพัง IMPORTRANGE ไม่ขึ้น sort ผิด</em></a>
+                  <a href="#project-handover-final"><span>8</span><strong>ก่อนส่งต่อรุ่นถัดไป</strong><em>งานค้าง ไฟล์ตัวจริง คนรับผิดชอบ จุดเสี่ยง</em></a>
+                </div>
+              </section>
+
+              <section id="project-handover-start" class="project-handover-summary section-appear section-delay-2" aria-label="แผนเริ่มงานเหรัญญิก">
                 <article>
-                  <span class="project-staff-ops-kicker">Handover map</span>
-                  <h3>ใช้หน้านี้เป็นสารบัญส่งต่องาน</h3>
-                  <p>เริ่มจากตรวจสารบัญ Project Status ว่าปี active และลิงก์ CSV ถูกต้อง จากนั้น export รายการปิดโครงการ เก็บเลขรันเอกสาร และทำ checklist ก่อนส่งสิทธิ์ให้รุ่นถัดไป</p>
+                  <span class="project-staff-ops-kicker">Start here</span>
+                  <h3>ถ้าไม่รู้อะไรเลย ให้ทำตาม 4 ขั้นนี้ก่อน</h3>
+                  <p>เป้าหมายคือรู้ว่าไฟล์จริงอยู่ที่ไหน เว็บดึงข้อมูลจากอะไร ใครรับผิดชอบโครงการใด และอะไรห้ามแก้โดยไม่ตรวจซ้ำ</p>
                 </article>
-                <ol class="project-handover-flow" aria-label="ลำดับงานถ่ายงาน">
-                  <li><span>1</span> ตรวจแหล่งข้อมูล</li>
-                  <li><span>2</span> Export CSV</li>
-                  <li><span>3</span> ส่งต่อเลขรัน</li>
+                <ol class="project-handover-flow" aria-label="ลำดับเริ่มรับงาน">
+                  <li><span>1</span> ขอสิทธิ์ Google Group และเปิดสารบัญ</li>
+                  <li><span>2</span> ตรวจปี active กับลิงก์ CSV</li>
+                  <li><span>3</span> เปิด Project Status แล้วดูคิวงานค้าง</li>
+                  <li><span>4</span> ตรวจเลขรัน เอกสารปิด และสูตรสำคัญ</li>
                 </ol>
               </section>
 
-              <section class="sheet-guide-section section-appear section-delay-3" aria-label="คู่มือกรอกข้อมูล Project Status">
+              <section id="project-handover-routine" class="project-onboarding-grid section-appear section-delay-3" aria-label="คู่มือรับงานแบบลำดับขั้น">
+                <article class="project-onboarding-card is-primary">
+                  <span class="project-staff-ops-kicker">Day 1</span>
+                  <h3>1. รับสิทธิ์และรู้จักไฟล์หลัก</h3>
+                  <p>ให้รุ่นเดิมเพิ่มบัญชี Google ของเหรัญญิกใหม่เข้า Google Group และแชร์ไฟล์หลักทั้งหมดก่อนเริ่มแก้ข้อมูล</p>
+                  <ul>
+                    <li>เปิด <b>สารบัญ Project Status</b> เพื่อตรวจปีการศึกษาที่ใช้งาน</li>
+                    <li>เปิด <b>Project Status</b> ของปีนั้นจากลิงก์ CSV/Google Sheet ในสารบัญ</li>
+                    <li>เปิด <b>Template เลขรันเอกสาร</b> เพื่อดูเลขเอกสารที่ออกไปแล้ว</li>
+                    <li>เปิดหน้าเว็บจริงแล้วเทียบว่าข้อมูลในเว็บตรงกับชีทหรือไม่</li>
+                  </ul>
+                </article>
+
+                <article class="project-onboarding-card">
+                  <span class="project-staff-ops-kicker">Day 2</span>
+                  <h3>2. อ่าน Project Status ให้เป็น</h3>
+                  <p>Project Status คือฐานกลางของงานเหรัญญิก ทุกแถวคือหนึ่งโครงการ และรหัสโครงการคือกุญแจที่เชื่อมไปเลขรัน เอกสารยืมรองจ่าย ฎีกา และ dashboard</p>
+                  <dl>
+                    <div><dt>ต้องดูทุกวัน</dt><dd>สถานะอนุมัติ, ยืมรองจ่าย, ปิดโครงการ, ผู้ตรวจ, กำหนดส่ง</dd></div>
+                    <div><dt>ต้องกรอกให้ครบ</dt><dd>รหัสโครงการ, ชื่อโครงการ, ฝ่าย/ชมรม, งบประมาณ, วันที่, ผู้รับผิดชอบ</dd></div>
+                    <div><dt>ห้ามแก้มั่ว</dt><dd>หัวคอลัมน์, สูตร array, ช่วง IMPORTRANGE, เลขรันที่ออกแล้ว</dd></div>
+                  </dl>
+                </article>
+
+                <article class="project-onboarding-card">
+                  <span class="project-staff-ops-kicker">Routine</span>
+                  <h3>3. งานที่ต้องทำเป็นรอบ</h3>
+                  <p>แบ่งงานเป็นรอบสั้น ๆ จะไม่หลุดคิวเอกสารและรู้ทันว่าโครงการไหนต้องตามต่อ</p>
+                  <ol class="project-action-list">
+                    <li><strong>ทุกวัน</strong><span>ดูโครงการที่สถานะเปลี่ยน, งานรอตรวจ, งานใกล้ครบกำหนด และข้อความจากฝ่าย/ชมรม</span></li>
+                    <li><strong>ทุกสัปดาห์</strong><span>ตรวจยอดงบใช้จริง, งานยืมรองจ่าย, งานรอส่งกิจการนิสิต และงานปิดโครงการค้าง</span></li>
+                    <li><strong>ทุกเดือน</strong><span>export รายการปิดโครงการ, ตรวจเลขฎีกา, เทียบเลขรันกับ Project Status และสำรองไฟล์</span></li>
+                  </ol>
+                </article>
+
+                <article id="project-handover-final" class="project-onboarding-card">
+                  <span class="project-staff-ops-kicker">Handover</span>
+                  <h3>4. ก่อนส่งต่อรุ่นถัดไป</h3>
+                  <p>รุ่นถัดไปต้องรู้สถานะล่าสุด ไม่ใช่แค่ได้ลิงก์ไฟล์ ให้เตรียมรายการงานค้างและอธิบายจุดเสี่ยงให้ครบ</p>
+                  <ul>
+                    <li>แยกโครงการค้างเป็น รออนุมัติ, รอยืมรองจ่าย, รอปิด, รอฎีกา</li>
+                    <li>ส่งรายชื่อผู้รับผิดชอบ ผู้ตรวจ และช่องทางติดต่อที่ยังใช้งานได้</li>
+                    <li>บอกไฟล์ไหนเป็นตัวจริง ไฟล์ไหนเป็นสำเนาหรือไฟล์เก่า</li>
+                    <li>อธิบายสูตรและ dropdown ที่เคยพังหรือเคยแก้เฉพาะหน้า</li>
+                  </ul>
+                </article>
+              </section>
+
+              <section id="project-handover-project-status" class="sheet-guide-section" aria-label="คู่มือกรอกข้อมูล Project Status">
                 <div class="sheet-guide-header">
                   <div>
-                    <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
-                    <h3>Project Status</h3>
+                    <span class="management-link-kicker">Project Status</span>
+                    <h3>โครงสร้างข้อมูลที่ต้องเข้าใจ</h3>
                   </div>
-                  <p>เริ่มจากสารบัญกลางเพื่อเลือกปีและลิงก์ชีท จากนั้นแก้ข้อมูลโครงการจริงในชีท Project Status ของปีนั้น เว็บจะอ่านปีที่ active และใช้ข้อมูลโครงการไปแสดงใน Dashboard, สถานะโครงการ และปฏิทิน</p>
+                  <p>ถ้าต้องแก้ข้อมูล ให้แก้ที่ชีทต้นทาง ไม่แก้จากหน้าเว็บ เว็บอ่านข้อมูลจาก CSV และใช้ชื่อคอลัมน์กับรหัสโครงการในการจับคู่</p>
                 </div>
 
-                <div class="sheet-guide-legend" aria-label="คำอธิบายสีแถว">
-                  <span><i class="is-required"></i><strong>จำเป็น</strong> ถ้าว่างข้อมูลหลักจะไม่แสดงหรือจับคู่ผิด</span>
-                  <span><i class="is-recommended"></i><strong>ควรกรอก</strong> ทำให้ dashboard และเอกสารครบถ้วน</span>
-                  <span><i class="is-optional"></i><strong>ไม่จำเป็น</strong> เว้นว่างได้ตามสถานะงานของโครงการ</span>
+                <div class="sheet-guide-legend" aria-label="คำอธิบายระดับความสำคัญ">
+                  <span><i class="is-required"></i><strong>จำเป็น</strong> ถ้าว่าง เว็บแสดงผลผิดหรือเชื่อมข้อมูลไม่ได้</span>
+                  <span><i class="is-recommended"></i><strong>ควรกรอก</strong> ใช้ทำ dashboard เอกสาร และการติดตาม</span>
+                  <span><i class="is-structure"></i><strong>โครงสร้าง</strong> สูตร/ลิงก์/หัวคอลัมน์ที่ต้องระวัง</span>
                 </div>
 
-                <div class="sheet-guide-grid">
-                  <article class="sheet-guide-card">
-                    <div class="sheet-guide-card-head">
-                      <h4>สารบัญ Project Status</h4>
-                      <span>เลือกปีและแหล่งข้อมูล</span>
-                    </div>
-                    <div class="sheet-guide-table-wrap">
-                      <table class="sheet-guide-table">
-                        <thead>
-                          <tr>
-                            <th>คอลัมน์</th>
-                            <th>หัวข้อ</th>
-                            <th>คำอธิบาย</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr class="is-required">
-                            <td>A</td>
-                            <td>ปีการศึกษา</td>
-                            <td>ใช้สร้างตัวเลือกปีในหน้า Dashboard และหน้าสถานะโครงการ เช่น 2568</td>
-                          </tr>
-                          <tr class="is-required">
-                            <td>B</td>
-                            <td>CSV โครงการ</td>
-                            <td>ลิงก์ข้อมูล Project Status ของปีนั้น ถ้าต้องแก้รายการโครงการจริงให้เปิดชีทจากลิงก์นี้</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>C</td>
-                            <td>CSV ผู้ตรวจ</td>
-                            <td>ลิงก์ข้อมูลผู้รับผิดชอบตรวจ/ผู้ปิดโครงการ ใช้เติมข้อมูลติดต่อในรายละเอียดโครงการ</td>
-                          </tr>
-                          <tr class="is-required">
-                            <td>D</td>
-                            <td>active</td>
-                            <td>ตั้งเป็น TRUE หรือ active สำหรับปีที่ต้องการให้เว็บโหลดเป็นค่าเริ่มต้น</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </article>
-
-                  <article class="sheet-guide-card">
-                    <div class="sheet-guide-card-head">
-                      <h4>Project Status</h4>
-                      <span>ข้อมูลโครงการจริง</span>
-                    </div>
-                    <div class="sheet-guide-table-wrap">
-                      <table class="sheet-guide-table">
-                        <thead>
-                          <tr>
-                            <th>คอลัมน์</th>
-                            <th>หัวข้อ</th>
-                            <th>คำอธิบาย</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr class="is-required">
-                            <td>รหัสโครงการ</td>
-                            <td>รหัสโครงการ</td>
-                            <td>ใช้ระบุโครงการและค้นหาในตาราง ถ้าว่างแถวนั้นจะไม่ถูกนำไปใช้</td>
-                          </tr>
-                          <tr class="is-required">
-                            <td>ชื่อโครงการ</td>
-                            <td>ชื่อโครงการ</td>
-                            <td>ใช้แสดงชื่อในตาราง การ์ดรายละเอียด Dashboard และปฏิทิน</td>
-                          </tr>
-                          <tr class="is-required">
-                            <td>E</td>
-                            <td>ฝ่าย / ชมรม</td>
-                            <td>ใช้กรององค์กรและจับคู่ข้อมูลทะเบียนองค์กร เช่น เลขที่บัญชีในเอกสาร</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>F</td>
-                            <td>ฝ่ายใหญ่</td>
-                            <td>ใช้จัดกลุ่มประเภทองค์กรในตัวกรองและกราฟภาพรวม</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>H</td>
-                            <td>สถานะอนุมัติโครงการ</td>
-                            <td>ใช้คำนวณจำนวนโครงการที่รอ/อนุมัติ/ยกเลิก และแสดง badge สถานะหลัก</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>L-M</td>
-                            <td>วันที่อนุมัติ / วันปฏิบัติงานวันสุดท้าย</td>
-                            <td>ใช้สร้างปฏิทินและคำนวณสถานะปิดโครงการตรงเวลา</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>N-O</td>
-                            <td>แหล่งเงิน / งบประมาณ 100%</td>
-                            <td>ใช้แสดงข้อมูลการเงิน คำนวณ Dashboard และสร้างเอกสารยืมรองจ่าย</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>Y-AE</td>
-                            <td>ข้อมูลยืมเงินรองจ่าย</td>
-                            <td>ใช้แสดงสถานะเอกสารยืมเงิน วันครบกำหนด สัดส่วน และยอดยืม</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>AI-AK</td>
-                            <td>ผู้ตรวจ / งบใช้จริง / กำหนดปิด</td>
-                            <td>ใช้ติดตามผู้รับผิดชอบปิดโครงการ งบใช้จริง และวันครบกำหนดส่งปิดโครงการ</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>AZ-BA</td>
-                            <td>สถานะปิดโครงการ</td>
-                            <td>ใช้สรุปสถานะปิดโครงการในกราฟ ตาราง และปฏิทิน</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </article>
-                </div>
-
-                <div class="project-numbering-detail-grid" aria-label="คู่มือระบบ Project Status สำหรับถ่ายงาน">
+                <div class="project-numbering-detail-grid" aria-label="ข้อมูลสำคัญใน Project Status">
                   <article class="project-numbering-detail-card">
-                    <h5>ภาพรวมระบบ Project Status</h5>
-                    <p>Project Status เป็นฐานข้อมูลกลางของฝ่ายเหรัญญิก ใช้ติดตามโครงการตั้งแต่อนุมัติโครงการ โอนงบประมาณ ยืมรองจ่าย ปิดโครงการ ไปจนถึงเลขฎีกา โดยให้ยึดชีท <code>ตารางสถานะ</code> เป็น source of truth และใช้รหัสโครงการเป็น key เชื่อมกับระบบอื่น</p>
+                    <h5>สารบัญ Project Status</h5>
+                    <p>เป็นไฟล์ชั้นนอกที่บอกเว็บว่าจะโหลดข้อมูลปีไหน</p>
                     <dl>
-                      <div><dt>ชีทหลัก</dt><dd><code>ตารางสถานะ</code> เก็บข้อมูลโครงการจริงทั้งหมด</dd></div>
-                      <div><dt>ชีทบุคลากร</dt><dd><code>CONTACT</code> เก็บรายชื่อและช่องทางติดต่อทีมเหรัญญิก</dd></div>
-                      <div><dt>ชีทตรวจงาน</dt><dd><code>ตรวจสอบงานผู้ช่วยเหรัญญิก</code> ดึงข้อมูลจากตารางสถานะตามชื่อผู้ช่วย</dd></div>
-                      <div><dt>ชีทติดตาม</dt><dd><code>ประธาน 4 ฝ่าย ติดตามการส่งเอกสา</code> ใช้ดูรายการชมรม/ฝ่ายที่ต้องตามเอกสารปิดโครงการ</dd></div>
+                      <div><dt>A</dt><dd>ปีการศึกษา เช่น 2568 ใช้สร้างตัวเลือกปีในเว็บ</dd></div>
+                      <div><dt>B</dt><dd>CSV โครงการ ลิงก์ข้อมูล Project Status ของปีนั้น</dd></div>
+                      <div><dt>C</dt><dd>CSV ผู้ตรวจ ใช้เติมข้อมูลผู้รับผิดชอบในรายละเอียดโครงการ</dd></div>
+                      <div><dt>D</dt><dd>active ตั้ง TRUE หรือ active เฉพาะปีที่ต้องการให้เว็บเปิดเป็นค่าเริ่มต้น</dd></div>
                     </dl>
                   </article>
 
                   <article class="project-numbering-detail-card">
-                    <h5>Workflow การกรอกข้อมูล</h5>
-                    <p>ให้เพิ่มโครงการใหม่ที่ชีท <code>ตารางสถานะ</code> แบบ append และกรอกเฉพาะช่อง input ส่วนช่องสูตรให้ปล่อยระบบคำนวณเอง</p>
+                    <h5>ข้อมูลเปิดโครงการ</h5>
+                    <p>กรอกตั้งแต่ตอนโครงการเริ่มเข้าระบบ เพื่อให้ dashboard และเอกสารตามงานได้ถูก</p>
                     <dl>
-                      <div><dt>เปิดโครงการ</dt><dd>กรอก <code>B:C</code> รหัสและชื่อโครงการ, <code>E:F</code> ผู้รับผิดชอบ/ฝ่าย, <code>H:N</code> สถานะอนุมัติ วันที่ และแหล่งงบ</dd></div>
-                      <div><dt>งบประมาณ</dt><dd>กรอกงบอนุมัติที่ <code>O</code>; ถ้ามีเปลี่ยนเพดานงบให้กรอก <code>Q</code>, <code>U</code>, <code>V</code> แล้วตรวจ <code>W</code></dd></div>
-                      <div><dt>ยืมรองจ่าย</dt><dd>อัปเดตสถานะที่ <code>Y</code>; ระบบดึงเลขรันที่ <code>Z</code> และคำนวณยอดยืมที่ <code>AE</code></dd></div>
-                      <div><dt>ปิดโครงการ</dt><dd>กรอกยอดใช้จริงที่ <code>AJ</code>, วันที่ส่งปิดที่ <code>AY</code>, สถานะปิดที่ <code>AZ:BA</code> แล้วตรวจ <code>BB:BG</code></dd></div>
+                      <div><dt>รหัส</dt><dd>รหัสโครงการ ห้ามซ้ำและห้ามเว้นว่าง เพราะใช้เชื่อมทุกระบบ</dd></div>
+                      <div><dt>ชื่อ</dt><dd>ชื่อโครงการที่จะแสดงในเว็บ เอกสาร และปฏิทิน</dd></div>
+                      <div><dt>E-F</dt><dd>ฝ่าย/ชมรม และฝ่ายใหญ่ ใช้กรององค์กรและจัดกลุ่มข้อมูล</dd></div>
+                      <div><dt>H-O</dt><dd>สถานะอนุมัติ วันที่ แหล่งเงิน และงบประมาณ 100%</dd></div>
                     </dl>
                   </article>
 
                   <article class="project-numbering-detail-card">
-                    <h5>สถานะที่ต้องส่งต่อให้รุ่นถัดไป</h5>
-                    <p>สถานะสำคัญในไฟล์มีหลายกลุ่ม แก้ให้ตรงกับ workflow จริง เพราะมีผลต่อ dashboard, การติดตามเอกสาร และการคำนวณงบประมาณ</p>
+                    <h5>ข้อมูลระหว่างดำเนินงาน</h5>
+                    <p>ใช้ตามงานงบประมาณและเงินยืมรองจ่ายระหว่างปี</p>
                     <dl>
-                      <div><dt>อนุมัติ</dt><dd><code>H</code> เช่น ผ่านสภารับหลักการ, ส่งขออนุมัติกิจการนิสิต, อนุมัติโครงการ, รอแก้ไข, ยกเลิกโครงการ</dd></div>
-                      <div><dt>โอนงบประมาณ</dt><dd><code>Q</code> เช่น ไม่เข้ากระบวนการโอนงบประมาณ, ผู้ช่วยตรวจสอบ, ผ่านที่ประชุมสภาใหญ่, กระบวนการโอนงบประมาณมีผลบังคับใช้</dd></div>
-                      <div><dt>ยืมรองจ่าย</dt><dd><code>Y</code> เช่น สำรองจ่ายก่อน, ส่งกิจการนิสิตแล้ว รออนุมัติ, เหรัญญิกรับเงินจากกิจการนิสิต, โครงการรับเงินแล้ว</dd></div>
-                      <div><dt>ปิดโครงการ</dt><dd><code>AZ</code> เช่น รอส่งเอกสารปิดโครง, ส่งให้ชมรมกลับเพื่อแก้ไข, รอส่งกิจการนิสิต, ส่งกิจการนิสิตเรียบร้อย</dd></div>
+                      <div><dt>Q-W</dt><dd>ข้อมูลขอเปลี่ยนเพดานงบและงบประมาณสุทธิ</dd></div>
+                      <div><dt>Y-AE</dt><dd>สถานะยืมรองจ่าย เลขเอกสาร วันครบกำหนด สัดส่วน และยอดยืม</dd></div>
+                      <div><dt>AF-AI</dt><dd>ผู้รับผิดชอบ เหรัญญิกโครงการ และผู้ตรวจเอกสาร</dd></div>
+                      <div><dt>AJ-AK</dt><dd>งบใช้จริงและกำหนดส่งเอกสารปิดโครงการ</dd></div>
                     </dl>
                   </article>
 
                   <article class="project-numbering-detail-card">
-                    <h5>สูตรและระบบที่ห้ามทำพัง</h5>
-                    <p>สูตรสำคัญจำนวนมากเป็นสูตร Google Sheets เช่น <code>IMPORTRANGE</code>, <code>FILTER</code>, <code>XLOOKUP</code>, <code>MAP</code> และ <code>VSTACK</code> หากเปิดใน Excel อาจเห็นเป็น <code>__xludf.DUMMYFUNCTION</code> ให้ตรวจสูตรจริงใน Google Sheets ก่อนแก้</p>
+                    <h5>ข้อมูลปิดโครงการ</h5>
+                    <p>ใช้สรุปว่าโครงการส่งเอกสารครบหรือยัง และต้องเบิกเพิ่มหรือคืนเงินหรือไม่</p>
                     <dl>
-                      <div><dt>เลขเอกสาร</dt><dd><code>R</code> ดึงเลขโอนงบจาก DATA โอนงบประมาณ, <code>Z</code> ดึงเลขยืมรองจ่าย, <code>BI</code> ดึงเลขฎีกา</dd></div>
-                      <div><dt>กำหนดส่ง</dt><dd><code>AK = M + 14</code>, <code>AW = AK - TODAY()</code>, และ <code>AP/AV</code> สร้างข้อความติดตาม</dd></div>
-                      <div><dt>งบประมาณ</dt><dd><code>W</code> คำนวณงบสุทธิ, <code>BE:BG</code> คำนวณใช้จริง คงเหลือ และเปอร์เซ็นต์ใช้งบ</dd></div>
-                      <div><dt>เบิก/คืนรองจ่าย</dt><dd><code>BC = AJ - AE</code> เมื่อโครงการรับเงินแล้ว; ถ้า <code>BC &gt; 0</code> ระบบแสดงเบิก ถ้า <code>BC &lt; 0</code> ระบบแสดงคืน</dd></div>
+                      <div><dt>AY</dt><dd>วันที่ส่งเอกสารปิดโครงการจริง</dd></div>
+                      <div><dt>AZ-BA</dt><dd>สถานะปิดโครงการและสถานะย่อยที่ใช้ขึ้น dashboard</dd></div>
+                      <div><dt>BB-BG</dt><dd>ผลคำนวณจำนวนวัน ยอดเบิก/คืน งบคงเหลือ และเปอร์เซ็นต์ใช้งบ</dd></div>
+                      <div><dt>BI</dt><dd>เลขฎีกาที่ดึงจาก Template เลขรันเอกสาร</dd></div>
                     </dl>
                   </article>
                 </div>
 
-                <div class="project-closeout-warning" role="note">
-                  <strong>ข้อควรระวังในการถ่ายงาน Project Status</strong>
+                <div id="project-handover-critical-path" class="project-critical-path" aria-label="วิธีทำงานหนึ่งโครงการตั้งแต่ต้นจนจบ">
+                  <strong>วิธีทำงาน 1 โครงการ ตั้งแต่ต้นจนจบ</strong>
+                  <ol>
+                    <li><span>รับโครงการเข้าไฟล์</span><p>เพิ่มแถวใหม่ใน <code>ตารางสถานะ</code> กรอกรหัส ชื่อ ฝ่าย/ชมรม สถานะอนุมัติ แหล่งเงิน และงบประมาณ</p></li>
+                    <li><span>ตามสถานะอนุมัติ</span><p>อัปเดตสถานะในคอลัมน์อนุมัติและโอนงบให้ตรงกับเอกสารจริง ทุกครั้งที่มีมติหรือส่งกิจการนิสิต</p></li>
+                    <li><span>จัดการยืมรองจ่าย</span><p>ถ้าโครงการยืมเงิน ให้เปิดเลขรันใน Template แล้วตรวจว่าเลขและยอดยืมกลับมาแสดงใน Project Status</p></li>
+                    <li><span>ตามเอกสารปิดโครงการ</span><p>เมื่อจบงาน ให้กรอกงบใช้จริง วันที่ส่งปิด และสถานะปิดโครงการ เพื่อให้ dashboard รู้ว่าค้างหรือเสร็จแล้ว</p></li>
+                    <li><span>ออกฎีกา/สรุปเบิกคืน</span><p>ตรวจยอดเบิกเพิ่มหรือคืนเงิน เทียบเลขฎีกา แล้ว export CSV ไปทำเอกสารปิดโครงการถ้าต้องส่งเป็นชุด</p></li>
+                  </ol>
+                </div>
+
+                <div id="project-handover-warnings" class="project-closeout-warning" role="note">
+                  <strong>ข้อควรระวังที่ต้องย้ำกับรุ่นถัดไป</strong>
                   <span>ห้ามลบสูตร ห้ามแก้ชื่อคอลัมน์ และห้าม sort เฉพาะบางคอลัมน์ ให้เลือกทั้งตารางก่อน sort เสมอ</span>
                   <span>ถ้าเพิ่มแถวเกินช่วงเดิม ต้องขยายสูตร, dropdown, filter และช่วง <code>IMPORTRANGE</code> ให้ครอบคลุมแถวใหม่</span>
-                  <span>ถ้าเลขรันเอกสารหรือข้อมูลจากระบบอื่นไม่ขึ้น ให้ตรวจสิทธิ์ <code>IMPORTRANGE</code>, ลิงก์ชีทต้นทาง และรหัสโครงการให้ตรงกัน</span>
+                  <span>ถ้าเลขรันเอกสารหรือข้อมูลจากระบบอื่นไม่ขึ้น ให้ตรวจสิทธิ์ <code>IMPORTRANGE</code>, ลิงก์ชีทต้นทาง และรหัสโครงการให้ตรงกันก่อนแก้สูตร</span>
                 </div>
               </section>
             </section>
 
-            <section class="panel project-staff-workflow-card project-staff-closeout-card" data-project-workflow-panel="export" hidden>
+            <section id="project-handover-closeout" class="panel project-staff-workflow-card project-staff-closeout-card" data-project-workflow-panel="export" hidden>
               <div class="project-closeout-guide">
                 <div class="project-closeout-hero">
                   <div>
-                    <span class="project-staff-ops-kicker">CSV export</span>
-                    <h3 class="panel-title">Export CSV ปิดโครงการ</h3>
-                    <p class="panel-caption">
-                      ใช้ไฟล์จากระบบไปสร้างเอกสารปิดโครงการใน Microsoft Word แบบอัตโนมัติ
-                    </p>
+                    <span class="project-staff-ops-kicker">Closeout</span>
+                    <h3 class="panel-title">ปิดโครงการและ Export CSV</h3>
+                    <p class="panel-caption">ใช้เมื่อต้องสรุปโครงการที่ถึงรอบปิด ทำเอกสาร Word หลายโครงการพร้อมกัน และตรวจยอดเบิก/คืนก่อนส่งต่อ</p>
                   </div>
                   <div class="project-closeout-hero-badges" aria-label="เงื่อนไขหลักของ Mail Merge">
-                    <span>1 row = 1 document</span>
-                    <span>ใช้ XLSX เป็นหลัก</span>
+                    <span>1 แถว = 1 โครงการ</span>
+                    <span>แปลง CSV เป็น XLSX ก่อน merge</span>
                   </div>
                 </div>
+
                 <div class="project-closeout-file-map" aria-label="ไฟล์ที่ใช้ทำ Mail Merge">
                   <article>
-                    <span class="project-closeout-file-type">Data source</span>
-                    <strong>ฐานข้อมูล</strong>
-                    <span>ใช้ไฟล์ CSV ที่ export จากระบบ แล้วแปลงเป็น <b>mailmerge.xlsx</b></span>
+                    <span class="project-closeout-file-type">Source</span>
+                    <strong>Project Status</strong>
+                    <span>ต้องกรอกงบใช้จริง วันที่ส่งปิด สถานะปิด และเลขฎีกาให้เรียบร้อยก่อน export</span>
                   </article>
                   <article>
-                    <span class="project-closeout-file-type">Document</span>
-                    <strong>Word Template</strong>
-                    <span>ใช้ไฟล์ <b>template.docx</b> ที่ดาวน์โหลดจากปุ่มด้านขวา</span>
+                    <span class="project-closeout-file-type">Output</span>
+                    <strong>CSV/XLSX + Word Template</strong>
+                    <span>CSV จากเว็บใช้เป็นฐานข้อมูล ส่วน Word Template ใช้สร้างเอกสารปิดโครงการแบบ Mail Merge</span>
                   </article>
                 </div>
-                <ol class="project-closeout-steps" aria-label="วิธีใช้ Export CSV ปิดโครงการ">
-                  <li>
-                    <span class="project-closeout-step-no">1</span>
-                    <div>
-                      <strong>เตรียมไฟล์ 2 ไฟล์</strong>
-                      <span>กด <b>ดาวน์โหลด Template</b> เพื่อได้ไฟล์ Word</span>
-                      <span>เลือก <b>Export ถึงเดือน</b> ถ้าต้องการจำกัดช่วงเวลา แล้วกด <b>Export CSV ปิดโครงการ</b></span>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="project-closeout-step-no">2</span>
-                    <div>
-                      <strong>แปลง CSV เป็น XLSX</strong>
-                      <span>ใน Excel: เปิด CSV แล้วกด <b>File &gt; Save As &gt; Excel Workbook (*.xlsx)</b></span>
-                      <span>ใน Google Sheets: อัปโหลด CSV แล้วกด <b>File &gt; Download &gt; Microsoft Excel (.xlsx)</b></span>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="project-closeout-step-no">3</span>
-                    <div>
-                      <strong>ทำ Mail Merge ใน Word</strong>
-                      <span>เปิดไฟล์ Template ที่ดาวน์โหลดไว้</span>
-                      <span>ไปที่ <b>Mailings &gt; Start Mail Merge &gt; Letters</b></span>
-                      <span>กด <b>Select Recipients &gt; Use an Existing List</b> แล้วเลือกไฟล์ XLSX</span>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="project-closeout-step-no">4</span>
-                    <div>
-                      <strong>เลือก Sheet และใส่ Merge Fields</strong>
-                      <span>เลือก <b>Sheet1$</b> หรือ sheet ที่มีข้อมูล</span>
-                      <span>ติ๊ก <b>First row of data contains column headers</b></span>
-                      <span>ใช้ <b>Insert Merge Field</b> ใส่ช่องข้อมูล เช่น <b>«ฎีกา»</b>, <b>«โครงการ»</b>, <b>«จำนวน»</b>, <b>«บัญชี»</b>, <b>«เลขที่»</b></span>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="project-closeout-step-no">5</span>
-                    <div>
-                      <strong>Preview และสร้างเอกสารจริง</strong>
-                      <span>กด <b>Preview Results</b> เพื่อตรวจข้อมูลทีละโครงการ</span>
-                      <span>ถ้าถูกต้องแล้วกด <b>Finish &amp; Merge &gt; Edit Individual Documents &gt; All</b></span>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="project-closeout-step-no">6</span>
-                    <div>
-                      <strong>Export PDF</strong>
-                      <span>Word จะสร้างเอกสารใหม่ โดย 1 หน้า = 1 โครงการ</span>
-                      <span>กด <b>File &gt; Save As &gt; PDF</b> เพื่อส่งออกไฟล์สุดท้าย</span>
-                    </div>
-                  </li>
-                </ol>
+
+                <section class="project-closeout-routine" aria-label="ลำดับปิดโครงการ">
+                  <h4>ทำตามลำดับนี้เมื่อถึงรอบปิดโครงการ</h4>
+                  <ol class="project-closeout-steps" aria-label="วิธีปิดโครงการและ Export CSV">
+                    <li>
+                      <span class="project-closeout-step-no">1</span>
+                      <div>
+                        <strong>กรองโครงการที่ต้องปิด</strong>
+                        <span>ใน Project Status ดูโครงการที่วันปฏิบัติงานสิ้นสุดแล้วหรือครบกำหนดส่งเอกสาร</span>
+                        <span>แยกงานเป็น รอเอกสารจากฝ่าย/ชมรม, รอตรวจ, รอส่งกิจการนิสิต, ส่งเรียบร้อย</span>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="project-closeout-step-no">2</span>
+                      <div>
+                        <strong>กรอกข้อมูลปิดให้ครบ</strong>
+                        <span>กรอกงบใช้จริง วันที่ส่งปิด และสถานะปิดโครงการใน Project Status</span>
+                        <span>ตรวจยอดเบิกเพิ่ม/คืนเงินจากช่องคำนวณก่อนออกเอกสาร</span>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="project-closeout-step-no">3</span>
+                      <div>
+                        <strong>ตรวจเลขฎีกา</strong>
+                        <span>ออกเลขใน Template เลขรันเอกสาร แล้วดูว่าเลขกลับมาแสดงใน Project Status</span>
+                        <span>ถ้าเลขไม่ขึ้น ให้ตรวจรหัสโครงการและสิทธิ์ <code>IMPORTRANGE</code></span>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="project-closeout-step-no">4</span>
+                      <div>
+                        <strong>Export CSV จากเว็บ</strong>
+                        <span>เลือกเดือนสุดท้ายที่ต้องการ export หรือปล่อยเป็นทั้งหมด</span>
+                        <span>กด <b>Export CSV ปิดโครงการ</b> แล้วเปิดไฟล์เพื่อตรวจหัวคอลัมน์และจำนวนแถว</span>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="project-closeout-step-no">5</span>
+                      <div>
+                        <strong>แปลง CSV เป็น XLSX</strong>
+                        <span>ใน Excel: เปิด CSV แล้วกด <b>File &gt; Save As &gt; Excel Workbook (*.xlsx)</b></span>
+                        <span>ใน Google Sheets: อัปโหลด CSV แล้วกด <b>File &gt; Download &gt; Microsoft Excel (.xlsx)</b></span>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="project-closeout-step-no">6</span>
+                      <div>
+                        <strong>ทำ Mail Merge ใน Word</strong>
+                        <span>เปิด Word Template แล้วเลือก <b>Mailings &gt; Start Mail Merge &gt; Letters</b></span>
+                        <span>กด <b>Select Recipients &gt; Use an Existing List</b> แล้วเลือกไฟล์ XLSX</span>
+                        <span>Preview ทีละรายการ ก่อน <b>Finish &amp; Merge</b> และ export เป็น PDF</span>
+                      </div>
+                    </li>
+                  </ol>
+                </section>
+
                 <div class="project-closeout-command-box" aria-label="คำสั่งหลักใน Microsoft Word">
                   <strong>คำสั่งหลักใน Word</strong>
                   <span>Mailings &gt; Start Mail Merge &gt; Letters</span>
@@ -331,19 +299,21 @@
                   <span>Mailings &gt; Preview Results</span>
                   <span>Mailings &gt; Finish &amp; Merge</span>
                 </div>
+
                 <div class="project-closeout-warning" role="note">
-                  <strong>จุดที่ต้องตรวจซ้ำ</strong>
-                  <span>แถวแรกของ XLSX ต้องเป็นชื่อคอลัมน์</span>
-                  <span>ห้าม merge cell และควรเก็บข้อมูลไว้ใน sheet เดียว</span>
+                  <strong>เช็กก่อนส่งไฟล์ปิดโครงการ</strong>
+                  <span>ชื่อโครงการ หน่วยงาน เลขฎีกา ยอดเงิน และบัญชีต้องตรงกับ Project Status</span>
+                  <span>แถวแรกของ XLSX ต้องเป็นชื่อคอลัมน์ ห้าม merge cell และควรเก็บข้อมูลไว้ใน sheet เดียว</span>
                   <span>หลังเชื่อมกับ Word แล้ว อย่าย้ายไฟล์ XLSX เพราะ Word จะจำ path ของไฟล์ไว้</span>
                   <a href="https://support.microsoft.com/en-gb/office/use-mail-merge-in-word-to-send-bulk-email-messages-0f123521-20ce-4aa8-8b62-ac211dedefa4" target="_blank" rel="noopener noreferrer">Microsoft Support: Mail Merge</a>
                 </div>
               </div>
-              <div class="project-staff-closeout-actions project-closeout-merge-tools" aria-label="เตรียมไฟล์สำหรับ Mail Merge">
+
+              <div class="project-staff-closeout-actions project-closeout-merge-tools" aria-label="เครื่องมือปิดโครงการ">
                 <div class="project-closeout-action-title">
                   <span class="project-staff-ops-kicker">Actions</span>
-                  <strong>เตรียมไฟล์สำหรับ Mail Merge</strong>
-                  <span>ทำในเว็บหน้านี้ให้ครบก่อน แล้วค่อยไปแปลง XLSX และ merge ใน Word</span>
+                  <strong>เครื่องมือที่ใช้ในหน้านี้</strong>
+                  <span>ทำข้อมูลใน Project Status ให้ครบก่อน แล้วค่อยดาวน์โหลด template และ export CSV</span>
                 </div>
                 <div class="project-closeout-tool-block">
                   <strong>1. ดาวน์โหลด Word Template</strong>
@@ -370,17 +340,23 @@
                   <button id="projectClosureMailMergeExportCsvStaff" class="btn-primary csv-export-btn" type="button" disabled>
                     Export CSV ปิดโครงการ
                   </button>
-                  <span>ได้ไฟล์ .csv ที่มีข้อมูลโครงการ ผู้ตรวจ สถานะปิด งบใช้จริง และข้อมูลบัญชีสำหรับ mail merge</span>
+                  <span>ได้ไฟล์ .csv ที่มีข้อมูลโครงการ ผู้ตรวจ สถานะปิด งบใช้จริง และข้อมูลบัญชีสำหรับ Mail Merge</span>
+                </div>
+                <div class="project-closeout-tool-block project-closeout-tool-check">
+                  <strong>3. หลัง export ต้องตรวจ</strong>
+                  <span>จำนวนแถวใน CSV เท่ากับจำนวนโครงการที่จะออกเอกสาร</span>
+                  <span>ไม่มีช่องเลขฎีกา ยอดเงิน หรือบัญชีว่างในรายการที่ต้องส่งจริง</span>
+                  <span>ชื่อคอลัมน์ยังอ่านได้ใน Excel/Word ไม่กลายเป็นอักขระเพี้ยน</span>
                 </div>
               </div>
             </section>
 
-            <section class="panel project-staff-workflow-card project-template-card" data-project-workflow-panel="templates" hidden>
+            <section id="project-handover-numbering" class="panel project-staff-workflow-card project-template-card" data-project-workflow-panel="templates" hidden>
               <header class="project-staff-ops-section-head">
                 <div>
                   <span class="project-staff-ops-kicker">Document numbering</span>
-                  <h3 class="panel-title">Template เลขรันเอกสาร</h3>
-                  <p>คู่มือใช้งาน Template เลขรันเอกสารที่สรุปจากโครงสร้างชีทจริง สำหรับตั้งค่าไฟล์ใหม่และส่งต่อให้เหรัญญิกรุ่นถัดไป</p>
+                  <h3 class="panel-title">เลขรันเอกสาร</h3>
+                  <p>ระบบเลขรันคือสมุดทะเบียนเอกสารของฝ่ายเหรัญญิก ใช้คุมว่าเอกสารใดออกเลขแล้ว อยู่สถานะไหน และเชื่อมกลับไป Project Status อย่างไร</p>
                 </div>
               </header>
 
@@ -388,109 +364,113 @@
                 <div class="project-numbering-steps" aria-label="ขั้นตอนเริ่มต้นใช้งาน">
                   <article>
                     <span>1</span>
-                    <strong>ทำสำเนา Template</strong>
+                    <strong>ทำสำเนาไฟล์สำหรับปีใหม่</strong>
                     <p>
                       เปิด
                       <a href="https://docs.google.com/spreadsheets/d/1-J43tS7lpCSLg59rJwOktH7psiRUqCwz-ZDHl9youII/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Google Sheets Template เลขรันเอกสาร</a>
-                      แล้วกด File &gt; Make a copy หรือ ไฟล์ &gt; ทำสำเนา จากนั้นตั้งชื่อไฟล์ตามปีการศึกษา เช่น SGCU68-10 เลขรันเอกสาร
+                      แล้วกด File &gt; Make a copy จากนั้นตั้งชื่อไฟล์ตามปีการศึกษา เช่น SGCU68-10 เลขรันเอกสาร
                     </p>
                   </article>
                   <article>
                     <span>2</span>
-                    <strong>ตั้งค่าชีทหน้าแรก</strong>
-                    <p>เข้าไปที่ชีท <code>เลขรันเอกสาร</code> แล้วกรอกปีการศึกษาใน <code>B1</code> และแนบลิงก์ Project Status ของปีนั้นใน <code>B2</code> โดยต้องเปิดไฟล์ Google Sheets Project Status ต้นทาง กด Share/แชร์ แล้ว Copy link มาใส่</p>
+                    <strong>ตั้งค่าหน้าแรก</strong>
+                    <p>เข้าไปที่ชีท <code>เลขรันเอกสาร</code> กรอกปีการศึกษาใน <code>B1</code> และวางลิงก์ Google Sheets Project Status ของปีนั้นใน <code>B2</code></p>
                   </article>
                   <article>
                     <span>3</span>
-                    <strong>ตรวจการดึงข้อมูล</strong>
-                    <p>หลังใส่ลิงก์แล้วให้ลองเลือกโครงการในชีทเอกสารพิเศษ หากรหัสโครงการ ชื่อโครงการ หน่วยงาน หรือฝ่ายไม่ขึ้น ให้ตรวจสิทธิ์ IMPORTRANGE และลิงก์ใน <code>B2</code></p>
+                    <strong>ทดสอบก่อนใช้จริง</strong>
+                    <p>ลองเลือกโครงการในชีทเอกสารยืมรองจ่ายหรือฎีกา ถ้าชื่อโครงการ หน่วยงาน หรือฝ่ายไม่ขึ้น ให้ตรวจสิทธิ์ <code>IMPORTRANGE</code> ก่อนออกเลขจริง</p>
                   </article>
                 </div>
 
                 <div class="project-numbering-detail-grid">
                   <article class="project-numbering-detail-card">
-                    <h5>หน้าแรก: เลขรันเอกสาร</h5>
-                    <p>เป็นหน้าตั้งค่าหลักของไฟล์ ใช้กำหนดปีการศึกษา ลิงก์ Project Status และรายการประเภทเอกสารที่จะนำไปเลือกในชีทอื่น</p>
+                    <h5>ต้องใช้ชีทไหนทำอะไร</h5>
+                    <p>เลือกชีทให้ถูกก่อนกรอก เพราะแต่ละชีทมีเงื่อนไขออกเลขไม่เหมือนกัน</p>
                     <dl>
-                      <div><dt>ตั้งค่าไฟล์</dt><dd><code>B1</code> ปีการศึกษา และ <code>B2</code> ลิงก์ Google Sheets Project Status ที่ได้จากปุ่ม Share/แชร์</dd></div>
-                      <div><dt>เพิ่มประเภท</dt><dd>กรอกชื่อประเภทเอกสารในคอลัมน์ A และเลขฝ่ายในคอลัมน์ B เพื่อให้ประเภทนั้นไปปรากฏเป็นตัวเลือกใน <code>C1</code></dd></div>
+                      <div><dt>หน้าแรก</dt><dd><code>เลขรันเอกสาร</code> ตั้งปี ลิงก์ Project Status และประเภทเอกสาร</dd></div>
+                      <div><dt>ทั่วไป</dt><dd>เอกสารทั่วไปของเหรัญญิกหรือฝ่ายอื่น ใช้กรอกรายการ ผู้รับผิดชอบ สถานะ และหมายเหตุ</dd></div>
+                      <div><dt>ยืมรองจ่าย</dt><dd>ใช้เมื่อโครงการต้องทำเอกสารยืมเงินรองจ่าย ระบบดึงชื่อโครงการจากรหัสโครงการ</dd></div>
+                      <div><dt>ฎีกา</dt><dd>ใช้เมื่อปิดโครงการและต้องออกเลขฎีกา/เรียกเงินคืน/เบิกเพิ่ม</dd></div>
+                    </dl>
+                  </article>
+
+                  <article class="project-numbering-detail-card">
+                    <h5>กติกาการออกเลข</h5>
+                    <p>เลขรันต้องรักษาลำดับเพื่อให้ตรวจย้อนหลังได้ ห้ามลบเลขที่เคยออกแล้วแม้เอกสารถูกยกเลิก</p>
+                    <dl>
+                      <div><dt>ห้ามลบ</dt><dd>ถ้าเอกสารยกเลิก ให้เปลี่ยนสถานะเป็น “ยกเลิก” และเขียนเหตุผลในหมายเหตุ</dd></div>
+                      <div><dt>ห้ามแทรก</dt><dd>เพิ่มรายการใหม่ท้ายตาราง เพื่อลดโอกาสสูตรและลำดับเลขคลาดเคลื่อน</dd></div>
+                      <div><dt>ห้ามแก้เลข</dt><dd>คอลัมน์เลขรันเป็นสูตรหรือระบบคำนวณ อย่าพิมพ์ทับเอง</dd></div>
+                      <div><dt>ต้องตรงกัน</dt><dd>รหัสโครงการในเลขรันต้องตรงกับ Project Status ทุกตัวอักษร</dd></div>
                     </dl>
                   </article>
 
                   <article class="project-numbering-detail-card">
                     <h5>เอกสารทั่วไป</h5>
-                    <p>ใช้สำหรับเอกสารทั่วไปที่ออกจากแต่ละฝ่าย ถ้าต้องเพิ่มฝ่ายหรือหมวดใหม่ ให้ copy จาก <code>TEMPLATE</code> แล้วเพิ่มประเภทเอกสารในหน้าแรกก่อนใช้งาน</p>
+                    <p>ใช้สำหรับหนังสือหรือเอกสารที่ออกในนามฝ่าย ไม่ได้ผูกกับ workflow โครงการซับซ้อน</p>
                     <dl>
-                      <div><dt>ตั้งค่าก่อน</dt><dd>เลือกประเภทเอกสารที่ <code>C1</code>; ตัวเลือกจะมาจากรายการที่กรอกไว้ในหน้าแรก</dd></div>
-                      <div><dt>ต้องกรอก</dt><dd>C รายการ, D ผู้รับผิดชอบ, E สถานะ, F หมายเหตุ</dd></div>
+                      <div><dt>ตั้งค่า</dt><dd>เลือกประเภทเอกสารที่ <code>C1</code> ตัวเลือกมาจากรายการในหน้าแรก</dd></div>
+                      <div><dt>กรอกเอง</dt><dd>C รายการ, D ผู้รับผิดชอบ, E สถานะ, F หมายเหตุ</dd></div>
                       <div><dt>อัตโนมัติ</dt><dd>A ลำดับ และ B เลขรัน ห้ามแก้เอง</dd></div>
                       <div><dt>สถานะ</dt><dd>ยกเลิก, ร่าง, รอลงนาม, ส่งแล้ว</dd></div>
                     </dl>
-                    <p class="project-numbering-example">ตัวอย่าง: copy จาก <code>TEMPLATE</code> เป็นชีท “ฝ่ายตัวอย่าง”, เพิ่ม “ฝ่ายตัวอย่าง” ในหน้าแรก, เลือก “ฝ่ายตัวอย่าง” ที่ <code>C1</code> แล้วเริ่มกรอกรายการเอกสาร</p>
+                    <p class="project-numbering-example">ถ้าต้องเพิ่มหมวดใหม่ ให้ copy จาก <code>TEMPLATE</code> แล้วเพิ่มชื่อประเภทเอกสารในหน้าแรกก่อนใช้งาน</p>
                   </article>
 
                   <article class="project-numbering-detail-card">
                     <h5>เอกสารยืมรองจ่าย</h5>
-                    <p>ใช้กับเอกสารยืมเงินรองจ่ายของโครงการ โดยเลือกจากรหัสโครงการแล้วให้ระบบดึงข้อมูลโครงการมาเติม</p>
+                    <p>ใช้กับโครงการที่ต้องยืมเงินก่อนหรือเบิกเงินรองจ่าย ระบบจะดึงข้อมูลโครงการมาเติมจาก Project Status</p>
                     <dl>
-                      <div><dt>ต้องกรอก</dt><dd>D รหัสโครงการ, H ผู้รับผิดชอบ, I สถานะ, J หมายเหตุ</dd></div>
+                      <div><dt>กรอกเอง</dt><dd>D รหัสโครงการ, H ผู้รับผิดชอบ, I สถานะ, J หมายเหตุ</dd></div>
                       <div><dt>อัตโนมัติ</dt><dd>A ลำดับ, B เลขรัน, C STATUS, E รายการ, F ฝ่าย, G หน่วยงาน</dd></div>
-                      <div><dt>เงื่อนไขเลขรัน</dt><dd>ต้องกรอก D, H, I ครบ ไม่เช่นนั้นจะขึ้น “กรอกข้อมูลไม่ครบถ้วน”</dd></div>
+                      <div><dt>เลขไม่ขึ้น</dt><dd>ตรวจว่า D, H, I กรอกครบ และรหัสโครงการมีอยู่ใน Project Status</dd></div>
+                      <div><dt>หลังออกเลข</dt><dd>กลับไปดู Project Status ว่าเลขยืมรองจ่ายแสดงในช่องที่เกี่ยวข้องแล้ว</dd></div>
                     </dl>
                   </article>
 
                   <article class="project-numbering-detail-card">
                     <h5>เอกสารขอเปลี่ยนเพดานงบ</h5>
-                    <p>ใช้เมื่อต้องลดงบประมาณจากโครงการหนึ่งและเพิ่มงบประมาณให้อีกโครงการหนึ่ง</p>
+                    <p>ใช้เมื่อต้องลดงบจากโครงการหนึ่งและเพิ่มงบให้อีกโครงการหนึ่ง</p>
                     <dl>
-                      <div><dt>ต้องกรอก</dt><dd>C:G โครงการลดงบประมาณ, H:L โครงการเพิ่มงบประมาณ, M สถานะ, N หมายเหตุ</dd></div>
+                      <div><dt>กรอกเอง</dt><dd>C:G โครงการลดงบประมาณ, H:L โครงการเพิ่มงบประมาณ, M สถานะ, N หมายเหตุ</dd></div>
                       <div><dt>อัตโนมัติ</dt><dd>A ลำดับ, B เลขรัน และคอลัมน์ซ่อน O:T</dd></div>
-                      <div><dt>เงื่อนไขเลขรัน</dt><dd>ต้องมีรหัสโครงการอย่างน้อย 1 ช่องใน C:L และมีสถานะใน M</dd></div>
+                      <div><dt>เงื่อนไข</dt><dd>ต้องมีรหัสโครงการอย่างน้อย 1 ช่องใน C:L และมีสถานะใน M</dd></div>
                     </dl>
                   </article>
 
                   <article class="project-numbering-detail-card">
                     <h5>ฎีกา</h5>
-                    <p>ใช้กับเอกสารเรียกเงินยืมรองจ่ายคืน/ฎีกา โดยแยกเลขตามประเภทองค์กรและสถานะปิดโครงการ</p>
+                    <p>ใช้กับเอกสารปิดโครงการ แยกเลขตามประเภทองค์กรและสถานะปิดโครงการ</p>
                     <dl>
-                      <div><dt>ต้องกรอก</dt><dd>D รหัสโครงการ และตรวจสถานะใน C/H ตามข้อมูล Project Status</dd></div>
+                      <div><dt>กรอกเอง</dt><dd>D รหัสโครงการ และตรวจสถานะใน C/H ตามข้อมูล Project Status</dd></div>
                       <div><dt>อัตโนมัติ</dt><dd>A ลำดับ, B เลขรันเอกสาร, E ชื่อโครงการ, F หน่วยงาน, G ฝ่าย และคอลัมน์ซ่อน I:S</dd></div>
-                      <div><dt>รูปแบบเลข</dt><dd>SGCU, SCCU, ART, VCK, SPT, PHT หรือ <code>อบจ. 10.01.03-XXX/ปี</code> เมื่อเป็น “ไม่ส่งปิดโครงการ”</dd></div>
-                    </dl>
-                  </article>
-
-                  <article class="project-numbering-detail-card">
-                    <h5>TEMPLATE และ SETTING</h5>
-                    <p>สองชีทนี้ใช้ดูแลโครงสร้างไฟล์ ไม่ใช่พื้นที่กรอกเอกสารประจำวัน</p>
-                    <dl>
-                      <div><dt>TEMPLATE</dt><dd>ใช้ copy เพื่อสร้างชีทใหม่ แล้วเปลี่ยนชื่อชีทตามฝ่ายหรือประเภทเอกสารที่ต้องการ</dd></div>
-                      <div><dt>SETTING</dt><dd>ใช้สูตรดึงข้อมูลจาก Project Status เพื่อป้อน dropdown และข้อมูลอัตโนมัติให้ชีทเอกสารพิเศษ ผู้ใช้ทั่วไปไม่ควรแก้</dd></div>
+                      <div><dt>รูปแบบ</dt><dd>SGCU, SCCU, ART, VCK, SPT, PHT หรือ <code>อบจ. 10.01.03-XXX/ปี</code> เมื่อเป็น “ไม่ส่งปิดโครงการ”</dd></div>
+                      <div><dt>หลังออกเลข</dt><dd>ตรวจว่าเลขฎีกากลับไปขึ้นใน Project Status ก่อน export เอกสารปิด</dd></div>
                     </dl>
                   </article>
                 </div>
 
                 <div class="project-numbering-money-case" aria-label="ตัวอย่าง logic ยืมรองจ่ายและฎีกา">
-                  <strong>ตัวอย่าง logic ยืมรองจ่าย/ฎีกา</strong>
+                  <strong>อ่านยอดเบิก/คืนให้ถูก</strong>
                   <div class="project-numbering-money-grid">
-                    <span>โครงการ A เบิกจริง 5,000 บาท เคยยืมรองจ่าย 4,000 บาท จึงเบิกเพิ่ม 1,000 บาท และสรุปยอดเบิก 5,000 บาท</span>
-                    <span>โครงการ B เบิกจริง 3,000 บาท เคยยืมรองจ่าย 4,000 บาท จึงคืนเงิน 1,000 บาท และสรุปยอดเบิก 3,000 บาท</span>
+                    <span>ถ้าใช้จริง 5,000 บาท และเคยยืม 4,000 บาท ต้องเบิกเพิ่ม 1,000 บาท แต่ยอดใช้จริงของโครงการคือ 5,000 บาท</span>
+                    <span>ถ้าใช้จริง 3,000 บาท และเคยยืม 4,000 บาท ต้องคืน 1,000 บาท แต่ยอดใช้จริงของโครงการคือ 3,000 บาท</span>
                   </div>
-                  <p>ไฟล์ที่ตรวจพบไม่มีคอลัมน์จำนวนเงินให้กรอกโดยตรงในชีท <code>ฎีกา</code>; หากมีการผูกยอดจาก Project Status เพิ่มเติม ควรตรวจสอบสูตรในชีทจริงอีกครั้งก่อนใช้งาน</p>
+                  <p>ให้ยึด Project Status เป็นฐานตรวจยอด เพราะสูตรคำนวณยอดเบิก/คืนอยู่ฝั่ง Project Status ไม่ใช่ทุกชีทในเลขรันจะมีช่องจำนวนเงินให้กรอกโดยตรง</p>
                 </div>
 
                 <div class="project-numbering-warnings">
-                  <strong>ข้อควรระวังและปัญหาที่พบบ่อย</strong>
+                  <strong>ปัญหาที่พบบ่อยและวิธีไล่ตรวจ</strong>
                   <ul>
-                    <li>ห้ามลบแถวที่เคยออกเลขแล้ว ให้เปลี่ยนสถานะเป็น “ยกเลิก” และใส่เหตุผลในหมายเหตุแทน</li>
-                    <li>ห้ามแก้เลขรัน หัวคอลัมน์ หรือสูตรในแถวที่ 4 เพราะหลายชีทใช้สูตรแบบ array</li>
-                    <li>ถ้าเลขรันไม่ขึ้น ให้ตรวจช่องบังคับของชีทนั้น ปีการศึกษาใน <code>B1</code> และประเภทเอกสารที่ <code>C1</code></li>
-                    <li>ถ้าข้อมูลโครงการไม่ขึ้นหรือ dropdown ว่าง ให้ตรวจลิงก์ Project Status ใน <code>B2</code> และสิทธิ์ IMPORTRANGE</li>
+                    <li>เลขรันไม่ขึ้น: ตรวจช่องบังคับของชีทนั้น ปีการศึกษาใน <code>B1</code> และประเภทเอกสารที่ <code>C1</code></li>
+                    <li>ข้อมูลโครงการไม่ขึ้น: ตรวจลิงก์ Project Status ใน <code>B2</code>, สิทธิ์ <code>IMPORTRANGE</code> และรหัสโครงการ</li>
+                    <li>เลขใน Project Status ไม่อัปเดต: ตรวจว่าชีทเลขรันแชร์สิทธิ์ถูกต้องและสูตรดึงข้อมูลยังครอบคลุมแถวใหม่</li>
+                    <li>ต้องยกเลิกเอกสาร: เปลี่ยนสถานะเป็น “ยกเลิก” ใส่เหตุผล และไม่ลบแถวเดิม</li>
                   </ul>
                 </div>
               </section>
-
             </section>
           </section>
-
         </div>
       </section>

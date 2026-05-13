@@ -142,7 +142,7 @@
     padding: 12px;
   }
 
-  #meetingPublicBookingDayModal .modal-table {
+  #meetingPublicBookingDayModal .modal-table:not(.meeting-day-modal-table) {
     min-width: 620px;
   }
 }

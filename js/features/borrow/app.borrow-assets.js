@@ -98,6 +98,7 @@ function initBorrowAssetsApp() {
   const STATUS_CANCELLED = "cancelled";
   const STATUS_RETURNED = "returned";
   const STAFF_REQUEST_PAGE_SIZE = 50;
+  const STAFF_ASSETS_PAGE_SIZE = 50;
   const STAFF_REQUEST_TAB_STATUSES = new Set([STATUS_PENDING, STATUS_APPROVED, STATUS_RECEIVED]);
   const STAFF_HISTORY_TAB_STATUSES = new Set([STATUS_REJECTED, STATUS_CANCELLED, STATUS_RETURNED]);
   const BORROW_FOLLOWUP_SOON_DAYS = 3;
@@ -145,6 +146,7 @@ function initBorrowAssetsApp() {
     queue: 1,
     history: 1
   };
+  let staffAssetsPage = 1;
 
   const resolveFirestoreBridge = () => {
     firestore = window.sgcuFirestore || {};
@@ -251,6 +253,62 @@ function initBorrowAssetsApp() {
         class="btn-ghost list-pagination-btn"
         type="button"
         data-borrow-page-action="next"
+        ${meta.currentPage >= meta.totalPages ? "disabled" : ""}
+      >ถัดไป</button>
+    `;
+  };
+
+  const staffAssetsPagerEl = (() => {
+    if (!borrowAssetsTableBodyStaff) return null;
+    const wrapper = borrowAssetsTableBodyStaff.closest(".table-wrapper");
+    if (!wrapper) return null;
+    const existing = document.getElementById("borrowAssetsStaffPager");
+    if (existing) return existing;
+    const pager = document.createElement("div");
+    pager.id = "borrowAssetsStaffPager";
+    pager.className = "list-pagination-controls";
+    pager.setAttribute("aria-live", "polite");
+    wrapper.insertAdjacentElement("afterend", pager);
+    return pager;
+  })();
+
+  const getPagedStaffAssetsRows = (rows, page) => {
+    const totalPages = Math.max(1, Math.ceil(rows.length / STAFF_ASSETS_PAGE_SIZE));
+    const currentPage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    const startIndex = (currentPage - 1) * STAFF_ASSETS_PAGE_SIZE;
+    return {
+      rows: rows.slice(startIndex, startIndex + STAFF_ASSETS_PAGE_SIZE),
+      currentPage,
+      totalPages,
+      startIndex,
+      endIndex: Math.min(rows.length, startIndex + STAFF_ASSETS_PAGE_SIZE),
+      total: rows.length
+    };
+  };
+
+  const renderBorrowAssetsStaffPager = (meta) => {
+    if (!staffAssetsPagerEl) return;
+    if (!meta || meta.total <= STAFF_ASSETS_PAGE_SIZE) {
+      staffAssetsPagerEl.innerHTML = "";
+      staffAssetsPagerEl.hidden = true;
+      return;
+    }
+    staffAssetsPagerEl.hidden = false;
+    staffAssetsPagerEl.innerHTML = `
+      <span class="list-pagination-summary">
+        แสดง ${safeEscape(meta.startIndex + 1)}-${safeEscape(meta.endIndex)} จาก ${safeEscape(meta.total)} รายการ
+      </span>
+      <button
+        class="btn-ghost list-pagination-btn"
+        type="button"
+        data-borrow-assets-page-action="prev"
+        ${meta.currentPage <= 1 ? "disabled" : ""}
+      >ก่อนหน้า</button>
+      <span class="list-pagination-page">หน้า ${safeEscape(meta.currentPage)} / ${safeEscape(meta.totalPages)}</span>
+      <button
+        class="btn-ghost list-pagination-btn"
+        type="button"
+        data-borrow-assets-page-action="next"
         ${meta.currentPage >= meta.totalPages ? "disabled" : ""}
       >ถัดไป</button>
     `;
@@ -1550,27 +1608,31 @@ function initBorrowAssetsApp() {
   const renderBorrowAssetsTableStaff = (rows) => {
     if (!borrowAssetsTableBodyStaff) return;
     if (!rows.length) {
+      renderBorrowAssetsStaffPager({ total: 0 });
       borrowAssetsTableBodyStaff.innerHTML = `
         <tr>
-          <td colspan="11">ไม่พบรายการพัสดุ</td>
+          <td colspan="11" data-label="รายการพัสดุ">ไม่พบรายการพัสดุ</td>
         </tr>
       `;
       return;
     }
-    borrowAssetsTableBodyStaff.innerHTML = rows
+    const pageMeta = getPagedStaffAssetsRows(rows, staffAssetsPage);
+    staffAssetsPage = pageMeta.currentPage;
+    renderBorrowAssetsStaffPager(pageMeta);
+    borrowAssetsTableBodyStaff.innerHTML = pageMeta.rows
       .map((row) => `
-        <tr>
-          <td>${safeEscape(row.type || "-")}</td>
-          <td>${safeEscape(row.code || "-")}</td>
-          <td>${safeEscape(row.name || "-")}</td>
-          <td>${safeEscape(row.location || "-")}</td>
-          <td>${safeEscape(row.total != null ? row.total : "-")}</td>
-          <td>${safeEscape(row.approvedText || "-")}</td>
-          <td>${safeEscape(row.borrowed != null ? row.borrowed : "-")}</td>
-          <td>${safeEscape(row.damaged != null ? row.damaged : "-")}</td>
-          <td>${safeEscape(row.remaining != null ? row.remaining : "-")}</td>
-          <td>${safeEscape(row.unit || "-")}</td>
-          <td>${safeEscape(row.note || "-")}</td>
+        <tr class="borrow-assets-staff-row">
+          <td data-label="ประเภท">${safeEscape(row.type || "-")}</td>
+          <td data-label="รหัสพัสดุ">${safeEscape(row.code || "-")}</td>
+          <td data-label="รายการ">${safeEscape(row.name || "-")}</td>
+          <td data-label="ที่เก็บ">${safeEscape(row.location || "-")}</td>
+          <td data-label="จำนวนทั้งหมด">${safeEscape(row.total != null ? row.total : "-")}</td>
+          <td data-label="อนุมัติการยืม">${safeEscape(row.approvedText || "-")}</td>
+          <td data-label="ยืมอยู่">${safeEscape(row.borrowed != null ? row.borrowed : "-")}</td>
+          <td data-label="ชำรุด">${safeEscape(row.damaged != null ? row.damaged : "-")}</td>
+          <td data-label="คงเหลือ">${safeEscape(row.remaining != null ? row.remaining : "-")}</td>
+          <td data-label="หน่วย">${safeEscape(row.unit || "-")}</td>
+          <td data-label="หมายเหตุ">${safeEscape(row.note || "-")}</td>
         </tr>
       `)
       .join("");
@@ -2682,17 +2744,17 @@ function initBorrowAssetsApp() {
         const qtyText = Number.isFinite(qtyNum) ? String(qtyNum) : "0";
         return `
           <tr>
-            <td>${index + 1}</td>
-            <td>${safeEscape(asset.code || "-")}</td>
-            <td>${safeEscape(asset.name || "-")}</td>
-            <td>${safeEscape(qtyText)}</td>
-            <td>${safeEscape(asset.unit || "-")}</td>
+            <td data-label="#">${index + 1}</td>
+            <td data-label="รหัส">${safeEscape(asset.code || "-")}</td>
+            <td data-label="รายการ">${safeEscape(asset.name || "-")}</td>
+            <td data-label="จำนวน">${safeEscape(qtyText)}</td>
+            <td data-label="หน่วย">${safeEscape(asset.unit || "-")}</td>
           </tr>
         `;
       }).join("")
       : `
         <tr>
-          <td colspan="5" class="borrow-request-assets-empty">ไม่มีรายการพัสดุ</td>
+          <td colspan="5" class="borrow-request-assets-empty" data-label="รายการพัสดุ">ไม่มีรายการพัสดุ</td>
         </tr>
       `;
     const canManageStatus = ensureStaffPermission(true);
@@ -3812,11 +3874,15 @@ function initBorrowAssetsApp() {
     });
   }
   if (borrowAssetsSearchStaff) {
-    borrowAssetsSearchStaff.addEventListener("input", applyBorrowAssetsFilters);
+    borrowAssetsSearchStaff.addEventListener("input", () => {
+      staffAssetsPage = 1;
+      applyBorrowAssetsFilters();
+    });
   }
   if (borrowAssetsSearchStaffClear && borrowAssetsSearchStaff) {
     borrowAssetsSearchStaffClear.addEventListener("click", () => {
       borrowAssetsSearchStaff.value = "";
+      staffAssetsPage = 1;
       applyBorrowAssetsFilters();
     });
   }
@@ -3824,8 +3890,22 @@ function initBorrowAssetsApp() {
     borrowAssetsTypeFilter.addEventListener("change", applyBorrowAssetsFilters);
   }
   if (borrowAssetsTypeFilterStaff) {
-    borrowAssetsTypeFilterStaff.addEventListener("change", applyBorrowAssetsFilters);
+    borrowAssetsTypeFilterStaff.addEventListener("change", () => {
+      staffAssetsPage = 1;
+      applyBorrowAssetsFilters();
+    });
   }
+
+  staffAssetsPagerEl?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const action = target.dataset.borrowAssetsPageAction;
+    if (action !== "prev" && action !== "next") return;
+    staffAssetsPage = action === "next"
+      ? staffAssetsPage + 1
+      : Math.max(1, staffAssetsPage - 1);
+    applyBorrowAssetsFilters();
+  });
 
   const staffTabBtns = document.querySelectorAll(".tab-btn[data-assets-staff-tab]");
   const staffBorrowQueue = document.getElementById("staffBorrowQueue");

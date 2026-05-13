@@ -827,6 +827,186 @@
     grid-template-columns: 1fr;
     gap: 2px;
   }
+
+  #borrowRequestDetailModal .modal-dialog {
+    max-height: min(94dvh, 780px);
+  }
+
+  #borrowRequestDetailModal .borrow-request-detail-body {
+    max-height: calc(94dvh - 104px - env(safe-area-inset-bottom, 0px));
+  }
+
+  .borrow-request-detail-shell {
+    gap: 10px;
+  }
+
+  .borrow-request-detail-hero,
+  .borrow-request-detail-section,
+  .borrow-request-summary-card,
+  .borrow-request-detail-item {
+    border-radius: 10px;
+  }
+
+  .borrow-request-detail-hero {
+    padding: 10px;
+  }
+
+  .borrow-request-detail-hero-name {
+    font-size: 15px;
+  }
+
+  .borrow-request-detail-hero-meta {
+    font-size: 11px;
+  }
+
+  .borrow-request-detail-summary {
+    gap: 6px;
+  }
+
+  .borrow-request-summary-card {
+    padding: 8px 10px;
+  }
+
+  .borrow-request-assets-wrap {
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .borrow-request-assets-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .borrow-request-assets-table thead {
+    display: none;
+  }
+
+  .borrow-request-assets-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .borrow-request-assets-table tbody tr {
+    display: grid;
+    border: 1px solid #f1f5f9;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 8px 18px rgba(148, 163, 184, 0.14);
+    overflow: hidden;
+  }
+
+  .borrow-request-assets-table th,
+  .borrow-request-assets-table td {
+    border-bottom: 0;
+  }
+
+  .borrow-request-assets-table tbody td {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .borrow-request-assets-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .borrow-request-assets-table tbody td::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .borrow-request-assets-table tbody td[data-label="#"] {
+    background: #f8fafc;
+    color: #111827;
+    font-weight: 700;
+  }
+
+  .borrow-request-assets-table tbody td[data-label="รายการ"] {
+    font-weight: 700;
+  }
+
+  .borrow-request-assets-empty {
+    color: #6b7280;
+    font-weight: 600;
+  }
+
+  .meeting-day-modal-table-wrap {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .meeting-day-modal-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .meeting-day-modal-table thead {
+    display: none;
+  }
+
+  .meeting-day-modal-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .meeting-day-modal-table tbody tr {
+    display: grid;
+    gap: 0;
+    border: 1px solid #f1f5f9;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 8px 18px rgba(148, 163, 184, 0.14);
+    overflow: hidden;
+  }
+
+  .meeting-day-modal-table tbody tr:hover {
+    background: #ffffff;
+  }
+
+  .meeting-day-modal-table tbody td {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #111827;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .meeting-day-modal-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .meeting-day-modal-table tbody td::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .meeting-day-modal-table tbody td[data-label="เวลา"] {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .meeting-day-modal-table tbody td[data-label="สถานะ"] {
+    align-items: center;
+  }
 }
 
 .borrow-consent-dialog {

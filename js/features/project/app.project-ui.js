@@ -249,13 +249,14 @@ function updateClubDebtSummary(filtered) {
     tableBodyEl.innerHTML = "";
     if (!rows.length) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="4" class="table-empty" style="text-align:center; color:#9ca3af;">ยังไม่มีรายการหนี้สโมสร</td>`;
+      tr.innerHTML = `<td colspan="4" class="table-empty" data-label="สรุปหนี้สโมสร" style="text-align:center; color:#9ca3af;">ยังไม่มีรายการหนี้สโมสร</td>`;
       tableBodyEl.appendChild(tr);
       return;
     }
 
     rows.forEach((row) => {
       const tr = document.createElement("tr");
+      tr.className = "dashboard-debt-summary-row";
       const orgCell = document.createElement("td");
       const debtCell = document.createElement("td");
       const countCell = document.createElement("td");

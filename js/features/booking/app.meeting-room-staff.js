@@ -317,8 +317,8 @@ function initMeetingRoomStaffApproval() {
       return;
     }
     bookingDayModalBodyEl.innerHTML = `
-      <div class="modal-table-wrap">
-        <table class="modal-table">
+      <div class="modal-table-wrap meeting-day-modal-table-wrap">
+        <table class="modal-table meeting-day-modal-table">
           <thead>
             <tr>
               <th>เวลา</th>
@@ -335,11 +335,11 @@ function initMeetingRoomStaffApproval() {
                 data-include-contact="true"
                 data-allow-status-edit="true"
               >
-                <td>${escapeText(`${item.startTime || "-"} - ${item.endTime || "-"}`)}</td>
-                <td>${escapeText(normalizeRoomDisplay(item.roomId, item.roomName))}</td>
-                <td>${escapeText(item.requester || "-")}</td>
-                <td>${escapeText(item.purpose || "-")}</td>
-                <td>
+                <td data-label="เวลา">${escapeText(`${item.startTime || "-"} - ${item.endTime || "-"}`)}</td>
+                <td data-label="ห้อง">${escapeText(normalizeRoomDisplay(item.roomId, item.roomName))}</td>
+                <td data-label="ผู้ขอ">${escapeText(item.requester || "-")}</td>
+                <td data-label="วัตถุประสงค์">${escapeText(item.purpose || "-")}</td>
+                <td data-label="สถานะ">
                   <span class="status-pill ${statusBadgeClass(item.status)}">${escapeText(statusText(item.status))}</span>
                 </td>
               </tr>

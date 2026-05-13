@@ -2715,11 +2715,11 @@ function initStaffAccessPages() {
     }
     if (!organizationCatalogTableBodyEl) return;
     if (!rows.length) {
-      organizationCatalogTableBodyEl.innerHTML = '<tr><td colspan="5">ยังไม่มีทะเบียนองค์กรในระบบ หรือยังโหลดข้อมูลไม่สำเร็จ</td></tr>';
+      organizationCatalogTableBodyEl.innerHTML = '<tr><td colspan="5" data-label="ทะเบียนองค์กร">ยังไม่มีทะเบียนองค์กรในระบบ หรือยังโหลดข้อมูลไม่สำเร็จ</td></tr>';
       return;
     }
     if (!visibleRows.length) {
-      organizationCatalogTableBodyEl.innerHTML = '<tr><td colspan="5">ไม่พบองค์กรตามตัวกรองที่เลือก</td></tr>';
+      organizationCatalogTableBodyEl.innerHTML = '<tr><td colspan="5" data-label="ทะเบียนองค์กร">ไม่พบองค์กรตามตัวกรองที่เลือก</td></tr>';
       return;
     }
     organizationCatalogTableBodyEl.innerHTML = visibleRows.map((item) => `

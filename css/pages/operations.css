@@ -3012,6 +3012,63 @@
 }
 
 @media (max-width: 768px) {
+  .budget-staff-form-panel,
+  .budget-staff-form-panel .panel-header,
+  .budget-staff-form-panel .panel-title,
+  .budget-staff-form-panel .panel-caption,
+  #budgetStaffManageForm,
+  #budgetStaffManageForm .budget-staff-form-section,
+  #budgetStaffManageForm .budget-staff-form-grid,
+  #budgetStaffManageForm .borrow-form-field {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .budget-staff-form-panel {
+    overflow-x: hidden;
+  }
+
+  #budgetStaffManageForm .budget-staff-form-section {
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  #budgetStaffManageForm .login-input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #budgetStaffManageForm select.login-input {
+    text-overflow: ellipsis;
+  }
+
+  #budgetStaffManageForm textarea.login-input {
+    resize: vertical;
+  }
+
+  .staff-access-actions.budget-staff-form-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .staff-access-actions.budget-staff-form-actions .btn-primary,
+  .staff-access-actions.budget-staff-form-actions .btn-ghost {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .staff-access-actions.budget-staff-form-actions #budgetStaffManageMessage {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .budget-org-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7793,6 +7850,100 @@
   .borrow-staff-status-select {
     width: 100%;
   }
+
+  .page-view[data-page="borrow-assets-staff"] .borrow-assets-staff-wrapper {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .borrow-assets-staff-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+    border-spacing: 0;
+  }
+
+  .borrow-assets-staff-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .borrow-assets-staff-table tbody tr {
+    display: grid;
+    gap: 0;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  }
+
+  .borrow-assets-staff-table tbody td,
+  .borrow-assets-staff-table tbody td:first-child,
+  .borrow-assets-staff-table tbody td:last-child {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-bottom: 0;
+    border-radius: 0;
+    background: #ffffff;
+    color: #0f172a;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .borrow-assets-staff-table tbody td:last-child {
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .borrow-assets-staff-table tbody td:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+
+  .borrow-assets-staff-table tbody td:nth-child(odd) {
+    background: #f8fafc;
+  }
+
+  .borrow-assets-staff-table tbody td::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  .borrow-assets-staff-table tbody td[data-label="รายการ"] {
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .borrow-assets-staff-table tbody td[data-label="รหัสพัสดุ"],
+  .borrow-assets-staff-table tbody td[data-label="คงเหลือ"] {
+    font-weight: 800;
+  }
+
+  .borrow-assets-staff-table tbody td[colspan] {
+    display: block;
+    text-align: center;
+    border-bottom: 0;
+  }
+
+  .borrow-assets-staff-table tbody td[colspan]::before {
+    content: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -7930,6 +8081,50 @@
   }
 }
 
+.page-view[data-page="org-representative-approval-staff"] .org-representative-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+  margin: 0 0 12px;
+}
+
+.page-view[data-page="org-representative-approval-staff"] .org-representative-summary-card,
+.page-view[data-page="org-representative-approval-staff"] .org-representative-summary-card.is-complete,
+.page-view[data-page="org-representative-approval-staff"] .org-representative-summary-card.is-warning {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.page-view[data-page="org-representative-approval-staff"] .org-representative-summary-label {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+.page-view[data-page="org-representative-approval-staff"] .org-representative-summary-value {
+  color: #1f2937;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1024px) {
+  .page-view[data-page="org-representative-approval-staff"] .org-representative-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 900px) {
   .organization-catalog-workspace,
   .organization-catalog-form-grid,
@@ -7940,6 +8135,7 @@
 
   .organization-catalog-summary-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
   }
 
   .organization-catalog-summary-card,
@@ -7948,5 +8144,164 @@
   .budget-org-floating-card.organization-catalog-summary-card:nth-child(5),
   .budget-org-floating-card.organization-catalog-summary-card:nth-child(7) {
     display: block;
+    min-height: 0;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .organization-catalog-summary-card .card-title {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .organization-catalog-summary-card .card-value {
+    color: #1f2937;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  .organization-catalog-overview-panel .budget-org-summary-caption {
+    margin-top: 10px;
+    line-height: 1.45;
+  }
+
+  .organization-catalog-list-card {
+    overflow-x: hidden;
+  }
+
+  .organization-catalog-filter-bar {
+    padding: 12px;
+  }
+
+  .organization-catalog-filter-reset,
+  .organization-catalog-table-actions .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .table-wrapper.organization-catalog-table-wrapper {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .organization-catalog-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .organization-catalog-table thead {
+    display: none;
+  }
+
+  .organization-catalog-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .organization-catalog-table tbody tr {
+    display: grid;
+    gap: 0;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  }
+
+  .organization-catalog-table tbody tr:hover,
+  .organization-catalog-table tbody tr.is-selected {
+    border-color: rgba(13, 148, 136, 0.42);
+    background: #ffffff;
+  }
+
+  .organization-catalog-row:hover td,
+  .organization-catalog-row.is-selected td {
+    background: inherit;
+  }
+
+  .organization-catalog-table tbody td,
+  .organization-catalog-table tbody td:first-child {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-bottom: 0;
+    border-radius: 0;
+    background: #ffffff;
+    color: #0f172a;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .organization-catalog-table tbody td:first-child {
+    border-radius: 8px 8px 0 0;
+    color: #9d174d;
+    font-weight: 800;
+  }
+
+  .organization-catalog-table tbody td:last-child {
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .organization-catalog-table tbody td:nth-child(odd) {
+    background: #f8fafc;
+  }
+
+  .organization-catalog-table tbody td::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  .organization-catalog-table tbody td[data-label="ชื่อองค์กร"] {
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .organization-catalog-table tbody td[colspan] {
+    display: block;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .organization-catalog-table tbody td[colspan]::before {
+    content: none;
+  }
+
+}
+
+@media (max-width: 640px) {
+  .page-view[data-page="org-representative-approval-staff"] .org-representative-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .organization-catalog-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .page-view[data-page="org-representative-approval-staff"] .budget-org-overview .organization-catalog-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

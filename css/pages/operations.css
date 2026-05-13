@@ -7184,6 +7184,29 @@
   background: #f8fafc;
 }
 
+.borrow-my-request-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.borrow-staff-request-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.borrow-notification-status {
+  min-height: 18px;
+  margin: -2px 0 10px;
+}
+
 .borrow-my-requests-table,
 .borrow-staff-requests-table {
   border-collapse: separate;

@@ -763,12 +763,18 @@ const STAFF_PAGE_OPTIONS = [
 ];
 let unsubscribeCurrentStaffApproval = null;
 let unsubscribeStaffPositionAccess = null;
+let unsubscribeCurrentRepresentativeApproval = null;
 let staffPositionAccessByName = {};
 let staffPositionAccessByCode = {};
 const currentStaffApprovalState = {
   email: "",
   hasApproved: false,
   approvedDivisionCodesYY: []
+};
+const currentRepresentativeApprovalState = {
+  email: "",
+  hasApproved: false,
+  loaded: false
 };
 
 function normalizeDivisionCodeYY(value) {
@@ -848,6 +854,32 @@ function extractApprovedDivisionCodesFromDocs(docs = []) {
   };
 }
 
+function getCurrentAcademicYearBE() {
+  const now = new Date();
+  const yearCE = now.getFullYear();
+  const month = now.getMonth() + 1;
+  return (month >= 6 ? yearCE : yearCE - 1) + 543;
+}
+
+function getAcademicYearFromTimestamp(value) {
+  if (!value) return "";
+  const date = typeof value?.toDate === "function" ? value.toDate() : new Date(value);
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  const yearCE = date.getFullYear();
+  const month = date.getMonth() + 1;
+  return String((month >= 6 ? yearCE : yearCE - 1) + 543);
+}
+
+function getRepresentativeAcademicYear(item = {}) {
+  const explicit = (item.academicYear || item.representativeAcademicYear || item.schoolYear || "").toString().trim();
+  if (/^\d{4}$/.test(explicit)) return explicit;
+  return getAcademicYearFromTimestamp(item.createdAt || item.reviewedAt || item.updatedAt) || String(getCurrentAcademicYearBE());
+}
+
+function isCurrentRepresentativeAcademicYear(item = {}) {
+  return getRepresentativeAcademicYear(item) === String(getCurrentAcademicYearBE());
+}
+
 function isHeadStaffProfile(profile) {
   const yyList = resolveStaffDivisionCodesYY(profile);
   return yyList.includes("00");
@@ -924,14 +956,17 @@ function getAllowedPagesForCurrentState() {
   const protectedAllowed = [
     "borrow-assets",
     "meeting-room-booking",
-    "budget-approval-request",
     "budget-approval-staff",
     "staff-application"
   ];
   protectedAllowed.forEach((page) => allowed.add(page));
+  if (currentRepresentativeApprovalState.hasApproved) {
+    allowed.add("budget-approval-request");
+  }
   if (isAffairsProfile) {
     allowed.delete("borrow-assets");
     allowed.delete("borrow-assets-staff");
+    allowed.delete("budget-approval-request");
   }
 
   if (staffAuthUser && staffViewMode === "staff") {
@@ -1274,6 +1309,7 @@ function initAuthUI() {
   const loginProfileLineIdLabelEl = document.getElementById("loginProfileLineIdLabel");
   const loginProfileSaveBtnEl = document.getElementById("loginProfileSaveBtn");
   const loginProfileStatusEl = document.getElementById("loginProfileStatus");
+  const loginProfileFirstLoginPromptEl = document.getElementById("loginProfileFirstLoginPrompt");
   let loginProfileLoadedForEmail = "";
   let loginProfileLoadSeq = 0;
   const loginProfileFacultyMap = {
@@ -1368,6 +1404,93 @@ function initAuthUI() {
     currentStaffApprovalState.email = "";
     currentStaffApprovalState.hasApproved = false;
     currentStaffApprovalState.approvedDivisionCodesYY = [];
+  }
+
+  function resetCurrentRepresentativeApprovalWatcher() {
+    if (typeof unsubscribeCurrentRepresentativeApproval === "function") {
+      try {
+        unsubscribeCurrentRepresentativeApproval();
+      } catch (_) {
+        // ignore unsubscribe errors
+      }
+    }
+    unsubscribeCurrentRepresentativeApproval = null;
+    currentRepresentativeApprovalState.email = "";
+    currentRepresentativeApprovalState.hasApproved = false;
+    currentRepresentativeApprovalState.loaded = false;
+  }
+
+  function applyRepresentativeApprovalRows(normalizedEmail, rows = []) {
+    currentRepresentativeApprovalState.email = normalizedEmail;
+    currentRepresentativeApprovalState.hasApproved = rows.some((item) => {
+      const status = (item.status || "").toString().trim().toLowerCase();
+      const requestType = (item.requestType || "").toString().trim();
+      const applicantEmail = (item?.applicant?.email || item.applicantEmail || "").toString().trim().toLowerCase();
+      return (
+        status === "approved" &&
+        requestType === "organization_representative" &&
+        applicantEmail === normalizedEmail &&
+        isCurrentRepresentativeAcademicYear(item)
+      );
+    });
+    currentRepresentativeApprovalState.loaded = true;
+    refreshAuthDisplay(auth.currentUser || null);
+  }
+
+  function watchCurrentRepresentativeApproval(firebaseUser) {
+    const firestore = window.sgcuFirestore || {};
+    const normalizedEmail = (firebaseUser?.email || "").toString().trim().toLowerCase();
+    if (!normalizedEmail) {
+      resetCurrentRepresentativeApprovalWatcher();
+      refreshAuthDisplay(firebaseUser || null);
+      return;
+    }
+    if (
+      !firestore.db ||
+      !firestore.collection ||
+      !firestore.query ||
+      !firestore.where ||
+      !firestore.onSnapshot
+    ) {
+      resetCurrentRepresentativeApprovalWatcher();
+      currentRepresentativeApprovalState.email = normalizedEmail;
+      currentRepresentativeApprovalState.hasApproved = false;
+      currentRepresentativeApprovalState.loaded = true;
+      refreshAuthDisplay(firebaseUser);
+      return;
+    }
+    if (
+      currentRepresentativeApprovalState.email === normalizedEmail &&
+      typeof unsubscribeCurrentRepresentativeApproval === "function"
+    ) {
+      return;
+    }
+
+    resetCurrentRepresentativeApprovalWatcher();
+    currentRepresentativeApprovalState.email = normalizedEmail;
+    currentRepresentativeApprovalState.hasApproved = false;
+    currentRepresentativeApprovalState.loaded = false;
+
+    const listQuery = firestore.query(
+      firestore.collection(firestore.db, firestoreCollections.organizationRepresentativeApplications || "organizationRepresentativeApplications"),
+      firestore.where("applicantEmail", "==", normalizedEmail)
+    );
+    unsubscribeCurrentRepresentativeApproval = firestore.onSnapshot(
+      listQuery,
+      (snapshot) => {
+        const rows = [];
+        (snapshot?.docs || []).forEach((docSnap) => {
+          rows.push(docSnap.data() || {});
+        });
+        applyRepresentativeApprovalRows(normalizedEmail, rows);
+      },
+      () => {
+        currentRepresentativeApprovalState.email = normalizedEmail;
+        currentRepresentativeApprovalState.hasApproved = false;
+        currentRepresentativeApprovalState.loaded = true;
+        refreshAuthDisplay(auth.currentUser || firebaseUser || null);
+      }
+    );
   }
 
   function watchCurrentStaffApproval(firebaseUser) {
@@ -1588,6 +1711,37 @@ function initAuthUI() {
     loginProfileStatusEl.style.color = color;
   }
 
+  function hasSavedLoginProfileData(profile) {
+    if (!profile || typeof profile !== "object") return false;
+    return [
+      "profileType",
+      "firstName",
+      "lastName",
+      "nickname",
+      "studentId",
+      "faculty",
+      "year",
+      "phone",
+      "lineId"
+    ].some((key) => (profile[key] || "").toString().trim() !== "");
+  }
+
+  function setFirstLoginPromptVisible(isVisible) {
+    const visible = !!isVisible;
+    if (loginProfileFirstLoginPromptEl) {
+      loginProfileFirstLoginPromptEl.hidden = !visible;
+    }
+    if (loginProfileCardEl) {
+      loginProfileCardEl.classList.toggle("is-first-login", visible);
+    }
+    if (visible) {
+      if (loginProfileTypeStudentEl) loginProfileTypeStudentEl.checked = true;
+      if (loginProfileTypeAffairsEl) loginProfileTypeAffairsEl.checked = false;
+      currentUserProfileType = "student";
+      applyLoginProfileTypeUI();
+    }
+  }
+
   function setLoginProfileEnabled(enabled) {
     const disabled = !enabled;
     if (loginProfileFormEl) {
@@ -1705,6 +1859,7 @@ function initAuthUI() {
 
   function clearLoginProfileFields() {
     currentUserProfileType = "student";
+    setFirstLoginPromptVisible(false);
     if (loginProfileTypeStudentEl) loginProfileTypeStudentEl.checked = true;
     if (loginProfileTypeAffairsEl) loginProfileTypeAffairsEl.checked = false;
     if (loginProfileFirstNameEl) loginProfileFirstNameEl.value = "";
@@ -1724,9 +1879,10 @@ function initAuthUI() {
   function applyLoginProfileToFields(profile, firebaseUser) {
     const safeProfile = profile && typeof profile === "object" ? profile : {};
     const storedType = (safeProfile.profileType || "").toString().trim().toLowerCase();
+    const hasSavedData = hasSavedLoginProfileData(safeProfile);
     const resolvedType = storedType === "affairs" || storedType === "student"
       ? storedType
-      : ((safeProfile.studentId || "").toString().trim() ? "student" : "affairs");
+      : ((safeProfile.studentId || "").toString().trim() ? "student" : (hasSavedData ? "affairs" : "student"));
     currentUserProfileType = resolvedType;
     if (loginProfileTypeStudentEl) loginProfileTypeStudentEl.checked = resolvedType !== "affairs";
     if (loginProfileTypeAffairsEl) loginProfileTypeAffairsEl.checked = resolvedType === "affairs";
@@ -1775,11 +1931,13 @@ function initAuthUI() {
     }
 
     const profile = readLoginProfiles()[email] || {};
+    const hasLocalProfile = hasSavedLoginProfileData(profile);
+    setFirstLoginPromptVisible(!hasLocalProfile);
     applyLoginProfileToFields(profile, firebaseUser);
-    if (profile.firstName || profile.lastName || profile.nickname || profile.studentId || profile.phone || profile.lineId) {
+    if (hasLocalProfile) {
       setLoginProfileStatus("โหลดข้อมูลผู้ใช้เดิมแล้ว", "#047857");
     } else {
-      setLoginProfileStatus("กรอกข้อมูลผู้ใช้และกดบันทึกได้เลย", "#6b7280");
+      setLoginProfileStatus("ระบบเลือกประเภทผู้ใช้งานเป็นนิสิตไว้ก่อน กรุณากรอกข้อมูลผู้ใช้และกดบันทึก", "#6b7280");
     }
     loginProfileLoadedForEmail = email;
     if (forceReload) {
@@ -1791,6 +1949,7 @@ function initAuthUI() {
       const currentEmail = (auth.currentUser?.email || "").toString().trim().toLowerCase();
       if (!remoteProfile || currentSeq !== loginProfileLoadSeq || currentEmail !== email) return;
       applyLoginProfileToFields(remoteProfile, firebaseUser);
+      setFirstLoginPromptVisible(!hasSavedLoginProfileData(remoteProfile));
       const cached = readLoginProfiles();
       cached[email] = {
         ...(cached[email] || {}),
@@ -1875,6 +2034,7 @@ function initAuthUI() {
       updatedAt: Date.now()
     };
     writeLoginProfiles(profiles);
+    setFirstLoginPromptVisible(false);
     applyStaffViewMode();
     window.dispatchEvent(new CustomEvent("sgcu:user-profile-updated", {
       detail: { email, profile: profiles[email] }
@@ -1961,6 +2121,7 @@ function initAuthUI() {
     setLoginProfileEnabled(isAuth);
     loadLoginProfileByUser(firebaseUser);
     if (!isAuth) {
+      setFirstLoginPromptVisible(false);
       setLoginProfileStatus("เข้าสู่ระบบก่อนจึงจะบันทึกข้อมูลผู้ใช้ได้", "#6b7280");
     }
     applyStaffViewMode();
@@ -1977,6 +2138,7 @@ function initAuthUI() {
 
   onAuthStateChanged(auth, (user) => {
     watchCurrentStaffApproval(user || null);
+    watchCurrentRepresentativeApproval(user || null);
     if (user) {
       const startedAt = resolveSessionStart(user);
       if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
@@ -1995,6 +2157,7 @@ function initAuthUI() {
     } else {
       clearAuthSession();
       resetCurrentStaffApprovalWatcher();
+      resetCurrentRepresentativeApprovalWatcher();
     }
     refreshAuthDisplay(user);
     window.dispatchEvent(

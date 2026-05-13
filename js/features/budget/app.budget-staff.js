@@ -144,6 +144,7 @@
   const LOCAL_BUDGET_GROUP_CEILING_OPEN_KEY = "sgcuBudgetStaffBudgetGroupCeilingOpen";
 
   let unsubscribeRequests = null;
+  let unsubscribeSettings = null;
   let requestRows = [];
   let editingId = "";
   let chartInstance = null;
@@ -1257,52 +1258,69 @@
     });
   };
 
-  const loadDeadline = async () => {
+  const applyBudgetSettings = (data = {}) => {
+    const deadline = toDateOnlyText(data.budgetRequestDeadline || "");
+    budgetRoundYear = normalizePositiveIntegerText(data.budgetRoundYear);
+    budgetRoundNo = normalizeRoundName(data.budgetRoundNo);
+    budgetActiveRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);
+    budgetCeiling = readMoneyInput(data.budgetCeiling);
+    if (!Number.isFinite(budgetCeiling) || budgetCeiling < 0) budgetCeiling = 0;
+    if (budgetCeiling <= 0) budgetCeiling = readLocalBudgetCeiling();
+    budgetGroupCeilings = normalizeBudgetGroupCeilings(data.budgetGroupCeilings);
+    if (!Object.keys(budgetGroupCeilings).length) budgetGroupCeilings = readLocalBudgetGroupCeilings();
+    const selectedRound = budgetActiveRounds.find((round) => round.id === normalizeText(data.currentBudgetRoundId)) || budgetActiveRounds[0];
+    if (selectedRound) {
+      budgetRoundYear = selectedRound.year;
+      budgetRoundNo = selectedRound.roundNo;
+      budgetCeiling = Number(selectedRound.budgetCeiling || 0) > 0 ? Number(selectedRound.budgetCeiling || 0) : budgetCeiling;
+      if (Object.keys(selectedRound.budgetGroupCeilings || {}).length) budgetGroupCeilings = selectedRound.budgetGroupCeilings;
+    }
+    roundYearInputEl.value = budgetRoundYear;
+    roundNoInputEl.value = budgetRoundNo;
+    deadlineInputEl.value = deadline;
+    ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
+    populateRoundOptions(orgSummaryRoundEl, { includeRequestRows: false });
+    populateRoundOptions(reviewRoundEl);
+    renderBudgetGroupCeilingInputs();
+    updateSummary();
+    renderRows();
+    void renderOrgSummaryChart();
+    syncRoundStatus();
+  };
+
+  const loadDeadline = () => {
+    if (typeof unsubscribeSettings === "function") {
+      try {
+        unsubscribeSettings();
+      } catch (_) {
+        // ignore
+      }
+      unsubscribeSettings = null;
+    }
+
     const firestore = getFirestore();
-    const canRead = !!(firestore.db && firestore.doc && firestore.getDoc);
+    const canRead = !!(firestore.db && firestore.doc && firestore.onSnapshot);
     if (!canRead) {
       setMessage(deadlineStatusEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
       return;
     }
-    try {
-      const snap = await firestore.getDoc(firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID));
-      const data = snap.exists() ? (snap.data() || {}) : {};
-      const deadline = toDateOnlyText(data.budgetRequestDeadline || "");
-      budgetRoundYear = normalizePositiveIntegerText(data.budgetRoundYear);
-      budgetRoundNo = normalizeRoundName(data.budgetRoundNo);
-      budgetActiveRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);
-      budgetCeiling = readMoneyInput(data.budgetCeiling);
-      if (!Number.isFinite(budgetCeiling) || budgetCeiling < 0) budgetCeiling = 0;
-      if (budgetCeiling <= 0) budgetCeiling = readLocalBudgetCeiling();
-      budgetGroupCeilings = normalizeBudgetGroupCeilings(data.budgetGroupCeilings);
-      if (!Object.keys(budgetGroupCeilings).length) budgetGroupCeilings = readLocalBudgetGroupCeilings();
-      const selectedRound = budgetActiveRounds.find((round) => round.id === normalizeText(data.currentBudgetRoundId)) || budgetActiveRounds[0];
-      if (selectedRound) {
-        budgetRoundYear = selectedRound.year;
-        budgetRoundNo = selectedRound.roundNo;
-        budgetCeiling = Number(selectedRound.budgetCeiling || 0) > 0 ? Number(selectedRound.budgetCeiling || 0) : budgetCeiling;
-        if (Object.keys(selectedRound.budgetGroupCeilings || {}).length) budgetGroupCeilings = selectedRound.budgetGroupCeilings;
+    const docRef = firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID);
+    unsubscribeSettings = firestore.onSnapshot(
+      docRef,
+      (snap) => {
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        applyBudgetSettings(data);
+      },
+      () => {
+        budgetCeiling = readLocalBudgetCeiling();
+        budgetGroupCeilings = readLocalBudgetGroupCeilings();
+        ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
+        renderBudgetGroupCeilingInputs();
+        updateSummary();
+        syncRoundStatus();
+        setMessage(deadlineStatusEl, "โหลดการตั้งค่าไม่สำเร็จ", "#b91c1c");
       }
-      roundYearInputEl.value = budgetRoundYear;
-      roundNoInputEl.value = budgetRoundNo;
-      deadlineInputEl.value = deadline;
-      ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
-      populateRoundOptions(orgSummaryRoundEl, { includeRequestRows: false });
-      populateRoundOptions(reviewRoundEl);
-      renderBudgetGroupCeilingInputs();
-      updateSummary();
-      renderRows();
-      void renderOrgSummaryChart();
-      syncRoundStatus();
-    } catch (_) {
-      budgetCeiling = readLocalBudgetCeiling();
-      budgetGroupCeilings = readLocalBudgetGroupCeilings();
-      ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
-      renderBudgetGroupCeilingInputs();
-      updateSummary();
-      syncRoundStatus();
-      setMessage(deadlineStatusEl, "โหลดการตั้งค่าไม่สำเร็จ", "#b91c1c");
-    }
+    );
   };
 
   const saveDeadline = async () => {
@@ -1385,7 +1403,6 @@
         metadata: { activeRoundCount: nextActiveRounds.length },
         source: "web_app_staff"
       });
-      await loadDeadline();
     } catch (error) {
       try {
         await firestore.setDoc(
@@ -1411,7 +1428,6 @@
         const code = normalizeText(error?.code);
         const detail = code ? ` (${code})` : "";
         setMessage(actionMessageEl, `บันทึกเส้นตายแล้ว แต่เพดานงบบันทึกเฉพาะเครื่องนี้${detail}`, "#b45309");
-        await loadDeadline();
       } catch (fallbackError) {
         budgetCeiling = ceiling;
         budgetGroupCeilings = groupCeilings;
@@ -2001,6 +2017,10 @@
     if (typeof unsubscribeRequests === "function") {
       try { unsubscribeRequests(); } catch (_) {}
       unsubscribeRequests = null;
+    }
+    if (typeof unsubscribeSettings === "function") {
+      try { unsubscribeSettings(); } catch (_) {}
+      unsubscribeSettings = null;
     }
   });
 })();

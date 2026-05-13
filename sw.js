@@ -1,10 +1,10 @@
-const CACHE_VERSION = "20260511-project-hidden-actions-1";
+const CACHE_VERSION = "20260513-staff-borrow-notifications-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260511-project-hidden-actions-1",
+  "./css/style.css?v=20260513-staff-borrow-notifications-1",
   "./css/core/base.css",
   "./css/core/prelude-layout.css",
   "./css/pages/operations.css",
@@ -37,11 +37,11 @@ const APP_SHELL_URLS = [
   "./js/features/project/app.project-modal.js",
   "./js/features/project/app.charts.js",
   "./js/features/project/app.pie.js",
-  "./js/features/project/app.sorting-auth.js?v=20260510-export-ui-1",
+  "./js/features/project/app.sorting-auth.js?v=20260513-budget-representative-nav-1",
   "./js/features/org/app.org.js?v=20260503-1",
   "./js/motion/app.motion.js",
-  "./js/core/app.feature-loader.js?v=20260511-project-hidden-actions-1",
-  "./js/core/app.init.js?v=20260511-project-hidden-actions-1",
+  "./js/core/app.feature-loader.js?v=20260513-staff-borrow-notifications-1",
+  "./js/core/app.init.js?v=20260513-staff-borrow-notifications-1",
   "./js/features/project/app.calendar.js",
   "./js/integrations/app.web-push.js",
   "./manifest.webmanifest",

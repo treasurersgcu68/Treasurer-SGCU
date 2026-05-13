@@ -172,8 +172,12 @@
                   <div class="panel-title">สถานะคำขอของฉัน</div>
                   <div class="panel-caption">ติดตามผลการอนุมัติและการนัดรับพัสดุ</div>
                 </div>
-                <button id="borrowMyRequestsExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
+                <div class="borrow-my-request-actions">
+                  <button id="borrowNotificationTestBtn" class="btn-ghost" type="button">ทดสอบแจ้งเตือน</button>
+                  <button id="borrowMyRequestsExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
+                </div>
               </div>
+              <div id="borrowNotificationStatus" class="section-text-sm borrow-notification-status" aria-live="polite"></div>
               <div class="table-wrapper borrow-my-requests-wrapper">
                 <table class="borrow-my-requests-table">
                   <thead>

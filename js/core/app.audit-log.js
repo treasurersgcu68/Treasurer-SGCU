@@ -136,8 +136,8 @@
     const labels = {
       "budget.settings.update": "แก้การตั้งค่างบ",
       "budget.round.delete": "ลบรอบงบ",
-      "budget.project_codes.run": "รันรหัสโครงการ",
-      "budget.project_codes.clear": "ยกเลิกรหัสโครงการ",
+      "budget.project_codes.run": "รันรหัสพิจารณาโครงการ",
+      "budget.project_codes.clear": "ยกเลิกรหัสพิจารณาโครงการ",
       "budget.request.create": "เพิ่มคำของบ",
       "budget.request.update": "แก้คำของบ",
       "budget.request.cancel": "ลด/ยกเลิกคำของบ",

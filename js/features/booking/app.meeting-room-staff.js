@@ -62,6 +62,7 @@ function initMeetingRoomStaffApproval() {
   const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
   const AUDIT_COLLECTION_NAME = firestoreCollections.auditLogs || "auditLogs";
   const STAFF_REQUEST_STATUSES = new Set(["pending", "cancel_requested", "reschedule_requested"]);
+  const STAFF_MEETING_PAGE_SIZE = 50;
   const DEFAULT_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public", isDefault: true },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public", isDefault: true },
@@ -420,6 +421,10 @@ function initMeetingRoomStaffApproval() {
   let hasRenderedOnce = false;
   let subscribeGuardTimer = null;
   let activeTab = "requests";
+  const pageByTab = {
+    requests: 1,
+    history: 1
+  };
   let isSeedingDefaultRooms = false;
   let editingRoomId = "";
   let calendarCursor = new Date();
@@ -1697,6 +1702,62 @@ function initMeetingRoomStaffApproval() {
     historySearchClearEl.style.display = historySearchQuery ? "inline-flex" : "none";
   };
 
+  const meetingPagerEl = (() => {
+    if (!allTableBody) return null;
+    const wrapper = allTableBody.closest(".table-wrapper");
+    if (!wrapper) return null;
+    const existing = document.getElementById("meetingRoomStaffPager");
+    if (existing) return existing;
+    const pager = document.createElement("div");
+    pager.id = "meetingRoomStaffPager";
+    pager.className = "list-pagination-controls";
+    pager.setAttribute("aria-live", "polite");
+    wrapper.insertAdjacentElement("afterend", pager);
+    return pager;
+  })();
+
+  const getPagedRows = (rows, page) => {
+    const totalPages = Math.max(1, Math.ceil(rows.length / STAFF_MEETING_PAGE_SIZE));
+    const currentPage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    const startIndex = (currentPage - 1) * STAFF_MEETING_PAGE_SIZE;
+    return {
+      rows: rows.slice(startIndex, startIndex + STAFF_MEETING_PAGE_SIZE),
+      currentPage,
+      totalPages,
+      startIndex,
+      endIndex: Math.min(rows.length, startIndex + STAFF_MEETING_PAGE_SIZE),
+      total: rows.length
+    };
+  };
+
+  const renderMeetingPager = (meta) => {
+    if (!meetingPagerEl) return;
+    if (!meta || meta.total <= STAFF_MEETING_PAGE_SIZE) {
+      meetingPagerEl.innerHTML = "";
+      meetingPagerEl.hidden = true;
+      return;
+    }
+    meetingPagerEl.hidden = false;
+    meetingPagerEl.innerHTML = `
+      <span class="list-pagination-summary">
+        แสดง ${escapeText(meta.startIndex + 1)}-${escapeText(meta.endIndex)} จาก ${escapeText(meta.total)} รายการ
+      </span>
+      <button
+        class="btn-ghost list-pagination-btn"
+        type="button"
+        data-meeting-page-action="prev"
+        ${meta.currentPage <= 1 ? "disabled" : ""}
+      >ก่อนหน้า</button>
+      <span class="list-pagination-page">หน้า ${escapeText(meta.currentPage)} / ${escapeText(meta.totalPages)}</span>
+      <button
+        class="btn-ghost list-pagination-btn"
+        type="button"
+        data-meeting-page-action="next"
+        ${meta.currentPage >= meta.totalPages ? "disabled" : ""}
+      >ถัดไป</button>
+    `;
+  };
+
   const renderStaffCalendar = (sourceRows = []) => {
     if (!staffCalendarPanel) return;
 
@@ -1848,11 +1909,14 @@ function initMeetingRoomStaffApproval() {
     const emptyText = activeTab === "history"
       ? (hasFilters ? "ไม่พบประวัติการขอตามตัวกรองที่เลือก" : "ยังไม่มีประวัติการขอ")
       : (hasFilters ? "ไม่พบรายการคำขอตามตัวกรองที่เลือก" : "ยังไม่มีรายการคำขอที่ยังไม่เลยวัน");
+    const pageMeta = getPagedRows(displayRows, pageByTab[activeTab]);
+    pageByTab[activeTab] = pageMeta.currentPage;
 
     if (allCountEl) allCountEl.textContent = `พบ ${displayRows.length} รายการ`;
+    renderMeetingPager(pageMeta);
 
     allTableBody.innerHTML = displayRows.length
-      ? displayRows
+      ? pageMeta.rows
           .map((booking) => {
             const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName);
             const dateText = formatDate(booking.date);
@@ -2130,6 +2194,7 @@ function initMeetingRoomStaffApproval() {
       tabButtons.forEach((btn) => {
         btn.addEventListener("click", () => {
           updateTabUI(btn.dataset.meetingStaffTab || "requests");
+          pageByTab[activeTab] = 1;
           render();
         });
       });
@@ -2159,6 +2224,15 @@ function initMeetingRoomStaffApproval() {
 
       const button = clickedElement.closest("button");
       if (!(button instanceof HTMLButtonElement)) return;
+      const pageAction = button.dataset.meetingPageAction;
+      if (pageAction === "prev" || pageAction === "next") {
+        const current = pageByTab[activeTab] || 1;
+        pageByTab[activeTab] = pageAction === "next"
+          ? current + 1
+          : Math.max(1, current - 1);
+        render();
+        return;
+      }
       const action = button.dataset.action;
       const id = button.dataset.id;
       if (action === "rename-room-start") {
@@ -2334,6 +2408,7 @@ function initMeetingRoomStaffApproval() {
   if (historySearchInputEl) {
     historySearchInputEl.addEventListener("input", () => {
       historySearchQuery = (historySearchInputEl.value || "").toString().trim().toLowerCase();
+      pageByTab[activeTab] = 1;
       syncHistorySearchUI();
       render();
     });
@@ -2342,6 +2417,7 @@ function initMeetingRoomStaffApproval() {
       if (!historySearchInputEl.value) return;
       historySearchInputEl.value = "";
       historySearchQuery = "";
+      pageByTab[activeTab] = 1;
       syncHistorySearchUI();
       render();
     });
@@ -2351,6 +2427,7 @@ function initMeetingRoomStaffApproval() {
     historySearchClearEl.addEventListener("click", () => {
       historySearchInputEl.value = "";
       historySearchQuery = "";
+      pageByTab[activeTab] = 1;
       syncHistorySearchUI();
       historySearchInputEl.focus();
       render();
@@ -2362,6 +2439,7 @@ function initMeetingRoomStaffApproval() {
   if (historyDateInputEl) {
     historyDateInputEl.addEventListener("change", () => {
       historyDateFilter = (historyDateInputEl.value || "").toString().trim();
+      pageByTab[activeTab] = 1;
       render();
     });
   }
@@ -2369,6 +2447,7 @@ function initMeetingRoomStaffApproval() {
   if (historyRoomSelectEl) {
     historyRoomSelectEl.addEventListener("change", () => {
       historyRoomFilter = (historyRoomSelectEl.value || "all").toString().trim() || "all";
+      pageByTab[activeTab] = 1;
       render();
     });
   }

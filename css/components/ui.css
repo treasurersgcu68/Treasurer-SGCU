@@ -644,6 +644,35 @@
   display: none;
 }
 
+.list-pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.list-pagination-controls[hidden] {
+  display: none;
+}
+
+.list-pagination-summary,
+.list-pagination-page {
+  white-space: nowrap;
+}
+
+.list-pagination-btn {
+  min-height: 34px;
+  padding: 7px 12px;
+}
+
+.list-pagination-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

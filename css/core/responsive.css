@@ -741,6 +741,11 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .list-pagination-controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
   #projectTable,
   #projectTableStaff,
   #longestOpenTableStaff {

@@ -624,7 +624,7 @@ function initBudgetApprovalRequestPage() {
 
   const exportMyBudgetRequestsCsv = () => {
     const rows = (Array.isArray(latestMyBudgetRequests) ? latestMyBudgetRequests : []).map((item) => ({
-      "รหัสโครงการ": item.projectCodeGenerated || "",
+      "รหัสพิจารณาโครงการ": item.projectCodeGenerated || "",
       "รอบรับคำขอ": getRequestRoundLabel(item),
       "ประเภทองค์กร": item.organizationType || "",
       "ฝ่าย / ชมรม": item.organizationName || "",
@@ -642,7 +642,7 @@ function initBudgetApprovalRequestPage() {
     window.sgcuCsvExport?.download({
       fileName: "budget-approval-requests",
       headers: [
-        "รหัสโครงการ",
+        "รหัสพิจารณาโครงการ",
         "รอบรับคำขอ",
         "ประเภทองค์กร",
         "ฝ่าย / ชมรม",
@@ -861,7 +861,7 @@ function initBudgetApprovalRequestPage() {
         : "";
       return `
         <tr class="budget-request-history-row${canEdit ? " is-editable" : ""}"${rowEditAttrs}>
-          <td style="text-align:center;" data-label="รหัสโครงการ"><code class="budget-request-project-code">${projectCode}</code></td>
+          <td style="text-align:center;" data-label="รหัสพิจารณาโครงการ"><code class="budget-request-project-code">${projectCode}</code></td>
           <td style="text-align:left;" data-label="รายการโครงการ">
             <div class="budget-request-history-project-name">${projectName}</div>
             <div class="section-text-sm budget-request-history-project-meta">${orgName} • ${escapeHtml(roundLabel)}</div>

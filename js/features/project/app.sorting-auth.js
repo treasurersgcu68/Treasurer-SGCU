@@ -353,11 +353,15 @@ window.sgcuSetStaffProjectWorkflowTab = setStaffProjectWorkflowTab;
 
 function updateStaffProjectOperationsPanel(filtered) {
   const ctx = projectStatusContexts.staff || {};
-  syncStaffProjectWorkflowTabs();
   if (!ctx.projectStaffOpsPanelEl) return;
 
   const data = Array.isArray(filtered) ? filtered : getAllLoadedProjects();
-  ctx.projectStaffOpsPanelEl.hidden = !isUserAuthenticated;
+  if (!isUserAuthenticated) {
+    ctx.projectStaffOpsPanelEl.hidden = true;
+    return;
+  }
+
+  syncStaffProjectWorkflowTabs();
   const closureExportProjects = filterClosureMailMergeProjects(data, "staff");
   if (ctx.projectClosureMailMergeExportBtn) {
     ctx.projectClosureMailMergeExportBtn.disabled = !isUserAuthenticated || closureExportProjects.length === 0 || !window.sgcuCsvExport?.download;
@@ -613,7 +617,11 @@ function toggleProjectStatusAccess(isAuthenticated, ctxKey = activeProjectStatus
     ctx.projectExportCsvBtn.disabled = !isAuthenticated;
   }
   if (ctx.projectStaffOpsPanelEl) {
-    ctx.projectStaffOpsPanelEl.hidden = !isAuthenticated;
+    if (!isAuthenticated) {
+      ctx.projectStaffOpsPanelEl.hidden = true;
+    } else {
+      syncStaffProjectWorkflowTabs();
+    }
   }
   if (ctx.projectClosureMailMergeExportBtn) {
     const availableProjects = isAuthenticated && ctxKey === "staff"

@@ -1347,6 +1347,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     refreshMotionForActivePage();
+    window.dispatchEvent(new CustomEvent("sgcu:page-active", { detail: { page: targetPage } }));
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent("sgcu:page-active", { detail: { page: targetPage } }));
+    });
 
     if (page === "home") {
       const loadHomeData = () => Promise.allSettled([

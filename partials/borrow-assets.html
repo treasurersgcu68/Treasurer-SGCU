@@ -161,7 +161,7 @@
                     </div>
                   </section>
 
-                  <button class="btn-primary" type="button" style="margin-top: 10px;">ส่งคำขอ</button>
+                  <button id="borrowRequestSubmitBtn" class="btn-primary" type="button" style="margin-top: 10px;">ส่งคำขอ</button>
                 </div>
               </div>
             </form>
@@ -174,14 +174,14 @@
                 </div>
                 <button id="borrowMyRequestsExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
               </div>
-              <div class="table-wrapper">
+              <div class="table-wrapper borrow-my-requests-wrapper">
                 <table class="borrow-my-requests-table">
                   <thead>
                     <tr>
                       <th>รายการ</th>
                       <th>ช่วงเวลา</th>
                       <th>สถานะ</th>
-                      <th>หมายเหตุ</th>
+                      <th>หมายเหตุ / รายละเอียด</th>
                     </tr>
                   </thead>
                   <tbody id="myBorrowRequestsTableBody">

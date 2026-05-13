@@ -40,6 +40,7 @@
   const saveBtnEl = document.getElementById("budgetStaffManageSaveBtn");
   const cancelEditBtnEl = document.getElementById("budgetStaffManageCancelEditBtn");
   const formMessageEl = document.getElementById("budgetStaffManageMessage");
+  const staffRoundInputEl = document.getElementById("budgetStaffRoundInput");
   const orgTypeInputEl = document.getElementById("budgetStaffOrgTypeInput");
   const orgNameInputEl = document.getElementById("budgetStaffOrgNameInput");
   const projectNameInputEl = document.getElementById("budgetStaffProjectNameInput");
@@ -101,6 +102,7 @@
     !saveBtnEl ||
     !cancelEditBtnEl ||
     !formMessageEl ||
+    !staffRoundInputEl ||
     !orgTypeInputEl ||
     !orgNameInputEl ||
     !projectNameInputEl ||
@@ -402,7 +404,7 @@
   const exportBudgetStaffCsv = (rowsOverride = null, fileNameSuffix = "") => {
     const sourceRows = Array.isArray(rowsOverride) ? rowsOverride : getReviewFilteredRows();
     const rows = sortForDisplay(sourceRows).map((item) => ({
-      "รหัสโครงการ": item.projectCodeGenerated || "",
+      "รหัสพิจารณาโครงการ": item.projectCodeGenerated || "",
       "รอบรับคำขอ": formatBudgetRoundLabel(item.budgetRoundYear, item.budgetRoundNo) || normalizeText(item.budgetRoundId) || "",
       "ประเภทองค์กร": item.organizationType || "",
       "ฝ่าย / ชมรม": item.organizationName || "",
@@ -421,7 +423,7 @@
     window.sgcuCsvExport?.download({
       fileName: suffix ? `budget-staff-requests-${suffix}` : "budget-staff-requests",
       headers: [
-        "รหัสโครงการ",
+        "รหัสพิจารณาโครงการ",
         "รอบรับคำขอ",
         "ประเภทองค์กร",
         "ฝ่าย / ชมรม",
@@ -529,6 +531,86 @@
       orgSummaryOrgEl.appendChild(opt);
     });
     orgSummaryOrgEl.value = Array.from(orgSummaryOrgEl.options).some((opt) => opt.value === selected) ? selected : "all";
+  };
+
+  const getStaffOrgTypeOptions = () => {
+    const filterRows = getOrgFilterRows();
+    const groups = filterRows.length
+      ? filterRows.map((item) => normalizeText(item?.group)).filter(Boolean)
+      : requestRows.map((item) => normalizeText(item.organizationType)).filter(Boolean);
+    return Array.from(new Set(groups)).sort((a, b) => a.localeCompare(b, "th"));
+  };
+
+  const getStaffOrgNameOptions = (orgType = "") => {
+    const group = normalizeText(orgType);
+    const filterRows = getOrgFilterRows();
+    const names = filterRows.length
+      ? filterRows
+        .filter((item) => !group || normalizeText(item?.group) === group)
+        .map((item) => normalizeText(item?.name))
+        .filter(Boolean)
+      : requestRows
+        .filter((item) => !group || normalizeText(item.organizationType) === group)
+        .map((item) => normalizeText(item.organizationName))
+        .filter(Boolean);
+    return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th"));
+  };
+
+  const appendSelectOption = (selectEl, value, label = value) => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    selectEl.appendChild(opt);
+  };
+
+  const isBudgetRoundPast = (round) => {
+    const endTime = new Date(`${round?.deadline || ""}T23:59:59`).getTime();
+    return Number.isFinite(endTime) && Date.now() > endTime;
+  };
+
+  const getCurrentSettingsRoundId = () => buildBudgetRoundId(roundYearInputEl.value, roundNoInputEl.value);
+
+  const getBudgetRoundOptionLabel = (round) => {
+    const state = isBudgetRoundPast(round) ? "หมดเขตแล้ว" : "เปิดรับอยู่";
+    return `${round?.label || round?.id || "ไม่ระบุรอบ"} (${state}${round?.deadline ? ` ถึง ${round.deadline}` : ""})`;
+  };
+
+  const populateStaffRoundOptions = (preferredValue = staffRoundInputEl.value) => {
+    const selected = normalizeText(preferredValue) || getCurrentSettingsRoundId();
+    staffRoundInputEl.innerHTML = "";
+    appendSelectOption(staffRoundInputEl, "", budgetActiveRounds.length ? "เลือกรอบรับคำขอ" : "ยังไม่มีรอบรับคำขอ");
+    staffRoundInputEl.options[0].disabled = true;
+    budgetActiveRounds.forEach((round) => appendSelectOption(staffRoundInputEl, round.id, getBudgetRoundOptionLabel(round)));
+    if (selected && !Array.from(staffRoundInputEl.options).some((opt) => opt.value === selected)) {
+      appendSelectOption(staffRoundInputEl, selected, getRoundLabelById(selected));
+    }
+    staffRoundInputEl.value = selected && Array.from(staffRoundInputEl.options).some((opt) => opt.value === selected) ? selected : "";
+  };
+
+  const populateStaffOrgTypeOptions = (preferredValue = orgTypeInputEl.value) => {
+    const selected = normalizeText(preferredValue);
+    orgTypeInputEl.innerHTML = "";
+    appendSelectOption(orgTypeInputEl, "", "เลือกประเภทองค์กร");
+    orgTypeInputEl.options[0].disabled = true;
+    getStaffOrgTypeOptions().forEach((group) => appendSelectOption(orgTypeInputEl, group));
+    if (selected && !Array.from(orgTypeInputEl.options).some((opt) => opt.value === selected)) {
+      appendSelectOption(orgTypeInputEl, selected);
+    }
+    orgTypeInputEl.value = selected && Array.from(orgTypeInputEl.options).some((opt) => opt.value === selected) ? selected : "";
+  };
+
+  const populateStaffOrgNameOptions = (preferredValue = orgNameInputEl.value) => {
+    const selected = normalizeText(preferredValue);
+    const group = normalizeText(orgTypeInputEl.value);
+    orgNameInputEl.innerHTML = "";
+    appendSelectOption(orgNameInputEl, "", group ? "เลือกฝ่าย / ชมรม" : "เลือกประเภทองค์กรก่อน");
+    orgNameInputEl.options[0].disabled = true;
+    getStaffOrgNameOptions(group).forEach((name) => appendSelectOption(orgNameInputEl, name));
+    if (selected && !Array.from(orgNameInputEl.options).some((opt) => opt.value === selected)) {
+      appendSelectOption(orgNameInputEl, selected);
+    }
+    orgNameInputEl.value = selected && Array.from(orgNameInputEl.options).some((opt) => opt.value === selected) ? selected : "";
+    orgNameInputEl.disabled = !group && orgNameInputEl.options.length <= 1;
   };
 
   const populateReviewGroupOptions = () => {
@@ -666,8 +748,11 @@
     }
     populateRoundOptions(orgSummaryRoundEl, { includeRequestRows: false });
     populateRoundOptions(reviewRoundEl);
+    populateStaffRoundOptions();
     populateOrgSummaryGroupOptions();
     populateOrgSummaryOrgOptions();
+    populateStaffOrgTypeOptions();
+    populateStaffOrgNameOptions();
     populateReviewGroupOptions();
     populateReviewOrgOptions();
     renderBudgetGroupCeilingInputs();
@@ -731,6 +816,9 @@
 
   const resetForm = () => {
     formEl.reset();
+    populateStaffRoundOptions("");
+    populateStaffOrgTypeOptions("");
+    populateStaffOrgNameOptions("");
     studentOperatorsInputEl.value = "0";
     studentParticipantsInputEl.value = "0";
     approvedAmountInputEl.value = "0";
@@ -739,7 +827,40 @@
     setMessage(formMessageEl, "");
   };
 
+  const getSelectedStaffRound = () => {
+    const selectedId = normalizeText(staffRoundInputEl.value);
+    const selectedRound = budgetActiveRounds.find((round) => round.id === selectedId);
+    if (selectedRound) {
+      return {
+        id: selectedRound.id,
+        year: selectedRound.year,
+        roundNo: selectedRound.roundNo
+      };
+    }
+    const year = normalizePositiveIntegerText(budgetRoundYear || roundYearInputEl.value);
+    const roundNo = normalizeRoundName(budgetRoundNo || roundNoInputEl.value);
+    return {
+      id: selectedId || buildBudgetRoundId(year, roundNo),
+      year,
+      roundNo
+    };
+  };
+
+  const getSelectedStaffRoundMeta = () => {
+    const selectedId = normalizeText(staffRoundInputEl.value);
+    return budgetActiveRounds.find((round) => round.id === selectedId) || null;
+  };
+
+  const syncStaffRoundMessage = () => {
+    const round = getSelectedStaffRoundMeta();
+    if (!round) return;
+    const actionText = editingId ? "รายการนี้กำลังแก้ไขใน" : "รายการใหม่จะถูกบันทึกใน";
+    const stateText = isBudgetRoundPast(round) ? "รอบนี้หมดเขตแล้ว" : "รอบนี้ยังเปิดรับอยู่";
+    setMessage(formMessageEl, `${actionText}${round.label} (${stateText})`, isBudgetRoundPast(round) ? "#b45309" : "#1d4ed8");
+  };
+
   const readFormPayload = () => {
+    const selectedRound = getSelectedStaffRound();
     return {
       organizationType: normalizeText(orgTypeInputEl.value),
       organizationName: normalizeText(orgNameInputEl.value),
@@ -752,12 +873,16 @@
       studentParticipants: Number(studentParticipantsInputEl.value || 0),
       estimatedExpense: Number(requestedAmountInputEl.value || 0),
       approvedAmount: Number(approvedAmountInputEl.value || 0),
-      status: normalizeText(statusInputEl.value).toLowerCase() || "pending"
+      status: normalizeText(statusInputEl.value).toLowerCase() || "pending",
+      budgetRoundYear: selectedRound.year,
+      budgetRoundNo: selectedRound.roundNo,
+      budgetRoundId: selectedRound.id
     };
   };
 
   const validateForm = () => {
     const controls = [
+      staffRoundInputEl,
       orgTypeInputEl,
       orgNameInputEl,
       projectNameInputEl,
@@ -791,8 +916,9 @@
       return false;
     }
 
-    if (!editingId && !buildBudgetRoundId(budgetRoundYear, budgetRoundNo)) {
-      setMessage(formMessageEl, "กรุณาเพิ่มหรือเลือกแก้ไขรอบรับคำขอก่อนเพิ่มรายการ", "#b91c1c");
+    const selectedRound = getSelectedStaffRound();
+    if (!selectedRound.id || !selectedRound.year || !selectedRound.roundNo) {
+      setMessage(formMessageEl, "กรุณาเลือกรอบรับคำขอก่อนบันทึกรายการ", "#b91c1c");
       return false;
     }
 
@@ -1079,7 +1205,7 @@
       const approvedText = status === "pending" && !approved ? "-" : formatMoney(approved);
       return `
         <tr class="budget-request-history-row budget-staff-request-row is-editable" data-budget-staff-edit-id="${id}" tabindex="0" title="คลิกเพื่อแก้ไขรายการ">
-          <td class="col-code" data-label="รหัสโครงการ"><code class="budget-request-project-code">${escapeHtml(item.projectCodeGenerated || "-")}</code></td>
+          <td class="col-code" data-label="รหัสพิจารณาโครงการ"><code class="budget-request-project-code">${escapeHtml(item.projectCodeGenerated || "-")}</code></td>
           <td class="col-project" data-label="รายการโครงการ">
             <div class="budget-request-history-project-name budget-staff-project-name">${escapeHtml(item.projectName || "-")}</div>
             <div class="section-text-sm budget-request-history-project-meta budget-staff-project-meta">
@@ -1463,6 +1589,7 @@
     roundNoInputEl.value = budgetRoundNo;
     deadlineInputEl.value = round.deadline;
     ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
+    populateStaffRoundOptions(round.id);
     renderBudgetGroupCeilingInputs();
     syncRoundStatus();
     updateSummary();
@@ -1496,7 +1623,7 @@
       return;
     }
 
-    setMessage(actionMessageEl, "กำลังรันรหัสโครงการ...", "#1d4ed8");
+    setMessage(actionMessageEl, "กำลังรันรหัสพิจารณาโครงการ...", "#1d4ed8");
     setCodeActionBusy(true);
     try {
       const orgCodeMap = await getOrgCodeMap();
@@ -1514,7 +1641,7 @@
       const updates = [];
       byOrg.forEach((rows, orgName) => {
         const code = orgCodeMap.get(orgName) || "ORG";
-        rows
+        const sortedRows = rows
           .sort((a, b) => {
             const da = getDateOnlyTime(a.operationEndDate);
             const db = getDateOnlyTime(b.operationEndDate);
@@ -1523,11 +1650,21 @@
             const sb = getDateOnlyTime(b.prepStartDate, Number.POSITIVE_INFINITY);
             if (sa !== sb) return sa - sb;
             return getCreatedAtTime(a) - getCreatedAtTime(b);
-          })
-          .forEach((row, index) => {
-            const sequence = String(index + 1).padStart(3, "0");
+          });
+        const maxExistingSequence = sortedRows.reduce((max, row) => {
+          const existing = normalizeText(row.projectCodeGenerated);
+          if (!existing) return max;
+          const match = existing.match(/\.([0-9]+)$/);
+          const sequence = match ? Number(match[1]) : 0;
+          return Number.isFinite(sequence) && sequence > max ? sequence : max;
+        }, 0);
+        let nextSequence = maxExistingSequence + 1;
+        sortedRows
+          .filter((row) => !normalizeText(row.projectCodeGenerated))
+          .forEach((row) => {
+            const sequence = String(nextSequence).padStart(3, "0");
+            nextSequence += 1;
             const generated = `${code}.${sequence}`;
-            if (normalizeText(row.projectCodeGenerated) === generated) return;
             updates.push({ id: row.id, code: generated });
           });
       });
@@ -1542,7 +1679,7 @@
         );
       }
 
-      setMessage(actionMessageEl, `รันรหัสโครงการสำเร็จ ${updates.length} รายการ`, "#047857");
+      setMessage(actionMessageEl, `รันรหัสพิจารณาโครงการสำเร็จ ${updates.length} รายการ`, "#047857");
       void window.sgcuAuditLog?.write?.({
         action: "budget.project_codes.run",
         entityType: "budgetApprovalRequest",
@@ -1552,8 +1689,8 @@
         source: "web_app_staff"
       });
     } catch (error) {
-      console.error("run budget project code failed - app.budget-staff.js", error);
-      setMessage(actionMessageEl, "รันรหัสโครงการไม่สำเร็จ", "#b91c1c");
+      console.error("run budget consideration code failed - app.budget-staff.js", error);
+      setMessage(actionMessageEl, "รันรหัสพิจารณาโครงการไม่สำเร็จ", "#b91c1c");
     } finally {
       setCodeActionBusy(false);
     }
@@ -1569,14 +1706,14 @@
 
     const rowsToClear = requestRows.filter((row) => normalizeText(row.projectCodeGenerated));
     if (!rowsToClear.length) {
-      setMessage(actionMessageEl, "ยังไม่มีรหัสโครงการที่ต้องยกเลิก", "#6b7280");
+      setMessage(actionMessageEl, "ยังไม่มีรหัสพิจารณาโครงการที่ต้องยกเลิก", "#6b7280");
       return;
     }
 
-    const ok = window.confirm(`ยืนยันยกเลิกรหัสโครงการที่รันแล้ว ${rowsToClear.length} รายการ ?`);
+    const ok = window.confirm(`ยืนยันยกเลิกรหัสพิจารณาโครงการที่รันแล้ว ${rowsToClear.length} รายการ ?`);
     if (!ok) return;
 
-    setMessage(actionMessageEl, "กำลังยกเลิกรหัสโครงการ...", "#1d4ed8");
+    setMessage(actionMessageEl, "กำลังยกเลิกรหัสพิจารณาโครงการ...", "#1d4ed8");
     setCodeActionBusy(true);
     try {
       for (const row of rowsToClear) {
@@ -1589,7 +1726,7 @@
           }
         );
       }
-      setMessage(actionMessageEl, `ยกเลิกรหัสโครงการสำเร็จ ${rowsToClear.length} รายการ`, "#047857");
+      setMessage(actionMessageEl, `ยกเลิกรหัสพิจารณาโครงการสำเร็จ ${rowsToClear.length} รายการ`, "#047857");
       void window.sgcuAuditLog?.write?.({
         action: "budget.project_codes.clear",
         entityType: "budgetApprovalRequest",
@@ -1599,8 +1736,8 @@
         source: "web_app_staff"
       });
     } catch (error) {
-      console.error("clear budget project code failed - app.budget-staff.js", error);
-      setMessage(actionMessageEl, "ยกเลิกรหัสโครงการไม่สำเร็จ", "#b91c1c");
+      console.error("clear budget consideration code failed - app.budget-staff.js", error);
+      setMessage(actionMessageEl, "ยกเลิกรหัสพิจารณาโครงการไม่สำเร็จ", "#b91c1c");
     } finally {
       setCodeActionBusy(false);
     }
@@ -1608,8 +1745,8 @@
 
   const fillFormForEdit = (row) => {
     if (!row) return;
-    orgTypeInputEl.value = normalizeText(row.organizationType);
-    orgNameInputEl.value = normalizeText(row.organizationName);
+    populateStaffOrgTypeOptions(row.organizationType);
+    populateStaffOrgNameOptions(row.organizationName);
     projectNameInputEl.value = normalizeText(row.projectName);
     activityLocationInputEl.value = normalizeText(row.activityLocation);
     prepStartDateInputEl.value = toDateOnlyText(row.prepStartDate);
@@ -1620,10 +1757,11 @@
     approvedAmountInputEl.value = Number(row.approvedAmount || 0).toString();
     statusInputEl.value = normalizeText(row.status || "pending").toLowerCase() || "pending";
     descriptionInputEl.value = normalizeText(row.description);
+    populateStaffRoundOptions(row.budgetRoundId);
     const round = budgetActiveRounds.find((item) => item.id === normalizeText(row.budgetRoundId));
     if (round) fillRoundSettings(round.id);
     setFormMode(row.id);
-    setMessage(formMessageEl, "กำลังแก้ไขรายการ", "#1d4ed8");
+    syncStaffRoundMessage();
     formEl.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -1669,9 +1807,6 @@
           {
             requestType: "budget_approval",
             ...payload,
-            budgetRoundYear,
-            budgetRoundNo,
-            budgetRoundId: buildBudgetRoundId(budgetRoundYear, budgetRoundNo),
             projectCodeGenerated: "",
             requester: {
               email: "staff-manual@system",
@@ -1799,6 +1934,14 @@
   });
   runCodeBtnEl.addEventListener("click", () => { void runProjectCodes(); });
   clearCodeBtnEl.addEventListener("click", () => { void clearProjectCodes(); });
+  staffRoundInputEl.addEventListener("change", syncStaffRoundMessage);
+  orgTypeInputEl.addEventListener("change", () => {
+    populateStaffOrgNameOptions("");
+    setMessage(formMessageEl, "");
+  });
+  orgNameInputEl.addEventListener("change", () => {
+    setMessage(formMessageEl, "");
+  });
   groupCeilingToggleBtnEl.addEventListener("click", () => {
     isGroupCeilingOpen = !isGroupCeilingOpen;
     writeLocalGroupCeilingOpen(isGroupCeilingOpen);

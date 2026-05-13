@@ -66,16 +66,15 @@
                   </button>
                 </div>
               </div>
-              <div class="table-wrapper">
-                <table>
+              <div class="table-wrapper borrow-staff-requests-wrapper">
+                <table class="borrow-staff-requests-table">
                   <thead>
                     <tr>
-                      <th>วันที่ยื่น</th>
+                      <th>คำขอ</th>
                       <th>ผู้ขอ</th>
                       <th>รายการ</th>
                       <th>ช่วงเวลา</th>
-                      <th>ติดตามคืน</th>
-                      <th>สถานะ</th>
+                      <th>จัดการ</th>
                     </tr>
                   </thead>
                   <tbody id="staffBorrowQueueTableBody">
@@ -84,7 +83,6 @@
                       <td>ชมรมดนตรีไทย</td>
                       <td>ไมค์ไร้สาย 2 ชุด</td>
                       <td>10-12 ต.ค. 2568</td>
-                      <td>-</td>
                       <td>
                         <select class="staff-status-select is-pending" aria-label="จัดการสถานะคำขอ">
                           <option value="pending" selected>รออนุมัติ</option>
@@ -102,7 +100,6 @@
                       <td>ฝ่ายกิจกรรม SGCU</td>
                       <td>เก้าอี้พลาสติก 50 ตัว</td>
                       <td>09-11 ต.ค. 2568</td>
-                      <td><span class="badge badge-pending">ครบกำหนดใน 2 วัน</span></td>
                       <td>
                         <select class="staff-status-select is-approved" aria-label="จัดการสถานะคำขอ">
                           <option value="pending">รออนุมัติ</option>
@@ -155,8 +152,8 @@
                   </div>
                 </div>
               </div>
-              <div class="table-wrapper">
-                <table>
+              <div class="table-wrapper borrow-staff-requests-wrapper">
+                <table class="borrow-staff-requests-table">
                   <thead>
                     <tr>
                       <th>ประเภท</th>
@@ -202,17 +199,16 @@
                 <table>
                   <thead>
                     <tr>
-                      <th>วันที่ยื่น</th>
+                      <th>คำขอ</th>
                       <th>ผู้ขอ</th>
                       <th>รายการ</th>
                       <th>ช่วงเวลา</th>
-                      <th>ติดตามคืน</th>
-                      <th>สถานะ</th>
+                      <th>จัดการ</th>
                     </tr>
                   </thead>
                   <tbody id="staffBorrowHistoryTableBody">
                     <tr>
-                      <td colspan="6">กำลังโหลดประวัติคำขอ...</td>
+                      <td colspan="5">กำลังโหลดประวัติคำขอ...</td>
                     </tr>
                   </tbody>
                 </table>

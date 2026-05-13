@@ -88,8 +88,8 @@
               <section class="panel panel-hover staff-access-panel budget-staff-settings-panel">
                 <div class="panel-header">
                   <div>
-                    <h3 class="panel-title">ตั้งค่าการรับคำขอและรหัสโครงการ</h3>
-                    <p class="panel-caption">จัดการรอบรับคำขอ เพดานงบของรอบ และการรันรหัสโครงการ</p>
+                    <h3 class="panel-title">ตั้งค่าการรับคำขอและรหัสพิจารณาโครงการ</h3>
+                    <p class="panel-caption">จัดการรอบรับคำขอ เพดานงบของรอบ และการรันรหัสพิจารณาโครงการ</p>
                   </div>
                 </div>
                 <div class="budget-staff-controls">
@@ -171,11 +171,11 @@
 
                       <div class="budget-staff-setting-block budget-staff-code-block">
                         <div class="budget-staff-setting-heading">
-                          <div class="card-title">รหัสโครงการ</div>
-                          <div class="card-caption">ล้างรหัสเดิมหรือรันใหม่ตามลำดับรายการ</div>
+                          <div class="card-title">รหัสพิจารณาโครงการ</div>
+                          <div class="card-caption">เติมรหัสให้รายการที่ยังไม่มี โดยต่อเลขจากรหัสเดิม</div>
                         </div>
                         <div class="staff-access-actions budget-staff-control-actions">
-                          <button id="budgetRunProjectCodeBtn" class="btn-ghost" type="button">รันรหัสโครงการ</button>
+                          <button id="budgetRunProjectCodeBtn" class="btn-ghost" type="button">รันรหัสพิจารณาโครงการ</button>
                           <button id="budgetClearProjectCodeBtn" class="btn-ghost" type="button">ยกเลิกรหัสที่รันแล้ว</button>
                         </div>
                       </div>
@@ -198,12 +198,22 @@
                   <div class="budget-staff-form-section-title">ข้อมูลโครงการ</div>
                   <div class="staff-application-position-grid budget-staff-form-grid">
                     <div class="borrow-form-field">
+                      <label class="login-label" for="budgetStaffRoundInput">รอบรับคำขอ</label>
+                      <select id="budgetStaffRoundInput" class="login-input" required>
+                        <option value="" selected disabled>เลือกรอบรับคำขอ</option>
+                      </select>
+                    </div>
+                    <div class="borrow-form-field">
                       <label class="login-label" for="budgetStaffOrgTypeInput">ประเภทองค์กร</label>
-                      <input id="budgetStaffOrgTypeInput" class="login-input" type="text" maxlength="120" required />
+                      <select id="budgetStaffOrgTypeInput" class="login-input" required>
+                        <option value="" selected disabled>เลือกประเภทองค์กร</option>
+                      </select>
                     </div>
                     <div class="borrow-form-field">
                       <label class="login-label" for="budgetStaffOrgNameInput">ฝ่าย / ชมรม</label>
-                      <input id="budgetStaffOrgNameInput" class="login-input" type="text" maxlength="180" required />
+                      <select id="budgetStaffOrgNameInput" class="login-input" required>
+                        <option value="" selected disabled>เลือกประเภทองค์กรก่อน</option>
+                      </select>
                     </div>
                     <div class="borrow-form-field">
                       <label class="login-label" for="budgetStaffProjectNameInput">ชื่อโครงการ</label>
@@ -282,7 +292,7 @@
               <div class="panel-header">
                 <div>
                   <h3 class="panel-title">รายการคำขออนุมัติงบประมาณ</h3>
-                  <p class="panel-caption">ตรวจสอบรหัสโครงการ ยอดเงิน และสถานะของแต่ละคำขอ</p>
+                  <p class="panel-caption">ตรวจสอบรหัสพิจารณาโครงการ ยอดเงิน และสถานะของแต่ละคำขอ</p>
                 </div>
                 <button id="budgetStaffExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
               </div>
@@ -310,7 +320,7 @@
                 <table id="budgetStaffRequestsTable" class="budget-staff-requests-table">
                   <thead>
                     <tr>
-                      <th class="col-code">รหัสโครงการ</th>
+                      <th class="col-code">รหัสพิจารณาโครงการ</th>
                       <th class="col-project">รายการโครงการ</th>
                       <th class="col-money">ยอดขอ</th>
                       <th class="col-money">ยอดอนุมัติ</th>

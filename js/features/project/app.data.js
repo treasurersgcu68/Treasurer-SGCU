@@ -151,7 +151,7 @@ let selectedProjectSourceYear = "";
 function parseProjectSourceList(rows) {
   if (!Array.isArray(rows) || rows.length < 2) return [];
   return rows
-    .slice(1)
+    .slice(3)
     .map((row) => ({
       year: (row[0] || "").toString().trim(),
       projectUrl: (row[1] || "").toString().trim(),

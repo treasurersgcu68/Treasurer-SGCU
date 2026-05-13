@@ -95,6 +95,7 @@ function initBorrowAssetsApp() {
   const STATUS_REJECTED = "rejected";
   const STATUS_CANCELLED = "cancelled";
   const STATUS_RETURNED = "returned";
+  const STAFF_REQUEST_PAGE_SIZE = 50;
   const STAFF_REQUEST_TAB_STATUSES = new Set([STATUS_PENDING, STATUS_APPROVED, STATUS_RECEIVED]);
   const STAFF_HISTORY_TAB_STATUSES = new Set([STATUS_REJECTED, STATUS_CANCELLED, STATUS_RETURNED]);
   const BORROW_FOLLOWUP_SOON_DAYS = 3;
@@ -134,6 +135,10 @@ function initBorrowAssetsApp() {
   const collectionSnapshotCounts = new Map();
   const collectionSnapshotErrors = new Map();
   let staffActionInFlight = false;
+  const staffRequestPageByMode = {
+    queue: 1,
+    history: 1
+  };
 
   const resolveFirestoreBridge = () => {
     firestore = window.sgcuFirestore || {};
@@ -187,6 +192,62 @@ function initBorrowAssetsApp() {
     if (!staffQueueMessageEl) return;
     staffQueueMessageEl.textContent = text || "";
     staffQueueMessageEl.style.color = color;
+  };
+
+  const staffRequestPagerEl = (() => {
+    if (!staffQueueTableBody) return null;
+    const wrapper = staffQueueTableBody.closest(".table-wrapper");
+    if (!wrapper) return null;
+    const existing = document.getElementById("borrowStaffRequestPager");
+    if (existing) return existing;
+    const pager = document.createElement("div");
+    pager.id = "borrowStaffRequestPager";
+    pager.className = "list-pagination-controls";
+    pager.setAttribute("aria-live", "polite");
+    wrapper.insertAdjacentElement("afterend", pager);
+    return pager;
+  })();
+
+  const getPagedRows = (rows, page) => {
+    const totalPages = Math.max(1, Math.ceil(rows.length / STAFF_REQUEST_PAGE_SIZE));
+    const currentPage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    const startIndex = (currentPage - 1) * STAFF_REQUEST_PAGE_SIZE;
+    return {
+      rows: rows.slice(startIndex, startIndex + STAFF_REQUEST_PAGE_SIZE),
+      currentPage,
+      totalPages,
+      startIndex,
+      endIndex: Math.min(rows.length, startIndex + STAFF_REQUEST_PAGE_SIZE),
+      total: rows.length
+    };
+  };
+
+  const renderStaffRequestPager = (meta) => {
+    if (!staffRequestPagerEl) return;
+    if (!meta || meta.total <= STAFF_REQUEST_PAGE_SIZE) {
+      staffRequestPagerEl.innerHTML = "";
+      staffRequestPagerEl.hidden = true;
+      return;
+    }
+    staffRequestPagerEl.hidden = false;
+    staffRequestPagerEl.innerHTML = `
+      <span class="list-pagination-summary">
+        แสดง ${safeEscape(meta.startIndex + 1)}-${safeEscape(meta.endIndex)} จาก ${safeEscape(meta.total)} รายการ
+      </span>
+      <button
+        class="btn-ghost list-pagination-btn"
+        type="button"
+        data-borrow-page-action="prev"
+        ${meta.currentPage <= 1 ? "disabled" : ""}
+      >ก่อนหน้า</button>
+      <span class="list-pagination-page">หน้า ${safeEscape(meta.currentPage)} / ${safeEscape(meta.totalPages)}</span>
+      <button
+        class="btn-ghost list-pagination-btn"
+        type="button"
+        data-borrow-page-action="next"
+        ${meta.currentPage >= meta.totalPages ? "disabled" : ""}
+      >ถัดไป</button>
+    `;
   };
 
   const normalizeBool = (value) => {
@@ -1626,9 +1687,12 @@ function initBorrowAssetsApp() {
             role="button"
             aria-label="ดูรายละเอียดคำขอ ${safeEscape(item.id || "-")}"
           >
+            <div class="borrow-my-card-head">
+              <span class="borrow-my-request-no">${safeEscape(item.requestNo || item.id || "-")}</span>
+              ${statusBadge(item.status)}
+            </div>
             <div><span class="borrow-my-cell-label">รายการ</span><span class="borrow-my-cell-value">${itemsText}</span></div>
             <div><span class="borrow-my-cell-label">ช่วงเวลา</span><span class="borrow-my-cell-value">${safeEscape(formatDateRange(item.pickupDate, item.returnDate))}</span></div>
-            <div><span class="borrow-my-cell-label">สถานะ</span><span class="borrow-my-cell-value">${statusBadge(item.status)}</span></div>
             <div><span class="borrow-my-cell-label">หมายเหตุ</span><span class="borrow-my-cell-value">${safeEscape(noteText)}</span></div>
           </article>
         `;
@@ -1660,10 +1724,24 @@ function initBorrowAssetsApp() {
           role="button"
           aria-label="ดูรายละเอียดคำขอ ${safeEscape(item.id || "-")}"
         >
-          <td>${itemsText}</td>
+          <td>
+            <div class="borrow-my-request-item-main">${itemsText}</div>
+            <div class="borrow-my-request-no">เลขที่คำขอ: ${safeEscape(item.requestNo || item.id || "-")}</div>
+          </td>
           <td>${safeEscape(formatDateRange(item.pickupDate, item.returnDate))}</td>
           <td>${statusBadge(item.status)}</td>
-          <td>${safeEscape(noteText)}</td>
+          <td>
+            <div class="borrow-my-note-cell">
+              <span>${safeEscape(noteText)}</span>
+              <button
+                class="btn-ghost borrow-row-detail-btn"
+                type="button"
+                data-action="detail"
+                data-request-id="${safeEscape(item.id || "")}"
+                data-request-source="${safeEscape(item.sourceCollection || "")}"
+              >ดูรายละเอียด</button>
+            </div>
+          </td>
         </tr>
       `;
     }).join("");
@@ -1713,7 +1791,6 @@ function initBorrowAssetsApp() {
   const renderRequesterCell = (item) => {
     const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ").trim() || "-";
     const projectMeta = [item.projectName, item.projectDept].filter(Boolean).join(" • ");
-    const activityMeta = (item.projectDetail || "").toString().trim();
     const contactMeta = [item.phone, item.lineId ? `Line: ${item.lineId}` : ""]
       .filter(Boolean)
       .join(" • ");
@@ -1721,8 +1798,18 @@ function initBorrowAssetsApp() {
       <div class="borrow-staff-requester">
         <div class="borrow-staff-requester-name">${safeEscape(fullName)}</div>
         ${projectMeta ? `<div class="borrow-staff-requester-meta">${safeEscape(projectMeta)}</div>` : ""}
-        ${activityMeta ? `<div class="borrow-staff-requester-meta">${safeEscape(activityMeta)}</div>` : ""}
         ${contactMeta ? `<div class="borrow-staff-requester-contact">${safeEscape(contactMeta)}</div>` : ""}
+      </div>
+    `;
+  };
+
+  const renderRequestMetaCell = (item) => {
+    const requestNo = (item.requestNo || item.id || "-").toString().trim();
+    const createdText = formatDate(item.createdDate || "");
+    return `
+      <div class="borrow-staff-request-meta">
+        <div class="borrow-staff-request-no">${safeEscape(requestNo)}</div>
+        <div class="borrow-staff-request-date">${safeEscape(createdText || "-")}</div>
       </div>
     `;
   };
@@ -1736,23 +1823,35 @@ function initBorrowAssetsApp() {
       const qty = Number(asset?.qty || 0);
       return sum + (Number.isFinite(qty) ? qty : 0);
     }, 0);
-    const rowsHtml = list.map((asset) => {
+    const visibleRows = list.slice(0, 3);
+    const hiddenCount = Math.max(0, list.length - visibleRows.length);
+    const rowsHtml = visibleRows.map((asset) => {
       const name = asset?.name || asset?.code || "-";
       const qty = Number(asset?.qty || 0);
-      const qtyText = Number.isFinite(qty) ? String(qty) : "0";
-      return `
+        const qtyText = Number.isFinite(qty) ? String(qty) : "0";
+        return `
         <div class="borrow-staff-item-row">
           <span class="borrow-staff-item-name">${safeEscape(name)}</span>
-          <span class="borrow-staff-item-qty">${safeEscape(qtyText)} ${safeEscape(asset?.unit || "")}</span>
+          <span class="borrow-staff-item-qty">
+            <span class="borrow-staff-item-qty-number">${safeEscape(qtyText)}</span>
+            ${asset?.unit ? `<span class="borrow-staff-item-unit">${safeEscape(asset.unit)}</span>` : ""}
+          </span>
         </div>
       `;
     }).join("");
+    const moreLine = hiddenCount
+      ? `<div class="borrow-staff-items-more">+ อีก ${safeEscape(hiddenCount)} รายการ</div>`
+      : "";
     const noteLine = (staffNote || "").toString().trim()
       ? `<div class="borrow-staff-items-note">หมายเหตุ: ${safeEscape(staffNote)}</div>`
       : "";
     return `
       <div class="borrow-staff-items">
+        <div class="borrow-staff-items-head" aria-hidden="true">
+          <span>รายการพัสดุ</span>
+        </div>
         ${rowsHtml}
+        ${moreLine}
         <div class="borrow-staff-items-total">รวม ${safeEscape(totalQty)} ชิ้น</div>
         ${noteLine}
       </div>
@@ -1770,6 +1869,42 @@ function initBorrowAssetsApp() {
     const meta = buildBorrowFollowupMeta(item);
     if ((item?.status !== STATUS_APPROVED && item?.status !== STATUS_RECEIVED) || !meta.dueSoon) return "-";
     return `<span class="badge ${safeEscape(meta.badgeClass)}">${safeEscape(meta.statusText)}</span>`;
+  };
+
+  const renderStaffRequestCard = (item, actionHtml, staffNote = "") => {
+    const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ").trim() || "-";
+    const requestNo = (item.requestNo || item.id || "-").toString().trim();
+    const projectMeta = [item.projectName, item.projectDept].filter(Boolean).join(" • ");
+    const contactMeta = [item.phone, item.lineId ? `Line: ${item.lineId}` : ""]
+      .filter(Boolean)
+      .join(" • ");
+    const followupHtml = renderFollowupCell(item);
+    const followupBlock = followupHtml !== "-"
+      ? `<div class="borrow-staff-card-alert">${followupHtml}</div>`
+      : "";
+    return `
+      <article class="borrow-staff-request-card">
+        <div class="borrow-staff-card-main">
+          <div class="borrow-staff-card-topline">
+            <span class="borrow-staff-request-no">${safeEscape(requestNo)}</span>
+            <span class="borrow-staff-request-date">ยื่น ${safeEscape(formatDate(item.createdDate || "") || "-")}</span>
+          </div>
+          <div class="borrow-staff-card-name">${safeEscape(fullName)}</div>
+          ${projectMeta ? `<div class="borrow-staff-card-meta">${safeEscape(projectMeta)}</div>` : ""}
+          ${contactMeta ? `<div class="borrow-staff-card-contact">${safeEscape(contactMeta)}</div>` : ""}
+          ${followupBlock}
+        </div>
+        <div class="borrow-staff-card-assets">
+          ${renderAssetsCell(item.assets, staffNote)}
+        </div>
+        <div class="borrow-staff-card-period">
+          ${renderPeriodCell(item)}
+          <div class="borrow-staff-actions borrow-staff-card-actions">
+            ${actionHtml}
+          </div>
+        </div>
+      </article>
+    `;
   };
 
   let staffRequestTabMode = "queue";
@@ -1798,16 +1933,20 @@ function initBorrowAssetsApp() {
       return;
     }
     if (!list.length) {
+      renderStaffRequestPager({ total: 0 });
       staffQueueTableBody.innerHTML = `
         <tr>
-          <td colspan="6">ยังไม่มีคำขอในระบบ</td>
+          <td colspan="5">ยังไม่มีคำขอในระบบ</td>
         </tr>
       `;
       renderStaffSummary();
       return;
     }
+    const pageMeta = getPagedRows(list, staffRequestPageByMode.queue);
+    staffRequestPageByMode.queue = pageMeta.currentPage;
+    renderStaffRequestPager(pageMeta);
 
-    staffQueueTableBody.innerHTML = list.map((item) => {
+    staffQueueTableBody.innerHTML = pageMeta.rows.map((item) => {
       const actionHtml = `
         <select
           class="staff-status-select borrow-staff-status-select ${borrowStatusSelectClass(item.status)}"
@@ -1828,12 +1967,7 @@ function initBorrowAssetsApp() {
 
       return `
         <tr class="borrow-staff-row" data-request-id="${safeEscape(item.id)}" data-request-source="${safeEscape(item.sourceCollection || "")}">
-          <td>${safeEscape(formatDate(item.createdDate || ""))}</td>
-          <td>${renderRequesterCell(item)}</td>
-          <td>${renderAssetsCell(item.assets, "")}</td>
-          <td>${renderPeriodCell(item)}</td>
-          <td>${renderFollowupCell(item)}</td>
-          <td><div class="borrow-staff-actions">${actionHtml}</div></td>
+          <td colspan="5">${renderStaffRequestCard(item, actionHtml, "")}</td>
         </tr>
       `;
     }).join("");
@@ -1851,7 +1985,7 @@ function initBorrowAssetsApp() {
         if (!historyList.length) {
           staffHistoryTableBody.innerHTML = `
             <tr>
-              <td colspan="6">ยังไม่มีประวัติคำขอ</td>
+              <td colspan="5">ยังไม่มีประวัติคำขอ</td>
             </tr>
           `;
         } else {
@@ -1861,9 +1995,10 @@ function initBorrowAssetsApp() {
       return;
     }
     if (!historyList.length) {
+      renderStaffRequestPager({ total: 0 });
       staffQueueTableBody.innerHTML = `
         <tr>
-          <td colspan="6">ยังไม่มีประวัติคำขอ</td>
+          <td colspan="5">ยังไม่มีประวัติคำขอ</td>
         </tr>
       `;
       if (staffHistoryTableBody) {
@@ -1871,7 +2006,10 @@ function initBorrowAssetsApp() {
       }
       return;
     }
-    const html = historyList.map((item) => {
+    const pageMeta = getPagedRows(historyList, staffRequestPageByMode.history);
+    staffRequestPageByMode.history = pageMeta.currentPage;
+    renderStaffRequestPager(pageMeta);
+    const html = pageMeta.rows.map((item) => {
       const actionHtml = `
         <select
           class="staff-status-select borrow-staff-status-select ${borrowStatusSelectClass(item.status)}"
@@ -1898,12 +2036,7 @@ function initBorrowAssetsApp() {
           role="button"
           aria-label="ดูรายละเอียดคำขอ ${safeEscape(item.requestNo || item.id || "-")}"
         >
-          <td data-label="วันที่ยื่น">${safeEscape(formatDate(item.createdDate || ""))}</td>
-          <td data-label="ผู้ขอ">${renderRequesterCell(item)}</td>
-          <td data-label="รายการ">${renderAssetsCell(item.assets, item.staffNote || "")}</td>
-          <td data-label="ช่วงเวลา">${renderPeriodCell(item)}</td>
-          <td data-label="ติดตามคืน">${renderFollowupCell(item)}</td>
-          <td data-label="สถานะ"><div class="borrow-staff-actions">${actionHtml}</div></td>
+          <td colspan="5">${renderStaffRequestCard(item, actionHtml, item.staffNote || "")}</td>
         </tr>
       `;
     }).join("");
@@ -1917,7 +2050,7 @@ function initBorrowAssetsApp() {
     if (!staffQueueTableBody) return;
     staffQueueTableBody.innerHTML = `
       <tr>
-        <td colspan="6">${safeEscape(text || "-")}</td>
+        <td colspan="5">${safeEscape(text || "-")}</td>
       </tr>
     `;
   };
@@ -3316,6 +3449,12 @@ function initBorrowAssetsApp() {
     myRequestsTableBody.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
+      const button = target.closest("button[data-action='detail'][data-request-id]");
+      if (button instanceof HTMLButtonElement) {
+        const item = getBorrowRequestByKey(button.dataset.requestId || "", button.dataset.requestSource || "");
+        if (item) openBorrowDetailModal(item);
+        return;
+      }
       if (target.closest("button, select, option, input, textarea, a")) return;
       const row = target.closest("tr[data-request-id]");
       if (!row) return;
@@ -3432,6 +3571,18 @@ function initBorrowAssetsApp() {
       });
     });
   }
+
+  staffRequestPagerEl?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const action = target.dataset.borrowPageAction;
+    if (action !== "prev" && action !== "next") return;
+    const current = staffRequestPageByMode[staffRequestTabMode] || 1;
+    staffRequestPageByMode[staffRequestTabMode] = action === "next"
+      ? current + 1
+      : Math.max(1, current - 1);
+    renderBorrowRequests();
+  });
 
   currentUserEmail = readCurrentUserEmail();
   restoreBorrowProfileForCurrentUser();

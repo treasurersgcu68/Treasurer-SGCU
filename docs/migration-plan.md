@@ -130,13 +130,14 @@ Acceptance criteria:
 
 Target collection: `organizationCatalog`
 
-Current source: `SGCU_APP_CONFIG.sheets.orgFilters`
+Current source: Firestore `organizationCatalog`
 
 Recommended implementation:
 
 - ใช้เป็น source หลักของ dropdown องค์กร
 - ใช้ bank account สำหรับ PDF auto-fill
-- เพิ่ม fallback ไป Google Sheets ระหว่าง migration
+- อัปโหลด CSV เก่าจากชีต ALL เพื่อ import ข้อมูลตั้งต้น
+- ไม่ fallback ไป Google Sheets แล้ว
 
 Acceptance criteria:
 

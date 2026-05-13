@@ -130,15 +130,34 @@ function initBudgetApprovalRequestPage() {
       .sort((a, b) => a.localeCompare(b, "th"));
   };
 
+  const compareBudgetOrgNameByCode = (a, b, codeByName = new Map()) => {
+    const codeA = (codeByName.get(a) || "").toString().trim();
+    const codeB = (codeByName.get(b) || "").toString().trim();
+    if (codeA && codeB) {
+      const codeCompare = codeA.localeCompare(codeB, "th", { numeric: true });
+      if (codeCompare) return codeCompare;
+    } else if (codeA || codeB) {
+      return codeA ? -1 : 1;
+    }
+    return a.localeCompare(b, "th");
+  };
+
   const collectBudgetOrgNameOptions = (orgType) => {
     const selectedType = (orgType || "").toString().trim();
     if (!selectedType) return [];
-    const fromFilters =
-      typeof orgFilters !== "undefined" && Array.isArray(orgFilters)
-        ? orgFilters
-          .filter((item) => (item?.group || "").toString().trim() === selectedType)
-          .map((item) => (item?.name || "").toString().trim())
-        : [];
+    const codeByName = new Map();
+    const fromFilters = [];
+    if (typeof orgFilters !== "undefined" && Array.isArray(orgFilters)) {
+      orgFilters
+        .filter((item) => (item?.group || "").toString().trim() === selectedType)
+        .forEach((item) => {
+          const name = (item?.name || "").toString().trim();
+          if (!name) return;
+          const code = (item?.code || "").toString().trim();
+          if (code && !codeByName.has(name)) codeByName.set(name, code);
+          fromFilters.push(name);
+        });
+    }
     const fromProjects =
       typeof projects !== "undefined" && Array.isArray(projects)
         ? projects
@@ -146,7 +165,7 @@ function initBudgetApprovalRequestPage() {
           .map((item) => (item?.orgName || "").toString().trim())
         : [];
     return Array.from(new Set([...fromFilters, ...fromProjects].filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b, "th"));
+      .sort((a, b) => compareBudgetOrgNameByCode(a, b, codeByName));
   };
 
   const normalizeOrgText = (value) => (value || "").toString().trim();

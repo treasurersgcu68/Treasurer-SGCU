@@ -3,16 +3,12 @@ const SGCU_APP_CONFIG = {
   sheets: {
     projectSources:
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vQoybDIWotYcgg-UWuRAUvbEkmWrdIbKbHWANHRyzta4i7CCNR5dKPVi_40ruIxrvbVMtsxrUUagrEx/pub?output=csv",
-    orgFilters:
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3mW8GVPRgbiURGAx59WyB3TZT5GbKoXJxHxmgpU2LRd_jgow9JBwXVjtjJRvfIgYYL5MKLLuZEddd/pub?output=csv",
     borrowAssets:
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcx0zotyWntFscUtgXHg4dkJQ6xI16Xrasy58sQfr-29iwgdpujpuvLC7poHH3TG4KR6P36A-bLyZR/pub?gid=0&single=true&output=csv"
   },
   managementLinks: {
     projectSources:
       "https://docs.google.com/spreadsheets/d/1YmrHUdwdCGErwuMOlm9ohEFDvJkeeSq8AKNUu4h6c8c/edit?usp=sharing",
-    orgFilters:
-      "https://docs.google.com/spreadsheets/d/19ncbNPEVXoTMGXQeKAvY88Dsr4a-Xy35-VyekQj8xdk/edit?usp=sharing",
     borrowAssets: ""
   },
   firestore: {
@@ -29,6 +25,7 @@ const SGCU_APP_CONFIG = {
       meetingRoomHolidays: "meetingRoomHolidays",
       meetingRooms: "meetingRooms",
       newsItems: "newsItems",
+      organizationCatalog: "organizationCatalog",
       orgStructureMembers: "orgStructureMembers",
       organizationRepresentativeApplications: "organizationRepresentativeApplications",
       staffApplications: "staffApplications",

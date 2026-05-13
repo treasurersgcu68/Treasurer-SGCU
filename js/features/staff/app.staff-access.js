@@ -75,6 +75,34 @@ function initStaffAccessPages() {
   const orgRepresentativeMainFilterTabEl = document.getElementById("orgRepresentativeMainFilterTab");
   const orgRepresentativeOverviewPanelEl = document.getElementById("orgRepresentativeOverviewPanel");
   const orgRepresentativeFilterPanelEl = document.getElementById("orgRepresentativeFilterPanel");
+  const organizationCatalogImportBtnEl = document.getElementById("organizationCatalogImportBtn");
+  const organizationCatalogImportFileEl = document.getElementById("organizationCatalogImportFile");
+  const organizationCatalogImportMessageEl = document.getElementById("organizationCatalogImportMessage");
+  const organizationCatalogTableBodyEl = document.getElementById("organizationCatalogTableBody");
+  const organizationCatalogTableCaptionEl = document.getElementById("organizationCatalogTableCaption");
+  const organizationCatalogFormEl = document.getElementById("organizationCatalogForm");
+  const organizationCatalogFormTitleEl = document.getElementById("organizationCatalogFormTitle");
+  const organizationCatalogFormMessageEl = document.getElementById("organizationCatalogFormMessage");
+  const organizationCatalogGroupListEl = document.getElementById("organizationCatalogGroupList");
+  const organizationCatalogSaveBtnEl = document.getElementById("organizationCatalogSaveBtn");
+  const organizationCatalogResetBtnEl = document.getElementById("organizationCatalogResetBtn");
+  const organizationCatalogArchiveBtnEl = document.getElementById("organizationCatalogArchiveBtn");
+  const organizationCatalogGroupFilterEl = document.getElementById("organizationCatalogGroupFilter");
+  const organizationCatalogSearchInputEl = document.getElementById("organizationCatalogSearchInput");
+  const organizationCatalogFilterResetBtnEl = document.getElementById("organizationCatalogFilterResetBtn");
+  const organizationCatalogShowMoreBtnEl = document.getElementById("organizationCatalogShowMoreBtn");
+  const organizationCatalogTotalCountEl = document.getElementById("organizationCatalogTotalCount");
+  const organizationCatalogGroupCountEl = document.getElementById("organizationCatalogGroupCount");
+  const organizationCatalogFilteredCountEl = document.getElementById("organizationCatalogFilteredCount");
+  const organizationCatalogVisibleCountEl = document.getElementById("organizationCatalogVisibleCount");
+  const organizationCatalogFields = {
+    id: document.getElementById("organizationCatalogId"),
+    group: document.getElementById("organizationCatalogGroup"),
+    name: document.getElementById("organizationCatalogName"),
+    code: document.getElementById("organizationCatalogCode"),
+    documentRunCode: document.getElementById("organizationCatalogRunCode"),
+    accountNo: document.getElementById("organizationCatalogAccountNo")
+  };
 
   if (approvalDetailModalEl && approvalDetailModalEl.parentElement !== document.body) {
     document.body.appendChild(approvalDetailModalEl);
@@ -132,6 +160,7 @@ function initStaffAccessPages() {
   const COLLECTION_USER_PROFILES = firestoreCollections.userProfiles || "userProfiles";
   const COLLECTION_POSITIONS = firestoreCollections.staffPositionCatalog || "staffPositionCatalog";
   const COLLECTION_ORG_STRUCTURE = firestoreCollections.orgStructureMembers || "orgStructureMembers";
+  const COLLECTION_ORGANIZATION_CATALOG = firestoreCollections.organizationCatalog || "organizationCatalog";
   const COLLECTION_POSITION_CODE_COUNTERS =
     firestoreCollections.staffPositionCodeCounters || "staffPositionCodeCounters";
   const STAFF_HEAD_EMAIL_OVERRIDES = new Set([
@@ -213,6 +242,12 @@ function initStaffAccessPages() {
   let currentOrgRepresentativeApplications = [];
   let currentOrgRepresentativePending = [];
   let currentOrgStructureMembers = [];
+  const ORGANIZATION_CATALOG_PAGE_SIZE = 120;
+  const organizationCatalogFilters = {
+    group: "all",
+    query: "",
+    visibleLimit: ORGANIZATION_CATALOG_PAGE_SIZE
+  };
   const orgStructureFilters = {
     query: "",
     term: "all",
@@ -315,6 +350,11 @@ function initStaffAccessPages() {
     const showOverview = nextTab === "overview";
     if (orgRepresentativeOverviewPanelEl) orgRepresentativeOverviewPanelEl.hidden = !showOverview;
     if (orgRepresentativeFilterPanelEl) orgRepresentativeFilterPanelEl.hidden = showOverview;
+    if (!showOverview && orgRepresentativeFilterPanelEl) {
+      orgRepresentativeFilterPanelEl.querySelectorAll(".section-appear").forEach((section) => {
+        section.classList.add("section-visible");
+      });
+    }
     if (orgRepresentativeMainOverviewTabEl) {
       orgRepresentativeMainOverviewTabEl.classList.toggle("is-active", showOverview);
       orgRepresentativeMainOverviewTabEl.setAttribute("aria-selected", showOverview ? "true" : "false");
@@ -2474,6 +2514,415 @@ function initStaffAccessPages() {
     return Array.isArray(globalThis.orgFilters) ? globalThis.orgFilters : [];
   };
 
+  const normalizeOrganizationCatalogText = (value) =>
+    (value ?? "")
+      .toString()
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .trim();
+
+  const slugifyOrganizationCatalogId = (value) => {
+    const slug = normalizeOrganizationCatalogText(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9ก-๙]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 120);
+    return slug || `organization-${Date.now()}`;
+  };
+
+  const isOrganizationCatalogHeaderRow = (row = []) => {
+    const first = normalizeOrganizationCatalogText(row[0]);
+    const second = normalizeOrganizationCatalogText(row[1]);
+    return /ประเภท|group|type/i.test(first) || /ชื่อ|ชมรม|องค์กร|name|organization/i.test(second);
+  };
+
+  const parseOrganizationCatalogCsvRows = (rows = []) => {
+    const dataRows = Array.isArray(rows) && rows.length && isOrganizationCatalogHeaderRow(rows[0])
+      ? rows.slice(1)
+      : rows;
+    const byId = new Map();
+
+    dataRows.forEach((row, index) => {
+      if (!Array.isArray(row)) return;
+      const group = normalizeOrganizationCatalogText(row[0]);
+      const name = normalizeOrganizationCatalogText(row[1]);
+      const code = normalizeOrganizationCatalogText(row[2]).toUpperCase();
+      const documentRunCode = normalizeOrganizationCatalogText(row[3]);
+      const accountNo = normalizeOrganizationCatalogText(row[4]);
+      if (!group || !name) return;
+
+      const id = slugifyOrganizationCatalogId(`${group}-${code || name}`);
+      byId.set(id, {
+        id,
+        group,
+        name,
+        code,
+        documentRunCode,
+        accountNo,
+        bankAccount: accountNo,
+        status: "active",
+        sortOrder: index + 1,
+        source: "legacy-csv"
+      });
+    });
+
+    return Array.from(byId.values());
+  };
+
+  const writeOrganizationCatalogItems = async (items, importedBy) => {
+    if (!items.length) return 0;
+    const timestampValue = firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString();
+
+    if (firestore.writeBatch) {
+      let written = 0;
+      for (let start = 0; start < items.length; start += 450) {
+        const batch = firestore.writeBatch(firestore.db);
+        items.slice(start, start + 450).forEach((item) => {
+          const { id, ...fields } = item;
+          batch.set(
+            firestore.doc(firestore.db, COLLECTION_ORGANIZATION_CATALOG, id),
+            {
+              ...fields,
+              importedAt: timestampValue,
+              importedBy,
+              updatedAt: timestampValue
+            },
+            { merge: true }
+          );
+        });
+        await batch.commit();
+        written += Math.min(450, items.length - start);
+      }
+      return written;
+    }
+
+    let written = 0;
+    for (const item of items) {
+      const { id, ...fields } = item;
+      await firestore.setDoc(
+        firestore.doc(firestore.db, COLLECTION_ORGANIZATION_CATALOG, id),
+        {
+          ...fields,
+          importedAt: timestampValue,
+          importedBy,
+          updatedAt: timestampValue
+        },
+        { merge: true }
+      );
+      written += 1;
+    }
+    return written;
+  };
+
+  const refreshOrganizationCatalogAfterImport = (items) => {
+    setLocalOrganizationCatalogRows(items.map((item) => ({
+      id: item.id,
+      group: item.group,
+      name: item.name,
+      code: item.code,
+      documentRunCode: item.documentRunCode,
+      accountNo: item.accountNo
+    })));
+    renderOrganizationCatalogTable();
+    renderOrgRepresentativeApplications();
+  };
+
+  const setLocalOrganizationCatalogRows = (rows) => {
+    const nextFilters = Array.isArray(rows) ? rows : [];
+    try {
+      orgFilters = nextFilters;
+    } catch (_) {
+      globalThis.orgFilters = nextFilters;
+    }
+    try {
+      if (typeof setCache === "function" && typeof CACHE_KEYS !== "undefined") {
+        setCache(CACHE_KEYS.ORG_FILTERS, nextFilters);
+      }
+    } catch (_) {}
+  };
+
+  const getOrganizationCatalogRows = () =>
+    getKnownOrganizationFilters()
+      .map((item) => ({
+        id: normalizeOrganizationCatalogText(item?.id),
+        group: normalizeOrganizationCatalogText(item?.group || item?.organizationType || item?.orgGroup),
+        name: normalizeOrganizationCatalogText(item?.name || item?.organizationName || item?.orgName),
+        code: normalizeOrganizationCatalogText(item?.code || item?.orgCode).toUpperCase(),
+        documentRunCode: normalizeOrganizationCatalogText(item?.documentRunCode || item?.runCode),
+        accountNo: normalizeOrganizationCatalogText(item?.accountNo || item?.bankAccount || item?.bankAccountNo)
+      }))
+      .filter((item) => item.group && item.name)
+      .sort((a, b) =>
+        a.group.localeCompare(b.group, "th") ||
+        (a.code || "").localeCompare(b.code || "", "th", { numeric: true }) ||
+        a.name.localeCompare(b.name, "th")
+      );
+
+  const syncOrganizationCatalogGroupOptions = (rows = getOrganizationCatalogRows()) => {
+    const groups = Array.from(new Set(rows.map((item) => item.group).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, "th"));
+    if (organizationCatalogGroupListEl) {
+      organizationCatalogGroupListEl.innerHTML = groups
+        .map((group) => `<option value="${toSafeText(group)}"></option>`)
+        .join("");
+    }
+    if (organizationCatalogGroupFilterEl) {
+      const currentValue = organizationCatalogFilters.group || "all";
+      organizationCatalogGroupFilterEl.innerHTML = [
+        '<option value="all">ทุกประเภทองค์กร</option>',
+        ...groups.map((group) => `<option value="${toSafeText(group)}">${toSafeText(group)}</option>`)
+      ].join("");
+      organizationCatalogGroupFilterEl.value = groups.includes(currentValue) ? currentValue : "all";
+      organizationCatalogFilters.group = organizationCatalogGroupFilterEl.value || "all";
+    }
+  };
+
+  const renderOrganizationCatalogTable = () => {
+    if (!organizationCatalogTableBodyEl && !organizationCatalogTableCaptionEl) return;
+    const rows = getOrganizationCatalogRows();
+    syncOrganizationCatalogGroupOptions(rows);
+    const groupCount = new Set(rows.map((item) => item.group).filter(Boolean)).size;
+    const query = normalizeOrganizationCatalogText(organizationCatalogFilters.query).toLowerCase();
+    const filteredRows = rows.filter((item) => {
+      if (organizationCatalogFilters.group !== "all" && item.group !== organizationCatalogFilters.group) {
+        return false;
+      }
+      if (!query) return true;
+      return [
+        item.group,
+        item.name,
+        item.code,
+        item.documentRunCode,
+        item.accountNo
+      ].some((value) => normalizeOrganizationCatalogText(value).toLowerCase().includes(query));
+    });
+    const visibleLimit = Math.max(ORGANIZATION_CATALOG_PAGE_SIZE, organizationCatalogFilters.visibleLimit || ORGANIZATION_CATALOG_PAGE_SIZE);
+    const visibleRows = filteredRows.slice(0, visibleLimit);
+    const selectedId = normalizeOrganizationCatalogText(organizationCatalogFields.id?.value);
+    if (organizationCatalogTotalCountEl) organizationCatalogTotalCountEl.textContent = rows.length.toLocaleString("th-TH");
+    if (organizationCatalogGroupCountEl) organizationCatalogGroupCountEl.textContent = groupCount.toLocaleString("th-TH");
+    if (organizationCatalogFilteredCountEl) organizationCatalogFilteredCountEl.textContent = filteredRows.length.toLocaleString("th-TH");
+    if (organizationCatalogVisibleCountEl) organizationCatalogVisibleCountEl.textContent = visibleRows.length.toLocaleString("th-TH");
+
+    if (organizationCatalogTableCaptionEl) {
+      organizationCatalogTableCaptionEl.textContent = rows.length
+        ? `แสดง ${visibleRows.length.toLocaleString("th-TH")} จาก ${filteredRows.length.toLocaleString("th-TH")} รายการ (${rows.length.toLocaleString("th-TH")} ทั้งหมด) จาก ${groupCount.toLocaleString("th-TH")} ประเภท`
+        : "ยังไม่มีข้อมูล";
+    }
+    if (organizationCatalogShowMoreBtnEl) {
+      const remaining = filteredRows.length - visibleRows.length;
+      organizationCatalogShowMoreBtnEl.hidden = remaining <= 0;
+      organizationCatalogShowMoreBtnEl.textContent = `แสดงเพิ่มอีก ${Math.min(ORGANIZATION_CATALOG_PAGE_SIZE, Math.max(remaining, 0)).toLocaleString("th-TH")} รายการ`;
+    }
+    if (!organizationCatalogTableBodyEl) return;
+    if (!rows.length) {
+      organizationCatalogTableBodyEl.innerHTML = '<tr><td colspan="5">ยังไม่มีทะเบียนองค์กรในระบบ หรือยังโหลดข้อมูลไม่สำเร็จ</td></tr>';
+      return;
+    }
+    if (!visibleRows.length) {
+      organizationCatalogTableBodyEl.innerHTML = '<tr><td colspan="5">ไม่พบองค์กรตามตัวกรองที่เลือก</td></tr>';
+      return;
+    }
+    organizationCatalogTableBodyEl.innerHTML = visibleRows.map((item) => `
+      <tr class="organization-catalog-row${item.id && item.id === selectedId ? " is-selected" : ""}" data-organization-id="${toSafeText(item.id)}">
+        <td data-label="ประเภทองค์กร">${toSafeText(item.group)}</td>
+        <td data-label="ชื่อองค์กร">${toSafeText(item.name)}</td>
+        <td data-label="รหัส">${toSafeText(item.code || "-")}</td>
+        <td data-label="เลขรันเอกสาร">${toSafeText(item.documentRunCode || "-")}</td>
+        <td data-label="เลขที่บัญชี">${toSafeText(item.accountNo || "-")}</td>
+      </tr>
+    `).join("");
+  };
+
+  const resetOrganizationCatalogForm = () => {
+    Object.values(organizationCatalogFields).forEach((field) => {
+      if (field) field.value = "";
+    });
+    if (organizationCatalogFormTitleEl) organizationCatalogFormTitleEl.textContent = "เพิ่ม / แก้ไของค์กร";
+    if (organizationCatalogArchiveBtnEl) organizationCatalogArchiveBtnEl.disabled = true;
+    setMessage(organizationCatalogFormMessageEl, "", "#6b7280");
+    renderOrganizationCatalogTable();
+  };
+
+  const fillOrganizationCatalogForm = (item) => {
+    if (!item) return;
+    if (organizationCatalogFields.id) organizationCatalogFields.id.value = item.id || "";
+    if (organizationCatalogFields.group) organizationCatalogFields.group.value = item.group || "";
+    if (organizationCatalogFields.name) organizationCatalogFields.name.value = item.name || "";
+    if (organizationCatalogFields.code) organizationCatalogFields.code.value = item.code || "";
+    if (organizationCatalogFields.documentRunCode) organizationCatalogFields.documentRunCode.value = item.documentRunCode || "";
+    if (organizationCatalogFields.accountNo) organizationCatalogFields.accountNo.value = item.accountNo || "";
+    if (organizationCatalogFormTitleEl) organizationCatalogFormTitleEl.textContent = "แก้ไของค์กร";
+    if (organizationCatalogArchiveBtnEl) organizationCatalogArchiveBtnEl.disabled = !item.id;
+    setMessage(organizationCatalogFormMessageEl, "กำลังแก้ไขรายการที่เลือก", "#475569");
+    renderOrganizationCatalogTable();
+  };
+
+  const buildOrganizationCatalogPayloadFromForm = () => {
+    const id = normalizeOrganizationCatalogText(organizationCatalogFields.id?.value);
+    const group = normalizeOrganizationCatalogText(organizationCatalogFields.group?.value);
+    const name = normalizeOrganizationCatalogText(organizationCatalogFields.name?.value);
+    const code = normalizeOrganizationCatalogText(organizationCatalogFields.code?.value).toUpperCase();
+    const documentRunCode = normalizeOrganizationCatalogText(organizationCatalogFields.documentRunCode?.value);
+    const accountNo = normalizeOrganizationCatalogText(organizationCatalogFields.accountNo?.value);
+    const docId = id || slugifyOrganizationCatalogId(`${group}-${code || name}`);
+    return {
+      id: docId,
+      group,
+      name,
+      code,
+      documentRunCode,
+      accountNo,
+      bankAccount: accountNo,
+      status: "active"
+    };
+  };
+
+  const saveOrganizationCatalogForm = async (event) => {
+    event?.preventDefault?.();
+    if (!resolveStore() || !firestore.setDoc || !firestore.doc) {
+      setMessage(organizationCatalogFormMessageEl, "ระบบยังไม่พร้อมบันทึก Firebase", "#b91c1c");
+      return;
+    }
+    const payload = buildOrganizationCatalogPayloadFromForm();
+    if (!payload.group || !payload.name) {
+      setMessage(organizationCatalogFormMessageEl, "กรุณากรอกประเภทองค์กรและชื่อองค์กร", "#b91c1c");
+      return;
+    }
+
+    const currentUser = readCurrentUser();
+    const updatedBy = (currentUser?.email || getCurrentAuthEmail() || "").toString().trim().toLowerCase();
+    const timestampValue = firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString();
+    try {
+      if (organizationCatalogSaveBtnEl) organizationCatalogSaveBtnEl.disabled = true;
+      setMessage(organizationCatalogFormMessageEl, "กำลังบันทึก...", "#1d4ed8");
+      const { id, ...fields } = payload;
+      await firestore.setDoc(
+        firestore.doc(firestore.db, COLLECTION_ORGANIZATION_CATALOG, id),
+        {
+          ...fields,
+          updatedAt: timestampValue,
+          updatedBy
+        },
+        { merge: true }
+      );
+
+      const nextRows = getOrganizationCatalogRows().filter((item) => item.id !== id);
+      nextRows.push({
+        id,
+        group: payload.group,
+        name: payload.name,
+        code: payload.code,
+        documentRunCode: payload.documentRunCode,
+        accountNo: payload.accountNo
+      });
+      setLocalOrganizationCatalogRows(nextRows);
+      fillOrganizationCatalogForm(nextRows.find((item) => item.id === id));
+      setMessage(organizationCatalogFormMessageEl, "บันทึกทะเบียนองค์กรแล้ว", "#047857");
+      renderOrgRepresentativeApplications();
+    } catch (error) {
+      console.error("save organization catalog failed - app.staff-access.js", error);
+      const message = (error?.code || "") === "permission-denied"
+        ? "ไม่มีสิทธิ์บันทึกทะเบียนองค์กร"
+        : (error?.message || "บันทึกทะเบียนองค์กรไม่สำเร็จ");
+      setMessage(organizationCatalogFormMessageEl, message, "#b91c1c");
+    } finally {
+      if (organizationCatalogSaveBtnEl) organizationCatalogSaveBtnEl.disabled = false;
+    }
+  };
+
+  const archiveCurrentOrganizationCatalogItem = async () => {
+    const id = normalizeOrganizationCatalogText(organizationCatalogFields.id?.value);
+    if (!id) return;
+    const name = normalizeOrganizationCatalogText(organizationCatalogFields.name?.value) || "รายการนี้";
+    const ok = window.confirm(`ยืนยันลบ "${name}" ออกจากทะเบียนองค์กร?`);
+    if (!ok) return;
+    if (!resolveStore() || !firestore.updateDoc || !firestore.doc) {
+      setMessage(organizationCatalogFormMessageEl, "ระบบยังไม่พร้อมลบข้อมูล", "#b91c1c");
+      return;
+    }
+    const currentUser = readCurrentUser();
+    const updatedBy = (currentUser?.email || getCurrentAuthEmail() || "").toString().trim().toLowerCase();
+    try {
+      if (organizationCatalogArchiveBtnEl) organizationCatalogArchiveBtnEl.disabled = true;
+      await firestore.updateDoc(
+        firestore.doc(firestore.db, COLLECTION_ORGANIZATION_CATALOG, id),
+        {
+          status: "archived",
+          archivedAt: firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString(),
+          updatedAt: firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString(),
+          updatedBy
+        }
+      );
+      setLocalOrganizationCatalogRows(getOrganizationCatalogRows().filter((item) => item.id !== id));
+      resetOrganizationCatalogForm();
+      setMessage(organizationCatalogFormMessageEl, "ลบออกจากทะเบียนแล้ว", "#047857");
+      renderOrgRepresentativeApplications();
+    } catch (error) {
+      console.error("archive organization catalog failed - app.staff-access.js", error);
+      const message = (error?.code || "") === "permission-denied"
+        ? "ไม่มีสิทธิ์ลบทะเบียนองค์กร"
+        : (error?.message || "ลบทะเบียนองค์กรไม่สำเร็จ");
+      setMessage(organizationCatalogFormMessageEl, message, "#b91c1c");
+      if (organizationCatalogArchiveBtnEl) organizationCatalogArchiveBtnEl.disabled = false;
+    }
+  };
+
+  const importOrganizationCatalogCsvFile = async (file) => {
+    if (!file) return;
+    if (!resolveStore()) {
+      setMessage(organizationCatalogImportMessageEl, "ระบบยังไม่พร้อมเชื่อมต่อ Firestore", "#b91c1c");
+      return;
+    }
+    if (!firestore.setDoc || !firestore.doc) {
+      setMessage(organizationCatalogImportMessageEl, "ระบบยังไม่พร้อมบันทึกทะเบียนองค์กร", "#b91c1c");
+      return;
+    }
+
+    const currentUser = readCurrentUser();
+    const importedBy = (currentUser?.email || getCurrentAuthEmail() || "").toString().trim().toLowerCase();
+    if (!importedBy) {
+      setMessage(organizationCatalogImportMessageEl, "กรุณาเข้าสู่ระบบก่อนอัปโหลดไฟล์", "#b91c1c");
+      return;
+    }
+
+    try {
+      if (organizationCatalogImportBtnEl) organizationCatalogImportBtnEl.disabled = true;
+      setMessage(organizationCatalogImportMessageEl, "กำลังอ่านไฟล์เก่า...", "#1d4ed8");
+      await window.sgcuVendorLoader?.ensurePapa?.();
+      if (!window.Papa) throw new Error("ไม่พบ PapaParse สำหรับอ่าน CSV");
+
+      const text = await file.text();
+      const parsed = window.Papa.parse(text, {
+        header: false,
+        skipEmptyLines: true
+      });
+      if (parsed.errors && parsed.errors.length) {
+        console.warn("organization catalog csv parse warnings - app.staff-access.js", parsed.errors);
+      }
+
+      const items = parseOrganizationCatalogCsvRows(parsed.data || []);
+      if (!items.length) {
+        setMessage(organizationCatalogImportMessageEl, "ไม่พบข้อมูลในไฟล์ CSV: ต้องมีคอลัมน์ A ประเภทองค์กร และ B ชื่อชมรม", "#b91c1c");
+        return;
+      }
+
+      setMessage(organizationCatalogImportMessageEl, `กำลังอัปโหลด ${items.length.toLocaleString("th-TH")} องค์กรเข้า Firebase...`, "#1d4ed8");
+      const written = await writeOrganizationCatalogItems(items, importedBy);
+      refreshOrganizationCatalogAfterImport(items);
+      setMessage(organizationCatalogImportMessageEl, `อัปโหลดทะเบียนองค์กร ${written.toLocaleString("th-TH")} รายการเข้า Firebase แล้ว`, "#047857");
+    } catch (error) {
+      console.error("import organization catalog csv failed - app.staff-access.js", error);
+      const code = (error?.code || "").toString();
+      const message = code === "permission-denied"
+        ? "ไม่มีสิทธิ์อัปโหลดทะเบียนองค์กรเข้า Firebase"
+        : (error?.message || "อัปโหลดไฟล์เก่าไม่สำเร็จ");
+      setMessage(organizationCatalogImportMessageEl, message, "#b91c1c");
+    } finally {
+      if (organizationCatalogImportBtnEl) organizationCatalogImportBtnEl.disabled = false;
+      if (organizationCatalogImportFileEl) organizationCatalogImportFileEl.value = "";
+    }
+  };
+
   const getOrgRepresentativeRoleKey = (role = "") => {
     const text = (role || "").toString().trim().toLowerCase();
     if (!text) return "";
@@ -2758,6 +3207,7 @@ function initStaffAccessPages() {
   };
 
   const renderOrgRepresentativeApplications = () => {
+    renderOrganizationCatalogTable();
     renderOrgRepresentativeOverview();
     renderOrgRepresentativePending();
     renderOrgRepresentativeHistory();
@@ -3372,7 +3822,10 @@ function initStaffAccessPages() {
 
     if (typeof loadOrgFilters === "function" && !getKnownOrganizationFilters().length) {
       loadOrgFilters()
-        .then(() => renderOrgRepresentativeOverview())
+        .then(() => {
+          renderOrganizationCatalogTable();
+          renderOrgRepresentativeOverview();
+        })
         .catch((error) => {
           console.warn("load organization filters for representative overview failed", error);
         });
@@ -4397,6 +4850,51 @@ function initStaffAccessPages() {
   if (orgRepresentativeMainFilterTabEl) {
     orgRepresentativeMainFilterTabEl.addEventListener("click", () => setOrgRepresentativeMainTab("filter"));
   }
+  organizationCatalogImportBtnEl?.addEventListener("click", () => {
+    organizationCatalogImportFileEl?.click();
+  });
+  organizationCatalogImportFileEl?.addEventListener("change", (event) => {
+    const file = event.target?.files?.[0] || null;
+    void importOrganizationCatalogCsvFile(file);
+  });
+  organizationCatalogFormEl?.addEventListener("submit", (event) => {
+    void saveOrganizationCatalogForm(event);
+  });
+  organizationCatalogResetBtnEl?.addEventListener("click", resetOrganizationCatalogForm);
+  organizationCatalogArchiveBtnEl?.addEventListener("click", () => {
+    void archiveCurrentOrganizationCatalogItem();
+  });
+  organizationCatalogGroupFilterEl?.addEventListener("change", () => {
+    organizationCatalogFilters.group = organizationCatalogGroupFilterEl.value || "all";
+    organizationCatalogFilters.visibleLimit = ORGANIZATION_CATALOG_PAGE_SIZE;
+    renderOrganizationCatalogTable();
+  });
+  organizationCatalogSearchInputEl?.addEventListener("input", () => {
+    organizationCatalogFilters.query = organizationCatalogSearchInputEl.value || "";
+    organizationCatalogFilters.visibleLimit = ORGANIZATION_CATALOG_PAGE_SIZE;
+    renderOrganizationCatalogTable();
+  });
+  organizationCatalogFilterResetBtnEl?.addEventListener("click", () => {
+    organizationCatalogFilters.group = "all";
+    organizationCatalogFilters.query = "";
+    organizationCatalogFilters.visibleLimit = ORGANIZATION_CATALOG_PAGE_SIZE;
+    if (organizationCatalogGroupFilterEl) organizationCatalogGroupFilterEl.value = "all";
+    if (organizationCatalogSearchInputEl) organizationCatalogSearchInputEl.value = "";
+    renderOrganizationCatalogTable();
+  });
+  organizationCatalogShowMoreBtnEl?.addEventListener("click", () => {
+    organizationCatalogFilters.visibleLimit += ORGANIZATION_CATALOG_PAGE_SIZE;
+    renderOrganizationCatalogTable();
+  });
+  organizationCatalogTableBodyEl?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const rowEl = target.closest("tr[data-organization-id]");
+    if (!rowEl) return;
+    const id = (rowEl.getAttribute("data-organization-id") || "").toString();
+    const item = getOrganizationCatalogRows().find((entry) => entry.id === id);
+    if (item) fillOrganizationCatalogForm(item);
+  });
   if (orgRepresentativeShowOverviewBtnEl) {
     orgRepresentativeShowOverviewBtnEl.addEventListener("click", () => setOrgRepresentativeView("overview"));
   }

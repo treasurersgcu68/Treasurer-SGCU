@@ -8,7 +8,6 @@ let SHEET_CSV_URL = "";
 let PROJECT_CONTACTS_CSV_URL = "";
 let DOWNLOAD_SHEET = "";
 let NEWS_SHEET_CSV = "";
-let ORG_FILTER_CSV_URL = "";
 let DEFAULT_BASE_GROUPS = [];
 
 // Auth/session defaults (can be overridden from global config before scripts run)
@@ -36,7 +35,6 @@ function applyRuntimeConfigAliases() {
   PROJECT_CONTACTS_CSV_URL = APP_CONFIG.sheets.projectContacts || "";
   DOWNLOAD_SHEET = APP_CONFIG.sheets.downloads || "";
   NEWS_SHEET_CSV = APP_CONFIG.sheets.news || "";
-  ORG_FILTER_CSV_URL = APP_CONFIG.sheets.orgFilters || "";
   DEFAULT_BASE_GROUPS = APP_CONFIG.org.defaultBaseGroups;
   AUTH_SESSION_MAX_AGE_MS =
     typeof globalThis.AUTH_SESSION_MAX_AGE_MS === "number" &&

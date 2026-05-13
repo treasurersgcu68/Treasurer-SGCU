@@ -84,7 +84,7 @@
 
 ### `organizationCatalog`
 
-ใช้แทน `SGCU_APP_CONFIG.sheets.orgFilters`
+ใช้เป็นแหล่งข้อมูลหลักของทะเบียนองค์กร แทน Google Sheet `orgFilters` เดิม
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -103,6 +103,8 @@
 2. ถ้า Firestore ว่างหรืออ่านไม่ได้ ให้ fallback ไป Google Sheets เดิม
 3. เพิ่มหน้า staff admin สำหรับแก้ข้อมูล
 4. เมื่อใช้งานจริงนิ่งแล้ว ค่อยปิด fallback ของ feature นั้น
+
+หมายเหตุ: `organizationCatalog` ปิด fallback ไป Google Sheets แล้ว เว็บอ่านทะเบียนองค์กรจาก Firestore เท่านั้น และใช้การ import CSV เก่าเพื่อเติมข้อมูลเริ่มต้น
 
 ## Ownership
 

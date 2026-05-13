@@ -226,6 +226,11 @@ service cloud.firestore {
       allow create, update, delete: if isHeadStaff();
     }
 
+    match /organizationCatalog/{orgId} {
+      allow get, list: if resource.data.status == "active" || isStaff();
+      allow create, update, delete: if isStaff();
+    }
+
     match /downloadDocuments/{documentId} {
       allow get, list: if resource.data.status == "published" || isStaff();
       allow create, update, delete: if isStaff();

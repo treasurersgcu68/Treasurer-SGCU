@@ -572,6 +572,15 @@
   margin-top: 0;
 }
 
+.dashboard-debt-metric .metric-value,
+.dashboard-debt-amount {
+  color: #b91c1c;
+}
+
+.dashboard-debt-summary-card .dashboard-card-header {
+  align-items: flex-start;
+}
+
 .rank-item-title {
   color: #111827;
 }

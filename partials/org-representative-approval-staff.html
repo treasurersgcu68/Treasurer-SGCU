@@ -32,128 +32,127 @@
 
           <div id="orgRepresentativeApprovalSection">
             <div id="orgRepresentativeFilterPanel" class="org-representative-main-panel" role="tabpanel" aria-labelledby="orgRepresentativeMainFilterTab" hidden>
-              <section class="management-link-panel management-link-panel-slim" data-management-visibility="staff" hidden>
-                <div class="management-link-copy">
-                  <span class="management-link-kicker">ลิงก์ Sheet ทะเบียนองค์กร</span>
-                  <h3>เปิดไฟล์ทะเบียนองค์กร</h3>
-                  <p>ใช้สำหรับเปิดไฟล์และตรวจสิทธิ์เข้าถึง Google Sheet เท่านั้น รายละเอียดวิธีกรอกข้อมูลอยู่ในคู่มือด้านล่าง</p>
-                </div>
-                <a
-                  class="btn-primary management-link-button"
-                  href="#"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-management-link="managementLinks.orgFilters"
-                >
-                  เปิด Sheet ทะเบียนองค์กร
-                </a>
-                <p class="sheet-access-note">
-                  ก่อนเปิด Google Sheet เพื่อแก้ไข ต้องเข้า
-                  <a href="https://groups.google.com/g/treasurer-sgcu" target="_blank" rel="noopener noreferrer">Google Group treasurer-sgcu</a>
-                  ก่อน เพื่อให้บัญชีมีสิทธิ์เข้าถึงไฟล์
-                </p>
-              </section>
-
-              <section class="sheet-guide-section section-appear section-delay-1" aria-label="คู่มือกรอกข้อมูล Sheet ทะเบียนองค์กร">
-                <div class="sheet-guide-header">
-                  <div>
-                    <span class="management-link-kicker">คู่มือกรอกข้อมูล</span>
-                    <h3>ทะเบียนองค์กร</h3>
+              <section class="organization-catalog-workspace" aria-label="จัดการทะเบียนองค์กร">
+                <div class="budget-org-overview-panel organization-catalog-overview-panel">
+                  <div class="budget-org-overview">
+                    <div class="cards budget-org-floating-cards organization-catalog-summary-cards" aria-label="สรุปทะเบียนองค์กร">
+                      <article class="card card-hover budget-org-floating-card organization-catalog-summary-card">
+                        <div class="card-title">องค์กรทั้งหมด</div>
+                        <div id="organizationCatalogTotalCount" class="card-value budget-org-floating-value">0</div>
+                      </article>
+                      <article class="card card-hover budget-org-floating-card organization-catalog-summary-card">
+                        <div class="card-title">ประเภทองค์กร</div>
+                        <div id="organizationCatalogGroupCount" class="card-value budget-org-floating-value">0</div>
+                      </article>
+                      <article class="card card-hover budget-org-floating-card organization-catalog-summary-card">
+                        <div class="card-title">ผลลัพธ์ตามตัวกรอง</div>
+                        <div id="organizationCatalogFilteredCount" class="card-value budget-org-floating-value">0</div>
+                      </article>
+                      <article class="card card-hover budget-org-floating-card organization-catalog-summary-card">
+                        <div class="card-title">กำลังแสดง</div>
+                        <div id="organizationCatalogVisibleCount" class="card-value budget-org-floating-value">0</div>
+                      </article>
+                    </div>
+                    <div class="borrow-detail-section-caption budget-org-summary-caption">ข้อมูลอ่านจาก Firebase และเรียงตามรหัสชมรม</div>
                   </div>
-                  <p>ทะเบียนองค์กรมี 2 ส่วน คือชีต ALL ที่เว็บดึงไปใช้แสดงผล/เติมข้อมูลเอกสาร และชีทย่อยของแต่ละฝ่ายใหญ่ที่ใช้กรอกข้อมูลจริง เวลากรอกหรือแก้ข้อมูลให้กรอกในชีทย่อย ไม่แก้ที่ ALL โดยตรง</p>
                 </div>
 
-                <div class="sheet-guide-legend" aria-label="คำอธิบายสีแถว">
-                  <span><i class="is-required"></i><strong>จำเป็น</strong> ถ้าว่างรายการจะไม่แสดงในตัวเลือก</span>
-                  <span><i class="is-recommended"></i><strong>ควรกรอก</strong> ใช้อ้างอิงรหัสองค์กรในงานยืมพัสดุ/คำของบ</span>
-                  <span><i class="is-optional"></i><strong>ไม่จำเป็น</strong> เว้นว่างได้ ระบบยังทำงาน แต่ห้ามลบหรือย้ายคอลัมน์</span>
-                </div>
+                <form id="organizationCatalogForm" class="borrow-request-form budget-request-form organization-catalog-form" aria-label="แบบฟอร์มทะเบียนองค์กร">
+                  <div class="panel panel-hover">
+                    <div class="panel-header">
+                      <div>
+                        <div id="organizationCatalogFormTitle" class="panel-title">เพิ่ม / แก้ไของค์กร</div>
+                        <div class="panel-caption">กรอกข้อมูลหลักขององค์กรเพื่อใช้กับฟอร์มและตัวกรองทั้งระบบ</div>
+                      </div>
+                    </div>
+                    <div class="panel-body budget-request-panel-body organization-catalog-form-body">
+                      <input id="organizationCatalogId" type="hidden">
+                      <div class="budget-request-form-main">
+                        <div class="budget-request-form-section">
+                          <div class="budget-request-form-section-title">ข้อมูลองค์กร</div>
+                          <div class="borrow-form-row">
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogGroup">ประเภทองค์กร</label>
+                              <input id="organizationCatalogGroup" class="login-input" type="text" list="organizationCatalogGroupList" required>
+                              <datalist id="organizationCatalogGroupList"></datalist>
+                            </div>
+                            <div class="borrow-form-field budget-request-field-wide">
+                              <label class="login-label" for="organizationCatalogName">ชื่อองค์กร</label>
+                              <input id="organizationCatalogName" class="login-input" type="text" required>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="budget-request-form-section">
+                          <div class="budget-request-form-section-title">รหัสและข้อมูลเอกสาร</div>
+                          <div class="borrow-form-row is-3">
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogCode">รหัสชมรม</label>
+                              <input id="organizationCatalogCode" class="login-input" type="text">
+                            </div>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogRunCode">เลขรันเอกสาร</label>
+                              <input id="organizationCatalogRunCode" class="login-input" type="text">
+                            </div>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogAccountNo">เลขที่บัญชี</label>
+                              <input id="organizationCatalogAccountNo" class="login-input" type="text">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="meeting-form-actions budget-request-actions organization-catalog-form-actions">
+                        <div class="budget-request-actions-message">
+                          <span id="organizationCatalogFormMessage" class="section-text-sm" aria-live="polite"></span>
+                        </div>
+                        <div class="budget-request-actions-group">
+                          <button id="organizationCatalogSaveBtn" class="btn-primary" type="submit">บันทึก</button>
+                          <button id="organizationCatalogResetBtn" class="btn-ghost" type="button">ล้างฟอร์ม</button>
+                          <button id="organizationCatalogArchiveBtn" class="btn-ghost is-danger" type="button" disabled>ลบออกจากทะเบียน</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </form>
 
-                <div class="sheet-guide-grid">
-                  <article class="sheet-guide-card">
-                    <div class="sheet-guide-card-head">
-                      <h4>ALL</h4>
-                      <span>เว็บอ่านจากชีทรวม</span>
+                <div class="panel panel-hover organization-catalog-list-card">
+                  <div class="panel-header budget-org-totals-header">
+                    <div>
+                      <div class="panel-title">รายองค์กรใน Firebase</div>
+                      <div class="panel-caption" id="organizationCatalogTableCaption">กำลังโหลดข้อมูล</div>
                     </div>
-                    <div class="sheet-guide-table-wrap">
-                      <table class="sheet-guide-table">
-                        <thead>
-                          <tr>
-                            <th>คอลัมน์</th>
-                            <th>หัวข้อ</th>
-                            <th>คำอธิบาย</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr class="is-required">
-                            <td>A</td>
-                            <td>ประเภทองค์กร</td>
-                            <td>เว็บใช้สร้างตัวกรองประเภทองค์กร เช่น องค์การบริหารสโมสรนิสิต หรือชมรมฝ่ายกีฬา</td>
-                          </tr>
-                          <tr class="is-required">
-                            <td>B</td>
-                            <td>ชื่อชมรม</td>
-                            <td>เว็บใช้เป็นชื่อองค์กรในฟอร์ม ตัวกรอง และการจับคู่ข้อมูลเอกสาร</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>C</td>
-                            <td>รหัสชมรม</td>
-                            <td>เว็บใช้เป็นรหัสอ้างอิงองค์กร ควรเป็นค่ามาตรฐานและไม่ซ้ำกัน</td>
-                          </tr>
-                          <tr class="is-optional">
-                            <td>D</td>
-                            <td>เลขรันเอกสาร</td>
-                            <td>บันทึกไว้สำหรับติดตามเอกสารหรืออ้างอิงรหัสเอกสารขององค์กร</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>E</td>
-                            <td>เลขที่บัญชี</td>
-                            <td>เว็บใช้เติมเลขบัญชีในเอกสารยืมรองจ่ายอัตโนมัติ โดยจับคู่จากชื่อชมรม</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                  </div>
+                  <div class="organization-catalog-filter-bar" aria-label="ตัวกรองทะเบียนองค์กร">
+                    <div class="borrow-form-field organization-catalog-filter-field">
+                      <label class="login-label" for="organizationCatalogGroupFilter">ประเภทองค์กร</label>
+                      <select id="organizationCatalogGroupFilter" class="login-input">
+                        <option value="all">ทุกประเภทองค์กร</option>
+                      </select>
                     </div>
-                  </article>
-
-                  <article class="sheet-guide-card">
-                    <div class="sheet-guide-card-head">
-                      <h4>ชีทย่อยของฝ่ายใหญ่</h4>
-                      <span>กรอกในชีทย่อยของฝ่ายใหญ่</span>
+                    <div class="borrow-form-field organization-catalog-filter-field organization-catalog-search">
+                      <label class="login-label" for="organizationCatalogSearchInput">ค้นหา</label>
+                      <input id="organizationCatalogSearchInput" class="login-input" type="search" placeholder="ชื่อองค์กร / รหัส / เลขบัญชี">
                     </div>
-                    <div class="sheet-guide-table-wrap">
-                      <table class="sheet-guide-table">
-                        <thead>
-                          <tr>
-                            <th>คอลัมน์</th>
-                            <th>หัวข้อ</th>
-                            <th>คำอธิบาย</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr class="is-required">
-                            <td>A</td>
-                            <td>ชื่อชมรม</td>
-                            <td>ชื่อองค์กรที่ผู้ใช้เลือกในฟอร์ม ถ้าว่างแถวนี้จะไม่ถูกนำไปใช้</td>
-                          </tr>
-                          <tr class="is-required">
-                            <td>B</td>
-                            <td>รหัสชมรม</td>
-                            <td>ใช้เป็นรหัสอ้างอิงในระบบ ควรกรอกเป็นตัวอักษร/ตัวเลขมาตรฐานและไม่ซ้ำกัน</td>
-                          </tr>
-                          <tr class="is-optional">
-                            <td>C</td>
-                            <td>เลขรันเอกสาร</td>
-                            <td>เอาไว้อ้างอิง ติดตามเอกสาร (Google Sheet จะรันเองตามรหัสชมรม)</td>
-                          </tr>
-                          <tr class="is-recommended">
-                            <td>D</td>
-                            <td>เลขที่บัญชี</td>
-                            <td>ใช้เติมเลขบัญชีในเอกสารยืมรองจ่ายอัตโนมัติ โดยจับคู่จากชื่อชมรมและรหัสชมรม</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </article>
+                    <button id="organizationCatalogFilterResetBtn" class="btn-ghost organization-catalog-filter-reset" type="button">ล้างตัวกรอง</button>
+                  </div>
+                  <div class="table-wrapper organization-catalog-table-wrapper">
+                    <table id="organizationCatalogTable" class="sheet-guide-table organization-catalog-table">
+                      <thead>
+                        <tr>
+                          <th>ประเภทองค์กร</th>
+                          <th>ชื่อองค์กร</th>
+                          <th>รหัส</th>
+                          <th>เลขรันเอกสาร</th>
+                          <th>เลขที่บัญชี</th>
+                        </tr>
+                      </thead>
+                      <tbody id="organizationCatalogTableBody">
+                        <tr><td colspan="5">กำลังโหลดทะเบียนองค์กร...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="organization-catalog-table-actions">
+                    <button id="organizationCatalogShowMoreBtn" class="btn-ghost" type="button" hidden>แสดงเพิ่ม</button>
+                  </div>
                 </div>
               </section>
             </div>

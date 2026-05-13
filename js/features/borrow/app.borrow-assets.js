@@ -37,7 +37,6 @@ function initBorrowAssetsApp() {
 
   const myRequestsTableBody = document.getElementById("myBorrowRequestsTableBody");
   const myRequestsExportCsvBtn = document.getElementById("borrowMyRequestsExportCsvBtn");
-  const borrowNotificationTestBtn = document.getElementById("borrowNotificationTestBtn");
   const borrowNotificationStatusEl = document.getElementById("borrowNotificationStatus");
   const myRequestsTableWrapper = myRequestsTableBody ? myRequestsTableBody.closest(".table-wrapper") : null;
   const myRequestsCardsEl = document.getElementById("myBorrowRequestsCards");
@@ -55,7 +54,6 @@ function initBorrowAssetsApp() {
   const staffBorrowFollowupTableBody = document.getElementById("staffBorrowFollowupTableBody");
   const staffHistoryTableBody = document.getElementById("staffBorrowHistoryTableBody");
   const staffBorrowExportCsvBtn = document.getElementById("staffBorrowExportCsvBtn");
-  const staffBorrowNotificationTestBtn = document.getElementById("staffBorrowNotificationTestBtn");
   const staffBorrowNotificationStatusEl = document.getElementById("staffBorrowNotificationStatus");
   const staffBorrowPickupDaysForm = document.getElementById("staffBorrowPickupDaysForm");
   const staffBorrowPickupDayInputs = Array.from(document.querySelectorAll("[data-staff-borrow-pickup-day]"));
@@ -282,15 +280,34 @@ function initBorrowAssetsApp() {
       .sort((a, b) => a.localeCompare(b, "th"));
   };
 
+  const compareBorrowOrgNameByCode = (a, b, codeByName = new Map()) => {
+    const codeA = (codeByName.get(a) || "").toString().trim();
+    const codeB = (codeByName.get(b) || "").toString().trim();
+    if (codeA && codeB) {
+      const codeCompare = codeA.localeCompare(codeB, "th", { numeric: true });
+      if (codeCompare) return codeCompare;
+    } else if (codeA || codeB) {
+      return codeA ? -1 : 1;
+    }
+    return a.localeCompare(b, "th");
+  };
+
   const collectBorrowOrgNameOptions = (orgType) => {
     const selectedType = (orgType || "").toString().trim();
     if (!selectedType || selectedType === OTHER_ORG_VALUE) return [];
-    const fromFilters =
-      typeof orgFilters !== "undefined" && Array.isArray(orgFilters)
-        ? orgFilters
-          .filter((item) => (item?.group || "").toString().trim() === selectedType)
-          .map((item) => (item?.name || "").toString().trim())
-        : [];
+    const codeByName = new Map();
+    const fromFilters = [];
+    if (typeof orgFilters !== "undefined" && Array.isArray(orgFilters)) {
+      orgFilters
+        .filter((item) => (item?.group || "").toString().trim() === selectedType)
+        .forEach((item) => {
+          const name = (item?.name || "").toString().trim();
+          if (!name) return;
+          const code = (item?.code || "").toString().trim();
+          if (code && !codeByName.has(name)) codeByName.set(name, code);
+          fromFilters.push(name);
+        });
+    }
     const fromProjects =
       typeof projects !== "undefined" && Array.isArray(projects)
         ? projects
@@ -298,7 +315,7 @@ function initBorrowAssetsApp() {
           .map((item) => (item?.orgName || "").toString().trim())
         : [];
     return Array.from(new Set([...fromFilters, ...fromProjects].filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b, "th"));
+      .sort((a, b) => compareBorrowOrgNameByCode(a, b, codeByName));
   };
 
   const toggleBorrowProjectNameOther = () => {
@@ -1295,48 +1312,6 @@ function initBorrowAssetsApp() {
     previousBorrowNotificationByKey = nextMap;
   };
 
-  const requestBorrowNotificationPermission = async () => {
-    if (typeof window === "undefined" || typeof Notification === "undefined") return "unsupported";
-    if (Notification.permission === "granted") return "granted";
-    const webPush = window.sgcuWebPush;
-    if (webPush && typeof webPush.requestPermission === "function") {
-      return webPush.requestPermission();
-    }
-    return Notification.requestPermission();
-  };
-
-  const testBorrowNotification = async () => {
-    if (!borrowNotificationTestBtn) return;
-    if (typeof window === "undefined" || typeof Notification === "undefined") {
-      setBorrowNotificationStatus("อุปกรณ์นี้ไม่รองรับการแจ้งเตือน", "#b91c1c");
-      return;
-    }
-    borrowNotificationTestBtn.disabled = true;
-    setBorrowNotificationStatus("กำลังตรวจสอบสิทธิ์แจ้งเตือน...", "#6b7280");
-    try {
-      const permission = await requestBorrowNotificationPermission();
-      if (permission !== "granted") {
-        setBorrowNotificationStatus(
-          permission === "denied" ? "เบราว์เซอร์บล็อกการแจ้งเตือน" : "ยังไม่ได้อนุญาตการแจ้งเตือน",
-          "#b91c1c"
-        );
-        return;
-      }
-      const title = "ทดสอบแจ้งเตือนพัสดุ";
-      const body = "ระบบจะแจ้งเตือนเมื่อสถานะคำขอยืมพัสดุของคุณมีการอัปเดต";
-      const sent = maybeSendBorrowBrowserNotification(title, body);
-      showBorrowRuntimeToastNotice(title, body, "success");
-      setBorrowNotificationStatus(
-        sent ? "ส่งแจ้งเตือนทดสอบแล้ว" : "อนุญาตแล้ว แต่เบราว์เซอร์ยังไม่แสดงแจ้งเตือน",
-        sent ? "#047857" : "#92400e"
-      );
-    } catch (_) {
-      setBorrowNotificationStatus("ทดสอบแจ้งเตือนไม่สำเร็จ", "#b91c1c");
-    } finally {
-      borrowNotificationTestBtn.disabled = false;
-    }
-  };
-
   const setStaffBorrowNotificationStatus = (text = "", color = "#6b7280") => {
     if (!staffBorrowNotificationStatusEl) return;
     staffBorrowNotificationStatusEl.textContent = text;
@@ -1435,38 +1410,6 @@ function initBorrowAssetsApp() {
       setStaffBorrowNotificationStatus(`แจ้งเตือนล่าสุด: ${title}`, meta.overdue ? "#b91c1c" : "#047857");
     });
     previousStaffBorrowNotificationByKey = nextMap;
-  };
-
-  const testStaffBorrowNotification = async () => {
-    if (!staffBorrowNotificationTestBtn) return;
-    if (typeof window === "undefined" || typeof Notification === "undefined") {
-      setStaffBorrowNotificationStatus("อุปกรณ์นี้ไม่รองรับการแจ้งเตือน", "#b91c1c");
-      return;
-    }
-    staffBorrowNotificationTestBtn.disabled = true;
-    setStaffBorrowNotificationStatus("กำลังตรวจสอบสิทธิ์แจ้งเตือน...", "#6b7280");
-    try {
-      const permission = await requestBorrowNotificationPermission();
-      if (permission !== "granted") {
-        setStaffBorrowNotificationStatus(
-          permission === "denied" ? "เบราว์เซอร์บล็อกการแจ้งเตือน" : "ยังไม่ได้อนุญาตการแจ้งเตือน",
-          "#b91c1c"
-        );
-        return;
-      }
-      const title = "ทดสอบแจ้งเตือนสตาฟพัสดุ";
-      const body = "ระบบจะแจ้งเตือนเมื่อมีคำขอใหม่ หรือมีรายการใกล้ครบกำหนดคืน";
-      const sent = maybeSendStaffBorrowBrowserNotification(title, body);
-      showBorrowRuntimeToastNotice(title, body, "success");
-      setStaffBorrowNotificationStatus(
-        sent ? "ส่งแจ้งเตือนทดสอบสตาฟแล้ว" : "อนุญาตแล้ว แต่เบราว์เซอร์ยังไม่แสดงแจ้งเตือน",
-        sent ? "#047857" : "#92400e"
-      );
-    } catch (_) {
-      setStaffBorrowNotificationStatus("ทดสอบแจ้งเตือนสตาฟไม่สำเร็จ", "#b91c1c");
-    } finally {
-      staffBorrowNotificationTestBtn.disabled = false;
-    }
   };
 
   const getAssetsCsvText = (assets = []) =>
@@ -3846,12 +3789,10 @@ function initBorrowAssetsApp() {
   myRequestsExportCsvBtn?.addEventListener("click", () => {
     exportBorrowRowsCsv(getMyBorrowRequestRows(), "borrow-my-requests");
   });
-  borrowNotificationTestBtn?.addEventListener("click", testBorrowNotification);
   staffBorrowExportCsvBtn?.addEventListener("click", () => {
     const name = staffRequestTabMode === "history" ? "borrow-staff-history" : "borrow-staff-queue";
     exportBorrowRowsCsv(getStaffBorrowVisibleRows(), name);
   });
-  staffBorrowNotificationTestBtn?.addEventListener("click", testStaffBorrowNotification);
   staffBorrowPickupDaysForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     void saveStaffBorrowPickupDays();

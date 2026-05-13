@@ -464,6 +464,18 @@
         ? globalThis.orgFilters
         : [];
 
+  const compareOrgFilterRowsByCode = (a, b) => {
+    const codeA = normalizeText(a?.code);
+    const codeB = normalizeText(b?.code);
+    if (codeA && codeB) {
+      const codeCompare = codeA.localeCompare(codeB, "th", { numeric: true });
+      if (codeCompare) return codeCompare;
+    } else if (codeA || codeB) {
+      return codeA ? -1 : 1;
+    }
+    return normalizeText(a?.name).localeCompare(normalizeText(b?.name), "th");
+  };
+
   const resetSelectOptions = (selectEl, firstLabel) => {
     const selected = selectEl.value || "all";
     selectEl.innerHTML = "";
@@ -519,13 +531,14 @@
     const names = filterRows.length
       ? filterRows
         .filter((item) => group === "all" || normalizeText(item?.group) === group)
+        .sort(compareOrgFilterRowsByCode)
         .map((item) => normalizeText(item?.name))
         .filter(Boolean)
       : requestRows
         .filter((item) => group === "all" || normalizeText(item.organizationType) === group)
         .map((item) => normalizeText(item.organizationName))
         .filter(Boolean);
-    Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th")).forEach((name) => {
+    Array.from(new Set(names)).forEach((name) => {
       const opt = document.createElement("option");
       opt.value = name;
       opt.textContent = name;
@@ -548,13 +561,16 @@
     const names = filterRows.length
       ? filterRows
         .filter((item) => !group || normalizeText(item?.group) === group)
+        .sort(compareOrgFilterRowsByCode)
         .map((item) => normalizeText(item?.name))
         .filter(Boolean)
       : requestRows
         .filter((item) => !group || normalizeText(item.organizationType) === group)
         .map((item) => normalizeText(item.organizationName))
         .filter(Boolean);
-    return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th"));
+    return filterRows.length
+      ? Array.from(new Set(names))
+      : Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th"));
   };
 
   const appendSelectOption = (selectEl, value, label = value) => {
@@ -636,13 +652,17 @@
     const names = filterRows.length
       ? filterRows
         .filter((item) => group === "all" || normalizeText(item?.group) === group)
+        .sort(compareOrgFilterRowsByCode)
         .map((item) => normalizeText(item?.name))
         .filter(Boolean)
       : requestRows
         .filter((item) => group === "all" || normalizeText(item.organizationType) === group)
         .map((item) => normalizeText(item.organizationName))
         .filter(Boolean);
-    Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th")).forEach((name) => {
+    const uniqueNames = filterRows.length
+      ? Array.from(new Set(names))
+      : Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th"));
+    uniqueNames.forEach((name) => {
       const opt = document.createElement("option");
       opt.value = name;
       opt.textContent = name;

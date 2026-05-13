@@ -533,55 +533,75 @@ function hydrateProjectsCache(list) {
   });
 }
 
-// โหลดตัวเลือก filter จากชีตภายนอก: คอลัมน์ A = ประเภทองค์กร, คอลัมน์ B = ฝ่าย/ชมรม, คอลัมน์ C = รหัสองค์กร
+function normalizeOrganizationCatalogDoc(docSnap) {
+  const data = docSnap?.data ? docSnap.data() : {};
+  const row = Array.isArray(data.row) ? data.row : [];
+  const group = (data.group || data.orgGroup || data.type || row[0] || "").toString().trim();
+  const name = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
+  const code = (data.code || data.orgCode || row[2] || "").toString().trim().toUpperCase();
+  const documentRunCode = (data.documentRunCode || data.runCode || row[3] || "").toString().trim();
+  const accountNo = (data.accountNo || data.bankAccount || data.bankAccountNo || row[4] || "").toString().trim();
+  if (!group || !name) return null;
+  return {
+    id: docSnap.id,
+    group,
+    name,
+    code,
+    documentRunCode,
+    accountNo,
+    sortOrder: Number(data.sortOrder ?? data.order ?? 0)
+  };
+}
+
+async function loadOrgFiltersFromFirestore() {
+  const store = window.sgcuFirestore || {};
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const collectionName = appConfig.firestore?.collections?.organizationCatalog || "organizationCatalog";
+  if (!store.db || !store.collection || !store.getDocs) return null;
+
+  const collectionRef = store.collection(store.db, collectionName);
+  const listQuery =
+    store.query && store.where
+      ? store.query(collectionRef, store.where("status", "==", "active"))
+      : collectionRef;
+  const snapshot = await store.getDocs(listQuery);
+  const items = [];
+  snapshot.forEach((docSnap) => {
+    const item = normalizeOrganizationCatalogDoc(docSnap);
+    if (item) items.push(item);
+  });
+  if (!items.length) return null;
+  items.sort((a, b) =>
+    a.sortOrder - b.sortOrder ||
+    (a.code || "").localeCompare(b.code || "", "th", { numeric: true }) ||
+    a.group.localeCompare(b.group, "th") ||
+    a.name.localeCompare(b.name, "th")
+  );
+  return items.map(({ sortOrder, ...item }) => item);
+}
+
+// โหลดตัวเลือก filter จาก Firestore collection `organizationCatalog` เท่านั้น
 async function loadOrgFilters() {
   try {
-    const cached = getCache(CACHE_KEYS.ORG_FILTERS, CACHE_TTL_MS);
-    if (cached && Array.isArray(cached) && cached.length) {
-      const hasOrgCode = cached.some((item) =>
-        (item?.code || "").toString().trim() !== ""
-      );
-      const hasAccountField = cached.some((item) =>
-        Object.prototype.hasOwnProperty.call(item || {}, "accountNo")
-      );
-      if (hasOrgCode && hasAccountField) {
-        orgFilters = cached;
-        return;
-      }
+    const firestoreItems = await loadOrgFiltersFromFirestore();
+    if (firestoreItems && firestoreItems.length) {
+      orgFilters = firestoreItems;
+      setCache(CACHE_KEYS.ORG_FILTERS, orgFilters);
+      clearLoadError("orgFilters");
+      return;
     }
 
-    await window.sgcuVendorLoader?.ensurePapa?.();
-    const csvText = await fetchTextWithProgress(ORG_FILTER_CSV_URL, (ratio) => {
-      if (typeof updateLoaderProgress === "function") {
-        updateLoaderProgress("orgFilters", ratio);
-      }
-    });
-
-    const parsed = Papa.parse(csvText, {
-      header: false,
-      skipEmptyLines: true
-    });
-
-    const rows = parsed.data || [];
-    const dataRows = rows.slice(1); // เริ่มจากแถวที่ 2 ของชีต
-
-    orgFilters = dataRows
-      .map((row) => ({
-        group: (row[0] || "").toString().trim(),
-        name: (row[1] || "").toString().trim(),
-        code: (row[2] || "").toString().trim().toUpperCase(),
-        documentRunCode: (row[3] || "").toString().trim(),
-        accountNo: (row[4] || "").toString().trim()
-      }))
-      .filter((r) => r.group !== "" && r.name !== "");
-
-    setCache(CACHE_KEYS.ORG_FILTERS, orgFilters);
-    clearLoadError("orgFilters");
-  } catch (err) {
-    console.error("โหลด org filter ไม่สำเร็จ ใช้ข้อมูลจาก projects แทน - app.js:955", err);
+    orgFilters = [];
     recordLoadError(
       "orgFilters",
-      "โหลดตัวเลือกฝ่าย/ชมรมไม่สำเร็จ กำลังใช้ข้อมูลจากโครงการ",
+      "ยังไม่มีทะเบียนองค์กรใน Firebase",
+      { showRetry: true }
+    );
+  } catch (err) {
+    console.error("โหลดทะเบียนองค์กรจาก Firestore ไม่สำเร็จ - app.data.js", err);
+    recordLoadError(
+      "orgFilters",
+      "โหลดทะเบียนองค์กรจาก Firebase ไม่สำเร็จ",
       { showRetry: true }
     );
     orgFilters = [];

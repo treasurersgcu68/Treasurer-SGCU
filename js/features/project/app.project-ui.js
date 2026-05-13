@@ -1,4 +1,16 @@
 /* Project Status UI: filters, summary cards, tables, dashboard KPIs */
+function compareOrgFilterByCodeThenName(a, b) {
+  const codeA = (a?.code || "").toString().trim();
+  const codeB = (b?.code || "").toString().trim();
+  if (codeA && codeB) {
+    const codeCompare = codeA.localeCompare(codeB, "th", { numeric: true });
+    if (codeCompare) return codeCompare;
+  } else if (codeA || codeB) {
+    return codeA ? -1 : 1;
+  }
+  return (a?.name || "").toString().localeCompare((b?.name || "").toString(), "th");
+}
+
 function initOrgTypeOptions() {
   if (!orgTypeSelect) return;  // ✅ กัน null
 
@@ -27,14 +39,19 @@ function initOrgOptions() {
   const sourceList = orgFilters.length
     ? orgFilters.filter((o) => (selectedGroup === "all" ? true : o.group === selectedGroup))
     : projects.filter((p) => (selectedGroup === "all" ? true : p.orgGroup === selectedGroup));
-  const orgNames = Array.from(
-    new Set(
-      sourceList
-        .map((item) => (orgFilters.length ? item.name : item.orgName))
-        .filter(Boolean)
-    )
-  );
-  orgNames.sort();
+  const orgNames = orgFilters.length
+    ? sourceList
+      .slice()
+      .sort(compareOrgFilterByCodeThenName)
+      .map((item) => (item.name || "").toString().trim())
+      .filter((name, index, list) => name && list.indexOf(name) === index)
+    : Array.from(
+      new Set(
+        sourceList
+          .map((item) => item.orgName)
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b, "th"));
   orgNames.forEach((name) => {
     const opt = document.createElement("option");
     opt.value = name;
@@ -160,6 +177,113 @@ function syncDashboardFilterOptions(selectEl, values) {
   return selectEl.value;
 }
 
+function isClubDebtProject(project) {
+  if (!project || typeof project !== "object") return false;
+  const advanceStatus = (project.advanceStatus || "").toString().trim();
+  const closeStatus = (project.statusClose || "").toString().trim();
+  const daysToDeadline = Number(project.daysToDeadline);
+  const advanceAmount = Number(project.advanceAmount || 0);
+  return (
+    advanceStatus === "โครงการรับเงินแล้ว" &&
+    Number.isFinite(daysToDeadline) &&
+    daysToDeadline < 0 &&
+    closeStatus !== "ส่งกิจการนิสิตเรียบร้อย" &&
+    Number.isFinite(advanceAmount) &&
+    advanceAmount !== 0
+  );
+}
+
+function buildClubDebtSummaryRows(sourceProjects) {
+  const rowsByOrg = new Map();
+  (sourceProjects || []).forEach((project) => {
+    if (!isClubDebtProject(project)) return;
+    const orgName = (project.orgName || "").toString().trim() || "(ไม่ระบุฝ่าย/ชมรม)";
+    const amount = Number(project.advanceAmount || 0);
+    const overdueDays = Math.abs(Number(project.daysToDeadline || 0));
+    const current = rowsByOrg.get(orgName) || {
+      orgName,
+      totalDebt: 0,
+      projectCount: 0,
+      maxOverdueDays: 0
+    };
+    current.totalDebt += amount;
+    current.projectCount += 1;
+    current.maxOverdueDays = Math.max(current.maxOverdueDays, overdueDays);
+    rowsByOrg.set(orgName, current);
+  });
+
+  return Array.from(rowsByOrg.values())
+    .sort((a, b) => Math.abs(b.totalDebt) - Math.abs(a.totalDebt) || b.projectCount - a.projectCount);
+}
+
+function updateClubDebtSummary(filtered) {
+  const totalEl = document.getElementById("clubDebtTotalStaff");
+  const captionEl = document.getElementById("clubDebtCaptionStaff");
+  const summaryCaptionEl = document.getElementById("clubDebtSummaryCaptionStaff");
+  const tableCaptionEl = document.getElementById("clubDebtSummaryTableCaptionStaff");
+  const tableBodyEl = document.getElementById("clubDebtSummaryTableBodyStaff");
+
+  if (!totalEl && !captionEl && !summaryCaptionEl && !tableCaptionEl && !tableBodyEl) return;
+
+  const rows = buildClubDebtSummaryRows(filtered);
+  const totalDebt = rows.reduce((sum, row) => sum + row.totalDebt, 0);
+  const projectCount = rows.reduce((sum, row) => sum + row.projectCount, 0);
+
+  if (totalEl) {
+    totalEl.textContent = formatMoney(totalDebt);
+  }
+  if (captionEl) {
+    captionEl.textContent = rows.length
+      ? `${projectCount.toLocaleString("th-TH")} โครงการ จาก ${rows.length.toLocaleString("th-TH")} องค์กร`
+      : "ไม่มีรายการที่เข้าเงื่อนไข";
+  }
+  if (summaryCaptionEl) {
+    summaryCaptionEl.textContent = rows.length
+      ? `คำนวณตามสูตร: รับเงินแล้ว + เลยกำหนดส่งเอกสาร + ยังไม่ส่งกิจการนิสิตเรียบร้อย`
+      : "ยังไม่มีโครงการที่รับเงินแล้ว เลยกำหนดส่งเอกสาร และยังไม่ส่งกิจการนิสิตเรียบร้อย";
+  }
+  if (tableCaptionEl) {
+    tableCaptionEl.textContent = `แสดงผล ${rows.length.toLocaleString("th-TH")} องค์กร`;
+  }
+  if (tableBodyEl) {
+    tableBodyEl.innerHTML = "";
+    if (!rows.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="4" class="table-empty" style="text-align:center; color:#9ca3af;">ยังไม่มีรายการหนี้สโมสร</td>`;
+      tableBodyEl.appendChild(tr);
+      return;
+    }
+
+    rows.forEach((row) => {
+      const tr = document.createElement("tr");
+      const orgCell = document.createElement("td");
+      const debtCell = document.createElement("td");
+      const countCell = document.createElement("td");
+      const overdueCell = document.createElement("td");
+
+      orgCell.dataset.label = "ฝ่าย / ชมรม";
+      debtCell.dataset.label = "ยอดหนี้";
+      countCell.dataset.label = "จำนวนโครงการ";
+      overdueCell.dataset.label = "ค้างนานสุด";
+
+      debtCell.className = "col-budget dashboard-debt-amount";
+      countCell.className = "col-budget";
+      overdueCell.className = "col-budget";
+      debtCell.style.textAlign = "right";
+      countCell.style.textAlign = "right";
+      overdueCell.style.textAlign = "right";
+
+      orgCell.textContent = row.orgName;
+      debtCell.textContent = `${formatMoney(row.totalDebt)} บาท`;
+      countCell.textContent = `${row.projectCount.toLocaleString("th-TH")} โครงการ`;
+      overdueCell.textContent = `${row.maxOverdueDays.toLocaleString("th-TH")} วัน`;
+
+      tr.append(orgCell, debtCell, countCell, overdueCell);
+      tableBodyEl.appendChild(tr);
+    });
+  }
+}
+
 function updateDashboardInsights(filtered, summary) {
   if (!summary) return;
   if (
@@ -171,7 +295,9 @@ function updateDashboardInsights(filtered, summary) {
     !recentProjectsListEl &&
     !longestOpenListEl &&
     !longestOpenTableCaptionEl &&
-    !longestOpenTableBodyEl
+    !longestOpenTableBodyEl &&
+    !document.getElementById("clubDebtTotalStaff") &&
+    !document.getElementById("clubDebtSummaryTableBodyStaff")
   ) {
     return;
   }
@@ -274,6 +400,8 @@ function updateDashboardInsights(filtered, summary) {
         : "ยังไม่มีข้อมูล";
     }
   }
+
+  updateClubDebtSummary(filtered);
 
   const renderRankList = (listEl, items, emptyText) => {
     if (!listEl) return;

@@ -1,10 +1,10 @@
-const CACHE_VERSION = "20260513-staff-borrow-notifications-1";
+const CACHE_VERSION = "20260513-club-debt-summary-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260513-staff-borrow-notifications-1",
+  "./css/style.css?v=20260513-club-debt-summary-1",
   "./css/core/base.css",
   "./css/core/prelude-layout.css",
   "./css/pages/operations.css",
@@ -12,7 +12,7 @@ const APP_SHELL_URLS = [
   "./css/pages/login-staff.css",
   "./css/core/layout.css",
   "./css/core/navigation.css",
-  "./css/components/ui.css",
+  "./css/components/ui.css?v=20260513-club-debt-summary-1",
   "./css/pages/home.css",
   "./css/pages/about-org.css",
   "./css/pages/treasurer-handover.css",
@@ -33,15 +33,15 @@ const APP_SHELL_URLS = [
   "./js/core/app.helpers.js?v=20260501-1",
   "./js/features/docs/app.file-links.js?v=20260417-1",
   "./js/features/project/app.data.js",
-  "./js/features/project/app.project-ui.js",
+  "./js/features/project/app.project-ui.js?v=20260513-club-debt-summary-1",
   "./js/features/project/app.project-modal.js",
   "./js/features/project/app.charts.js",
   "./js/features/project/app.pie.js",
   "./js/features/project/app.sorting-auth.js?v=20260513-budget-representative-nav-1",
   "./js/features/org/app.org.js?v=20260503-1",
   "./js/motion/app.motion.js",
-  "./js/core/app.feature-loader.js?v=20260513-staff-borrow-notifications-1",
-  "./js/core/app.init.js?v=20260513-staff-borrow-notifications-1",
+  "./js/core/app.feature-loader.js?v=20260513-borrow-notifications-2",
+  "./js/core/app.init.js?v=20260513-borrow-notifications-2",
   "./js/features/project/app.calendar.js",
   "./js/integrations/app.web-push.js",
   "./manifest.webmanifest",

@@ -387,35 +387,22 @@ let orgAccountMap = null;
 
 function ensureOrgAccountMap() {
   if (orgAccountMap) return Promise.resolve();
-  return new Promise((resolve) => {
-    if (typeof Papa === "undefined") {
-      orgAccountMap = {};
-      resolve();
-      return;
-    }
-    Papa.parse(ORG_FILTER_CSV_URL, {
-      download: true,
-      header: false,
-      complete: (results) => {
-        const map = {};
-        if (results && results.data) {
-          results.data.forEach((row) => {
-            if (row.length >= 5) {
-              const name = (row[1] || "").trim(); // Column B
-              const acc = (row[4] || "").trim();  // Column E
-              if (name) map[name] = acc;
-            }
-          });
-        }
-        orgAccountMap = map;
-        resolve();
-      },
-      error: () => {
-        orgAccountMap = {};
-        resolve();
+  return Promise.resolve()
+    .then(async () => {
+      if ((!Array.isArray(orgFilters) || !orgFilters.length) && typeof loadOrgFilters === "function") {
+        await loadOrgFilters();
       }
+      const map = {};
+      (Array.isArray(orgFilters) ? orgFilters : []).forEach((item) => {
+        const name = (item?.name || "").toString().trim();
+        const acc = (item?.accountNo || item?.bankAccount || "").toString().trim();
+        if (name) map[name] = acc;
+      });
+      orgAccountMap = map;
+    })
+    .catch(() => {
+      orgAccountMap = {};
     });
-  });
 }
 
 function formatPdfNumber(value) {

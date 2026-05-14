@@ -1,4 +1,4 @@
-const CACHE_VERSION = "20260513-club-debt-summary-1";
+const CACHE_VERSION = "20260514-finance-overdue-notify-730-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
@@ -37,7 +37,7 @@ const APP_SHELL_URLS = [
   "./js/features/project/app.project-modal.js",
   "./js/features/project/app.charts.js",
   "./js/features/project/app.pie.js",
-  "./js/features/project/app.sorting-auth.js?v=20260513-budget-representative-nav-1",
+  "./js/features/project/app.sorting-auth.js?v=20260514-finance-overdue-notify-730-1",
   "./js/features/org/app.org.js?v=20260503-1",
   "./js/motion/app.motion.js",
   "./js/core/app.feature-loader.js?v=20260513-borrow-notifications-2",

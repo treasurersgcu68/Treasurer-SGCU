@@ -41,8 +41,11 @@
 .app-loader-logo img {
   width: 104px;
   height: 104px;
+  box-sizing: border-box;
   object-fit: contain;
-  filter: drop-shadow(0 18px 28px rgba(236, 72, 153, 0.16));
+  border: 1px solid rgba(236, 72, 153, 0.14);
+  border-radius: 24px;
+  filter: none;
 }
 
 .app-loader-title {

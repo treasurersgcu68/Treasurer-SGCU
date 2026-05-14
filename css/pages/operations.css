@@ -8175,7 +8175,7 @@
   }
 
   .organization-catalog-list-card {
-    overflow-x: hidden;
+    overflow: hidden;
   }
 
   .organization-catalog-filter-bar {
@@ -8189,11 +8189,25 @@
   }
 
   .table-wrapper.organization-catalog-table-wrapper {
-    max-height: none;
-    overflow: visible;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
+    max-height: min(62vh, 560px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.36);
+    border-radius: 14px;
+    background: #f8fafc;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .table-wrapper.organization-catalog-table-wrapper::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .table-wrapper.organization-catalog-table-wrapper::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.65);
   }
 
   .organization-catalog-table {
@@ -8301,6 +8315,51 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .page-view[data-page="org-representative-approval-staff"] .budget-org-overview .organization-catalog-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.page-view[data-page="org-representative-approval-staff"] .budget-org-overview .organization-catalog-summary-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+  margin: 0 0 12px;
+}
+
+.page-view[data-page="org-representative-approval-staff"] .organization-catalog-summary-card,
+.page-view[data-page="org-representative-approval-staff"] .budget-org-floating-card.organization-catalog-summary-card,
+.page-view[data-page="org-representative-approval-staff"] .budget-org-floating-card.organization-catalog-summary-card:nth-child(n + 5) {
+  display: block;
+  grid-column: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.page-view[data-page="org-representative-approval-staff"] .organization-catalog-summary-card .card-title {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+.page-view[data-page="org-representative-approval-staff"] .organization-catalog-summary-card .card-value {
+  color: #1f2937;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1024px) {
   .page-view[data-page="org-representative-approval-staff"] .budget-org-overview .organization-catalog-summary-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

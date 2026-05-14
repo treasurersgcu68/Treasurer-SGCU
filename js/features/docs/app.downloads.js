@@ -1,6 +1,7 @@
 /* ดาวน์โหลดเอกสารการเงิน */
 const DOWNLOADS_CACHE_SOURCE_FIRESTORE = "firestore";
 const DOWNLOADS_CACHE_SOURCE_SHEETS = "sheets";
+let downloadPreviewModalInitialized = false;
 
 function toggleDownloadSkeleton(isLoading) {
   const downloadSkeletonEl = document.getElementById("downloadSkeleton");
@@ -46,8 +47,8 @@ function createDownloadListItem(doc) {
   buttons.className = "download-buttons";
   main.appendChild(buttons);
 
-  addDownloadButton(buttons, "EX", doc.exUrl);
-  addDownloadButton(buttons, "PDF", doc.pdfUrl);
+  addDownloadButton(buttons, "EX", doc.exUrl, doc);
+  addDownloadButton(buttons, "PDF", doc.pdfUrl, doc);
   addDownloadButton(buttons, "DOCX", doc.docxUrl);
   addDownloadButton(buttons, "XLSX", doc.xlsxUrl);
 
@@ -149,16 +150,118 @@ async function loadDownloadDocumentsFromFirestore() {
   return items.sort((a, b) => (a.category || "").localeCompare(b.category || "", "th") || (a.name || "").localeCompare(b.name || "", "th"));
 }
 
+function ensureDownloadPreviewModal() {
+  let modal = document.getElementById("downloadPreviewModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "downloadPreviewModal";
+    modal.className = "modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-hidden", "true");
+    modal.setAttribute("aria-labelledby", "downloadPreviewModalTitle");
+    modal.innerHTML = `
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div>
+            <div id="downloadPreviewModalTitle" class="modal-title"></div>
+            <div id="downloadPreviewModalSubtitle" class="modal-subtitle"></div>
+          </div>
+          <button id="downloadPreviewModalClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
+        </div>
+        <div id="downloadPreviewModalBody" class="modal-body"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  if (!downloadPreviewModalInitialized) {
+    const closeButton = modal.querySelector("#downloadPreviewModalClose");
+    closeButton?.addEventListener("click", closeDownloadPreviewModal);
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) closeDownloadPreviewModal();
+    });
+    downloadPreviewModalInitialized = true;
+  }
+
+  return modal;
+}
+
+function closeDownloadPreviewModal() {
+  const modal = document.getElementById("downloadPreviewModal");
+  const body = document.getElementById("downloadPreviewModalBody");
+  if (!modal) return;
+  if (typeof closeDialog === "function") {
+    closeDialog(modal);
+  } else {
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
+  }
+  if (body) body.innerHTML = "";
+}
+
+function openDownloadPreviewModal(doc, label, url) {
+  const previewUrl = toPreviewUrl(url);
+  if (!previewUrl) return;
+
+  const modal = ensureDownloadPreviewModal();
+  const titleEl = modal.querySelector("#downloadPreviewModalTitle");
+  const subtitleEl = modal.querySelector("#downloadPreviewModalSubtitle");
+  const bodyEl = modal.querySelector("#downloadPreviewModalBody");
+  if (!titleEl || !bodyEl) return;
+
+  titleEl.textContent = doc?.name || "แบบฟอร์มการเงิน";
+  if (subtitleEl) {
+    subtitleEl.textContent = doc?.desc || "";
+    subtitleEl.hidden = !doc?.desc;
+  }
+  bodyEl.innerHTML = "";
+
+  const action = document.createElement("a");
+  action.className = "download-btn download-preview-download";
+  action.target = "_blank";
+  action.rel = "noopener noreferrer";
+  action.href = toDownloadUrl(url, label.toLowerCase());
+  action.textContent = "⬇ ดาวน์โหลดไฟล์";
+  bodyEl.appendChild(action);
+
+  const frame = document.createElement("div");
+  frame.className = "download-preview-frame news-preview-frame";
+  const iframe = document.createElement("iframe");
+  iframe.src = previewUrl;
+  iframe.title = `preview-${label.toLowerCase()}-${doc?.name || "financial-document"}`;
+  iframe.allow = "fullscreen";
+  frame.appendChild(iframe);
+  bodyEl.appendChild(frame);
+
+  if (typeof openDialog === "function") {
+    openDialog(modal, { focusSelector: "#downloadPreviewModalClose" });
+  } else {
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
+  }
+}
+
 /* สร้างปุ่มดาวน์โหลด 1 ปุ่ม (EX / PDF / DOCX / XLSX) */
-function addDownloadButton(wrapper, label, url) {
+function addDownloadButton(wrapper, label, url, doc = null) {
   if (!url || url === "-" || url === "--" || url === "") return;
+
+  if (label === "EX" || label === "PDF") {
+    const button = document.createElement("button");
+    button.className = "download-btn";
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", () => openDownloadPreviewModal(doc, label, url));
+    wrapper.appendChild(button);
+    return;
+  }
 
   const a = document.createElement("a");
   a.className = "download-btn";
   a.target = "_blank";
   a.rel = "noopener noreferrer";
   a.href = toDownloadUrl(url, label.toLowerCase());
-  a.textContent = `⬇ ${label}`;
+  a.textContent = label;
   wrapper.appendChild(a);
 }
 

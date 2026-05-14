@@ -937,6 +937,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  const finishProjectStatusPageLoad = (page) => {
+    if (page === "project-status") {
+      ensureProjectStatusInitialized("public");
+      refreshProjectStatus("public");
+    } else {
+      ensureProjectStatusInitialized("staff");
+      refreshProjectStatus("staff");
+    }
+    if (typeof window.syncProjectMobileActionBar === "function") {
+      window.syncProjectMobileActionBar();
+    }
+  };
+
+  const loadProjectStatusPageData = async (page) => {
+    await ensureProjectDataLoaded();
+    const activePage = document.querySelector(".page-view.active")?.dataset.page || "";
+    if (activePage !== page) return;
+    finishProjectStatusPageLoad(page);
+  };
+
   const scrollPageToTop = (page, behavior = "smooth") => {
     if (mainContainerEl instanceof HTMLElement) {
       mainContainerEl.scrollTo({ top: 0, left: 0, behavior });
@@ -1369,14 +1389,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (shouldLoadProjectDataForPage(page)) {
-      await ensureProjectDataLoaded();
-      ensureProjectStatusInitialized(
-        page === "project-status" ? "public" : "staff"
-      );
-      if (page === "project-status") {
-        refreshProjectStatus("public");
+      if (page === "project-status" && !projectsLoaded) {
+        setLoading(true, "public");
+        setProjectDataLoadState("info", "กำลังโหลดข้อมูลโครงการ...");
+        scheduleIdleTask(() => runBackgroundTask(
+          () => loadProjectStatusPageData(page),
+          "project-status-data"
+        ), 100);
       } else {
-        refreshProjectStatus("staff");
+        await ensureProjectDataLoaded();
+        finishProjectStatusPageLoad(page);
       }
     }
 

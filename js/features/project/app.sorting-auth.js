@@ -13,6 +13,10 @@ const lastStaffProjectCheckRows = {
   advance: [],
   transfer: []
 };
+const STAFF_FINANCE_OVERDUE_NOTIFY_HOUR = 7;
+const STAFF_FINANCE_OVERDUE_NOTIFY_MINUTE = 30;
+const STAFF_FINANCE_OVERDUE_NOTIFY_KEY = "sgcuStaffFinanceOverdueNotifiedDate";
+let staffFinanceOverdueNotifyTimer = null;
 
 function buildProjectStatusRefreshSignature(ctxKey) {
   const ctx = projectStatusContexts[ctxKey] || {};
@@ -271,6 +275,113 @@ function buildProjectOpsRows(filtered, metaGetter) {
     });
 }
 
+function getStaffFinanceOverdueRows() {
+  return {
+    advance: (lastStaffProjectCheckRows.advance || []).filter((row) => row.remainingDays < 0),
+    transfer: (lastStaffProjectCheckRows.transfer || []).filter((row) => row.remainingDays < 0)
+  };
+}
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getStaffFinanceNotificationUrl() {
+  return `${window.location.origin}${window.location.pathname}#dashboard-staff`;
+}
+
+async function showStaffFinanceOverdueNotification(overdueRows) {
+  const advanceCount = overdueRows.advance.length;
+  const transferCount = overdueRows.transfer.length;
+  if (!advanceCount && !transferCount) return false;
+
+  const total = advanceCount + transferCount;
+  const firstProject = overdueRows.advance[0]?.project || overdueRows.transfer[0]?.project || null;
+  const firstProjectText = firstProject
+    ? ` รายการแรก: ${firstProject.code || "-"} ${firstProject.name || ""}`.trim()
+    : "";
+  const body = [
+    advanceCount ? `ยืมรองจ่าย ${advanceCount.toLocaleString("th-TH")} โครงการ` : "",
+    transferCount ? `โอนงบประมาณ ${transferCount.toLocaleString("th-TH")} โครงการ` : ""
+  ].filter(Boolean).join(" / ");
+  const notificationOptions = {
+    data: { url: getStaffFinanceNotificationUrl() }
+  };
+
+  if (window.sgcuWebPush?.showNotification) {
+    return window.sgcuWebPush.showNotification(
+      `มีงานการเงินเลยกำหนด ${total.toLocaleString("th-TH")} โครงการ`,
+      `${body}${firstProjectText ? `\n${firstProjectText}` : ""}`,
+      notificationOptions
+    );
+  }
+
+  if (typeof window.Notification === "undefined" || Notification.permission !== "granted") return false;
+  // eslint-disable-next-line no-new
+  new Notification(`มีงานการเงินเลยกำหนด ${total.toLocaleString("th-TH")} โครงการ`, {
+    body: `${body}${firstProjectText ? `\n${firstProjectText}` : ""}`,
+    icon: "img/icons/treasurer-icon-192.png",
+    badge: "img/icons/treasurer-icon-192.png",
+    data: notificationOptions.data
+  });
+  return true;
+}
+
+async function maybeNotifyStaffFinanceOverdue(now = new Date()) {
+  if (!isUserAuthenticated) return;
+  if (typeof staffViewMode !== "undefined" && staffViewMode !== "staff") return;
+  if (
+    now.getHours() < STAFF_FINANCE_OVERDUE_NOTIFY_HOUR ||
+    (now.getHours() === STAFF_FINANCE_OVERDUE_NOTIFY_HOUR && now.getMinutes() < STAFF_FINANCE_OVERDUE_NOTIFY_MINUTE)
+  ) return;
+
+  const todayKey = getLocalDateKey(now);
+  try {
+    if (window.localStorage?.getItem(STAFF_FINANCE_OVERDUE_NOTIFY_KEY) === todayKey) return;
+  } catch (_) {
+    // continue without localStorage dedupe
+  }
+
+  const overdueRows = getStaffFinanceOverdueRows();
+  if (!overdueRows.advance.length && !overdueRows.transfer.length) return;
+
+  const didShow = await showStaffFinanceOverdueNotification(overdueRows);
+  if (!didShow) return;
+
+  try {
+    window.localStorage?.setItem(STAFF_FINANCE_OVERDUE_NOTIFY_KEY, todayKey);
+  } catch (_) {
+    // ignore localStorage errors
+  }
+}
+
+function scheduleStaffFinanceOverdueNotification() {
+  if (staffFinanceOverdueNotifyTimer) {
+    window.clearTimeout(staffFinanceOverdueNotifyTimer);
+    staffFinanceOverdueNotifyTimer = null;
+  }
+
+  const now = new Date();
+  const nextRun = new Date(now);
+  nextRun.setHours(STAFF_FINANCE_OVERDUE_NOTIFY_HOUR, STAFF_FINANCE_OVERDUE_NOTIFY_MINUTE, 0, 0);
+  if (nextRun.getTime() <= now.getTime()) {
+    nextRun.setDate(nextRun.getDate() + 1);
+  }
+  const delay = Math.max(1000, nextRun.getTime() - now.getTime());
+  staffFinanceOverdueNotifyTimer = window.setTimeout(() => {
+    void maybeNotifyStaffFinanceOverdue(new Date());
+    scheduleStaffFinanceOverdueNotification();
+  }, delay);
+}
+
+function syncStaffFinanceOverdueNotification() {
+  scheduleStaffFinanceOverdueNotification();
+  void maybeNotifyStaffFinanceOverdue(new Date());
+}
+
 function renderProjectOpsTable(tbody, rows) {
   if (!tbody) return;
   const colSpan = 3;
@@ -384,6 +495,7 @@ function updateStaffProjectOperationsPanel(filtered) {
   const transferRows = buildProjectOpsRows(data, getTransferCheckMeta);
   lastStaffProjectCheckRows.advance = advanceRows;
   lastStaffProjectCheckRows.transfer = transferRows;
+  syncStaffFinanceOverdueNotification();
   syncStaffProjectCheckTabs();
   if (ctx.projectAdvanceBlockedCountEl) ctx.projectAdvanceBlockedCountEl.textContent = advanceRows.length.toLocaleString("th-TH");
   if (ctx.projectTransferBlockedCountEl) ctx.projectTransferBlockedCountEl.textContent = transferRows.length.toLocaleString("th-TH");
@@ -761,6 +873,7 @@ const STAFF_PAGE_OPTIONS = [
   "org-representative-approval-staff",
   "login"
 ];
+const STAFF_FULL_ACCESS_PAGES = new Set(STAFF_PAGE_OPTIONS);
 let unsubscribeCurrentStaffApproval = null;
 let unsubscribeStaffPositionAccess = null;
 let unsubscribeCurrentRepresentativeApproval = null;
@@ -881,6 +994,9 @@ function isCurrentRepresentativeAcademicYear(item = {}) {
 }
 
 function isHeadStaffProfile(profile) {
+  const positionText = (profile?.position || "").toString().trim().replace(/\s+/g, " ");
+  if (positionText.includes("เหรัญญิก")) return true;
+  if (hasStaffRoleToken(profile?.role, "0")) return true;
   const yyList = resolveStaffDivisionCodesYY(profile);
   return yyList.includes("00");
 }
@@ -926,6 +1042,8 @@ function findAllowedPagesFromPositionCatalog(positionName, yy, zz) {
 }
 
 function getAllowedStaffPagesByProfile(profile) {
+  if (isHeadStaffProfile(profile)) return new Set(STAFF_FULL_ACCESS_PAGES);
+
   const merged = new Set();
   const positions = Array.isArray(profile?.positions) ? profile.positions : [];
   positions.forEach((entry) => {
@@ -1003,6 +1121,11 @@ function getAllowedPagesForCurrentState() {
       allowed.delete("staff-approval");
       allowed.delete("org-representative-approval-staff");
     }
+  }
+
+  if (isHeadStaffProfile(staffAuthUser)) {
+    allowed.add("budget-approval-request");
+    STAFF_FULL_ACCESS_PAGES.forEach((page) => allowed.add(page));
   }
 
   return allowed;

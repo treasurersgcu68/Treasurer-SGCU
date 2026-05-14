@@ -28,6 +28,20 @@ function initSectionAppearObserver() {
   sections.forEach((sec) => sectionObserver.observe(sec));
 }
 
+function revealMobileActivePageSections() {
+  const activePage = document.querySelector(".page-view.active");
+  if (!activePage) return;
+  const isMobile = window.matchMedia && window.matchMedia("(max-width: 840px)").matches;
+  if (!isMobile) return;
+
+  activePage.querySelectorAll(".section-appear").forEach((section) => {
+    section.classList.add("section-visible");
+    if (sectionObserver) {
+      sectionObserver.unobserve(section);
+    }
+  });
+}
+
 function initHomePanelMotion() {
   const homePage = document.querySelector('.page-view[data-page="home"]');
   const panels = Array.from(homePage?.querySelectorAll(".home-snap-panel") || []);
@@ -182,6 +196,7 @@ function initCountupOnVisible() {
 function refreshMotionForActivePage() {
   initPressMotion();
   initSectionAppearObserver();
+  requestAnimationFrame(revealMobileActivePageSections);
   initHomePanelMotion();
   initHomeScrollPolish();
   if (!hasInitCountup) {

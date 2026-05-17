@@ -1,4 +1,4 @@
-const CACHE_VERSION = "20260514-finance-overdue-notify-730-1";
+const CACHE_VERSION = "20260517-news-auto-popup-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [

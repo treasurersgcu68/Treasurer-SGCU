@@ -1514,11 +1514,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     mobileMenuGroups.forEach((group) => {
       const summary = group.querySelector("summary");
       if (!summary) return;
-      summary.addEventListener("click", () => {
+      summary.addEventListener("click", (event) => {
+        if (group.classList.contains("is-single")) {
+          event.preventDefault();
+          group.setAttribute("open", "");
+          return;
+        }
         const willOpen = !group.hasAttribute("open");
         if (!willOpen) return;
         mobileMenuGroups.forEach((otherGroup) => {
-          if (otherGroup !== group) otherGroup.removeAttribute("open");
+          if (otherGroup !== group && !otherGroup.classList.contains("is-single")) {
+            otherGroup.removeAttribute("open");
+          }
         });
       });
     });

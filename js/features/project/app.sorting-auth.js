@@ -810,9 +810,19 @@ function syncMobileNavGroupVisibility() {
     }
 
     const links = Array.from(group.querySelectorAll("a[data-page]"));
-    const hasVisibleLinks = links.some((link) => link.style.display !== "none");
+    const visibleLinks = links.filter((link) => link.style.display !== "none");
+    const hasVisibleLinks = visibleLinks.length > 0;
+    const hasSingleVisibleLink = visibleLinks.length === 1;
+
+    group.classList.toggle("is-single", hasSingleVisibleLink);
+    if (hasSingleVisibleLink) {
+      group.setAttribute("open", "");
+    }
     group.style.display = hasVisibleLinks ? "" : "none";
-    if (!hasVisibleLinks) group.removeAttribute("open");
+    if (!hasVisibleLinks) {
+      group.classList.remove("is-single");
+      group.removeAttribute("open");
+    }
   });
 }
 

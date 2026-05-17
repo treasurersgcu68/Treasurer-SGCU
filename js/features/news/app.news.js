@@ -4,6 +4,8 @@ const HOME_NEWS_PREVIEW_DESKTOP_LIMIT = 4;
 const HOME_NEWS_PREVIEW_MOBILE_LIMIT = 2;
 const HOME_NEWS_PREVIEW_MOBILE_QUERY = "(max-width: 640px)";
 const NEWS_PAGE_SIZE = 9;
+const NEWS_AUTO_POPUP_RECENT_DAYS = 7;
+const NEWS_AUTO_POPUP_STORAGE_KEY = "sgcu:auto-news-popup:v1";
 const newsFilterState = {
   query: "",
   year: "all",
@@ -17,6 +19,8 @@ const NEWS_CACHE_SOURCE_FIRESTORE = "firestore";
 const NEWS_CACHE_SOURCE_SHEETS = "sheets";
 let newsScheduleRefreshTimer = null;
 let homeNewsPreviewViewportHandlerInitialized = false;
+let newsAutoPopupScheduled = false;
+let newsAutoPopupShownThisSession = false;
 
 function getHomeNewsPreviewLimit() {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -400,6 +404,7 @@ function renderNewsList() {
 
   updateNewsLoadMoreVisibility(processedItems.length > filteredItems.length);
   renderHomeNewsPreview();
+  scheduleRecentNewsAutoPopup();
 }
 
 function initNewsFilters() {
@@ -644,6 +649,60 @@ function openNewsModal(newsId) {
   `;
 
   openDialog(newsModalEl, { focusSelector: "#newsModalClose" });
+}
+
+function getNewsAutoPopupShownIds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(NEWS_AUTO_POPUP_STORAGE_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.map((id) => id.toString()) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function markNewsAutoPopupShown(newsId) {
+  if (!newsId) return;
+  try {
+    const shownIds = getNewsAutoPopupShownIds();
+    const nextIds = Array.from(new Set([newsId.toString(), ...shownIds])).slice(0, 30);
+    localStorage.setItem(NEWS_AUTO_POPUP_STORAGE_KEY, JSON.stringify(nextIds));
+  } catch (err) {
+    // localStorage can be unavailable in private browsing; popup still works for the session.
+  }
+}
+
+function getNewsAutoPopupDate(item) {
+  return parseNewsDate(item?.date) || normalizeNewsStoredDate(item?.publishAt);
+}
+
+function getRecentNewsAutoPopupItem() {
+  const cutoffMs = Date.now() - NEWS_AUTO_POPUP_RECENT_DAYS * 24 * 60 * 60 * 1000;
+  const shownIds = getNewsAutoPopupShownIds();
+
+  return getVisibleNewsItems()
+    .filter((item) => {
+      if (!item?.id || shownIds.includes(item.id.toString())) return false;
+      const date = getNewsAutoPopupDate(item);
+      return date && date.getTime() >= cutoffMs && date.getTime() <= Date.now();
+    })
+    .sort((a, b) => compareNewsItems(a, b, "latest"))[0];
+}
+
+function scheduleRecentNewsAutoPopup() {
+  if (newsAutoPopupScheduled || newsAutoPopupShownThisSession) return;
+  const item = getRecentNewsAutoPopupItem();
+  if (!item) return;
+
+  newsAutoPopupScheduled = true;
+  window.setTimeout(() => {
+    newsAutoPopupScheduled = false;
+    if (newsAutoPopupShownThisSession) return;
+    if (typeof getActiveDialog === "function" && getActiveDialog()) return;
+
+    newsAutoPopupShownThisSession = true;
+    markNewsAutoPopupShown(item.id);
+    openNewsModal(item.id);
+  }, 650);
 }
 
 function closeNewsModal() {

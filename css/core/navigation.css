@@ -311,6 +311,12 @@
   background: rgba(255, 255, 255, 0.78);
   overflow: hidden;
 }
+.mobile-menu-group.is-single {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
 .mobile-menu-group summary {
   list-style: none;
   cursor: pointer;
@@ -340,11 +346,17 @@
 .mobile-menu-group[open] summary::after {
   transform: rotate(225deg);
 }
+.mobile-menu-group.is-single summary {
+  display: none;
+}
 .mobile-menu-links {
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+}
+.mobile-menu-group.is-single .mobile-menu-links {
+  padding: 0;
 }
 .mobile-menu-links a {
   margin: 0;

@@ -405,7 +405,7 @@
   const exportBudgetStaffCsv = (rowsOverride = null, fileNameSuffix = "") => {
     const sourceRows = Array.isArray(rowsOverride) ? rowsOverride : getReviewFilteredRows();
     const rows = sortForDisplay(sourceRows).map((item) => ({
-      "รหัสพิจารณาโครงการ": item.projectCodeGenerated || "",
+      "รหัสโครงการ": item.projectCodeGenerated || "",
       "รอบรับคำขอ": formatBudgetRoundLabel(item.budgetRoundYear, item.budgetRoundNo) || normalizeText(item.budgetRoundId) || "",
       "ประเภทองค์กร": item.organizationType || "",
       "ฝ่าย / ชมรม": item.organizationName || "",
@@ -424,7 +424,7 @@
     window.sgcuCsvExport?.download({
       fileName: suffix ? `budget-staff-requests-${suffix}` : "budget-staff-requests",
       headers: [
-        "รหัสพิจารณาโครงการ",
+        "รหัสโครงการ",
         "รอบรับคำขอ",
         "ประเภทองค์กร",
         "ฝ่าย / ชมรม",
@@ -1226,7 +1226,7 @@
       const approvedText = status === "pending" && !approved ? "-" : formatMoney(approved);
       return `
         <tr class="budget-request-history-row budget-staff-request-row is-editable" data-budget-staff-edit-id="${id}" tabindex="0" title="คลิกเพื่อแก้ไขรายการ">
-          <td class="col-code" data-label="รหัสพิจารณาโครงการ"><code class="budget-request-project-code">${escapeHtml(item.projectCodeGenerated || "-")}</code></td>
+          <td class="col-code" data-label="รหัสโครงการ"><code class="budget-request-project-code">${escapeHtml(item.projectCodeGenerated || "-")}</code></td>
           <td class="col-project" data-label="รายการโครงการ">
             <div class="budget-request-history-project-name budget-staff-project-name">${escapeHtml(item.projectName || "-")}</div>
             <div class="section-text-sm budget-request-history-project-meta budget-staff-project-meta">
@@ -1659,7 +1659,7 @@
       return;
     }
 
-    setMessage(actionMessageEl, "กำลังรันรหัสพิจารณาโครงการ...", "#1d4ed8");
+    setMessage(actionMessageEl, "กำลังรันรหัสโครงการ...", "#1d4ed8");
     setCodeActionBusy(true);
     try {
       const orgCodeMap = await getOrgCodeMap();
@@ -1715,7 +1715,7 @@
         );
       }
 
-      setMessage(actionMessageEl, `รันรหัสพิจารณาโครงการสำเร็จ ${updates.length} รายการ`, "#047857");
+      setMessage(actionMessageEl, `รันรหัสโครงการสำเร็จ ${updates.length} รายการ`, "#047857");
       void window.sgcuAuditLog?.write?.({
         action: "budget.project_codes.run",
         entityType: "budgetApprovalRequest",
@@ -1726,7 +1726,7 @@
       });
     } catch (error) {
       console.error("run budget consideration code failed - app.budget-staff.js", error);
-      setMessage(actionMessageEl, "รันรหัสพิจารณาโครงการไม่สำเร็จ", "#b91c1c");
+      setMessage(actionMessageEl, "รันรหัสโครงการไม่สำเร็จ", "#b91c1c");
     } finally {
       setCodeActionBusy(false);
     }
@@ -1742,14 +1742,14 @@
 
     const rowsToClear = requestRows.filter((row) => normalizeText(row.projectCodeGenerated));
     if (!rowsToClear.length) {
-      setMessage(actionMessageEl, "ยังไม่มีรหัสพิจารณาโครงการที่ต้องยกเลิก", "#6b7280");
+      setMessage(actionMessageEl, "ยังไม่มีรหัสโครงการที่ต้องยกเลิก", "#6b7280");
       return;
     }
 
-    const ok = window.confirm(`ยืนยันยกเลิกรหัสพิจารณาโครงการที่รันแล้ว ${rowsToClear.length} รายการ ?`);
+    const ok = window.confirm(`ยืนยันยกเลิกรหัสโครงการที่รันแล้ว ${rowsToClear.length} รายการ ?`);
     if (!ok) return;
 
-    setMessage(actionMessageEl, "กำลังยกเลิกรหัสพิจารณาโครงการ...", "#1d4ed8");
+    setMessage(actionMessageEl, "กำลังยกเลิกรหัสโครงการ...", "#1d4ed8");
     setCodeActionBusy(true);
     try {
       for (const row of rowsToClear) {
@@ -1762,7 +1762,7 @@
           }
         );
       }
-      setMessage(actionMessageEl, `ยกเลิกรหัสพิจารณาโครงการสำเร็จ ${rowsToClear.length} รายการ`, "#047857");
+      setMessage(actionMessageEl, `ยกเลิกรหัสโครงการสำเร็จ ${rowsToClear.length} รายการ`, "#047857");
       void window.sgcuAuditLog?.write?.({
         action: "budget.project_codes.clear",
         entityType: "budgetApprovalRequest",
@@ -1773,7 +1773,7 @@
       });
     } catch (error) {
       console.error("clear budget consideration code failed - app.budget-staff.js", error);
-      setMessage(actionMessageEl, "ยกเลิกรหัสพิจารณาโครงการไม่สำเร็จ", "#b91c1c");
+      setMessage(actionMessageEl, "ยกเลิกรหัสโครงการไม่สำเร็จ", "#b91c1c");
     } finally {
       setCodeActionBusy(false);
     }

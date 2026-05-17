@@ -208,9 +208,32 @@
 
   if ("serviceWorker" in window.navigator) {
     let didRefreshForNewWorker = false;
+    let hadServiceWorkerController = !!window.navigator.serviceWorker.controller;
+    const serviceWorkerUrl = (window.sgcuServiceWorkerUrl || DEFAULT_SW_URL).toString().trim() || DEFAULT_SW_URL;
+    const reloadStorageKey = `sgcu-sw-controller-reload:${serviceWorkerUrl}`;
+    const hasReloadedForCurrentWorker = () => {
+      try {
+        return window.sessionStorage?.getItem(reloadStorageKey) === "1";
+      } catch (_) {
+        return didRefreshForNewWorker;
+      }
+    };
+    const markReloadedForCurrentWorker = () => {
+      try {
+        window.sessionStorage?.setItem(reloadStorageKey, "1");
+      } catch (_) {
+        // sessionStorage can be unavailable in restricted browsing contexts.
+      }
+    };
     window.navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadServiceWorkerController) {
+        hadServiceWorkerController = true;
+        return;
+      }
       if (didRefreshForNewWorker) return;
+      if (hasReloadedForCurrentWorker()) return;
       didRefreshForNewWorker = true;
+      markReloadedForCurrentWorker();
       window.location.reload();
     });
     const registerWhenIdle = () => {

@@ -147,6 +147,8 @@ let closureRateDonutChart;
 let approvalRateDonutChart;
 let kpiOnTimeDonutChart;
 let kpiBudgetUsageDonutChart;
+let clubDebtSummaryChart = null;
+let clubDebtAgeChart = null;
 let projectModalEl;
 let budgetChartSkeletonEl;
 let statusPieSkeletonEl;

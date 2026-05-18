@@ -134,6 +134,10 @@
     grid-template-columns: 1fr;
   }
 
+  .dashboard-debt-row {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-filter-bar {
     grid-template-columns: 1fr;
   }

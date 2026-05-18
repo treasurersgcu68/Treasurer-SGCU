@@ -98,11 +98,6 @@
                 <div id="topOrgBudgetStaff" class="metric-caption">-</div>
               </article>
 
-              <article class="dashboard-metric dashboard-debt-metric">
-                <div class="metric-label">หนี้สโมสรค้างส่งเอกสาร</div>
-                <div id="clubDebtTotalStaff" class="metric-value">0</div>
-                <div id="clubDebtCaptionStaff" class="metric-caption">-</div>
-              </article>
             </div>
 
             <div class="dashboard-grid"> 
@@ -193,30 +188,37 @@
             </div>
 
             <div class="dashboard-lower" style="margin-top:12px;">
-              <article class="dashboard-card dashboard-card-wide dashboard-debt-summary-card">
-                <div class="dashboard-card-header">
-                  <div>
-                    <h4 class="dashboard-card-title">สรุปหนี้สโมสร</h4>
-                    <p id="clubDebtSummaryCaptionStaff" class="metric-caption">คำนวณจากโครงการรับเงินแล้ว ที่เลยกำหนดส่งเอกสาร และยังไม่ส่งกิจการนิสิตเรียบร้อย</p>
+              <div class="dashboard-debt-row">
+                <article class="dashboard-card dashboard-debt-summary-card">
+                  <div class="dashboard-card-header">
+                    <div>
+                      <h4 class="dashboard-card-title">สรุปหนี้สโมสร</h4>
+                      <div class="dashboard-debt-summary-total">
+                        <span class="metric-label">ยอดหนี้ค้างส่งเอกสาร</span>
+                        <span id="clubDebtTotalStaff" class="metric-value dashboard-debt-amount">0</span>
+                        <span id="clubDebtCaptionStaff" class="metric-caption">-</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div class="project-table-wrapper">
-                  <table id="clubDebtSummaryTableStaff">
-                    <caption id="clubDebtSummaryTableCaptionStaff">แสดงผล 0 องค์กร</caption>
-                    <thead>
-                      <tr>
-                        <th style="text-align:center;">ฝ่าย / ชมรม</th>
-                        <th style="text-align:right;">ยอดหนี้</th>
-                        <th style="text-align:right;">จำนวนโครงการ</th>
-                        <th style="text-align:right;">ค้างนานสุด</th>
-                      </tr>
-                    </thead>
-                    <tbody id="clubDebtSummaryTableBodyStaff">
-                      <tr><td colspan="4" class="table-empty" data-label="สรุปหนี้สโมสร" style="text-align:center; color:#9ca3af;">ยังไม่มีรายการหนี้สโมสร</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </article>
+                  <p id="clubDebtSummaryChartCaptionStaff" class="chart-caption">แสดงผล 0 องค์กร</p>
+                  <div id="clubDebtSummaryChartInnerStaff" class="chart-inner club-debt-chart-inner">
+                    <canvas id="clubDebtSummaryChartStaff"></canvas>
+                  </div>
+                </article>
+
+                <article class="dashboard-card dashboard-debt-age-card">
+                  <div class="dashboard-card-header">
+                    <div>
+                      <h4 class="dashboard-card-title">อายุหนี้</h4>
+                      <p id="clubDebtAgeCaptionStaff" class="metric-caption">แยกตามจำนวนวันที่เลยกำหนดส่งเอกสาร</p>
+                    </div>
+                  </div>
+                  <div class="donut-wrap club-debt-age-donut-wrap">
+                    <canvas id="clubDebtAgeChartStaff"></canvas>
+                  </div>
+                  <div id="clubDebtAgeLegendStaff" class="club-debt-age-legend" aria-label="คำอธิบายสีอายุหนี้"></div>
+                </article>
+              </div>
 
               <article class="dashboard-card dashboard-card-wide">
                 <div class="dashboard-card-header">

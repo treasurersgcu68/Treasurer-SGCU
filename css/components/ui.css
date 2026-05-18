@@ -501,6 +501,17 @@
   min-width: 0;
 }
 
+.dashboard-debt-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 12px;
+}
+
+.dashboard-debt-row > .dashboard-card {
+  min-width: 0;
+}
+
 .dashboard-card .project-table-wrapper {
   min-width: 0;
   max-width: 100%;
@@ -572,13 +583,65 @@
   margin-top: 0;
 }
 
-.dashboard-debt-metric .metric-value,
 .dashboard-debt-amount {
-  color: #b91c1c;
+  color: #be185d;
 }
 
 .dashboard-debt-summary-card .dashboard-card-header {
   align-items: flex-start;
+}
+
+.dashboard-debt-age-card .dashboard-card-header {
+  align-items: flex-start;
+}
+
+.club-debt-age-donut-wrap {
+  height: 220px;
+  margin-top: 8px;
+}
+
+.club-debt-age-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.club-debt-age-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.club-debt-age-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.dashboard-debt-summary-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.dashboard-debt-summary-total .metric-label::after,
+.dashboard-debt-summary-total .metric-value::after {
+  content: " ";
+}
+
+.dashboard-debt-summary-total .metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
 @media (max-width: 640px) {
@@ -595,93 +658,8 @@
     line-height: 1.45;
   }
 
-  .dashboard-debt-summary-card .project-table-wrapper {
-    max-height: none;
-    overflow: visible;
-  }
-
-  #clubDebtSummaryTableStaff {
-    display: block;
-    min-width: 0;
-    width: 100%;
-  }
-
-  #clubDebtSummaryTableStaff caption {
-    display: block;
-    margin-bottom: 10px;
-    color: #64748b;
-    font-size: 11px;
-    text-align: left;
-  }
-
-  #clubDebtSummaryTableStaff thead {
-    display: none;
-  }
-
-  #clubDebtSummaryTableStaff tbody {
-    display: grid;
-    gap: 10px;
-  }
-
-  #clubDebtSummaryTableStaff tbody tr {
-    display: grid;
-    gap: 8px;
-    padding: 12px;
-    border: 1px solid rgba(220, 38, 38, 0.16);
-    border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 8px 20px rgba(148, 163, 184, 0.14);
-  }
-
-  #clubDebtSummaryTableStaff tbody td {
-    display: grid;
-    grid-template-columns: 104px minmax(0, 1fr);
-    gap: 10px;
-    align-items: start;
-    width: auto;
-    padding: 0;
-    border: 0;
-    color: #111827;
-    line-height: 1.45;
-    text-align: right !important;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  #clubDebtSummaryTableStaff tbody td::before {
-    content: attr(data-label);
-    color: #64748b;
-    font-size: 11px;
-    font-weight: 700;
-    text-align: left;
-  }
-
-  #clubDebtSummaryTableStaff tbody td:first-child {
+  .dashboard-debt-row {
     grid-template-columns: 1fr;
-    gap: 2px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #fee2e2;
-    color: #111827;
-    font-weight: 800;
-    text-align: left !important;
-  }
-
-  #clubDebtSummaryTableStaff tbody td:first-child::before {
-    font-size: 10px;
-  }
-
-  #clubDebtSummaryTableStaff tbody td[colspan] {
-    display: block;
-    text-align: center !important;
-  }
-
-  #clubDebtSummaryTableStaff tbody td[colspan]::before {
-    display: none;
-  }
-
-  #clubDebtSummaryTableStaff .dashboard-debt-amount {
-    font-size: 14px;
-    font-weight: 800;
   }
 }
 

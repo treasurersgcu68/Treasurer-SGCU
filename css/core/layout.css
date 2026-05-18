@@ -70,3 +70,50 @@
   gap: 12px;
   margin-bottom: 18px;
 }
+
+.project-refresh-data-btn {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  margin-left: 4px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #0f766e;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: -1px;
+  transition: color 0.16s ease-out, transform 0.16s ease-out;
+}
+
+.project-refresh-data-btn:hover {
+  color: #0d9488;
+  transform: translateY(-1px);
+}
+
+.project-refresh-data-btn:focus-visible {
+  outline: 3px solid rgba(20, 184, 166, 0.25);
+  outline-offset: 2px;
+}
+
+.project-refresh-data-btn[disabled] {
+  cursor: wait;
+  opacity: 0.65;
+  transform: none;
+}
+
+.project-dashboard-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-last-updated-meta,
+.project-visitor-meta {
+  line-height: 1.45;
+}

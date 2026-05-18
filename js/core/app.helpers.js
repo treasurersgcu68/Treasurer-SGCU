@@ -310,7 +310,8 @@ async function fetchTextWithProgress(url, onProgress, options = {}) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
+      const cacheMode = options.cache || "default";
+      const res = await fetch(url, { signal: controller.signal, cache: cacheMode });
       if (!res.ok) {
         throw new Error(`Fetch failed: ${res.status}`);
       }

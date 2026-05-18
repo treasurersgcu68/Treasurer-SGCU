@@ -303,6 +303,7 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     orgSelect: get("orgSelect"),
     projectSearchInput: get("projectSearchInput"),
     projectSearchClearBtn: get("projectSearchClear"),
+    projectRefreshDataBtn: get("projectRefreshData"),
     projectExportCsvBtn: get("projectExportCsv"),
     projectClosureMailMergeExportBtn: get("projectClosureMailMergeExportCsv"),
     projectClosureExportUntilMonthInput: get("projectClosureExportUntilMonth"),

@@ -152,8 +152,8 @@
       "booking.status_updated": "อัปเดตสถานะจองห้อง",
       "booking.status_updated_by_staff": "สตาฟอัปเดตสถานะจองห้อง",
       "booking.deleted_by_staff": "สตาฟลบคำขอจองห้อง",
-      "booking.cancelled_by_requester": "ผู้จองยกเลิกคำขอ",
-      "booking.reschedule_requested": "ผู้จองขอเปลี่ยนเวลา",
+      "booking.cancelled_by_requester": "ผู้จองขอยกเลิกคำขอ",
+      "booking.reschedule_requested": "ผู้จองขอเปลี่ยนห้อง/เวลา",
       "meeting_room.created": "เพิ่มห้องประชุม",
       "meeting_room.deleted": "ลบห้องประชุม",
       "meeting_room.renamed": "แก้ชื่อห้องประชุม",
@@ -187,7 +187,7 @@
       approved: "อนุมัติแล้ว",
       rejected: "ปฏิเสธ/ยกเลิก",
       cancel_requested: "ขอยกเลิก",
-      reschedule_requested: "ขอเปลี่ยนเวลา",
+      reschedule_requested: "ขอเปลี่ยนห้อง/เวลา",
       no_show: "No-show",
       received: "รับของแล้ว",
       returned: "คืนแล้ว",
@@ -234,6 +234,7 @@
       const status = getStatusChangeText(item);
       const reschedule = data.rescheduleRequestedDate
         ? `ขอเปลี่ยนเป็น ${[
+            data.rescheduleRequestedRoomName || data.rescheduleRequestedRoomId || "",
             data.rescheduleRequestedDate,
             `${data.rescheduleRequestedStartTime || "-"}-${data.rescheduleRequestedEndTime || "-"}`
           ].filter(Boolean).join(" ")}`

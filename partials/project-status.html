@@ -5,7 +5,12 @@
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">สถานะโครงการ</h1>
-              <p class="page-meta">อัปเดตล่าสุด : <span id="projectsLastUpdated">-</span></p>
+              <p class="page-meta project-last-updated-meta">
+                อัปเดตล่าสุด : <span id="projectsLastUpdated">-</span>
+                <button id="projectRefreshData" class="project-refresh-data-btn" type="button" aria-label="ดึงข้อมูลใหม่" title="ดึงข้อมูลใหม่">
+                  <span aria-hidden="true">↻</span>
+                </button>
+              </p>
             </div>
 
             <!-- Toggle ระหว่างมุมมองสรุป / Dashboard / ปฏิทิน -->

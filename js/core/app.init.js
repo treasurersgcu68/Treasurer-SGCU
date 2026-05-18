@@ -1689,6 +1689,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         ctx.projectSearchInput.focus();
       });
     }
+    if (ctx.projectRefreshDataBtn) {
+      ctx.projectRefreshDataBtn.addEventListener("click", () => {
+        setActiveProjectStatusContext(key);
+        void forceRefreshProjectData(key);
+      });
+    }
     if (ctx.projectExportCsvBtn) {
       ctx.projectExportCsvBtn.addEventListener("click", () => {
         exportVisibleProjectsCsv(key);

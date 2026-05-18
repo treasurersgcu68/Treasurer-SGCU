@@ -53,10 +53,10 @@ function normalizePublishedSheetUrl(url) {
   return value || "";
 }
 
-async function getPublishedHtmlWorkbookSheets(url, onProgress) {
+async function getPublishedHtmlWorkbookSheets(url, onProgress, options = {}) {
   const indexHtml = await fetchTextWithProgress(url, (ratio) => {
     if (typeof onProgress === "function") onProgress(Math.min(ratio * 0.25, 0.25));
-  });
+  }, options);
   const sheets = parsePublishedSheetIndex(indexHtml);
   const projectSheet =
     sheets.find((sheet) => (sheet.name || "").trim() === "ตารางสถานะ") ||
@@ -69,17 +69,17 @@ async function getPublishedHtmlWorkbookSheets(url, onProgress) {
   return { projectSheet, contactSheet };
 }
 
-async function loadRowsFromPublishedHtmlWorkbook(url, onProgress) {
-  const { projectSheet, contactSheet } = await getPublishedHtmlWorkbookSheets(url, onProgress);
+async function loadRowsFromPublishedHtmlWorkbook(url, onProgress, options = {}) {
+  const { projectSheet, contactSheet } = await getPublishedHtmlWorkbookSheets(url, onProgress, options);
   const projectUrl = normalizePublishedSheetUrl(projectSheet.pageUrl) || buildPublishedSheetUrl(url, projectSheet.gid);
   const contactUrl = normalizePublishedSheetUrl(contactSheet.pageUrl) || buildPublishedSheetUrl(url, contactSheet.gid);
 
   const projectHtml = await fetchTextWithProgress(projectUrl, (ratio) => {
     if (typeof onProgress === "function") onProgress(0.25 + Math.min(ratio * 0.55, 0.55));
-  });
+  }, options);
   const contactHtml = await fetchTextWithProgress(contactUrl, (ratio) => {
     if (typeof onProgress === "function") onProgress(0.8 + Math.min(ratio * 0.2, 0.2));
-  });
+  }, options);
 
   return {
     projectRows: parsePublishedSheetRows(projectHtml),
@@ -126,16 +126,25 @@ function applyProjectContactRows(contactRows) {
   }
 }
 
-async function loadProjectContactsFromCsv(url) {
+async function loadProjectContactsFromCsv(url, options = {}) {
   const contactUrl = (url || "").toString().trim();
   if (!contactUrl) return;
   await window.sgcuVendorLoader?.ensurePapa?.();
-  const csvText = await fetchTextWithProgress(contactUrl);
+  const csvText = await fetchTextWithProgress(contactUrl, null, options);
   const parsed = Papa.parse(csvText, {
     header: false,
     skipEmptyLines: false
   });
   applyProjectContactRows(parsed.data || []);
+}
+
+function parseCsvRows(csvText, options = {}) {
+  const parsed = Papa.parse(csvText || "", {
+    header: false,
+    skipEmptyLines: false,
+    ...options
+  });
+  return parsed.data || [];
 }
 
 function isTruthySheetValue(value) {
@@ -231,8 +240,10 @@ function syncProjectYearSelects(selectedYear = selectedProjectSourceYear) {
   });
 }
 
-async function loadProjectSourceConfigs() {
-  if (projectSourceLoadPromise) return projectSourceLoadPromise;
+async function loadProjectSourceConfigs(options = {}) {
+  const force = Boolean(options.force);
+  const fetchOptions = force ? { cache: "no-store" } : {};
+  if (projectSourceLoadPromise && !force) return projectSourceLoadPromise;
 
   projectSourceLoadPromise = (async () => {
     const fallbackSource = {
@@ -250,7 +261,7 @@ async function loadProjectSourceConfigs() {
 
     try {
       await window.sgcuVendorLoader?.ensurePapa?.();
-      const csvText = await fetchTextWithProgress(sourceUrl);
+      const csvText = await fetchTextWithProgress(sourceUrl, null, fetchOptions);
       const parsed = Papa.parse(csvText, {
         header: false,
         skipEmptyLines: false
@@ -272,14 +283,14 @@ async function loadProjectSourceConfigs() {
   return projectSourceLoadPromise;
 }
 
-async function resolveProjectSourceConfig(year = selectedProjectSourceYear) {
+async function resolveProjectSourceConfig(year = selectedProjectSourceYear, options = {}) {
   const fallback = {
     year: "",
     projectUrl: SHEET_CSV_URL,
     contactUrl: PROJECT_CONTACTS_CSV_URL,
     isActive: true
   };
-  const sources = await loadProjectSourceConfigs();
+  const sources = await loadProjectSourceConfigs(options);
   const normalizedYear = (year || "").toString().trim();
   return (
     (normalizedYear && sources.find((source) => source.year === normalizedYear)) ||
@@ -288,9 +299,11 @@ async function resolveProjectSourceConfig(year = selectedProjectSourceYear) {
   );
 }
 
-async function loadProjectsFromSheet(sourceConfigOverride = null) {
+async function loadProjectsFromSheet(sourceConfigOverride = null, options = {}) {
   try {
-    const sourceConfig = sourceConfigOverride || await resolveProjectSourceConfig();
+    const force = Boolean(options.force);
+    const fetchOptions = force ? { cache: "no-store" } : {};
+    const sourceConfig = sourceConfigOverride || await resolveProjectSourceConfig(selectedProjectSourceYear, { force });
     activeProjectSourceConfig = sourceConfig || activeProjectSourceConfig;
     selectedProjectSourceYear = (sourceConfig?.year || selectedProjectSourceYear || "").toString().trim();
     syncProjectYearSelects(selectedProjectSourceYear);
@@ -306,7 +319,7 @@ async function loadProjectsFromSheet(sourceConfigOverride = null) {
         Object.prototype.hasOwnProperty.call(project || {}, "closeStatusAdvance") &&
         Object.prototype.hasOwnProperty.call(project || {}, "closeStatusDecree")
       );
-    if (cached && Array.isArray(cached) && cached.length && hasCloseStatusBreakdown) {
+    if (!force && cached && Array.isArray(cached) && cached.length && hasCloseStatusBreakdown) {
       projects = applySourceYearToProjects(cached, selectedProjectSourceYear);
       hydrateProjectsCache(projects);
       clearLoadError("projects");
@@ -337,26 +350,28 @@ async function loadProjectsFromSheet(sourceConfigOverride = null) {
         if (typeof updateLoaderProgress === "function") {
           updateLoaderProgress("projects", ratio);
         }
-      });
+      }, fetchOptions);
       rows = workbookRows.projectRows;
       applyProjectContactRows(workbookRows.contactRows);
     } else {
       await window.sgcuVendorLoader?.ensurePapa?.();
-      const csvText = await fetchTextWithProgress(projectUrl, (ratio) => {
+      const projectCsvPromise = fetchTextWithProgress(projectUrl, (ratio) => {
         if (typeof updateLoaderProgress === "function") {
           updateLoaderProgress("projects", ratio);
         }
-      });
+      }, fetchOptions);
+      const contactCsvPromise = contactUrl
+        ? fetchTextWithProgress(contactUrl, null, fetchOptions).catch((err) => {
+            console.error("โหลดข้อมูลติดต่อจากชีท 2 ไม่สำเร็จ - app.data.js", err);
+            return "";
+          })
+        : Promise.resolve("");
 
-      const parsed = Papa.parse(csvText, {
-        header: false,
-        skipEmptyLines: false
-      });
-      rows = parsed.data;
-      try {
-        await loadProjectContactsFromCsv(contactUrl);
-      } catch (err) {
-        console.error("โหลดข้อมูลติดต่อจากชีท 2 ไม่สำเร็จ - app.data.js", err);
+      const [csvText, contactCsvText] = await Promise.all([projectCsvPromise, contactCsvPromise]);
+
+      rows = parseCsvRows(csvText);
+      if (contactCsvText) {
+        applyProjectContactRows(parseCsvRows(contactCsvText));
       }
     }
 
@@ -491,6 +506,61 @@ async function retryProjectDataLoad() {
       "ยังไม่สามารถโหลดข้อมูลโครงการได้ กรุณาลองใหม่อีกครั้งภายหลัง",
       { onRetry: () => void retryProjectDataLoad() }
     );
+  }
+}
+
+async function forceRefreshProjectData(ctxKey = activeProjectStatusContext) {
+  clearLoadError("projects");
+  clearLoadError("orgFilters");
+  setProjectDataLoadState("info", "กำลังดึงข้อมูลล่าสุดจาก Google Sheets...");
+  projectsLoaded = false;
+  projectsLoadPromise = null;
+  projectSourceLoadPromise = null;
+  Object.values(projectStatusContexts || {}).forEach((ctx) => {
+    if (ctx) ctx.isInitialized = false;
+    if (ctx?.projectRefreshDataBtn) ctx.projectRefreshDataBtn.disabled = true;
+  });
+  lastProjectStatusRefreshSignatureByContext.public = "";
+  lastProjectStatusRefreshSignatureByContext.staff = "";
+  lastProjectStatusProjectsRefByContext.public = null;
+  lastProjectStatusProjectsRefByContext.staff = null;
+  setLoading(true, "public");
+  setLoading(true, "staff");
+
+  try {
+    await loadProjectsFromSheet(null, { force: true });
+    if (loadErrors?.has?.("projects")) {
+      throw new Error("project data refresh failed");
+    }
+    if (!projects || projects.length === 0) {
+      projects = getFallbackProjects();
+    }
+    await loadOrgFilters();
+    await window.sgcuVendorLoader?.ensureChart?.();
+
+    ["public", "staff"].forEach((key) => {
+      ensureProjectStatusInitialized(key);
+      refreshProjectFiltersForContext(key, selectedProjectSourceYear);
+      refreshProjectStatus(key);
+      refreshProjectCalendarForContext(key);
+    });
+    renderHomeKpis();
+    projectsLoaded = true;
+    setProjectDataLoadState();
+  } catch (err) {
+    console.error("บังคับดึงข้อมูลโครงการใหม่ไม่สำเร็จ - app.data.js", err);
+    recordLoadError("projects", "ดึงข้อมูลล่าสุดไม่สำเร็จ กำลังใช้ข้อมูลเดิมหรือข้อมูลสำรอง", { showRetry: true });
+    setProjectDataLoadState(
+      "error",
+      "ยังไม่สามารถดึงข้อมูลล่าสุดได้ กรุณาลองใหม่อีกครั้ง",
+      { onRetry: () => void forceRefreshProjectData(ctxKey) }
+    );
+  } finally {
+    setLoading(false, "public");
+    setLoading(false, "staff");
+    Object.values(projectStatusContexts || {}).forEach((ctx) => {
+      if (ctx?.projectRefreshDataBtn) ctx.projectRefreshDataBtn.disabled = false;
+    });
   }
 }
 

@@ -4,7 +4,17 @@
           <div class="page-header-flex">
             <div>
               <h1 class="page-title">ภาพรวมโครงการ</h1>
-              <p class="page-meta">อัปเดตล่าสุด : <span id="projectsLastUpdatedDashboardStaff">-</span> | ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง | ผู้เข้าชมสะสม : <span id="dashboardVisitorAllTimeCount">-</span> ครั้ง</p>
+              <div class="page-meta project-dashboard-meta">
+                <div class="project-last-updated-meta">
+                  อัปเดตล่าสุด : <span id="projectsLastUpdatedDashboardStaff">-</span>
+                  <button id="projectRefreshDataStaff" class="project-refresh-data-btn" type="button" aria-label="ดึงข้อมูลใหม่" title="ดึงข้อมูลใหม่">
+                    <span aria-hidden="true">↻</span>
+                  </button>
+                </div>
+                <div class="project-visitor-meta">
+                  ผู้เข้าชมวันนี้ : <span id="dashboardVisitorCount">-</span> ครั้ง | ผู้เข้าชมสะสม : <span id="dashboardVisitorAllTimeCount">-</span> ครั้ง
+                </div>
+              </div>
             </div>
             <div class="tabs dashboard-staff-main-tabs" role="tablist" aria-label="เลือกมุมมองภาพรวมโครงการ">
               <button type="button" class="tab-btn view-toggle-btn is-active" data-project-workflow-tab="overview">
@@ -57,6 +67,8 @@
               </div>
             </div>
           </div>
+
+          <div id="projectDataLoadStateStaff" class="project-data-load-state" hidden></div>
 
           <div id="dashboardStaffOverviewPanel" class="dashboard-staff-main-panel" data-project-workflow-panel="overview">
           <section class="dashboard-overview section-appear section-delay-1">

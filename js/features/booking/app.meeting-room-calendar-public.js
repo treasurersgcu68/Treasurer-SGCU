@@ -179,7 +179,7 @@
     const normalized = safeStatus(status);
     if (normalized === "approved") return "อนุมัติแล้ว";
     if (normalized === "cancel_requested") return "ขอยกเลิก (รออนุมัติ)";
-    if (normalized === "reschedule_requested") return "ขอเปลี่ยนเวลา (รออนุมัติ)";
+    if (normalized === "reschedule_requested") return "ขอเปลี่ยนห้อง/เวลา (รออนุมัติ)";
     if (normalized === "no_show") return "ไม่มาใช้ห้อง (No-show)";
     if (normalized === "rejected") return "ไม่อนุมัติ / ยกเลิกแล้ว";
     return "รออนุมัติ";

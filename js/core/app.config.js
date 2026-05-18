@@ -61,7 +61,7 @@ const SGCU_APP_CONFIG = {
     staffEmailLegacyColumn: -1
   },
   cache: {
-    ttlMs: 3 * 60 * 1000,
+    ttlMs: 60 * 60 * 1000,
     keys: {
       PROJECTS: "sgcu_cache_projects",
       NEWS: "sgcu_cache_news",

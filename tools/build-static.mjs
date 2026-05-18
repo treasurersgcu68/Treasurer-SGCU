@@ -14,7 +14,6 @@ const copyIgnoreNames = new Set([
   ".gitignore",
   ".DS_Store",
   ".github",
-  "dist",
   "node_modules",
   "package.json",
   "package-lock.json",
@@ -25,9 +24,12 @@ const copyIgnoreNames = new Set([
 const scanIgnoreNames = new Set([
   ".git",
   ".DS_Store",
-  "dist",
   "node_modules"
 ]);
+
+function isIgnoredGeneratedDir(name) {
+  return /^dist(?:\s+\d+)?$/.test(name);
+}
 
 const textFileExtensions = new Set([
   ".css",
@@ -62,7 +64,7 @@ async function copyRecursive(source, target) {
   await fs.mkdir(target, { recursive: true });
 
   for (const entry of entries) {
-    if (copyIgnoreNames.has(entry.name)) continue;
+    if (copyIgnoreNames.has(entry.name) || isIgnoredGeneratedDir(entry.name)) continue;
 
     const sourcePath = path.join(source, entry.name);
     const targetPath = path.join(target, entry.name);
@@ -81,7 +83,7 @@ async function listProjectFiles(source, ignoreNames = scanIgnoreNames) {
   const files = [];
 
   for (const entry of entries) {
-    if (ignoreNames.has(entry.name)) continue;
+    if (ignoreNames.has(entry.name) || isIgnoredGeneratedDir(entry.name)) continue;
 
     const sourcePath = path.join(source, entry.name);
     if (entry.isDirectory()) {

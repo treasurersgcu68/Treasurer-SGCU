@@ -247,6 +247,54 @@
   border-left-color: var(--theme-pink-400);
 }
 
+.meeting-manage-helper {
+  margin-top: 4px;
+  color: #6b7280;
+}
+
+.meeting-manage-summary {
+  border: 1px solid rgba(236, 72, 153, 0.18);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 8px 22px rgba(236, 72, 153, 0.08);
+}
+
+.meeting-manage-summary-kicker {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--theme-pink-700);
+}
+
+.meeting-manage-summary-main {
+  margin-top: 2px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.meeting-manage-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+  color: #4b5563;
+  font-size: 0.88rem;
+}
+
+.meeting-manage-summary-meta span {
+  border-radius: 999px;
+  background: rgba(253, 242, 248, 0.9);
+  padding: 3px 8px;
+}
+
+.meeting-manage-summary-purpose {
+  margin-top: 6px;
+  color: #374151;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
 .meeting-booking-form .borrow-form-field .login-label {
   font-weight: 600;
 }

@@ -1,5 +1,6 @@
 /* Scoreboard: SGCU-10.001 */
 const SCOREBOARD_BASE_SCORE = 100;
+const SCOREBOARD_ACADEMIC_YEAR = "2568";
 
 function initScoreboard() {
   const podiumEl = document.getElementById("scorePodium");
@@ -11,8 +12,17 @@ function initScoreboard() {
     return;
   }
 
+  if (!isScoreboardSelectedYearAllowed()) {
+    hideScoreboard(podiumEl, runnersEl);
+    if (typeof markLoaderStep === "function") {
+      markLoaderStep("scoreboard");
+    }
+    return Promise.resolve([]);
+  }
+
   podiumEl.classList.remove("score-animate-in");
   runnersEl.classList.remove("score-animate-in");
+  setScoreboardSectionVisible(podiumEl, true);
   renderScoreSkeleton(podiumEl, runnersEl);
 
   return Promise.resolve()
@@ -22,6 +32,9 @@ function initScoreboard() {
       }
       if (typeof ensureProjectDataLoaded === "function") {
         await ensureProjectDataLoaded();
+      }
+      if (!isScoreboardSelectedYearAllowed()) {
+        return [];
       }
       if (typeof updateLoaderProgress === "function") {
         updateLoaderProgress("scoreboard", 0.75);
@@ -41,11 +54,11 @@ function initScoreboard() {
     })
     .then((items) => {
       if (!items.length) {
-        renderLoadState(podiumEl, "empty", "ยังไม่มีข้อมูลคะแนน");
-        runnersEl.innerHTML = "";
+        hideScoreboard(podiumEl, runnersEl);
         return;
       }
 
+      setScoreboardSectionVisible(podiumEl, true);
       const podium = items.slice(0, 3);
       const runners = items.slice(3, 8);
 
@@ -72,9 +85,51 @@ function initScoreboard() {
     });
 }
 
+function refreshScoreboardForProjectYear() {
+  return initScoreboard();
+}
+
 function getScoreboardCacheKey() {
   const year = (typeof selectedProjectSourceYear === "string" ? selectedProjectSourceYear : "").trim();
-  return `${CACHE_KEYS.SCOREBOARD}:project-derived:v1:${year || "active"}`;
+  return `${CACHE_KEYS.SCOREBOARD}:project-derived:v3:${SCOREBOARD_ACADEMIC_YEAR}:${year || "active"}`;
+}
+
+function setScoreboardSectionVisible(anchorEl, isVisible) {
+  const section = anchorEl?.closest?.(".home-snap-panel") || anchorEl?.closest?.(".home-scoreboard");
+  if (!section) return;
+  if (section.dataset.scoreboardDisabled === "true") {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = !isVisible;
+}
+
+function hideScoreboard(podiumEl, runnersEl) {
+  setScoreboardSectionVisible(podiumEl, false);
+  if (podiumEl) podiumEl.innerHTML = "";
+  if (runnersEl) runnersEl.innerHTML = "";
+}
+
+function isScoreboardSelectedYearAllowed() {
+  const selectedYear = getSelectedScoreboardAcademicYear();
+  return !selectedYear || isScoreboardYearTarget(selectedYear);
+}
+
+function getSelectedScoreboardAcademicYear() {
+  const candidates = [
+    document.getElementById("yearSelect")?.value || "",
+    document.getElementById("calendarYearSelect")?.value || "",
+    document.getElementById("yearSelectStaff")?.value || "",
+    typeof selectedProjectSourceYear === "string" ? selectedProjectSourceYear : "",
+    typeof activeProjectSourceConfig === "object" && activeProjectSourceConfig ? activeProjectSourceConfig.year : ""
+  ];
+  return candidates.map(normalizeScoreOrgName).find(Boolean) || "";
+}
+
+function isScoreboardYearTarget(year) {
+  const digits = normalizeScoreOrgName(year).replace(/[^\d]/g, "");
+  if (!digits) return false;
+  return digits === SCOREBOARD_ACADEMIC_YEAR || digits.slice(-2) === SCOREBOARD_ACADEMIC_YEAR.slice(-2);
 }
 
 function buildScoreboardFromProjects(projectList) {
@@ -125,7 +180,14 @@ function calculateProjectScore(project) {
 }
 
 function isScoreboardEligibleProject(project) {
-  return (project?.statusClose || "").toString().trim() === "ส่งกิจการนิสิตเรียบร้อย";
+  return (
+    isScoreboardTargetYear(project) &&
+    (project?.statusClose || "").toString().trim() === "ส่งกิจการนิสิตเรียบร้อย"
+  );
+}
+
+function isScoreboardTargetYear(project) {
+  return isScoreboardYearTarget(project?.year);
 }
 
 function resolveProjectCloseDurationDays(project) {
@@ -274,24 +336,31 @@ function renderScoreRunners(container, runners) {
     container.style.display = "none";
     return;
   }
-  container.style.display = "flex";
+  container.style.display = "block";
 
-  const chips = runners
+  const rows = runners
     .map((item, idx) => {
       const rank = idx + 4;
       return `
-        <div class="score-runner-chip">
-          <span class="score-runner-rank">${rank}</span>
-          <span>${item.org}</span>
-          <span style="opacity:0.85;">· ${item.score.toLocaleString()} คะแนน</span>
+        <div class="score-runner-row">
+          <span class="score-runner-rank" aria-label="อันดับ ${rank}">${rank}</span>
+          <span class="score-runner-main">
+            <span class="score-runner-name">${item.org}</span>
+          </span>
+          <span class="score-runner-score">${item.score.toLocaleString()} คะแนน</span>
         </div>
       `;
     })
     .join("");
 
   container.innerHTML = `
-    <span class="score-runners-title">Runners-up</span>
-    ${chips}
+    <div class="score-runners-header">
+      <span class="score-runners-title">Runners-up</span>
+      <span class="score-runners-count">${runners.length} องค์กร</span>
+    </div>
+    <div class="score-runners-list">
+      ${rows}
+    </div>
   `;
   requestAnimationFrame(() => {
     container.classList.add("score-animate-in");

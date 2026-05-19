@@ -10,11 +10,48 @@
     },
     pageScripts: {
       home: [
-        "js/features/news/app.news.js?v=20260417-1",
+        "js/features/docs/app.file-links.js?v=20260417-1",
+        "js/features/news/app.news.js?v=20260417-1"
+      ],
+      scoreboard: [
+        "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
+        "js/features/project/app.calendar.js",
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1",
         "js/features/news/app.scoreboard.js?v=20260501-1"
       ],
-      news: "js/features/news/app.news.js?v=20260417-1",
-      "financial-docs": "js/features/docs/app.downloads.js?v=20260501-1",
+      "org-structure": "js/features/org/app.org.js?v=20260503-1",
+      news: [
+        "js/features/docs/app.file-links.js?v=20260417-1",
+        "js/features/news/app.news.js?v=20260417-1"
+      ],
+      "financial-docs": [
+        "js/features/docs/app.file-links.js?v=20260417-1",
+        "js/features/docs/app.downloads.js?v=20260501-1"
+      ],
+      "project-status": [
+        "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
+        "js/features/project/app.project-modal.js",
+        "js/features/project/app.charts.js",
+        "js/features/project/app.pie.js",
+        "js/features/project/app.calendar.js",
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1"
+      ],
+      "project-status-staff": [
+        "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
+        "js/features/project/app.project-modal.js",
+        "js/features/project/app.charts.js",
+        "js/features/project/app.pie.js",
+        "js/features/project/app.calendar.js",
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1"
+      ],
+      "dashboard-staff": [
+        "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
+        "js/features/project/app.project-modal.js",
+        "js/features/project/app.charts.js",
+        "js/features/project/app.pie.js",
+        "js/features/project/app.calendar.js",
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1"
+      ],
       "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260513-borrow-notifications-2",
       "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260513-borrow-notifications-2",
       "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
@@ -33,9 +70,18 @@
         "js/features/budget/app.budget-staff.js?v=20260510-round-wording-1"
       ],
       "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260504-1",
-      "content-management-staff": "js/features/content/app.content-management.js?v=20260506-1",
-      "content-news-staff": "js/features/content/app.content-management.js?v=20260506-1",
-      "content-documents-staff": "js/features/content/app.content-management.js?v=20260506-1",
+      "content-management-staff": [
+        "js/features/docs/app.file-links.js?v=20260417-1",
+        "js/features/content/app.content-management.js?v=20260506-1"
+      ],
+      "content-news-staff": [
+        "js/features/docs/app.file-links.js?v=20260417-1",
+        "js/features/content/app.content-management.js?v=20260506-1"
+      ],
+      "content-documents-staff": [
+        "js/features/docs/app.file-links.js?v=20260417-1",
+        "js/features/content/app.content-management.js?v=20260506-1"
+      ],
       "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260510-round-wording-1"
     },
     idlePrefetchPages: []

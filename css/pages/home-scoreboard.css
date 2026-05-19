@@ -259,41 +259,87 @@
 .score-runners {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 18px;
-  padding: 10px 14px;
+  padding: 14px;
+  border: 1px solid rgba(236, 72, 153, 0.16);
+}
+
+.score-runners-header {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  border: 1px solid rgba(236, 72, 153, 0.16);
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
 .score-runners-title {
   font-weight: 600;
-  margin-right: 8px;
+  font-size: 15px;
+  color: #111827;
 }
 
-.score-runner-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+.score-runners-count {
+  flex: 0 0 auto;
   border-radius: 999px;
-  background: rgba(255, 228, 244, 0.8);
-  border: 1px solid rgba(236, 72, 153, 0.2);
-  font-size: 13px;
+  padding: 3px 9px;
+  background: rgba(17, 24, 39, 0.05);
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.score-runners-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.score-runner-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(17, 24, 39, 0.07);
 }
 
 .score-runner-rank {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #ec4899, #f97316);
-  color: #ffffff;
+  background: rgba(17, 24, 39, 0.07);
+  color: #374151;
   font-size: 12px;
   font-weight: 700;
+}
+
+.score-runner-main {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.score-runner-name {
+  min-width: 0;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score-runner-score {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .score-loading {
@@ -378,27 +424,27 @@
   animation-delay: 200ms;
 }
 
-.score-animate-in .score-runner-chip {
+.score-animate-in .score-runner-row {
   animation: chip-fade 420ms ease both;
 }
 
-.score-animate-in .score-runner-chip:nth-child(2) {
+.score-animate-in .score-runner-row:nth-child(1) {
   animation-delay: 60ms;
 }
 
-.score-animate-in .score-runner-chip:nth-child(3) {
+.score-animate-in .score-runner-row:nth-child(2) {
   animation-delay: 120ms;
 }
 
-.score-animate-in .score-runner-chip:nth-child(4) {
+.score-animate-in .score-runner-row:nth-child(3) {
   animation-delay: 180ms;
 }
 
-.score-animate-in .score-runner-chip:nth-child(5) {
+.score-animate-in .score-runner-row:nth-child(4) {
   animation-delay: 240ms;
 }
 
-.score-animate-in .score-runner-chip:nth-child(6) {
+.score-animate-in .score-runner-row:nth-child(5) {
   animation-delay: 300ms;
 }
 
@@ -568,8 +614,32 @@
   }
 
   .score-runners {
-    gap: 8px;
     padding: 10px;
+  }
+
+  .score-runners-list {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .score-runner-row {
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    padding: 8px 9px;
+    border-radius: 12px;
+  }
+
+  .score-runner-rank {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .score-runner-name {
+    font-size: 13px;
+  }
+
+  .score-runner-score {
+    font-size: 12px;
   }
 
   .score-skeleton-title {
@@ -593,8 +663,8 @@
 }
 
 /* ตัวอักษรใน Runners-up เป็นสีดำ */
-.score-runners, .score-runners * {
-  color: #000 !important;
+.score-runners {
+  color: #111827;
 }
 
 /* กันไม่ให้กินพื้นที่แนวตั้งเยอะเกินไป */

@@ -5,6 +5,35 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|png|jpg|jpeg|webp|svg|woff|woff2|ttf)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(html|json|webmanifest)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=300, stale-while-revalidate=86400"
+          }
+        ]
+      },
+      {
+        "source": "sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
     ]
   },
   "firestore": {

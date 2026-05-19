@@ -819,7 +819,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     shouldHoldAppLoaderForHome = page === "home";
     if (shouldHoldAppLoaderForHome) {
       loaderStepKeys.add("news");
-      if (document.getElementById("scorePodium") && document.getElementById("scoreRunners")) {
+      const scoreboardPanel = document.getElementById("scorePodium")?.closest(".home-snap-panel");
+      const isScoreboardEnabled = scoreboardPanel && !scoreboardPanel.hidden && scoreboardPanel.dataset.scoreboardDisabled !== "true";
+      if (isScoreboardEnabled && document.getElementById("scoreRunners")) {
         loaderStepKeys.add("scoreboard");
       }
       if (document.getElementById("org-structure-content")) {
@@ -1373,10 +1375,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     if (page === "home") {
-      const loadHomeData = () => Promise.allSettled([
-        runFeatureTask("news", "loadNewsFromSheet"),
-        runFeatureTask("home", "initScoreboard")
-      ]);
+      const loadHomeData = () => {
+        const tasks = [runFeatureTask("news", "loadNewsFromSheet")];
+        const scoreboardPanel = document.getElementById("scorePodium")?.closest(".home-snap-panel");
+        if (scoreboardPanel && scoreboardPanel.dataset.scoreboardDisabled !== "true") {
+          tasks.push(runFeatureTask("scoreboard", "initScoreboard"));
+        }
+        return Promise.allSettled(tasks);
+      };
       scheduleIdleTask(() => runBackgroundTask(loadHomeData, "home-loader-data"));
     } else if (page === "news") {
       await runFeatureTask("news", "loadNewsFromSheet");
@@ -1388,7 +1394,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.sgcuAuditLog?.initDashboard?.();
     }
 
-    if (shouldLoadProjectDataForPage(page)) {
+    if (typeof shouldLoadProjectDataForPage === "function" && shouldLoadProjectDataForPage(page)) {
       if (page === "project-status" && !projectsLoaded) {
         setLoading(true, "public");
         setProjectDataLoadState("info", "กำลังโหลดข้อมูลโครงการ...");
@@ -1593,13 +1599,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ===== 5) Modal รายละเอียดโครงการ =====
+  const closeProjectModalSafely = () => {
+    if (typeof closeProjectModal === "function") {
+      closeProjectModal();
+      return;
+    }
+    if (projectModalEl && typeof closeDialog === "function") {
+      closeDialog(projectModalEl);
+      return;
+    }
+    if (projectModalEl) {
+      projectModalEl.classList.remove("show");
+      projectModalEl.setAttribute("aria-hidden", "true");
+    }
+  };
   if (projectModalCloseEl) {
-    projectModalCloseEl.addEventListener("click", closeProjectModal);
+    projectModalCloseEl.addEventListener("click", closeProjectModalSafely);
   }
   if (projectModalEl) {
     projectModalEl.addEventListener("click", (e) => {
       if (e.target === projectModalEl) {
-        closeProjectModal();
+        closeProjectModalSafely();
       }
     });
   }
@@ -1661,6 +1681,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }
         refreshProjectStatus(key);
+        if (typeof refreshScoreboardForProjectYear === "function") {
+          await refreshScoreboardForProjectYear();
+        }
       });
     }
     if (ctx.orgTypeSelect) {
@@ -1738,7 +1761,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ===== 7) โหลดโครงสร้างองค์กร (Home section) แบบ background =====
-  scheduleIdleTask(() => runBackgroundTask(loadOrgStructure, "orgStructure"));
+  scheduleIdleTask(() => runBackgroundTask(
+    () => runFeatureTask("org-structure", "loadOrgStructure"),
+    "orgStructure"
+  ));
 
   // ===== 8) Sorting ตารางโครงการ (public/staff) =====
   ["public", "staff"].forEach((key) => {

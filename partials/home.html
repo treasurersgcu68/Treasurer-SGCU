@@ -107,24 +107,125 @@
             </div>
           </section>
 
-          <!-- 3) ที่มา -->
+          <!-- 3) ที่มา / เริ่มต้นใช้งาน -->
           <section class="home-snap-panel" aria-label="ช่วงหลัก 3">
             <div class="home-snap-scroll">
               <div class="home-snap-content">
-                <section class="home-origin section-appear section-delay-1">
-                  <article class="home-origin-card panel panel-hover">
-                    <h3 class="home-origin-title">ที่มา</h3>
-                    <p>
-                      ในอดีต การติดตามสถานะโครงการและงบประมาณขององค์กรนิสิตยังขาดระบบกลางที่ชัดเจน
-                      ข้อมูลกระจัดกระจาย ไม่สามารถตรวจสอบได้อย่างครบถ้วนว่าโครงการใดได้รับงบประมาณเท่าใด
-                      ใช้จ่ายไปอย่างไร และมีสถานะการปิดโครงการในระดับใด
+                <section class="project-approval-workflow section-appear section-delay-1" aria-labelledby="projectApprovalWorkflowTitle">
+                  <header class="workflow-section-header">
+                    <span class="workflow-kicker">Treasurer SGCU</span>
+                    <h2 id="projectApprovalWorkflowTitle">Project Approval Workflow</h2>
+                    <p class="workflow-subtitle">ขั้นตอนการอนุมัติโครงการและงบประมาณสำหรับองค์กรนิสิต</p>
+                    <p class="workflow-description">
+                      แสดงลำดับขั้นตอนตั้งแต่การจัดทำโครงการ การตรวจสอบงบประมาณ จนถึงการอนุมัติโดยกิจการนิสิต
                     </p>
-                    <p>
-                      องค์การบริหารสโมสรนิสิตจุฬาลงกรณ์มหาวิทยาลัย วาระ 68 จึงได้พัฒนาเว็บไซต์นี้ขึ้น
-                      เพื่อรวบรวมข้อมูลทั้งหมดไว้ในที่เดียว ยกระดับการบริหารงานให้เป็นระบบ โปร่งใส
-                      และตรวจสอบได้ พร้อมทั้งสนับสนุนการทำงานและการส่งต่อองค์ความรู้สู่รุ่นถัดไป
-                    </p>
-                  </article>
+                  </header>
+
+                  <div class="workflow-phase-grid" aria-label="Project approval phases">
+                    <article class="workflow-phase-card is-preparation">
+                      <div class="workflow-card-topline">
+                        <div class="workflow-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 3v5h5" />
+                            <path d="M9 15h6" />
+                            <path d="M9 11h3" />
+                          </svg>
+                        </div>
+                        <span class="workflow-status-pill">Pending</span>
+                      </div>
+                      <div class="workflow-card-heading">
+                        <span class="workflow-phase-label">Phase 01</span>
+                        <h3>Preparation</h3>
+                        <p>การจัดเตรียมโครงการและจัดสรรงบประมาณภายในองค์กร</p>
+                      </div>
+                      <ul class="workflow-step-list">
+                        <li>กรอก Term Plan / Year Plan</li>
+                        <li>จัดทำรายละเอียดโครงการ</li>
+                        <li>ประชุมจัดสรรงบประมาณภายในองค์กร</li>
+                        <li>ปรับแก้เอกสารก่อนส่ง</li>
+                      </ul>
+                    </article>
+
+                    <article class="workflow-phase-card is-treasury">
+                      <div class="workflow-card-topline">
+                        <div class="workflow-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M12 2v20" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6" />
+                          </svg>
+                        </div>
+                        <span class="workflow-status-pill is-reviewing">Reviewing</span>
+                      </div>
+                      <div class="workflow-card-heading">
+                        <span class="workflow-phase-label">Phase 02</span>
+                        <h3>Treasury &amp; Secretariat Review</h3>
+                        <p>ฝ่ายเหรัญญิกและฝ่ายเลขานุการตรวจสอบความถูกต้องของงบประมาณและเอกสาร</p>
+                      </div>
+                      <ul class="workflow-step-list">
+                        <li>ตรวจสอบงบประมาณ</li>
+                        <li>ตรวจสอบเอกสารประกอบ</li>
+                        <li>แจ้งแก้ไขเอกสาร</li>
+                        <li>รวมเอกสารเพื่อเสนออนุกรรมการ</li>
+                      </ul>
+                    </article>
+
+                    <article class="workflow-phase-card is-council">
+                      <div class="workflow-card-topline">
+                        <div class="workflow-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M3 10h18" />
+                            <path d="M5 10v9" />
+                            <path d="M9 10v9" />
+                            <path d="M15 10v9" />
+                            <path d="M19 10v9" />
+                            <path d="M4 19h16" />
+                            <path d="M12 4 4 8h16z" />
+                          </svg>
+                        </div>
+                        <span class="workflow-status-pill is-council">Council Review</span>
+                      </div>
+                      <div class="workflow-card-heading">
+                        <span class="workflow-phase-label">Phase 03</span>
+                        <h3>Committee &amp; Council</h3>
+                        <p>กระบวนการพิจารณาโดยอนุกรรมการและที่ประชุมสภานิสิต</p>
+                      </div>
+                      <ul class="workflow-step-list">
+                        <li>ผ่านการพิจารณา 30 ตำแหน่ง / อนุกรรมการ</li>
+                        <li>เข้าที่ประชุมสภานิสิต</li>
+                      </ul>
+                      <details class="workflow-agenda">
+                        <summary>Meeting Agenda</summary>
+                        <ul>
+                          <li>วาระที่ 1</li>
+                          <li>วาระที่ 2</li>
+                          <li>วาระที่ 3</li>
+                        </ul>
+                      </details>
+                    </article>
+
+                    <article class="workflow-phase-card is-final">
+                      <div class="workflow-card-topline">
+                        <div class="workflow-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        </div>
+                        <span class="workflow-status-pill is-approved">Approved</span>
+                      </div>
+                      <div class="workflow-card-heading">
+                        <span class="workflow-phase-label">Phase 04</span>
+                        <h3>Final Approval</h3>
+                        <p>ขั้นตอนสุดท้ายก่อนสามารถดำเนินการใช้งบประมาณได้</p>
+                      </div>
+                      <ul class="workflow-step-list">
+                        <li>ปรับแก้เอกสารตามมติที่ประชุม</li>
+                        <li>เหรัญญิกและเลขานุการตรวจสอบ</li>
+                        <li>ส่งอนุมัติโดยกิจการนิสิต</li>
+                      </ul>
+                    </article>
+                  </div>
+
                 </section>
               </div>
             </div>

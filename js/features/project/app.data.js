@@ -437,6 +437,9 @@ async function switchProjectSourceYear(year) {
   const selectedYear = (year || "").toString().trim();
   if (!selectedYear || selectedYear === selectedProjectSourceYear) {
     syncProjectYearSelects(selectedProjectSourceYear);
+    if (typeof refreshScoreboardForProjectYear === "function") {
+      await refreshScoreboardForProjectYear();
+    }
     return;
   }
 
@@ -462,6 +465,9 @@ async function switchProjectSourceYear(year) {
       refreshProjectCalendarForContext(ctxKey);
     });
     renderHomeKpis();
+    if (typeof refreshScoreboardForProjectYear === "function") {
+      await refreshScoreboardForProjectYear();
+    }
   } catch (err) {
     console.error("เปลี่ยนปี Project Status ไม่สำเร็จ - app.data.js", err);
     recordLoadError("projects", `โหลดข้อมูลปีการศึกษา ${selectedYear} ไม่สำเร็จ`, { showRetry: true });

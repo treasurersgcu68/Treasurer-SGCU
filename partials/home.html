@@ -21,20 +21,58 @@
                       <!-- ปุ่มหลัก -->
                       <div class="home-hero-actions">
                         <button
-                          class="btn-primary"
+                          class="btn-primary home-main-action is-primary"
                           type="button"
                           data-goto-page="project-status"
                         >
-                          ดูสถานะโครงการทั้งหมด
+                          <span class="home-main-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <path d="M4 19V5" />
+                              <path d="M4 19h16" />
+                              <path d="M8 16v-5" />
+                              <path d="M12 16V8" />
+                              <path d="M16 16v-3" />
+                            </svg>
+                          </span>
+                          <span>ดูสถานะโครงการทั้งหมด</span>
                         </button>
                         <button
-                          class="btn-secondary"
+                          class="btn-secondary home-main-action is-secondary"
                           type="button"
                           data-goto-page="meeting-room-booking"
                         >
-                          จองห้องประชุม
+                          <span class="home-main-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <path d="M8 2v4" />
+                              <path d="M16 2v4" />
+                              <path d="M3 10h18" />
+                              <path d="M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+                            </svg>
+                          </span>
+                          <span>จองห้องประชุม</span>
                         </button>
                       </div>
+                      <nav class="home-quick-actions" aria-label="ทางลัดบริการฝ่ายเหรัญญิก">
+                        <button class="home-quick-action" type="button" data-goto-page="budget-approval-request">
+                          <span class="home-quick-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <path d="M12 2v20" />
+                              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6" />
+                            </svg>
+                          </span>
+                          <span>ยื่นของบประมาณ</span>
+                        </button>
+                        <button class="home-quick-action" type="button" data-goto-page="borrow-assets">
+                          <span class="home-quick-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                              <path d="M3.3 7 12 12l8.7-5" />
+                              <path d="M12 22V12" />
+                            </svg>
+                          </span>
+                          <span>ยืม-คืนพัสดุ</span>
+                        </button>
+                      </nav>
                       <button class="home-scroll-hint" type="button" data-home-scroll-next>
                         <span class="home-scroll-hint-dot" aria-hidden="true"></span>
                         เลื่อนลงเพื่อดูข่าวและประกาศล่าสุด

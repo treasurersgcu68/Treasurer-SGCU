@@ -1391,6 +1391,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else if (["content-management-staff", "content-news-staff", "content-documents-staff"].includes(page)) {
       await runFeatureTask(page, "initContentManagementStaffPage");
     } else if (page === "system-data-staff") {
+      window.sgcuHealthCheck?.init?.();
       window.sgcuAuditLog?.initDashboard?.();
     }
 

@@ -65,8 +65,27 @@ function hasDownloadLink(value) {
   return !!text && text !== "-" && text !== "--";
 }
 
+function normalizeDownloadOrder(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : Number.POSITIVE_INFINITY;
+}
+
+function compareDownloadDocuments(a, b) {
+  return (
+    normalizeDownloadOrder(a.categoryOrder) - normalizeDownloadOrder(b.categoryOrder) ||
+    (a.category || "").localeCompare(b.category || "", "th") ||
+    normalizeDownloadOrder(a.sortOrder) - normalizeDownloadOrder(b.sortOrder) ||
+    (a.name || "").localeCompare(b.name || "", "th")
+  );
+}
+
+function hasExplicitDownloadOrder(items) {
+  return (items || []).some((item) => Number.isFinite(Number(item.categoryOrder)) || Number.isFinite(Number(item.sortOrder)));
+}
+
 function normalizeDownloadFirestoreItem(docSnap) {
   const data = docSnap?.data ? docSnap.data() : {};
+  const links = data.links || {};
   const name = (data.name || data.title || "").toString().trim();
   if (!name) return null;
   return {
@@ -74,11 +93,13 @@ function normalizeDownloadFirestoreItem(docSnap) {
     name,
     desc: (data.desc || data.description || "").toString().trim(),
     org: (data.org || data.organization || "").toString().trim(),
-    exUrl: (data.exUrl || data.exampleUrl || "").toString().trim(),
-    pdfUrl: (data.pdfUrl || "").toString().trim(),
-    docxUrl: (data.docxUrl || "").toString().trim(),
-    xlsxUrl: (data.xlsxUrl || "").toString().trim(),
-    category: (data.category || "").toString().trim() || "อื่น ๆ"
+    exUrl: (data.exUrl || data.exampleUrl || links.ex || "").toString().trim(),
+    pdfUrl: (data.pdfUrl || links.pdf || "").toString().trim(),
+    docxUrl: (data.docxUrl || links.docx || "").toString().trim(),
+    xlsxUrl: (data.xlsxUrl || links.xlsx || "").toString().trim(),
+    category: (data.category || "").toString().trim() || "อื่น ๆ",
+    categoryOrder: data.categoryOrder,
+    sortOrder: data.sortOrder
   };
 }
 
@@ -94,7 +115,9 @@ function normalizeDownloadSheetRow(row, index) {
     pdfUrl: (row?.[4] || "").toString().trim(),
     docxUrl: (row?.[5] || "").toString().trim(),
     xlsxUrl: (row?.[6] || "").toString().trim(),
-    category: (row?.[7] || "").toString().trim() || "อื่น ๆ"
+    category: (row?.[7] || "").toString().trim() || "อื่น ๆ",
+    categoryOrder: row?.[8],
+    sortOrder: row?.[9]
   };
 }
 
@@ -147,7 +170,7 @@ async function loadDownloadDocumentsFromFirestore() {
     const item = normalizeDownloadFirestoreItem(docSnap);
     if (item) items.push(item);
   });
-  return items.sort((a, b) => (a.category || "").localeCompare(b.category || "", "th") || (a.name || "").localeCompare(b.name || "", "th"));
+  return items.sort(compareDownloadDocuments);
 }
 
 function ensureDownloadPreviewModal() {
@@ -411,6 +434,9 @@ async function loadDownloadDocuments() {
       .slice(1)
       .map((row, index) => normalizeDownloadSheetRow(row, index))
       .filter(Boolean);
+    if (hasExplicitDownloadOrder(sheetItems)) {
+      sheetItems.sort(compareDownloadDocuments);
+    }
     const categoryNames = renderDownloadDocuments(listEl, sheetItems);
     if (!categoryNames.length) {
       setDownloadListState(listEl, "empty", "ยังไม่มีเอกสารดาวน์โหลด");

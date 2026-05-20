@@ -52,11 +52,12 @@
 | `description` | string | no | รายละเอียด |
 | `organization` | string | no | องค์กรที่เกี่ยวข้อง |
 | `category` | string | yes | หมวดหมู่ |
+| `categoryOrder` | number | no | ใช้เรียงหมวดหมู่ ค่าน้อยขึ้นก่อน ระบบ staff คำนวณให้จากปุ่มขึ้น/ลง |
 | `links.ex` | string | no | ลิงก์ EX |
 | `links.pdf` | string | no | ลิงก์ PDF |
 | `links.docx` | string | no | ลิงก์ DOCX |
 | `links.xlsx` | string | no | ลิงก์ XLSX |
-| `sortOrder` | number | no | ใช้เรียงภายในหมวด |
+| `sortOrder` | number | no | ใช้เรียงเอกสารภายในหมวด ค่าน้อยขึ้นก่อน ระบบ staff คำนวณให้จากปุ่มขึ้น/ลง |
 | `status` | string | yes | `published`, `hidden`, `archived` |
 | `createdAt` | timestamp | yes | server timestamp |
 | `updatedAt` | timestamp | yes | server timestamp |

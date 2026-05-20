@@ -35,6 +35,13 @@
   const runCodeBtnEl = document.getElementById("budgetRunProjectCodeBtn");
   const clearCodeBtnEl = document.getElementById("budgetClearProjectCodeBtn");
   const actionMessageEl = document.getElementById("budgetStaffActionMessage");
+  const clearCodeModalEl = document.getElementById("budgetProjectCodeClearModal");
+  const clearCodeCloseBtnEl = document.getElementById("budgetProjectCodeClearCloseBtn");
+  const clearCodeCancelBtnEl = document.getElementById("budgetProjectCodeClearCancelBtn");
+  const clearCodeConfirmBtnEl = document.getElementById("budgetProjectCodeClearConfirmBtn");
+  const clearCodeCountEl = document.getElementById("budgetProjectCodeClearCount");
+  const clearCodeListEl = document.getElementById("budgetProjectCodeClearList");
+  const clearCodeMessageEl = document.getElementById("budgetProjectCodeClearMessage");
 
   const formEl = document.getElementById("budgetStaffManageForm");
   const saveBtnEl = document.getElementById("budgetStaffManageSaveBtn");
@@ -98,6 +105,13 @@
     !runCodeBtnEl ||
     !clearCodeBtnEl ||
     !actionMessageEl ||
+    !clearCodeModalEl ||
+    !clearCodeCloseBtnEl ||
+    !clearCodeCancelBtnEl ||
+    !clearCodeConfirmBtnEl ||
+    !clearCodeCountEl ||
+    !clearCodeListEl ||
+    !clearCodeMessageEl ||
     !formEl ||
     !saveBtnEl ||
     !cancelEditBtnEl ||
@@ -132,6 +146,9 @@
   if (roundDeleteModalEl.parentElement !== document.body) {
     document.body.appendChild(roundDeleteModalEl);
   }
+  if (clearCodeModalEl.parentElement !== document.body) {
+    document.body.appendChild(clearCodeModalEl);
+  }
 
   const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
   const firestoreCollections = appConfig.firestore?.collections || {};
@@ -156,6 +173,8 @@
   let budgetActiveRounds = [];
   let roundDeleteResolve = null;
   let roundDeleteContext = null;
+  let clearCodeResolve = null;
+  let clearCodeContext = null;
 
   const formatMoney = (value) => {
     const num = Number(value || 0);
@@ -1502,6 +1521,38 @@
     });
   };
 
+  const closeClearCodeModal = (result = false) => {
+    if (!clearCodeResolve) return;
+    const resolve = clearCodeResolve;
+    clearCodeResolve = null;
+    clearCodeContext = null;
+    closeDialog(clearCodeModalEl);
+    resolve(result);
+  };
+
+  const openClearCodeModal = (rows) => {
+    clearCodeContext = { rows: Array.isArray(rows) ? rows : [] };
+    const count = clearCodeContext.rows.length;
+    clearCodeCountEl.textContent = `จะยกเลิกรหัสโครงการ ${count.toLocaleString("th-TH")} รายการ`;
+    clearCodeMessageEl.textContent = "";
+    const previewRows = clearCodeContext.rows.slice(0, 5);
+    clearCodeListEl.innerHTML = previewRows.map((row) => {
+      const code = escapeHtml(normalizeText(row.projectCodeGenerated) || "-");
+      const name = escapeHtml(normalizeText(row.projectName) || normalizeText(row.organizationName) || "-");
+      return `<li><code>${code}</code><span>${name}</span></li>`;
+    }).join("");
+    if (count > previewRows.length) {
+      clearCodeListEl.insertAdjacentHTML(
+        "beforeend",
+        `<li><code>+${(count - previewRows.length).toLocaleString("th-TH")}</code><span>รายการอื่นที่มีรหัสโครงการแล้ว</span></li>`
+      );
+    }
+    openDialog(clearCodeModalEl, { focusSelector: "#budgetProjectCodeClearCancelBtn" });
+    return new Promise((resolve) => {
+      clearCodeResolve = resolve;
+    });
+  };
+
   const deleteRoundRequests = async (firestore, rows) => {
     const requestRowsToDelete = (Array.isArray(rows) ? rows : []).filter((row) => normalizeText(row.id));
     if (!requestRowsToDelete.length) return 0;
@@ -1746,7 +1797,7 @@
       return;
     }
 
-    const ok = window.confirm(`ยืนยันยกเลิกรหัสโครงการที่รันแล้ว ${rowsToClear.length} รายการ ?`);
+    const ok = await openClearCodeModal(rowsToClear);
     if (!ok) return;
 
     setMessage(actionMessageEl, "กำลังยกเลิกรหัสโครงการ...", "#1d4ed8");
@@ -1956,6 +2007,15 @@
   });
   roundDeleteModalEl.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeRoundDeleteModal(false);
+  });
+  clearCodeCloseBtnEl.addEventListener("click", () => closeClearCodeModal(false));
+  clearCodeCancelBtnEl.addEventListener("click", () => closeClearCodeModal(false));
+  clearCodeConfirmBtnEl.addEventListener("click", () => closeClearCodeModal(true));
+  clearCodeModalEl.addEventListener("click", (event) => {
+    if (event.target === clearCodeModalEl) closeClearCodeModal(false);
+  });
+  clearCodeModalEl.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeClearCodeModal(false);
   });
   activeRoundListEl.addEventListener("click", (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;

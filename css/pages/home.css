@@ -76,6 +76,17 @@
   margin: auto;
 }
 
+@media (min-width: 961px) {
+  .main:has(.home-page-view.active) {
+    max-width: 1090px;
+  }
+
+  .home-snap-panel:first-child .home-snap-content,
+  .home-snap-panel:first-child .home-hero-inner {
+    max-width: 1050px;
+  }
+}
+
 .home-page-view .home-hero {
   min-height: auto;
   padding: 0;
@@ -255,12 +266,13 @@
 
 .home-hero-inner {
   max-width: 1120px;
+  width: 100%;
   margin: 0 auto;
   padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 56px;
+  gap: clamp(88px, 8vw, 112px);
 }
 
 /* ซ้าย: ข้อความ */
@@ -286,6 +298,8 @@
 .home-hero-subtitle {
   max-width: 520px;
   font-size: 15px;
+  line-height: 1.85;
+  font-weight: 400;
   color: #4b5563;
   margin: 0 0 24px;
   overflow-wrap: anywhere;

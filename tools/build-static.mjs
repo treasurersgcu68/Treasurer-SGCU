@@ -14,6 +14,7 @@ const copyIgnoreNames = new Set([
   ".gitignore",
   ".DS_Store",
   ".github",
+  "firebase-debug.log",
   "node_modules",
   "package.json",
   "package-lock.json",
@@ -24,6 +25,7 @@ const copyIgnoreNames = new Set([
 const scanIgnoreNames = new Set([
   ".git",
   ".DS_Store",
+  "firebase-debug.log",
   "node_modules"
 ]);
 

@@ -250,13 +250,42 @@ function renderScoreSkeleton(podiumEl, runnersEl) {
     </div>
   `;
 
-  runnersEl.style.display = "flex";
+  runnersEl.style.display = "block";
   runnersEl.innerHTML = `
-    <span class="score-skeleton-title" aria-hidden="true"></span>
-    <span class="score-skeleton-chip" aria-hidden="true"></span>
-    <span class="score-skeleton-chip" aria-hidden="true"></span>
-    <span class="score-skeleton-chip" aria-hidden="true"></span>
-    <span class="score-skeleton-chip score-skeleton-chip-short" aria-hidden="true"></span>
+    <div class="score-runners-header score-skeleton-runners-header" aria-hidden="true">
+      <span class="score-skeleton-title"></span>
+      <span class="score-skeleton-count"></span>
+    </div>
+    <div class="score-runners-list score-skeleton-runners-list" aria-hidden="true">
+      <div class="score-runner-row score-skeleton-runner-row">
+        <span class="score-skeleton-rank"></span>
+        <span class="score-skeleton-runner-main">
+          <span class="score-skeleton-line score-skeleton-runner-name"></span>
+        </span>
+        <span class="score-skeleton-runner-score"></span>
+      </div>
+      <div class="score-runner-row score-skeleton-runner-row">
+        <span class="score-skeleton-rank"></span>
+        <span class="score-skeleton-runner-main">
+          <span class="score-skeleton-line score-skeleton-runner-name score-skeleton-runner-name-wide"></span>
+        </span>
+        <span class="score-skeleton-runner-score"></span>
+      </div>
+      <div class="score-runner-row score-skeleton-runner-row">
+        <span class="score-skeleton-rank"></span>
+        <span class="score-skeleton-runner-main">
+          <span class="score-skeleton-line score-skeleton-runner-name"></span>
+        </span>
+        <span class="score-skeleton-runner-score"></span>
+      </div>
+      <div class="score-runner-row score-skeleton-runner-row">
+        <span class="score-skeleton-rank"></span>
+        <span class="score-skeleton-runner-main">
+          <span class="score-skeleton-line score-skeleton-runner-name score-skeleton-runner-name-short"></span>
+        </span>
+        <span class="score-skeleton-runner-score"></span>
+      </div>
+    </div>
   `;
 }
 

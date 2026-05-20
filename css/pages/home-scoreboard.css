@@ -4,6 +4,14 @@
   margin-top: 40px;
 }
 
+.home-scoreboard .home-section-header p {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
 .scoreboard-wrapper {
   background:
     radial-gradient(circle at top left, rgba(255, 228, 244, 0.9), transparent 55%),
@@ -98,7 +106,9 @@
 .score-skeleton-line,
 .score-skeleton-badge,
 .score-skeleton-title,
-.score-skeleton-chip {
+.score-skeleton-count,
+.score-skeleton-rank,
+.score-skeleton-runner-score {
   background: linear-gradient(
     90deg,
     rgba(252, 231, 243, 0.88) 0%,
@@ -168,14 +178,52 @@
   margin-right: 8px;
 }
 
-.score-skeleton-chip {
-  width: 150px;
-  height: 30px;
+.score-skeleton-count {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 22px;
   border-radius: 999px;
 }
 
-.score-skeleton-chip-short {
-  width: 112px;
+.score-skeleton-runners-list {
+  pointer-events: none;
+}
+
+.score-skeleton-runner-row {
+  min-height: 46px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.score-skeleton-rank {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.score-skeleton-runner-main {
+  min-width: 0;
+  display: block;
+}
+
+.score-skeleton-runner-name {
+  display: block;
+  width: 78%;
+  height: 12px;
+  margin-bottom: 0;
+}
+
+.score-skeleton-runner-name-wide {
+  width: 92%;
+}
+
+.score-skeleton-runner-name-short {
+  width: 62%;
+}
+
+.score-skeleton-runner-score {
+  width: 76px;
+  height: 12px;
+  border-radius: 999px;
 }
 
 /* เสาให้สูงไม่เท่ากัน */
@@ -488,6 +536,26 @@
 }
 /* responsive (scoreboard) */
 @media (max-width: 768px) {
+  .home-scoreboard .home-section-header {
+    margin-bottom: 16px;
+    padding-inline: 6px;
+  }
+
+  .home-scoreboard .home-section-header h2 {
+    font-size: 20px;
+    line-height: 1.28;
+  }
+
+  .home-scoreboard .home-section-header p {
+    max-width: 30rem;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .home-scoreboard .home-section-header p br {
+    display: none;
+  }
+
   .score-podium {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -567,6 +635,21 @@
 }
 
 @media (max-width: 480px) {
+  .home-scoreboard .home-section-header {
+    margin-bottom: 14px;
+  }
+
+  .home-scoreboard .home-section-header h2 {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  .home-scoreboard .home-section-header p {
+    max-width: 26rem;
+    font-size: 12.5px;
+    line-height: 1.58;
+  }
+
   .scoreboard-wrapper {
     padding: 18px 12px 16px;
     border-radius: 20px;
@@ -656,9 +739,16 @@
     width: 76px;
   }
 
-  .score-skeleton-chip {
-    flex: 1 1 120px;
-    min-width: 0;
+  .score-skeleton-runner-row {
+    min-height: 44px;
+  }
+
+  .score-skeleton-count {
+    width: 62px;
+  }
+
+  .score-skeleton-runner-score {
+    width: 68px;
   }
 }
 

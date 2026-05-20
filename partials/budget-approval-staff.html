@@ -379,4 +379,41 @@
             </div>
           </div>
         </div>
+
+        <div
+          id="budgetProjectCodeClearModal"
+          class="modal budget-code-clear-modal"
+          aria-hidden="true"
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="budgetProjectCodeClearTitle"
+        >
+          <div class="modal-dialog budget-code-clear-dialog">
+            <div class="modal-header">
+              <div>
+                <div id="budgetProjectCodeClearTitle" class="modal-title">ยืนยันยกเลิกรหัสที่รันแล้ว</div>
+                <div class="modal-subtitle">ระบบจะล้างเฉพาะรหัสโครงการที่ถูกสร้างไว้ รายการคำของบยังอยู่เหมือนเดิม</div>
+              </div>
+              <button id="budgetProjectCodeClearCloseBtn" class="modal-close" type="button" aria-label="ปิด">×</button>
+            </div>
+            <div class="modal-body budget-code-clear-body">
+              <div class="budget-code-clear-warning">
+                <div class="budget-code-clear-mark" aria-hidden="true">!</div>
+                <div>
+                  <div id="budgetProjectCodeClearCount" class="budget-code-clear-count">-</div>
+                  <div class="budget-code-clear-copy">หลังยืนยันแล้ว ต้องกด “รันรหัสโครงการ” ใหม่หากต้องการจัดลำดับรหัสอีกครั้ง</div>
+                </div>
+              </div>
+              <div class="budget-code-clear-preview">
+                <div class="budget-code-clear-preview-title">ตัวอย่างรหัสที่จะถูกยกเลิก</div>
+                <ul id="budgetProjectCodeClearList" class="budget-code-clear-list"></ul>
+              </div>
+              <div id="budgetProjectCodeClearMessage" class="section-text-sm budget-code-clear-message" aria-live="polite"></div>
+            </div>
+            <div class="modal-actions budget-code-clear-actions">
+              <button id="budgetProjectCodeClearCancelBtn" class="btn-ghost" type="button">ยกเลิก</button>
+              <button id="budgetProjectCodeClearConfirmBtn" class="btn-primary budget-code-clear-confirm" type="button">ยืนยันยกเลิกรหัส</button>
+            </div>
+          </div>
+        </div>
       </section>

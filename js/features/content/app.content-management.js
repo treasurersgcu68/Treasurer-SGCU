@@ -685,7 +685,9 @@ function initContentDocumentsStaffPage() {
   };
   const state = {
     items: [],
+    source: "",
     listStatus: "",
+    isReordering: false,
     filters: {
       query: "",
       category: "all",
@@ -722,6 +724,15 @@ function initContentDocumentsStaffPage() {
     return !!text && text !== "-" && text !== "--";
   };
 
+  const normalizeOrder = (value) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : Number.POSITIVE_INFINITY;
+  };
+
+  const isFiniteOrder = (value) => Number.isFinite(Number(value));
+
+  const hasExplicitOrder = (items) => (items || []).some((item) => isFiniteOrder(item.categoryOrder) || isFiniteOrder(item.sortOrder));
+
   const slugifyDocumentId = (value) => {
     const base = (value || "")
       .toString()
@@ -736,6 +747,7 @@ function initContentDocumentsStaffPage() {
 
   const normalizeDocumentFirestoreDoc = (docSnap) => {
     const data = docSnap?.data ? docSnap.data() : {};
+    const links = data.links || {};
     const name = (data.name || data.title || "").toString().trim();
     if (!name) return null;
     const item = {
@@ -743,11 +755,13 @@ function initContentDocumentsStaffPage() {
       name,
       desc: (data.desc || data.description || "").toString().trim(),
       org: (data.org || data.organization || "").toString().trim(),
-      exUrl: (data.exUrl || data.exampleUrl || "").toString().trim(),
-      pdfUrl: (data.pdfUrl || "").toString().trim(),
-      docxUrl: (data.docxUrl || "").toString().trim(),
-      xlsxUrl: (data.xlsxUrl || "").toString().trim(),
+      exUrl: (data.exUrl || data.exampleUrl || links.ex || "").toString().trim(),
+      pdfUrl: (data.pdfUrl || links.pdf || "").toString().trim(),
+      docxUrl: (data.docxUrl || links.docx || "").toString().trim(),
+      xlsxUrl: (data.xlsxUrl || links.xlsx || "").toString().trim(),
       category: (data.category || "").toString().trim() || "อื่น ๆ",
+      categoryOrder: data.categoryOrder,
+      sortOrder: data.sortOrder,
       status: (data.status || "published").toString()
     };
     item.formats = [
@@ -771,7 +785,9 @@ function initContentDocumentsStaffPage() {
       pdfUrl: (row?.[4] || "").toString().trim(),
       docxUrl: (row?.[5] || "").toString().trim(),
       xlsxUrl: (row?.[6] || "").toString().trim(),
-      category: (row?.[7] || "").toString().trim() || "อื่น ๆ"
+      category: (row?.[7] || "").toString().trim() || "อื่น ๆ",
+      categoryOrder: row?.[8],
+      sortOrder: row?.[9]
     };
     item.formats = [
       hasLink(item.exUrl) ? "ex" : "",
@@ -783,7 +799,44 @@ function initContentDocumentsStaffPage() {
   };
 
   const sortDocuments = (items) =>
-    items.sort((a, b) => (a.category || "").localeCompare(b.category || "", "th") || (a.name || "").localeCompare(b.name || "", "th"));
+    items.sort(
+      (a, b) =>
+        normalizeOrder(a.categoryOrder) - normalizeOrder(b.categoryOrder) ||
+        (a.category || "").localeCompare(b.category || "", "th") ||
+        normalizeOrder(a.sortOrder) - normalizeOrder(b.sortOrder) ||
+        (a.name || "").localeCompare(b.name || "", "th")
+    );
+
+  const getOrderedCategories = (items = state.items) => {
+    const categoryMap = new Map();
+    items.forEach((item) => {
+      const category = item.category || "อื่น ๆ";
+      const order = normalizeOrder(item.categoryOrder);
+      const current = categoryMap.get(category);
+      if (!current || order < current.order) {
+        categoryMap.set(category, { category, order });
+      }
+    });
+    return Array.from(categoryMap.values()).sort((a, b) => a.order - b.order || a.category.localeCompare(b.category, "th"));
+  };
+
+  const getCategoryOrderFor = (category) => {
+    const found = getOrderedCategories().find((item) => item.category === category);
+    if (found && Number.isFinite(found.order)) return found.order;
+    const finiteOrders = getOrderedCategories().map((item) => item.order).filter(Number.isFinite);
+    return finiteOrders.length ? Math.max(...finiteOrders) + 10 : (getOrderedCategories().length + 1) * 10;
+  };
+
+  const getNextSortOrder = (category) => {
+    const finiteOrders = state.items
+      .filter((item) => (item.category || "อื่น ๆ") === category)
+      .map((item) => normalizeOrder(item.sortOrder))
+      .filter(Number.isFinite);
+    return finiteOrders.length ? Math.max(...finiteOrders) + 10 : 10;
+  };
+
+  const getDocumentsInCategory = (category) =>
+    sortDocuments(state.items.filter((item) => (item.category || "อื่น ๆ") === category));
 
   const setFormDisabled = (disabled) => {
     Array.from(form.elements).forEach((el) => {
@@ -843,7 +896,7 @@ function initContentDocumentsStaffPage() {
   };
 
   const syncFilterOptions = () => {
-    const categories = Array.from(new Set(state.items.map((item) => item.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "th"));
+    const categories = getOrderedCategories().map((item) => item.category);
     const orgs = Array.from(new Set(state.items.map((item) => item.org).filter(Boolean))).sort((a, b) => a.localeCompare(b, "th"));
     syncFilterSelectOptions(filters.category, categories, "ทุกหมวด");
     syncFilterSelectOptions(filters.org, orgs, "ทุกองค์กร");
@@ -868,17 +921,41 @@ function initContentDocumentsStaffPage() {
     return `<a class="content-documents-file-link" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
   };
 
+  const buildOrderControls = (item) => {
+    const isFirestoreSource = state.source === "firestore";
+    const categories = getOrderedCategories();
+    const categoryIndex = categories.findIndex((entry) => entry.category === item.category);
+    const categoryItems = getDocumentsInCategory(item.category || "อื่น ๆ");
+    const itemIndex = categoryItems.findIndex((entry) => entry.id === item.id);
+    const disabledAttr = (disabled) => (disabled || !isFirestoreSource || state.isReordering ? " disabled" : "");
+    const title = isFirestoreSource ? "" : " title=\"จัดลำดับได้หลังบันทึกข้อมูลลง Firestore\"";
+    return `
+      <div class="content-documents-order-controls"${title}>
+        <div class="content-documents-order-group">
+          <span>หมวด</span>
+          <button type="button" class="content-documents-order-btn" aria-label="ย้ายหมวดขึ้น" data-category-reorder="up" data-category="${esc(item.category || "อื่น ๆ")}"${disabledAttr(categoryIndex <= 0)}>↑</button>
+          <button type="button" class="content-documents-order-btn" aria-label="ย้ายหมวดลง" data-category-reorder="down" data-category="${esc(item.category || "อื่น ๆ")}"${disabledAttr(categoryIndex < 0 || categoryIndex >= categories.length - 1)}>↓</button>
+        </div>
+        <div class="content-documents-order-group">
+          <span>เอกสาร</span>
+          <button type="button" class="content-documents-order-btn" aria-label="ย้ายเอกสารขึ้น" data-document-reorder="up" data-document-id="${esc(item.id)}"${disabledAttr(itemIndex <= 0)}>↑</button>
+          <button type="button" class="content-documents-order-btn" aria-label="ย้ายเอกสารลง" data-document-reorder="down" data-document-id="${esc(item.id)}"${disabledAttr(itemIndex < 0 || itemIndex >= categoryItems.length - 1)}>↓</button>
+        </div>
+      </div>
+    `;
+  };
+
   const renderRows = () => {
     const visibleItems = getFilteredItems();
     const loadStatus = state.listStatus ? ` · ${state.listStatus}` : "";
     const sourceLabel = state.source === "firestore" ? "Firestore" : "Google Sheet";
     tableCaption.textContent = `แสดง ${visibleItems.length.toLocaleString("th-TH")} จาก ${state.items.length.toLocaleString("th-TH")} เอกสารจาก ${sourceLabel}${loadStatus}`;
     if (!state.items.length) {
-      tableBody.innerHTML = `<tr><td colspan="4">ยังไม่มีเอกสารใน Sheet</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="5">ยังไม่มีเอกสารใน Sheet</td></tr>`;
       return;
     }
     if (!visibleItems.length) {
-      tableBody.innerHTML = `<tr><td colspan="4">ไม่พบเอกสารตามตัวกรอง</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="5">ไม่พบเอกสารตามตัวกรอง</td></tr>`;
       return;
     }
     tableBody.innerHTML = visibleItems
@@ -898,6 +975,7 @@ function initContentDocumentsStaffPage() {
             <td>${esc(item.category || "-")}</td>
             <td>${esc(item.org || "-")}</td>
             <td><div class="content-documents-file-links">${links || "-"}</div></td>
+            <td>${buildOrderControls(item)}</td>
           </tr>
         `;
       })
@@ -938,16 +1016,25 @@ function initContentDocumentsStaffPage() {
     const csvText = await response.text();
     const parsed = window.Papa.parse(csvText, { header: false, skipEmptyLines: true });
     if (parsed.errors?.length) throw new Error(parsed.errors[0].message);
-    return (parsed.data || [])
+    const items = (parsed.data || [])
       .slice(1)
       .map((row, index) => normalizeDocumentRow(row, index))
       .filter(Boolean);
+    return hasExplicitOrder(items)
+      ? items.sort(
+        (a, b) =>
+          normalizeOrder(a.categoryOrder) - normalizeOrder(b.categoryOrder) ||
+          (a.category || "").localeCompare(b.category || "", "th") ||
+          normalizeOrder(a.sortOrder) - normalizeOrder(b.sortOrder) ||
+          (a.name || "").localeCompare(b.name || "", "th")
+      )
+      : items;
   };
 
   const loadDocuments = async () => {
     state.listStatus = "";
     tableCaption.textContent = "กำลังโหลดเอกสาร...";
-    tableBody.innerHTML = `<tr><td colspan="4">กำลังโหลดเอกสาร...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="5">กำลังโหลดเอกสาร...</td></tr>`;
     try {
       const firestoreItems = await loadDocumentsFromFirestore();
       if (Array.isArray(firestoreItems) && firestoreItems.length) {
@@ -965,7 +1052,7 @@ function initContentDocumentsStaffPage() {
     } catch (error) {
       console.error("โหลดเอกสารการเงินไม่สำเร็จ - app.content-management.js", error);
       tableCaption.textContent = "โหลดเอกสารไม่สำเร็จ";
-      tableBody.innerHTML = `<tr><td colspan="4">ไม่สามารถโหลดเอกสารจาก Firestore หรือ Google Sheet ได้</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="5">ไม่สามารถโหลดเอกสารจาก Firestore หรือ Google Sheet ได้</td></tr>`;
       setMessage("ตรวจลิงก์ Sheet และสิทธิ์การเผยแพร่ CSV", "error");
     }
   };
@@ -985,10 +1072,16 @@ function initContentDocumentsStaffPage() {
       const editorEmail = currentUser?.email || "";
       let importedCount = 0;
       const idCounts = {};
+      const categoryOrders = new Map();
+      const sortOrderCounts = new Map();
       for (const item of items) {
         const baseDocId = slugifyDocumentId(`${item.category}-${item.org}-${item.name}`);
         idCounts[baseDocId] = (idCounts[baseDocId] || 0) + 1;
         const docId = idCounts[baseDocId] > 1 ? `${baseDocId}-${idCounts[baseDocId]}` : baseDocId;
+        if (!categoryOrders.has(item.category)) {
+          categoryOrders.set(item.category, isFiniteOrder(item.categoryOrder) ? Number(item.categoryOrder) : (categoryOrders.size + 1) * 10);
+        }
+        sortOrderCounts.set(item.category, (sortOrderCounts.get(item.category) || 0) + 1);
         await firestore.setDoc(
           firestore.doc(firestore.db, DOCUMENTS_COLLECTION, docId),
           {
@@ -1000,6 +1093,8 @@ function initContentDocumentsStaffPage() {
             docxUrl: item.docxUrl,
             xlsxUrl: item.xlsxUrl,
             category: item.category,
+            categoryOrder: categoryOrders.get(item.category),
+            sortOrder: isFiniteOrder(item.sortOrder) ? Number(item.sortOrder) : sortOrderCounts.get(item.category) * 10,
             status: "published",
             updatedAt: firestore.serverTimestamp(),
             updatedBy: editorEmail,
@@ -1034,10 +1129,12 @@ function initContentDocumentsStaffPage() {
       "ลิงก์ PDF": item.pdfUrl,
       "ลิงก์ DOCX": item.docxUrl,
       "ลิงก์ XLSX": item.xlsxUrl,
-      "หมวดหมู่": item.category
+      "หมวดหมู่": item.category,
+      "ลำดับหมวดหมู่": isFiniteOrder(item.categoryOrder) ? Number(item.categoryOrder) : "",
+      "ลำดับเอกสาร": isFiniteOrder(item.sortOrder) ? Number(item.sortOrder) : ""
     }));
     const ok = window.sgcuCsvExport.download({
-      headers: ["ชื่อเอกสาร", "รายละเอียด", "องค์กร", "ลิงก์ EX", "ลิงก์ PDF", "ลิงก์ DOCX", "ลิงก์ XLSX", "หมวดหมู่"],
+      headers: ["ชื่อเอกสาร", "รายละเอียด", "องค์กร", "ลิงก์ EX", "ลิงก์ PDF", "ลิงก์ DOCX", "ลิงก์ XLSX", "หมวดหมู่", "ลำดับหมวดหมู่", "ลำดับเอกสาร"],
       rows,
       fileName: "sgcu-financial-documents"
     });
@@ -1059,8 +1156,17 @@ function initContentDocumentsStaffPage() {
       const id = fields.id.value.trim();
       const beforeItem = id ? state.items.find((item) => item.id === id) || null : null;
       const nextId = id || slugifyDocumentId(`${payload.category}-${payload.org}-${payload.name}`);
+      const isSameCategory = beforeItem && (beforeItem.category || "อื่น ๆ") === payload.category;
+      const categoryOrder = isSameCategory && isFiniteOrder(beforeItem.categoryOrder)
+        ? Number(beforeItem.categoryOrder)
+        : getCategoryOrderFor(payload.category);
+      const sortOrder = isSameCategory && isFiniteOrder(beforeItem.sortOrder)
+        ? Number(beforeItem.sortOrder)
+        : getNextSortOrder(payload.category);
       const savePayload = {
         ...payload,
+        categoryOrder,
+        sortOrder,
         updatedAt: firestore.serverTimestamp(),
         updatedBy: editorEmail
       };
@@ -1100,6 +1206,88 @@ function initContentDocumentsStaffPage() {
     }
   };
 
+  const persistOrderUpdates = async (updates, successMessage) => {
+    const firestore = store();
+    const currentUser = auth()?.currentUser;
+    if (state.source !== "firestore") {
+      setMessage("จัดลำดับได้เมื่อโหลดข้อมูลจาก Firestore เท่านั้น", "error");
+      return;
+    }
+    if (!updates.length) return;
+    if (!firestore.db || !firestore.doc || !firestore.setDoc || !firestore.serverTimestamp) {
+      setMessage("ระบบยังไม่พร้อมบันทึกลำดับ", "error");
+      return;
+    }
+    state.isReordering = true;
+    renderRows();
+    try {
+      const editorEmail = currentUser?.email || "";
+      for (const update of updates) {
+        await firestore.setDoc(
+          firestore.doc(firestore.db, DOCUMENTS_COLLECTION, update.id),
+          {
+            ...update.payload,
+            updatedAt: firestore.serverTimestamp(),
+            updatedBy: editorEmail
+          },
+          { merge: true }
+        );
+      }
+      clearDownloadsCache();
+      await loadDocuments();
+      setMessage(successMessage || "บันทึกลำดับแล้ว", "success");
+    } catch (error) {
+      console.error("บันทึกลำดับเอกสารการเงินไม่สำเร็จ - app.content-management.js", error);
+      setMessage(error.message || "บันทึกลำดับไม่สำเร็จ", "error");
+      renderRows();
+    } finally {
+      state.isReordering = false;
+      renderRows();
+    }
+  };
+
+  const reorderCategory = async (category, direction) => {
+    const categories = getOrderedCategories();
+    const currentIndex = categories.findIndex((entry) => entry.category === category);
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= categories.length) return;
+    const nextCategories = categories.map((entry) => entry.category);
+    const moved = nextCategories[currentIndex];
+    nextCategories[currentIndex] = nextCategories[targetIndex];
+    nextCategories[targetIndex] = moved;
+    const nextOrderByCategory = new Map(nextCategories.map((name, index) => [name, (index + 1) * 10]));
+    const updates = state.items
+      .map((item) => {
+        const nextOrder = nextOrderByCategory.get(item.category || "อื่น ๆ");
+        return isFiniteOrder(nextOrder) && Number(item.categoryOrder) !== nextOrder
+          ? { id: item.id, payload: { categoryOrder: nextOrder } }
+          : null;
+      })
+      .filter(Boolean);
+    await persistOrderUpdates(updates, "บันทึกลำดับหมวดหมู่แล้ว");
+  };
+
+  const reorderDocument = async (documentId, direction) => {
+    const item = state.items.find((candidate) => candidate.id === documentId);
+    if (!item) return;
+    const categoryItems = getDocumentsInCategory(item.category || "อื่น ๆ");
+    const currentIndex = categoryItems.findIndex((candidate) => candidate.id === documentId);
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= categoryItems.length) return;
+    const nextItems = [...categoryItems];
+    const moved = nextItems[currentIndex];
+    nextItems[currentIndex] = nextItems[targetIndex];
+    nextItems[targetIndex] = moved;
+    const updates = nextItems.map((candidate, index) => ({
+      id: candidate.id,
+      payload: {
+        categoryOrder: getCategoryOrderFor(candidate.category || "อื่น ๆ"),
+        sortOrder: (index + 1) * 10
+      }
+    }));
+    await persistOrderUpdates(updates, "บันทึกลำดับเอกสารแล้ว");
+  };
+
   const archiveCurrentItem = async () => {
     if (!fields.id.value.trim()) {
       fields.status.value = "archived";
@@ -1110,6 +1298,22 @@ function initContentDocumentsStaffPage() {
   };
 
   tableBody.addEventListener("click", (event) => {
+    const categoryButton = event.target.closest("[data-category-reorder]");
+    if (categoryButton) {
+      event.preventDefault();
+      const category = categoryButton.dataset.category || "";
+      const direction = categoryButton.dataset.categoryReorder || "";
+      void reorderCategory(category, direction);
+      return;
+    }
+    const documentButton = event.target.closest("[data-document-reorder]");
+    if (documentButton) {
+      event.preventDefault();
+      const documentId = documentButton.dataset.documentId || "";
+      const direction = documentButton.dataset.documentReorder || "";
+      void reorderDocument(documentId, direction);
+      return;
+    }
     const row = event.target.closest("[data-document-id]");
     if (!row || event.target.closest("a")) return;
     const item = state.items.find((candidate) => candidate.id === row.dataset.documentId);
@@ -1117,6 +1321,7 @@ function initContentDocumentsStaffPage() {
   });
   tableBody.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
+    if (event.target.closest("button, a")) return;
     const row = event.target.closest("[data-document-id]");
     if (!row) return;
     event.preventDefault();

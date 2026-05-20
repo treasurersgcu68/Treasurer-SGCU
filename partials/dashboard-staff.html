@@ -312,13 +312,56 @@
         <div class="page">
           <div class="page-header-flex">
             <div>
-              <h1 class="page-title">ข้อมูลระบบ</h1>
-              <p class="page-meta">ประวัติการทำรายการล่าสุด</p>
+              <h1 class="page-title">ตรวจระบบ</h1>
+              <p class="page-meta">ตรวจสถานะ Firebase, สิทธิ์ staff, แหล่งข้อมูล และ cache ก่อนแก้ปัญหาเว็บ</p>
             </div>
           </div>
 
+          <section class="panel section-appear section-delay-1 system-health-panel">
+            <header class="panel-header">
+              <div>
+                <h3 class="panel-title">Health Check</h3>
+                <p id="systemHealthCaption" class="panel-caption">กดตรวจระบบเพื่อดูว่าส่วนสำคัญพร้อมใช้งานหรือมีจุดที่ต้องแก้</p>
+              </div>
+              <div class="system-health-actions">
+                <button id="systemHealthCopyBtn" class="btn-ghost" type="button" disabled>คัดลอกสรุป</button>
+                <button id="systemHealthRunBtn" class="btn-primary" type="button">ตรวจระบบ</button>
+              </div>
+            </header>
+            <div id="systemHealthSummary" class="system-health-summary" aria-live="polite">
+              <div class="system-health-summary-card">
+                <span class="system-health-summary-label">ผ่าน</span>
+                <strong id="systemHealthOkCount">0</strong>
+              </div>
+              <div class="system-health-summary-card">
+                <span class="system-health-summary-label">ควรตรวจต่อ</span>
+                <strong id="systemHealthWarnCount">0</strong>
+              </div>
+              <div class="system-health-summary-card">
+                <span class="system-health-summary-label">ผิดปกติ</span>
+                <strong id="systemHealthErrorCount">0</strong>
+              </div>
+            </div>
+            <div id="systemHealthStatus" class="form-message" hidden></div>
+            <div class="table-wrapper system-health-table-wrapper">
+              <table id="systemHealthTable" class="system-health-table">
+                <thead>
+                  <tr>
+                    <th>ส่วนที่ตรวจ</th>
+                    <th>สถานะ</th>
+                    <th>รายละเอียด</th>
+                    <th>สิ่งที่ควรทำ</th>
+                  </tr>
+                </thead>
+                <tbody id="systemHealthTableBody">
+                  <tr><td colspan="4">ยังไม่ได้ตรวจระบบ</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           <div id="dashboardStaffAuditPanel" class="dashboard-staff-main-panel">
-            <section class="panel section-appear section-delay-1">
+            <section class="panel section-appear section-delay-2">
               <header class="panel-header">
                 <div>
                   <h3 class="panel-title">Activity Log</h3>

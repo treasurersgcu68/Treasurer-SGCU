@@ -82,6 +82,7 @@
         "js/features/docs/app.file-links.js?v=20260417-1",
         "js/features/content/app.content-management.js?v=20260506-1"
       ],
+      "system-data-staff": "js/features/staff/app.health-check.js?v=20260520-1",
       "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260510-round-wording-1"
     },
     idlePrefetchPages: []

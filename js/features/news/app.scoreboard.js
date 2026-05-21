@@ -60,7 +60,7 @@ function initScoreboard() {
 
       setScoreboardSectionVisible(podiumEl, true);
       const podium = items.slice(0, 3);
-      const runners = items.slice(3, 8);
+      const runners = items.slice(3, 9);
 
       renderScorePodium(podiumEl, podium);
       renderScoreRunners(runnersEl, runners);

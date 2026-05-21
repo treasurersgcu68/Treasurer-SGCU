@@ -1185,7 +1185,7 @@
 .workflow-phase-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px;
   align-items: stretch;
 }
 
@@ -1207,12 +1207,12 @@
   content: "";
   position: absolute;
   top: 50%;
-  right: -13px;
-  width: 18px;
-  height: 18px;
-  border-top: 2px solid rgba(156, 163, 175, 0.42);
-  border-right: 2px solid rgba(156, 163, 175, 0.42);
-  transform: translateY(-50%) rotate(45deg);
+  right: -20px;
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(236, 72, 153, 0.2), rgba(156, 163, 175, 0.32));
+  transform: translateY(-50%);
 }
 
 .workflow-phase-card:last-child::after {
@@ -1376,28 +1376,49 @@
   box-shadow: 0 0 0 4px rgba(249, 168, 212, 0.18);
 }
 
-.workflow-agenda {
-  margin: -1px 0 12px;
-  border-radius: 12px;
-  background: #fff7ed;
-  border: 1px solid rgba(251, 146, 60, 0.18);
-}
-
-.workflow-agenda summary {
-  cursor: pointer;
-  padding: 9px 11px;
-  color: #9a3412;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.workflow-agenda ul {
+.workflow-agenda-list {
   display: grid;
-  gap: 6px;
+  gap: 7px;
+  margin: 0 0 13px;
+}
+
+.workflow-agenda-card {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  padding: 8px 9px 8px 28px;
+  border-radius: 12px;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 12.5px;
+  line-height: 1.45;
+  cursor: text;
+}
+
+.workflow-agenda-card::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #f9a8d4;
+  box-shadow: 0 0 0 4px rgba(249, 168, 212, 0.18);
+}
+
+.workflow-agenda-card span {
+  display: block;
+}
+
+.workflow-agenda-card ul {
+  display: grid;
+  gap: 4px;
   margin: 0;
-  padding: 0 12px 12px 28px;
-  color: #7c2d12;
-  font-size: 13px;
+  padding-left: 16px;
+  color: #4b5563;
+  font-size: 12px;
 }
 
 .home-start-full {

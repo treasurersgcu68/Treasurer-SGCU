@@ -1201,6 +1201,13 @@
                 return `โครงการ ${Number(row?.projects || 0).toLocaleString("th-TH")} รายการ`;
               }
             }
+          },
+          externalAxisLabels: {
+            y: {
+              enabled: true,
+              width: 190,
+              gap: 8
+            }
           }
         },
         scales: {
@@ -1210,7 +1217,11 @@
             }
           },
           y: {
+            afterFit(scale) {
+              scale.width = Math.max(scale.width || 0, 190);
+            },
             ticks: {
+              display: false,
               autoSkip: false
             }
           }

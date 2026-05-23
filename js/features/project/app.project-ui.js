@@ -507,6 +507,14 @@ function updateClubDebtSummaryChart(rows, chartCanvasEl, chartInnerEl) {
             ];
           }
         }
+      },
+      externalAxisLabels: {
+        y: {
+          enabled: true,
+          width: 190,
+          gap: 8,
+          formatter: (label) => wrapLabel(label)
+        }
       }
     },
     scales: {
@@ -520,7 +528,11 @@ function updateClubDebtSummaryChart(rows, chartCanvasEl, chartInnerEl) {
         }
       },
       y: {
+        afterFit(scale) {
+          scale.width = Math.max(scale.width || 0, 190);
+        },
         ticks: {
+          display: false,
           autoSkip: false,
           padding: 6,
           callback(value) {
@@ -1300,6 +1312,12 @@ function renderHomeKpis(sourceProjects = projects) {
     maintainAspectRatio: false,
     animation: false,
     scales: {
+      x: {
+        afterFit(scale) {
+          scale.height = Math.max(scale.height || 0, 44);
+        },
+        ticks: { display: false }
+      },
       y: {
         beginAtZero: true,
         ticks: {
@@ -1309,6 +1327,15 @@ function renderHomeKpis(sourceProjects = projects) {
     },
     plugins: {
       legend: { position: "bottom" },
+      externalAxisLabels: {
+        x: {
+          enabled: true,
+          height: 38,
+          gap: 6,
+          className: "chart-external-axis-month chart-external-axis-month-compact",
+          formatter: (label) => formatMonthAxisLabel(label)
+        }
+      },
       tooltip: {
         callbacks: {
           label: (ctx) => {

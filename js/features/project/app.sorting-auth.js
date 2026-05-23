@@ -667,24 +667,30 @@ function setLoading(isLoading, ctxKey = activeProjectStatusContext) {
   const statusSkel = ctx.statusPieSkeletonEl;
   const tableSkel = ctx.projectTableSkeletonEl;
   const calendarSkel = ctx.calendarSkeletonEl;
+  const dashboardSkel = ctx.dashboardOverviewSkeletonEl;
+  const dashboardContent = ctx.dashboardOverviewContentEl;
 
   if (budgetSkel) budgetSkel.style.display = isLoading ? "block" : "none";
   if (statusSkel) statusSkel.style.display = isLoading ? "flex" : "none";
   if (tableSkel) tableSkel.style.display = isLoading ? "block" : "none";
   if (calendarSkel) calendarSkel.style.display = isLoading ? "grid" : "none";
+  if (dashboardSkel) dashboardSkel.style.display = isLoading ? "grid" : "none";
 
   if (budgetCanvas) budgetCanvas.style.visibility = isLoading ? "hidden" : "visible";
   if (statusCanvas) statusCanvas.style.visibility = isLoading ? "hidden" : "visible";
   if (ctx.tableBodyEl) ctx.tableBodyEl.style.visibility = isLoading ? "hidden" : "visible";
   if (ctx.calendarContainerEl) ctx.calendarContainerEl.style.visibility = isLoading ? "hidden" : "visible";
+  if (dashboardContent) dashboardContent.style.visibility = isLoading ? "hidden" : "visible";
 
   budgetCanvas?.parentElement?.classList.toggle("is-loading", isLoading);
   statusCanvas?.parentElement?.classList.toggle("is-loading", isLoading);
   ctx.projectTableAreaEl?.classList.toggle("is-loading", isLoading);
+  dashboardContent?.classList.toggle("is-loading", isLoading);
 
   budgetCanvas?.parentElement?.setAttribute("aria-busy", isLoading ? "true" : "false");
   statusCanvas?.parentElement?.setAttribute("aria-busy", isLoading ? "true" : "false");
   ctx.projectTableAreaEl?.setAttribute("aria-busy", isLoading ? "true" : "false");
+  dashboardContent?.setAttribute("aria-busy", isLoading ? "true" : "false");
 
   if (isLoading) {
     if (ctx.projectTableAreaEl) ctx.projectTableAreaEl.style.display = "block";

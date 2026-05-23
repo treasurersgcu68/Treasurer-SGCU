@@ -579,6 +579,167 @@
   gap: 4px;
 }
 
+.dashboard-staff-main-panel {
+  position: relative;
+}
+
+.dashboard-overview.is-loading {
+  pointer-events: none;
+}
+
+.dashboard-overview-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: none;
+  align-content: start;
+  gap: 16px;
+  border-radius: 0;
+}
+
+.dashboard-skeleton-header {
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-skeleton-metric-grid,
+.dashboard-skeleton-donut-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-skeleton-metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.dashboard-skeleton-donut-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.dashboard-skeleton-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.dashboard-skeleton-card {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-height: 112px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-skeleton-line,
+.dashboard-skeleton-donut,
+.dashboard-skeleton-bar,
+.dashboard-skeleton-table span {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #eef2f7 0%,
+    #d8dee8 42%,
+    #eef2f7 82%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.2s infinite;
+}
+
+.dashboard-skeleton-title {
+  width: min(260px, 62%);
+  height: 18px;
+}
+
+.dashboard-skeleton-label {
+  width: 58%;
+  height: 12px;
+}
+
+.dashboard-skeleton-value {
+  width: 44%;
+  height: 34px;
+  margin-top: 6px;
+}
+
+.dashboard-skeleton-value-sm {
+  width: 32%;
+}
+
+.dashboard-skeleton-value-wide {
+  width: 76%;
+}
+
+.dashboard-skeleton-caption {
+  width: 68%;
+  height: 11px;
+}
+
+.dashboard-skeleton-donut-card {
+  align-items: center;
+  text-align: left;
+}
+
+.dashboard-skeleton-donut {
+  justify-self: center;
+  width: min(112px, 60%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  -webkit-mask: radial-gradient(circle, transparent 0 45%, #000 46%);
+  mask: radial-gradient(circle, transparent 0 45%, #000 46%);
+}
+
+.dashboard-skeleton-chart-card {
+  min-height: 236px;
+}
+
+.dashboard-skeleton-bars {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.dashboard-skeleton-bar {
+  height: 24px;
+  border-radius: 0 999px 999px 0;
+}
+
+.dashboard-skeleton-bar-sm {
+  width: 44%;
+}
+
+.dashboard-skeleton-bar-md {
+  width: 62%;
+}
+
+.dashboard-skeleton-bar-lg {
+  width: 78%;
+}
+
+.dashboard-skeleton-bar-xl {
+  width: 92%;
+}
+
+.dashboard-skeleton-table-card {
+  min-height: 220px;
+}
+
+.dashboard-skeleton-table {
+  display: grid;
+  grid-template-columns: minmax(82px, 0.8fr) minmax(160px, 2fr) minmax(96px, 1fr) minmax(86px, 0.8fr);
+  gap: 18px 14px;
+  margin-top: 4px;
+}
+
+.dashboard-skeleton-table span {
+  height: 14px;
+}
+
 .dashboard-metric .metric-caption, .dashboard-metric .kpi-caption {
   margin-top: 0;
 }
@@ -660,6 +821,37 @@
 
   .dashboard-debt-row {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-overview-skeleton {
+    gap: 12px;
+  }
+
+  .dashboard-skeleton-metric-grid,
+  .dashboard-skeleton-donut-grid,
+  .dashboard-skeleton-chart-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-skeleton-card {
+    min-height: 96px;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .dashboard-skeleton-chart-card {
+    min-height: 206px;
+  }
+
+  .dashboard-skeleton-table {
+    grid-template-columns: minmax(0, 1fr) 76px;
+    gap: 14px 12px;
+  }
+
+  .dashboard-skeleton-table span:nth-child(4n + 2),
+  .dashboard-skeleton-table span:nth-child(4n + 3) {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1298,6 +1490,82 @@ th.sortable.sort-desc::after {
 .chart-inner canvas {
   position: relative;
   z-index: 1;
+}
+
+.chart-external-axis-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.chart-external-axis-label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.chart-external-axis-label span {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.chart-external-axis-y .chart-external-axis-label {
+  align-items: flex-end;
+  text-align: right;
+  transform: translateY(-50%);
+}
+
+.chart-external-axis-x .chart-external-axis-label {
+  align-items: center;
+  text-align: center;
+  white-space: nowrap;
+  transform: translateX(-50%) rotate(var(--axis-label-rotate, 0deg));
+  transform-origin: top center;
+}
+
+.chart-external-axis-x .chart-external-axis-label.is-first {
+  transform: translateX(0) rotate(var(--axis-label-rotate, 0deg));
+}
+
+.chart-external-axis-x .chart-external-axis-label.is-last {
+  transform: translateX(-100%) rotate(var(--axis-label-rotate, 0deg));
+}
+
+.chart-external-axis-month .chart-external-axis-label {
+  min-width: 42px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #4b5563;
+  font-size: 10px;
+  line-height: 1.08;
+}
+
+.chart-external-axis-month .chart-external-axis-label span:first-child {
+  font-weight: 700;
+}
+
+.chart-external-axis-month .chart-external-axis-label span:last-child {
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .chart-external-axis-month-compact .chart-external-axis-label {
+    min-width: 28px;
+    padding: 1px 2px;
+    border-radius: 4px;
+    font-size: 8px;
+    line-height: 1.05;
+  }
 }
 
 .chart-inner.is-loading {

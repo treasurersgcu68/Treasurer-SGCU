@@ -150,7 +150,15 @@ function initCharts(ctxKey = activeProjectStatusContext) {
               boxHeight: 10
             }
           },
-          tooltip: { enabled: true }
+          tooltip: { enabled: true },
+          externalAxisLabels: {
+            y: {
+              enabled: true,
+              width: 170,
+              gap: 8,
+              formatter: (label) => getClosureAxisWrappedLabel(label)
+            }
+          }
         },
         scales: {
           x: {
@@ -159,7 +167,11 @@ function initCharts(ctxKey = activeProjectStatusContext) {
           },
           y: {
             stacked: true,
+            afterFit(scale) {
+              scale.width = Math.max(scale.width || 0, 170);
+            },
             ticks: {
+              display: false,
               autoSkip: false,
               padding: 6,
               callback(value) {
@@ -273,11 +285,24 @@ function initCharts(ctxKey = activeProjectStatusContext) {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { enabled: true }
+          tooltip: { enabled: true },
+          externalAxisLabels: {
+            x: {
+              enabled: true,
+              height: 46,
+              gap: 6,
+              alignEdges: true,
+              className: "chart-external-axis-month",
+              formatter: (label) => formatMonthAxisLabel(label)
+            }
+          }
         },
         scales: {
           x: {
-            ticks: { font: { size: 11 } }
+            afterFit(scale) {
+              scale.height = Math.max(scale.height || 0, 54);
+            },
+            ticks: { display: false, font: { size: 11 } }
           },
           y: {
             beginAtZero: true,

@@ -153,6 +153,8 @@ let projectModalEl;
 let budgetChartSkeletonEl;
 let statusPieSkeletonEl;
 let projectTableSkeletonEl;
+let dashboardOverviewSkeletonEl;
+let dashboardOverviewContentEl;
 let orgStructureSkeletonEl;
 let projectModalTitleEl;
 let projectModalTitleBadgeEl;
@@ -283,10 +285,126 @@ const centerTextPlugin = {
   }
 };
 
+const externalAxisLabelsPlugin = {
+  id: "externalAxisLabels",
+  afterDraw(chart, args, options = {}) {
+    const parent = chart.canvas?.parentElement;
+    const chartArea = chart.chartArea;
+    if (!parent || !chartArea) return;
+
+    const renderAxis = (axis, config) => {
+      if (!config?.enabled) return;
+      const scale = chart.scales?.[axis];
+      if (!scale) return;
+
+      const container = getExternalAxisContainer(chart, parent, axis);
+      const labels = chart.data?.labels || [];
+      const formatter = typeof config.formatter === "function"
+        ? config.formatter
+        : (label) => label;
+      const className = config.className || "";
+      const maxItems = Number(config.maxItems) || labels.length;
+      const visibleLabels = labels.slice(0, maxItems);
+
+      container.className = [
+        "chart-external-axis-labels",
+        `chart-external-axis-${axis}`,
+        className
+      ].filter(Boolean).join(" ");
+      container.innerHTML = "";
+
+      visibleLabels.forEach((label, index) => {
+        const lines = normalizeExternalAxisLines(formatter(label, index, chart));
+        if (!lines.length) return;
+        const canAlignEdges = axis === "x" && config.alignEdges && visibleLabels.length > 1;
+        const item = document.createElement("span");
+        item.className = [
+          "chart-external-axis-label",
+          canAlignEdges && index === 0 ? "is-first" : "",
+          canAlignEdges && index === visibleLabels.length - 1 ? "is-last" : ""
+        ].filter(Boolean).join(" ");
+        item.title = (label || "").toString();
+        lines.forEach((line) => {
+          const lineEl = document.createElement("span");
+          lineEl.textContent = line;
+          item.appendChild(lineEl);
+        });
+
+        if (axis === "y") {
+          const y = scale.getPixelForValue(index);
+          const width = Math.max(24, chartArea.left - (Number(config.gap) || 8));
+          item.style.left = "0px";
+          item.style.top = `${y}px`;
+          item.style.width = `${width}px`;
+        } else {
+          const x = scale.getPixelForValue(index);
+          const rowGap = Number(config.rowGap) || 14;
+          const yOffset = config.stagger ? rowGap * (index % 2) : 0;
+          item.style.left = `${x}px`;
+          item.style.top = `${chartArea.bottom + (Number(config.gap) || 8) + yOffset}px`;
+          if (config.rotate) item.style.setProperty("--axis-label-rotate", `${Number(config.rotate) || 0}deg`);
+        }
+
+        container.appendChild(item);
+      });
+    };
+
+    parent.classList.add("has-external-axis-labels");
+    renderAxis("y", options.y);
+    renderAxis("x", options.x);
+  },
+  afterDestroy(chart) {
+    Object.values(chart.$externalAxisContainers || {}).forEach((container) => container.remove());
+    chart.$externalAxisContainers = null;
+  }
+};
+
+function normalizeExternalAxisLines(value) {
+  const lines = Array.isArray(value) ? value : [value];
+  return lines
+    .map((line) => (line || "").toString().replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function formatMonthAxisLabel(label) {
+  const text = (label || "").toString().replace(/\s+/g, " ").trim();
+  if (!text) return [];
+
+  const parts = text.split(" ");
+  if (parts.length < 2) return [text];
+
+  const month = parts[0];
+  const rawYear = parts.slice(1).join(" ");
+  const yearDigits = rawYear.replace(/[^\d]/g, "");
+  const numericYear = Number(yearDigits);
+  const year = yearDigits.length === 2 && Number.isFinite(numericYear)
+    ? `${2500 + numericYear}`
+    : rawYear;
+
+  return [month, year];
+}
+
+function getExternalAxisContainer(chart, parent, axis) {
+  chart.$externalAxisContainers = chart.$externalAxisContainers || {};
+  if (chart.$externalAxisContainers[axis]?.isConnected) {
+    return chart.$externalAxisContainers[axis];
+  }
+
+  const container = document.createElement("div");
+  container.setAttribute("aria-hidden", "true");
+  parent.appendChild(container);
+  chart.$externalAxisContainers[axis] = container;
+  return container;
+}
+
 function registerCenterTextPlugin() {
   if (typeof Chart === "undefined" || !Chart.register) return;
-  if (Chart.registry?.plugins?.get?.("centerText")) return;
-  Chart.register(centerTextPlugin);
+  if (!Chart.registry?.plugins?.get?.("centerText")) {
+    Chart.register(centerTextPlugin);
+  }
+  if (!Chart.registry?.plugins?.get?.("externalAxisLabels")) {
+    Chart.register(externalAxisLabelsPlugin);
+  }
 }
 
 registerCenterTextPlugin();
@@ -354,6 +472,8 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     budgetChartSkeletonEl: get("budgetChartSkeleton"),
     statusPieSkeletonEl: get("statusPieSkeleton"),
     projectTableSkeletonEl: get("projectTableSkeleton"),
+    dashboardOverviewSkeletonEl: get("dashboardOverviewSkeleton"),
+    dashboardOverviewContentEl: get("dashboardOverviewContent"),
     closureStatusChartDownloadBtn: get("downloadClosureStatusChartPng"),
     projectDataLoadStateEl: get("projectDataLoadState"),
     calendarSkeletonEl: get("calendarSkeleton"),
@@ -427,6 +547,8 @@ function setActiveProjectStatusContext(key) {
   budgetChartSkeletonEl = ctx.budgetChartSkeletonEl;
   statusPieSkeletonEl = ctx.statusPieSkeletonEl;
   projectTableSkeletonEl = ctx.projectTableSkeletonEl;
+  dashboardOverviewSkeletonEl = ctx.dashboardOverviewSkeletonEl;
+  dashboardOverviewContentEl = ctx.dashboardOverviewContentEl;
   calendarSkeletonEl = ctx.calendarSkeletonEl;
   projectTableAreaEl = ctx.projectTableAreaEl;
   projectTableLockEl = ctx.projectTableLockEl;

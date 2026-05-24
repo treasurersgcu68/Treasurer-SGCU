@@ -1293,6 +1293,11 @@
     gap: 12px;
   }
 
+  #staffApprovalPendingTable tbody,
+  #staffApprovalHistoryTable tbody {
+    padding-bottom: 18px;
+  }
+
   #staffApprovalPendingTable tr,
   #staffApprovalHistoryTable tr,
   #orgRepresentativePendingTable tr,
@@ -1401,6 +1406,70 @@
   #orgRepresentativeHistoryTable .staff-status-select {
     width: 100%;
     min-width: 0;
+  }
+
+  .page-view[data-page="staff-approval"] #staffApprovalPendingPanel {
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .page-view[data-page="staff-approval"] #staffApprovalPendingPanel .panel-header,
+  .page-view[data-page="staff-approval"] #staffApprovalPendingPanel .panel-header > div {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .page-view[data-page="staff-approval"] .staff-approval-view-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    padding: 2px;
+  }
+
+  .page-view[data-page="staff-approval"] .staff-approval-view-toggle .tab-btn {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 8px 6px;
+    justify-content: center;
+    white-space: normal;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #staffApprovalPendingTable,
+  #staffApprovalHistoryTable,
+  #staffApprovalPendingTable tbody,
+  #staffApprovalHistoryTable tbody,
+  #staffApprovalPendingTable tr,
+  #staffApprovalHistoryTable tr,
+  #staffApprovalPendingTable td,
+  #staffApprovalHistoryTable td {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #staffApprovalPendingTable tr,
+  #staffApprovalHistoryTable tr {
+    overflow: hidden;
+  }
+
+  #staffApprovalPendingTable td > *,
+  #staffApprovalHistoryTable td > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #staffApprovalHistoryTable .staff-approval-history-code {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .meeting-secondary-actions,

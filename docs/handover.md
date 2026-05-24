@@ -36,6 +36,7 @@
 - `tools/build-static.mjs`: build static output
 - `docs/data-model.md`: รายละเอียด data source และ collection เป้าหมาย
 - `docs/migration-plan.md`: แผนย้ายข้อมูลจาก Sheets ไป Firestore
+- `docs/operations-monitoring.md`: คู่มือตั้ง budget alert, usage monitoring และ retention
 
 ## Common Tasks
 
@@ -171,6 +172,15 @@ appSettings/global
 5. ถ้าแก้ Firestore rules ให้ deploy rules และลอง login บัญชี staff จริง
 6. ถ้าแก้ service worker หรือ asset สำคัญ ให้ตรวจ cache/version ว่าผู้ใช้จะได้ไฟล์ใหม่
 7. บันทึกสิ่งที่เปลี่ยนใน PR หรือ release note
+
+## Operations Checklist
+
+อย่างน้อยเดือนละครั้งให้ดู `docs/operations-monitoring.md` และตรวจ:
+
+- Firebase/Google Cloud budget alert ยังส่งถึงอีเมลทีม
+- Firestore reads/writes/storage ไม่พุ่งผิดปกติ
+- collection ที่โตตามเวลา เช่น `meetingRoomBookings`, `borrowAssetRequests`, `auditLogs`
+- console error เรื่อง permission หรือ missing index ในหน้าหลัก
 
 ## Backup Checklist
 

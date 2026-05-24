@@ -91,6 +91,8 @@ function initBudgetApprovalRequestPage() {
     firestoreCollections.organizationRepresentativeApplications || "organizationRepresentativeApplications";
   const SETTINGS_COLLECTION = firestoreCollections.budgetApprovalSettings || "budgetApprovalSettings";
   const SETTINGS_DOC_ID = firestoreDocs.budgetApprovalSettings || "global";
+  const BUDGET_REQUEST_LIST_LIMIT = 500;
+  const REPRESENTATIVE_APPLICATION_LIST_LIMIT = 100;
   let unsubscribeMyRequests = null;
   let unsubscribeOrgBudgetTotals = null;
   let unsubscribeRepresentativeApplications = null;
@@ -1192,7 +1194,8 @@ function initBudgetApprovalRequestPage() {
     if (orgTotalsCaptionEl) orgTotalsCaptionEl.textContent = `กำลังโหลดรายการใน${orgType}...`;
     const listQuery = firestore.query(
       firestore.collection(firestore.db, REQUEST_COLLECTION),
-      firestore.where("organizationType", "==", orgType)
+      firestore.where("organizationType", "==", orgType),
+      ...(firestore.limit ? [firestore.limit(BUDGET_REQUEST_LIST_LIMIT)] : [])
     );
     unsubscribeOrgBudgetTotals = firestore.onSnapshot(
       listQuery,
@@ -1261,7 +1264,8 @@ function initBudgetApprovalRequestPage() {
     myRequestsCaptionEl.textContent = "กำลังโหลดรายการ...";
     const listQuery = firestore.query(
       firestore.collection(firestore.db, REQUEST_COLLECTION),
-      firestore.where("requester.email", "==", email)
+      firestore.where("requester.email", "==", email),
+      ...(firestore.limit ? [firestore.limit(BUDGET_REQUEST_LIST_LIMIT)] : [])
     );
     unsubscribeMyRequests = firestore.onSnapshot(
       listQuery,
@@ -1302,6 +1306,10 @@ function initBudgetApprovalRequestPage() {
     }
 
     const firestore = window.sgcuFirestore || {};
+    if (!readCurrentUserEmail()) {
+      setBudgetRequestCloseState("");
+      return;
+    }
     const canRead = !!(
       firestore.db &&
       firestore.doc &&
@@ -1393,7 +1401,8 @@ function initBudgetApprovalRequestPage() {
     if (representativeStatusCaptionEl) representativeStatusCaptionEl.textContent = "กำลังโหลดสิทธิ์ตัวแทนองค์กร...";
     const listQuery = firestore.query(
       firestore.collection(firestore.db, REPRESENTATIVE_APPLICATION_COLLECTION),
-      firestore.where("applicantEmail", "==", email)
+      firestore.where("applicantEmail", "==", email),
+      ...(firestore.limit ? [firestore.limit(REPRESENTATIVE_APPLICATION_LIST_LIMIT)] : [])
     );
     unsubscribeRepresentativeApplications = firestore.onSnapshot(
       listQuery,
@@ -2080,6 +2089,7 @@ function initBudgetApprovalRequestPage() {
     window.sgcuAuth.onAuthStateChanged(window.sgcuAuth.auth, () => {
       subscribeMyRequests();
       subscribeRepresentativeApplications();
+      subscribeBudgetSettings();
     });
   }
 

@@ -99,6 +99,8 @@ function initBorrowAssetsApp() {
   const STATUS_RETURNED = "returned";
   const STAFF_REQUEST_PAGE_SIZE = 50;
   const STAFF_ASSETS_PAGE_SIZE = 50;
+  const BORROW_REQUEST_ACTIVE_LIST_LIMIT = 500;
+  const BORROW_REQUEST_HISTORY_LIST_LIMIT = 300;
   const STAFF_REQUEST_TAB_STATUSES = new Set([STATUS_PENDING, STATUS_APPROVED, STATUS_RECEIVED]);
   const STAFF_HISTORY_TAB_STATUSES = new Set([STATUS_REJECTED, STATUS_CANCELLED, STATUS_RETURNED]);
   const BORROW_FOLLOWUP_SOON_DAYS = 3;
@@ -3103,9 +3105,12 @@ function initBorrowAssetsApp() {
     };
 
     BORROW_REQUEST_COLLECTIONS.forEach((name) => {
-      collectionSnapshotRows.set(name, []);
-      collectionSnapshotCounts.set(name, 0);
-      collectionSnapshotErrors.set(name, "");
+      ["active", "history"].forEach((scope) => {
+        const key = `${name}:${scope}`;
+        collectionSnapshotRows.set(key, []);
+        collectionSnapshotCounts.set(key, 0);
+        collectionSnapshotErrors.set(key, "");
+      });
     });
 
     const currentEmail = readCurrentUserEmail();
@@ -3126,18 +3131,49 @@ function initBorrowAssetsApp() {
 
     BORROW_REQUEST_COLLECTIONS.forEach((collectionName) => {
       const colRef = firestore.collection(firestore.db, collectionName);
-      const requestQuery = shouldReadAllRequests
-        ? colRef
-        : (
-          currentEmail && firestore.query && firestore.where
-            ? firestore.query(colRef, firestore.where("requesterEmail", "==", currentEmail))
-            : colRef
-        );
-      const unsubscribe = firestore.onSnapshot(
+      const querySpecs = shouldReadAllRequests
+        ? [
+          {
+            scope: "active",
+            query: firestore.query && firestore.where
+              ? firestore.query(
+                colRef,
+                firestore.where("status", "in", [STATUS_PENDING, STATUS_APPROVED, STATUS_RECEIVED]),
+                ...(firestore.limit ? [firestore.limit(BORROW_REQUEST_ACTIVE_LIST_LIMIT)] : [])
+              )
+              : (firestore.limit && firestore.query ? firestore.query(colRef, firestore.limit(BORROW_REQUEST_ACTIVE_LIST_LIMIT)) : colRef)
+          },
+          {
+            scope: "history",
+            query: firestore.query && firestore.where
+              ? firestore.query(
+                colRef,
+                firestore.where("status", "in", [STATUS_REJECTED, STATUS_CANCELLED, STATUS_RETURNED]),
+                ...(firestore.limit ? [firestore.limit(BORROW_REQUEST_HISTORY_LIST_LIMIT)] : [])
+              )
+              : (firestore.limit && firestore.query ? firestore.query(colRef, firestore.limit(BORROW_REQUEST_HISTORY_LIST_LIMIT)) : colRef)
+          }
+        ]
+        : [
+          {
+            scope: "mine",
+            query: currentEmail && firestore.query && firestore.where
+              ? firestore.query(
+                colRef,
+                firestore.where("requesterEmail", "==", currentEmail),
+                ...(firestore.limit ? [firestore.limit(BORROW_REQUEST_ACTIVE_LIST_LIMIT)] : [])
+              )
+              : (firestore.limit && firestore.query ? firestore.query(colRef, firestore.limit(BORROW_REQUEST_ACTIVE_LIST_LIMIT)) : colRef)
+          }
+        ];
+
+      querySpecs.forEach(({ scope, query: requestQuery }) => {
+        const snapshotKey = `${collectionName}:${scope}`;
+        const unsubscribe = firestore.onSnapshot(
         requestQuery,
         (snapshot) => {
-          collectionSnapshotErrors.set(collectionName, "");
-          collectionSnapshotCounts.set(collectionName, Number(snapshot.size || 0));
+          collectionSnapshotErrors.set(snapshotKey, "");
+          collectionSnapshotCounts.set(snapshotKey, Number(snapshot.size || 0));
           myRequestsLoadState = "loaded";
           myRequestsLoadError = "";
           const normalized = [];
@@ -3152,7 +3188,7 @@ function initBorrowAssetsApp() {
               console.error("borrow request doc malformed - app.borrow-assets.js:2004", collectionName, docSnap.id, err);
             }
           });
-          collectionSnapshotRows.set(collectionName, normalized);
+          collectionSnapshotRows.set(snapshotKey, normalized);
           mergeAndRender();
           const visibleCount = borrowRequestsSnapshotCount;
           if (visibleCount > 0) {
@@ -3169,9 +3205,9 @@ function initBorrowAssetsApp() {
         (error) => {
           const code = (error?.code || "").toString();
           const loggedIn = !!readCurrentUserEmail();
-          collectionSnapshotErrors.set(collectionName, code || "unknown");
-          collectionSnapshotRows.set(collectionName, []);
-          collectionSnapshotCounts.set(collectionName, 0);
+          collectionSnapshotErrors.set(snapshotKey, code || "unknown");
+          collectionSnapshotRows.set(snapshotKey, []);
+          collectionSnapshotCounts.set(snapshotKey, 0);
           if (!shouldReadAllRequests) {
             myRequestsLoadState = "error";
             myRequestsLoadError = code === "permission-denied"
@@ -3199,8 +3235,9 @@ function initBorrowAssetsApp() {
           setStaffQueueMessage("โหลดคิวคำขอไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
           console.error("borrow assets subscribe failed - app.borrow-assets.js:2046", collectionName, error);
         }
-      );
-      unsubscribeBorrowRequests.push(unsubscribe);
+        );
+        unsubscribeBorrowRequests.push(unsubscribe);
+      });
     });
   };
 

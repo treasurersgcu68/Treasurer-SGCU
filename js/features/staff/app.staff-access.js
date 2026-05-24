@@ -163,6 +163,8 @@ function initStaffAccessPages() {
   const COLLECTION_ORGANIZATION_CATALOG = firestoreCollections.organizationCatalog || "organizationCatalog";
   const COLLECTION_POSITION_CODE_COUNTERS =
     firestoreCollections.staffPositionCodeCounters || "staffPositionCodeCounters";
+  const STAFF_APPLICATION_LIST_LIMIT = 500;
+  const ORG_REPRESENTATIVE_LIST_LIMIT = 500;
   const STAFF_HEAD_EMAIL_OVERRIDES = new Set([
     "tuwanon.kimchiang@gmail.com",
     "treasurer.sgcu68@gmail.com"
@@ -257,6 +259,8 @@ function initStaffAccessPages() {
   let currentOrgRepresentativeOrganizations = [];
   let currentOrgRepresentativeFilteredOrganizations = [];
   let currentOrgRepresentativeAcademicYear = "";
+  let orgRepresentativeOrgFiltersLoadPromise = null;
+  let orgRepresentativeOrgFiltersLoadedForPage = false;
   let currentPositionCatalog = [];
   let currentEditingPositionId = "";
   let appFormStatusLocked = false;
@@ -988,6 +992,118 @@ function initStaffAccessPages() {
     const id = (page || "").toString().trim();
     return STAFF_PAGE_OPTIONS.some((item) => item.id === id) || STAFF_IMPLICIT_ALLOWED_PAGES.includes(id);
   };
+  const normalizeAllowedPageId = (value) => {
+    const raw = (value || "").toString().trim();
+    if (!raw) return "";
+    const cleaned = raw
+      .replace(/^https?:\/\/[^/#?]+/i, "")
+      .replace(/^\.?\/*(?:index\.html)?#?\/?/, "")
+      .replace(/^#\/?/, "")
+      .replace(/^\/+/, "")
+      .replace(/[?#].*$/, "");
+    const lowered = cleaned.toLowerCase();
+    const kebab = cleaned
+      .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+      .toLowerCase();
+    const compact = kebab.replace(/[\s_/]+/g, "-");
+    const byDirectId = STAFF_PAGE_OPTIONS.find((item) => item.id === raw || item.id === lowered || item.id === compact);
+    if (byDirectId) return byDirectId.id;
+    if (STAFF_IMPLICIT_ALLOWED_PAGES.includes(cleaned) || STAFF_IMPLICIT_ALLOWED_PAGES.includes(lowered) || STAFF_IMPLICIT_ALLOWED_PAGES.includes(compact)) {
+      return compact;
+    }
+    const byLabel = STAFF_PAGE_OPTIONS.find((item) => item.label === raw || item.label === cleaned);
+    if (byLabel) return byLabel.id;
+    const aliases = new Map([
+      ["dashboard", "dashboard-staff"],
+      ["staff-dashboard", "dashboard-staff"],
+      ["ภาพรวมโครงการ", "dashboard-staff"],
+      ["project-status", "project-status-staff"],
+      ["project-status-staff", "project-status-staff"],
+      ["สถานะโครงการ", "project-status-staff"],
+      ["สถานะโครงการฝั่ง-staff", "project-status-staff"],
+      ["system-data", "system-data-staff"],
+      ["health-check", "system-data-staff"],
+      ["ข้อมูลระบบ", "system-data-staff"],
+      ["borrow-assets", "borrow-assets-staff"],
+      ["borrow-assets-staff", "borrow-assets-staff"],
+      ["ยืม-คืนพัสดุ", "borrow-assets-staff"],
+      ["meeting-room", "meeting-room-staff"],
+      ["meeting-room-booking", "meeting-room-staff"],
+      ["meeting-room-staff", "meeting-room-staff"],
+      ["ห้องประชุม", "meeting-room-staff"],
+      ["budget-approval", "budget-approval-staff"],
+      ["budget-approval-staff", "budget-approval-staff"],
+      ["คำของบประมาณ", "budget-approval-staff"],
+      ["content-management", "content-management-staff"],
+      ["content-management-staff", "content-management-staff"],
+      ["จัดการเนื้อหา", "content-management-staff"],
+      ["news", "content-news-staff"],
+      ["content-news", "content-news-staff"],
+      ["content-news-staff", "content-news-staff"],
+      ["ข่าวสาร", "content-news-staff"],
+      ["financial-docs", "content-documents-staff"],
+      ["content-documents", "content-documents-staff"],
+      ["content-documents-staff", "content-documents-staff"],
+      ["เอกสารการเงิน", "content-documents-staff"],
+      ["staff", "staff-approval"],
+      ["staff-approval", "staff-approval"],
+      ["สมาชิกสตาฟ", "staff-approval"],
+      ["org-representative", "org-representative-approval-staff"],
+      ["org-representative-approval", "org-representative-approval-staff"],
+      ["org-representative-approval-staff", "org-representative-approval-staff"],
+      ["ตัวแทนองค์กร", "org-representative-approval-staff"],
+      ["login", "login"],
+      ["เข้าสู่ระบบ", "login"],
+      ["เข้าสู่ระบบ-บัญชีผู้ใช้", "login"]
+    ]);
+    return aliases.get(raw) || aliases.get(cleaned) || aliases.get(lowered) || aliases.get(compact) || "";
+  };
+  const flattenAllowedPageValues = (pages) => {
+    if (Array.isArray(pages)) return pages.flatMap((item) => flattenAllowedPageValues(item));
+    if (typeof pages === "string") {
+      const text = pages.trim();
+      if (!text) return [];
+      if (text === "*" || text.toLowerCase() === "all") {
+        return [...STAFF_PAGE_OPTIONS.map((item) => item.id), ...STAFF_IMPLICIT_ALLOWED_PAGES];
+      }
+      return text.split(/[,;|\n]+/).map((item) => item.trim()).filter(Boolean);
+    }
+    if (pages && typeof pages === "object") {
+      const picked = ["id", "page", "pageId", "value", "name", "label", "route"]
+        .map((key) => pages[key])
+        .filter((item) => item !== undefined && item !== null && item !== "");
+      const truthyKeys = Object.entries(pages)
+        .filter(([, enabled]) => enabled === true || enabled === "true" || enabled === 1 || enabled === "1")
+        .map(([key]) => key);
+      return [...picked, ...truthyKeys].flatMap((item) => flattenAllowedPageValues(item));
+    }
+    return [];
+  };
+  const readAllowedPagesInput = (entry = {}) => {
+    if (!entry || typeof entry !== "object") return entry;
+    return (
+      entry.allowedPages ??
+      entry.allowedPageIds ??
+      entry.allowedStaffPages ??
+      entry.staffPages ??
+      entry.pages ??
+      entry.pageAccess ??
+      entry.pagePermissions ??
+      entry.permissions?.allowedPages ??
+      entry.permissions?.pages ??
+      entry.access?.allowedPages ??
+      entry.access?.pages ??
+      []
+    );
+  };
+  const getStaffPageLabel = (page) => {
+    const id = (page || "").toString().trim();
+    const explicit = STAFF_PAGE_OPTIONS.find((item) => item.id === id);
+    if (explicit) return explicit.label;
+    if (id === "login") return "เข้าสู่ระบบ / บัญชีผู้ใช้";
+    if (id === "project-status-staff") return "สถานะโครงการฝั่ง Staff";
+    return id || "-";
+  };
   const getDefaultAllowedPagesByYY = (yy) => {
     const code = normalizeCode2(yy);
     if (code === "00") {
@@ -996,9 +1112,9 @@ function initStaffAccessPages() {
     return ["login"];
   };
   const normalizeAllowedPages = (pages, fallbackYY = "") => {
-    const list = Array.isArray(pages)
-      ? pages.map((item) => (item || "").toString().trim()).filter(Boolean)
-      : [];
+    const list = flattenAllowedPageValues(pages)
+      .map((item) => normalizeAllowedPageId(item))
+      .filter(Boolean);
     const filtered = Array.from(new Set(list.filter((page) => isKnownStaffPage(page))));
     return filtered.length ? filtered : getDefaultAllowedPagesByYY(fallbackYY);
   };
@@ -1265,7 +1381,7 @@ function initStaffAccessPages() {
     code: (entry.code || entry.positionCode || "").toString().trim(),
     yy: normalizeCode2(entry.yy || entry.positionCodeYY || entry.divisionCodeYY || ""),
     zz: normalizeCode2(entry.zz || entry.positionCodeZZ || entry.levelCodeZZ || ""),
-    allowedPages: normalizeAllowedPages(entry.allowedPages, entry.yy || entry.positionCodeYY || entry.divisionCodeYY || ""),
+    allowedPages: normalizeAllowedPages(readAllowedPagesInput(entry), entry.yy || entry.positionCodeYY || entry.divisionCodeYY || ""),
     sourceApplicationId: (entry.sourceApplicationId || "").toString().trim(),
     approvedAt: entry.approvedAt || null
   });
@@ -1321,7 +1437,7 @@ function initStaffAccessPages() {
 
   const getAllowedPagesForCatalogPosition = (item = {}) => {
     const yy = normalizeCode2(item.divisionCodeYY || item.yy || "");
-    return normalizeAllowedPages(item.allowedPages, yy);
+    return normalizeAllowedPages(readAllowedPagesInput(item), yy);
   };
 
   const findPositionAccessMeta = (positionText, yyHint = "", zzHint = "") => {
@@ -2034,22 +2150,20 @@ function initStaffAccessPages() {
   };
 
   const renderAllowedPageBadges = (allowedPages = []) => {
-    const pages = Array.isArray(allowedPages) ? allowedPages : [];
-    const visiblePages = pages.filter((page) => STAFF_PAGE_OPTIONS.some((entry) => entry.id === page));
-    if (!visiblePages.length) return '<span class="staff-position-page-badge is-summary">ไม่มีหน้าฝั่ง Staff</span>';
-    if (STAFF_PAGE_OPTIONS.every((item) => visiblePages.includes(item.id))) {
+    const pages = new Set(normalizeAllowedPages(allowedPages, ""));
+    const orderedPages = [
+      ...STAFF_PAGE_OPTIONS.map((item) => item.id),
+      "project-status-staff"
+    ]
+      .filter((page) => pages.has(page));
+    if (!orderedPages.length) return '<span class="staff-position-page-badge is-summary">ไม่มีหน้าฝั่ง Staff</span>';
+    const hasAllSelectableStaffPages = STAFF_PAGE_OPTIONS.every((item) => pages.has(item.id));
+    if (hasAllSelectableStaffPages) {
       return `<span class="staff-position-page-badge is-summary">ทุกหน้า (${toSafeText(STAFF_PAGE_OPTIONS.length)} หน้า)</span>`;
     }
-    const shownPages = visiblePages.slice(0, 4);
-    const hiddenCount = Math.max(0, visiblePages.length - shownPages.length);
-    const visibleBadges = shownPages.map((page) => {
-      const label = STAFF_PAGE_OPTIONS.find((entry) => entry.id === page)?.label || page;
-      return `<span class="staff-position-page-badge">${toSafeText(label)}</span>`;
-    });
-    if (hiddenCount) {
-      visibleBadges.push(`<span class="staff-position-page-badge is-summary">+${toSafeText(hiddenCount)} หน้า</span>`);
-    }
-    return visibleBadges.join("");
+    return orderedPages
+      .map((page) => `<span class="staff-position-page-badge">${toSafeText(getStaffPageLabel(page))}</span>`)
+      .join("");
   };
 
   const renderApplicationPositionSelect = () => {
@@ -2512,6 +2626,75 @@ function initStaffAccessPages() {
       if (typeof orgFilters !== "undefined" && Array.isArray(orgFilters)) return orgFilters;
     } catch (_) {}
     return Array.isArray(globalThis.orgFilters) ? globalThis.orgFilters : [];
+  };
+
+  const loadOrgRepresentativeOrgFiltersFromStore = async () => {
+    if (!resolveStore() || !firestore.getDocs || !firestore.collection) return false;
+    const colRef = firestore.collection(firestore.db, COLLECTION_ORGANIZATION_CATALOG);
+    const q = firestore.query && firestore.where
+      ? firestore.query(colRef, firestore.where("status", "==", "active"))
+      : colRef;
+    const snapshot = await firestore.getDocs(q);
+    const rows = [];
+    (snapshot?.docs || []).forEach((docSnap) => {
+      const data = docSnap.data?.() || {};
+      const status = normalizeOrganizationCatalogText(data.status || "active").toLowerCase();
+      if (status && status !== "active") return;
+      const group = normalizeOrganizationCatalogText(data.group || data.organizationType || data.orgGroup);
+      const name = normalizeOrganizationCatalogText(data.name || data.organizationName || data.orgName);
+      if (!group || !name) return;
+      rows.push({
+        id: normalizeOrganizationCatalogText(docSnap.id),
+        group,
+        name,
+        code: normalizeOrganizationCatalogText(data.code || data.orgCode).toUpperCase(),
+        documentRunCode: normalizeOrganizationCatalogText(data.documentRunCode || data.runCode),
+        accountNo: normalizeOrganizationCatalogText(data.accountNo || data.bankAccount || data.bankAccountNo)
+      });
+    });
+    rows.sort((a, b) =>
+      a.group.localeCompare(b.group, "th") ||
+      (a.code || "").localeCompare(b.code || "", "th", { numeric: true }) ||
+      a.name.localeCompare(b.name, "th")
+    );
+    if (rows.length) {
+      setLocalOrganizationCatalogRows(rows);
+      return true;
+    }
+    return false;
+  };
+
+  const canLoadOrgRepresentativeOrgFilters = () =>
+    typeof loadOrgFilters === "function" || !!(resolveStore() && firestore.getDocs && firestore.collection);
+
+  const ensureOrgRepresentativeOrgFiltersLoaded = () => {
+    if (orgRepresentativeOrgFiltersLoadedForPage && getKnownOrganizationFilters().length) return Promise.resolve(true);
+    if (!canLoadOrgRepresentativeOrgFilters()) return Promise.resolve(false);
+    if (orgRepresentativeOrgFiltersLoadPromise) return orgRepresentativeOrgFiltersLoadPromise;
+    orgRepresentativeOrgFiltersLoadPromise = Promise.resolve()
+      .then(() => {
+        if (typeof loadOrgFilters === "function") {
+          return Promise.resolve(loadOrgFilters()).then(() => getKnownOrganizationFilters().length > 0);
+        }
+        return false;
+      })
+      .then((loadedFromSharedLoader) => {
+        if (loadedFromSharedLoader || getKnownOrganizationFilters().length) return true;
+        return loadOrgRepresentativeOrgFiltersFromStore();
+      })
+      .then((loaded) => {
+        orgRepresentativeOrgFiltersLoadedForPage = true;
+        return !!loaded || getKnownOrganizationFilters().length > 0;
+      })
+      .catch((error) => {
+        console.warn("load organization filters for representative overview failed", error);
+        orgRepresentativeOrgFiltersLoadedForPage = true;
+        return false;
+      })
+      .finally(() => {
+        orgRepresentativeOrgFiltersLoadPromise = null;
+      });
+    return orgRepresentativeOrgFiltersLoadPromise;
   };
 
   const normalizeOrganizationCatalogText = (value) =>
@@ -3036,6 +3219,24 @@ function initStaffAccessPages() {
   };
 
   const renderOrgRepresentativeOverview = () => {
+    if (!orgRepresentativeOrgFiltersLoadedForPage && canLoadOrgRepresentativeOrgFilters()) {
+      if (orgRepresentativeOverviewBodyEl) {
+        orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="5">กำลังโหลดทะเบียนองค์กร...</td></tr>';
+      }
+      if (orgRepresentativePanelCaptionEl && currentOrgRepresentativeView === "overview") {
+        orgRepresentativePanelCaptionEl.textContent = "กำลังโหลดทะเบียนองค์กร...";
+      }
+      void ensureOrgRepresentativeOrgFiltersLoaded().then((loaded) => {
+        if (!loaded) {
+          renderOrgRepresentativeOverview();
+          return;
+        }
+        renderOrganizationCatalogTable();
+        renderOrgRepresentativeOverview();
+      });
+      return;
+    }
+
     populateOrgRepresentativeAcademicYearFilter();
     buildOrgRepresentativeOrganizations();
     populateOrgRepresentativeGroupFilter();
@@ -3598,7 +3799,21 @@ function initStaffAccessPages() {
         divisionCodeYY: item.divisionCodeYY,
         divisionLabel: divisionCodeLabel(item.divisionCodeYY),
         levelCodeZZ: item.levelCodeZZ,
-        allowedPages: normalizeAllowedPages(item.allowedPages, item.divisionCodeYY)
+        allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), item.divisionCodeYY)
+      })));
+      renderPositionDatalist();
+      renderPositionCatalog();
+      renderPositionAllowedPageOptions([], "");
+      return;
+    }
+    if (!getCurrentAuthEmail()) {
+      currentPositionCatalog = sortPositionCatalogItems(DEFAULT_POSITION_OPTIONS.map((item) => ({
+        id: slugifyPosition(item.name),
+        name: item.name,
+        divisionCodeYY: item.divisionCodeYY,
+        divisionLabel: divisionCodeLabel(item.divisionCodeYY),
+        levelCodeZZ: item.levelCodeZZ,
+        allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), item.divisionCodeYY)
       })));
       renderPositionDatalist();
       renderPositionCatalog();
@@ -3633,7 +3848,7 @@ function initStaffAccessPages() {
               divisionCodeYY: yy,
               divisionLabel: normalizePositionText(item.divisionLabel || item.divisionName || divisionCodeLabel(yy)),
               levelCodeZZ: zz,
-              allowedPages: normalizeAllowedPages(item.allowedPages, yy)
+              allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), yy)
             };
           })
           .filter((item) => item.name);
@@ -3647,7 +3862,7 @@ function initStaffAccessPages() {
             divisionCodeYY: item.divisionCodeYY,
             divisionLabel: item.divisionLabel || divisionCodeLabel(item.divisionCodeYY),
             levelCodeZZ: item.levelCodeZZ,
-            allowedPages: normalizeAllowedPages(item.allowedPages, item.divisionCodeYY)
+            allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), item.divisionCodeYY)
           }))
         ].forEach((item) => {
           const key = normalizePositionText(item.name).toLowerCase();
@@ -3670,7 +3885,7 @@ function initStaffAccessPages() {
           name: item.name,
           divisionCodeYY: item.divisionCodeYY,
           levelCodeZZ: item.levelCodeZZ,
-          allowedPages: normalizeAllowedPages(item.allowedPages, item.divisionCodeYY)
+          allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), item.divisionCodeYY)
         }));
         renderPositionDatalist();
         renderApplicationPositionSelect();
@@ -3738,15 +3953,29 @@ function initStaffAccessPages() {
       scheduleDeferredBootstrap();
       return;
     }
+    if (!getCurrentAuthEmail()) {
+      currentPendingApplications = [];
+      approvalBodyEl.innerHTML = `<tr><td colspan="5">กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้</td></tr>`;
+      setMessage(approvalMessageEl, "", "#6b7280");
+      return;
+    }
 
     if (typeof unsubscribePendingApplications === "function") {
       unsubscribePendingApplications();
       unsubscribePendingApplications = null;
     }
 
-    const q = firestore.query(
-      firestore.collection(firestore.db, COLLECTION_APPLICATIONS)
-    );
+    const colRef = firestore.collection(firestore.db, COLLECTION_APPLICATIONS);
+    const q = firestore.where
+      ? firestore.query(
+        colRef,
+        firestore.where("status", "==", "pending"),
+        ...(firestore.limit ? [firestore.limit(STAFF_APPLICATION_LIST_LIMIT)] : [])
+      )
+      : firestore.query(
+        colRef,
+        ...(firestore.limit ? [firestore.limit(STAFF_APPLICATION_LIST_LIMIT)] : [])
+      );
 
     unsubscribePendingApplications = firestore.onSnapshot(
       q,
@@ -3779,15 +4008,28 @@ function initStaffAccessPages() {
       scheduleDeferredBootstrap();
       return;
     }
+    if (!getCurrentAuthEmail()) {
+      currentApprovedHistory = [];
+      approvalHistoryBodyEl.innerHTML = `<tr><td colspan="3">กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้</td></tr>`;
+      return;
+    }
 
     if (typeof unsubscribeApprovalHistory === "function") {
       unsubscribeApprovalHistory();
       unsubscribeApprovalHistory = null;
     }
 
-    const q = firestore.query(
-      firestore.collection(firestore.db, COLLECTION_APPLICATIONS)
-    );
+    const colRef = firestore.collection(firestore.db, COLLECTION_APPLICATIONS);
+    const q = firestore.where
+      ? firestore.query(
+        colRef,
+        firestore.where("status", "==", "approved"),
+        ...(firestore.limit ? [firestore.limit(STAFF_APPLICATION_LIST_LIMIT)] : [])
+      )
+      : firestore.query(
+        colRef,
+        ...(firestore.limit ? [firestore.limit(STAFF_APPLICATION_LIST_LIMIT)] : [])
+      );
 
     unsubscribeApprovalHistory = firestore.onSnapshot(
       q,
@@ -3819,15 +4061,19 @@ function initStaffAccessPages() {
       scheduleDeferredBootstrap();
       return;
     }
+    if (!getCurrentAuthEmail()) {
+      if (orgRepresentativePendingBodyEl) {
+        orgRepresentativePendingBodyEl.innerHTML = '<tr><td colspan="5">กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูล...</td></tr>';
+      }
+      setMessage(orgRepresentativeMessageEl, "", "#6b7280");
+      return;
+    }
 
-    if (typeof loadOrgFilters === "function" && !getKnownOrganizationFilters().length) {
-      loadOrgFilters()
+    if (!orgRepresentativeOrgFiltersLoadedForPage) {
+      ensureOrgRepresentativeOrgFiltersLoaded()
         .then(() => {
           renderOrganizationCatalogTable();
           renderOrgRepresentativeOverview();
-        })
-        .catch((error) => {
-          console.warn("load organization filters for representative overview failed", error);
         });
     }
 
@@ -3837,7 +4083,8 @@ function initStaffAccessPages() {
     }
 
     const q = firestore.query(
-      firestore.collection(firestore.db, COLLECTION_ORG_REPRESENTATIVES)
+      firestore.collection(firestore.db, COLLECTION_ORG_REPRESENTATIVES),
+      ...(firestore.limit ? [firestore.limit(ORG_REPRESENTATIVE_LIST_LIMIT)] : [])
     );
 
     unsubscribeOrgRepresentativeApplications = firestore.onSnapshot(
@@ -3849,10 +4096,29 @@ function initStaffAccessPages() {
             .filter((item) => (item.requestType || "").toString().trim() === "organization_representative"),
           "updatedAt"
         );
-        renderOrgRepresentativeApplications();
+        const renderLoadedApplications = () => {
+          renderOrgRepresentativeApplications();
+          window.setTimeout(() => {
+            renderOrgRepresentativeOverview();
+          }, 0);
+        };
+        if (!orgRepresentativeOrgFiltersLoadedForPage) {
+          ensureOrgRepresentativeOrgFiltersLoaded().then(() => {
+            renderLoadedApplications();
+          });
+          return;
+        }
+        renderLoadedApplications();
       },
       (error) => {
         console.error("organization representative listener failed - app.staff-access.js:2417", error);
+        if (!getCurrentAuthEmail()) {
+          if (orgRepresentativePendingBodyEl) {
+            orgRepresentativePendingBodyEl.innerHTML = '<tr><td colspan="5">กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูล...</td></tr>';
+          }
+          setMessage(orgRepresentativeMessageEl, "", "#6b7280");
+          return;
+        }
         const msg = buildListenerErrorText("ไม่สามารถโหลดคำขอตัวแทนองค์กรได้ในขณะนี้", error);
         if (orgRepresentativePendingBodyEl) {
           orgRepresentativePendingBodyEl.innerHTML = `<tr><td colspan="5">${toSafeText(msg)}</td></tr>`;
@@ -3984,7 +4250,7 @@ function initStaffAccessPages() {
           code: approvedPositionCode,
           yy: approvedPositionCodeMeta.yy,
           zz: approvedPositionCodeMeta.zz,
-          allowedPages: normalizeAllowedPages(positionMeta?.allowedPages, approvedPositionCodeMeta.yy),
+          allowedPages: normalizeAllowedPages(readAllowedPagesInput(positionMeta || {}), approvedPositionCodeMeta.yy),
           sourceApplicationId: id,
           approvedAt: new Date().toISOString()
         };

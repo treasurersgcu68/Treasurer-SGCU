@@ -446,11 +446,42 @@ function resizeClubDebtSummaryChart(rows, chartInnerEl) {
   if (clubDebtSummaryChart) clubDebtSummaryChart.resize();
 }
 
+function formatDebtAxisTick(value, compact = false) {
+  const num = Math.abs(Number(value));
+  if (!Number.isFinite(num)) return "";
+  if (compact) {
+    if (num >= 1000000) {
+      const valueText = (num / 1000000).toLocaleString("th-TH", { maximumFractionDigits: 1 });
+      return `${valueText}M`;
+    }
+    if (num >= 1000) {
+      const valueText = (num / 1000).toLocaleString("th-TH", { maximumFractionDigits: 0 });
+      return `${valueText}K`;
+    }
+    return num.toLocaleString("th-TH", { maximumFractionDigits: 0 });
+  }
+  if (num >= 1000000) {
+    const valueText = (num / 1000000).toLocaleString("th-TH", { maximumFractionDigits: 1 });
+    return `${valueText} ล้าน`;
+  }
+  if (num >= 100000) {
+    const valueText = (num / 100000).toLocaleString("th-TH", { maximumFractionDigits: 1 });
+    return `${valueText} แสน`;
+  }
+  if (num >= 1000) {
+    const valueText = (num / 1000).toLocaleString("th-TH", { maximumFractionDigits: 0 });
+    return `${valueText} พัน`;
+  }
+  return num.toLocaleString("th-TH", { maximumFractionDigits: 0 });
+}
+
 function updateClubDebtSummaryChart(rows, chartCanvasEl, chartInnerEl) {
   if (!chartCanvasEl || typeof Chart === "undefined") return;
   const wrapLabel = typeof getClosureAxisWrappedLabel === "function"
     ? getClosureAxisWrappedLabel
     : (label) => label;
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  const yAxisWidth = isMobile ? 118 : 190;
 
   const labels = rows.length ? rows.map((row) => row.orgName) : ["ไม่มีรายการ"];
   const data = rows.length ? rows.map((row) => Math.abs(row.totalDebt)) : [0];
@@ -511,7 +542,7 @@ function updateClubDebtSummaryChart(rows, chartCanvasEl, chartInnerEl) {
       externalAxisLabels: {
         y: {
           enabled: true,
-          width: 190,
+          width: yAxisWidth,
           gap: 8,
           formatter: (label) => wrapLabel(label)
         }
@@ -522,14 +553,16 @@ function updateClubDebtSummaryChart(rows, chartCanvasEl, chartInnerEl) {
         beginAtZero: true,
         max: axisMax,
         ticks: {
+          font: { size: isMobile ? 10 : 11 },
+          maxTicksLimit: isMobile ? 4 : 5,
           callback(value) {
-            return formatMoney(Number(value));
+            return formatDebtAxisTick(value, isMobile);
           }
         }
       },
       y: {
         afterFit(scale) {
-          scale.width = Math.max(scale.width || 0, 190);
+          scale.width = yAxisWidth;
         },
         ticks: {
           display: false,

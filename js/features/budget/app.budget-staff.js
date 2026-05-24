@@ -156,6 +156,7 @@
   const COLLECTION_REQUESTS = firestoreCollections.budgetApprovalRequests || "budgetApprovalRequests";
   const COLLECTION_SETTINGS = firestoreCollections.budgetApprovalSettings || "budgetApprovalSettings";
   const SETTINGS_DOC_ID = firestoreDocs.budgetApprovalSettings || "global";
+  const REQUEST_LIST_LIMIT = 1000;
   const LOCAL_BUDGET_CEILING_KEY = "sgcuBudgetStaffBudgetCeiling";
   const LOCAL_BUDGET_GROUP_CEILINGS_KEY = "sgcuBudgetStaffBudgetGroupCeilings";
   const LOCAL_BUDGET_GROUP_CEILING_OPEN_KEY = "sgcuBudgetStaffBudgetGroupCeilingOpen";
@@ -1290,7 +1291,8 @@
 
     const listQuery = firestore.query(
       firestore.collection(firestore.db, COLLECTION_REQUESTS),
-      firestore.orderBy("createdAt", "desc")
+      firestore.orderBy("createdAt", "desc"),
+      ...(firestore.limit ? [firestore.limit(REQUEST_LIST_LIMIT)] : [])
     );
 
     unsubscribeRequests = firestore.onSnapshot(listQuery, (snapshot) => {

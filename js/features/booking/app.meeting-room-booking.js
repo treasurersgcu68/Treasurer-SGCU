@@ -81,6 +81,8 @@ function initMeetingRoomBookingApp() {
   const ROOM_COLLECTION_NAME = firestoreCollections.meetingRooms || "meetingRooms";
   const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
   const AUDIT_COLLECTION_NAME = firestoreCollections.auditLogs || "auditLogs";
+  const USER_BOOKING_LOOKBACK_MONTHS = 1;
+  const USER_BOOKING_LOOKAHEAD_MONTHS = 3;
   const DEFAULT_MEETING_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public" },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public" },
@@ -177,6 +179,26 @@ function initMeetingRoomBookingApp() {
     normalizeProjectCode(value).replace(/[^A-Z0-9]/g, "");
 
   let calendarCursor = new Date();
+
+  const toDateKeyForQuery = (date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const getBookingQueryWindow = () => {
+    const base = calendarCursor instanceof Date && !Number.isNaN(calendarCursor.getTime())
+      ? calendarCursor
+      : new Date();
+    const start = new Date(base.getFullYear(), base.getMonth() - USER_BOOKING_LOOKBACK_MONTHS, 1);
+    const end = new Date(base.getFullYear(), base.getMonth() + USER_BOOKING_LOOKAHEAD_MONTHS + 1, 0);
+    return {
+      start: toDateKeyForQuery(start),
+      end: toDateKeyForQuery(end)
+    };
+  };
 
   const readProjectSource = () => {
     if (typeof window === "undefined") return [];
@@ -1242,12 +1264,6 @@ function initMeetingRoomBookingApp() {
       return;
     }
     clearMeetingAutoRetry();
-    if (!bookings.length) {
-      stateEl.hidden = false;
-      stateEl.style.color = "#6b7280";
-      stateEl.innerHTML = "ยังไม่มีการจองห้องประชุม";
-      return;
-    }
     stateEl.hidden = true;
     stateEl.innerHTML = "";
   };
@@ -2170,7 +2186,6 @@ function initMeetingRoomBookingApp() {
     if (calendarTitle) {
       calendarTitle.textContent = formatCalendarTitle(selectedMonthStart.firstDay);
     }
-
     const todayKey = toDateKey(new Date());
     const maxEvents = getMeetingCalendarMaxEvents();
     const cells = [];
@@ -2422,8 +2437,15 @@ function initMeetingRoomBookingApp() {
     }
     try {
       const colRef = firestore.collection(firestore.db, BOOKING_COLLECTION_NAME);
-      unsubscribe = firestore.onSnapshot(
+      const windowRange = getBookingQueryWindow();
+      const bookingQuery = firestore.query(
         colRef,
+        firestore.where("date", ">=", windowRange.start),
+        firestore.where("date", "<=", windowRange.end),
+        firestore.orderBy("date", "asc")
+      );
+      unsubscribe = firestore.onSnapshot(
+        bookingQuery,
         (snapshot) => {
           bookings = snapshot.docs.map(mapSnapshotDoc);
           syncApprovalNotifications(bookings);
@@ -3051,6 +3073,7 @@ function initMeetingRoomBookingApp() {
   if (calendarPrevBtn) {
     calendarPrevBtn.addEventListener("click", () => {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+      subscribeBookings();
       renderCalendarOverview();
     });
   }
@@ -3058,6 +3081,7 @@ function initMeetingRoomBookingApp() {
   if (calendarNextBtn) {
     calendarNextBtn.addEventListener("click", () => {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+      subscribeBookings();
       renderCalendarOverview();
     });
   }

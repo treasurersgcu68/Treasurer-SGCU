@@ -57,6 +57,24 @@
   text-decoration: underline;
 }
 
+.meeting-public-calendar-page #meetingPublicCalendar {
+  --calendar-row-height: 132px;
+  grid-auto-rows: minmax(var(--calendar-row-height), auto);
+}
+
+.meeting-public-calendar-page #meetingPublicCalendar .calendar-day {
+  height: auto;
+  min-height: var(--calendar-row-height);
+  overflow: visible;
+}
+
+.meeting-public-calendar-page #meetingPublicCalendar .calendar-event {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.25;
+}
+
 @media (max-width: 840px) {
   .borrow-my-requests-cards {
     display: grid;
@@ -108,7 +126,7 @@
   }
 
   .meeting-public-calendar-page .calendar-day {
-    min-height: 76px;
+    min-height: 96px;
     padding: 5px;
   }
 

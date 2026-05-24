@@ -1,14 +1,14 @@
-const CACHE_VERSION = "20260523-external-axis-month-labels-8";
+const CACHE_VERSION = "20260524-mobile-y-axis-balance-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260523-external-axis-month-labels-8",
+  "./css/style.css?v=20260524-mobile-y-axis-balance-1",
   "./js/integrations/app.firebase-bootstrap.js?v=20260423-1",
   "./js/core/app.config.js?v=20260518-csv-refresh-2",
   "./js/integrations/app.runtime-config.js?v=20260504-1",
-  "./js/core/app.core.js?v=20260523-external-axis-month-labels-8",
+  "./js/core/app.core.js?v=20260524-mobile-y-axis-balance-1",
   "./js/core/app.csv-export.js?v=20260504-1",
   "./js/core/app.audit-log.js?v=20260507-1",
   "./js/core/app.dialog.js?v=20260501-1",

@@ -63,6 +63,7 @@ function initMeetingRoomStaffApproval() {
   const AUDIT_COLLECTION_NAME = firestoreCollections.auditLogs || "auditLogs";
   const STAFF_REQUEST_STATUSES = new Set(["pending", "cancel_requested", "reschedule_requested"]);
   const STAFF_MEETING_PAGE_SIZE = 50;
+  const STAFF_BOOKING_LIST_LIMIT = 1000;
   const DEFAULT_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public", isDefault: true },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public", isDefault: true },
@@ -2156,6 +2157,11 @@ function initMeetingRoomStaffApproval() {
     if (!hasFirestore) return;
     try {
       const colRef = firestore.collection(firestore.db, COLLECTION_NAME);
+      const bookingsQuery = firestore.query(
+        colRef,
+        firestore.orderBy("date", "desc"),
+        ...(firestore.limit ? [firestore.limit(STAFF_BOOKING_LIST_LIMIT)] : [])
+      );
       if (subscribeGuardTimer) {
         window.clearTimeout(subscribeGuardTimer);
       }
@@ -2168,7 +2174,7 @@ function initMeetingRoomStaffApproval() {
         `;
       }, 8000);
       unsubscribe = firestore.onSnapshot(
-        colRef,
+        bookingsQuery,
         (snapshot) => {
           bookings = snapshot.docs.map(mapSnapshotDoc);
           syncStaffRequestNotifications(bookings);

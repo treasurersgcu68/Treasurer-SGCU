@@ -22,6 +22,8 @@
   const BOOKING_COLLECTION_NAME = firestoreCollections.meetingRoomBookings || "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = firestoreCollections.meetingRooms || "meetingRooms";
   const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
+  const PUBLIC_BOOKING_LOOKBACK_MONTHS = 1;
+  const PUBLIC_BOOKING_LOOKAHEAD_MONTHS = 2;
   const DEFAULT_MEETING_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2" },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2" },
@@ -66,6 +68,7 @@
   let holidayLookup = new Map();
   let activeDayDate = "";
   let calendarCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  let unsubscribeBookings = null;
 
   const resolveFirestoreBridge = () => {
     firestore = window.sgcuFirestore || {};
@@ -134,6 +137,16 @@
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+  };
+
+  const getPublicBookingWindow = () => {
+    const cursorState = getCalendarMonthState(calendarCursor);
+    const start = new Date(cursorState.year, cursorState.month - PUBLIC_BOOKING_LOOKBACK_MONTHS, 1);
+    const end = new Date(cursorState.year, cursorState.month + PUBLIC_BOOKING_LOOKAHEAD_MONTHS + 1, 0);
+    return {
+      start: toDateKey(start),
+      end: toDateKey(end)
+    };
   };
 
   const formatDate = (dateText = "") => {
@@ -212,12 +225,6 @@
       month: safe.getMonth(),
       firstDay: new Date(safe.getFullYear(), safe.getMonth(), 1)
     };
-  };
-
-  const getCalendarMaxEvents = () => {
-    if (window.matchMedia && window.matchMedia("(max-width: 640px)").matches) return 2;
-    if (window.matchMedia && window.matchMedia("(max-width: 860px)").matches) return 3;
-    return 4;
   };
 
   const parseDateTime = (date, time) => {
@@ -305,8 +312,6 @@
     const selectedMonthStart = getCalendarMonthState(calendarCursor);
     const daysInMonth = new Date(selectedMonthStart.year, selectedMonthStart.month + 1, 0).getDate();
     const todayKey = toDateKey(new Date());
-    const maxEvents = getCalendarMaxEvents();
-
     const monthBookings = bookings
       .filter((item) => {
         if (!item.date || item.status === "rejected") return false;
@@ -338,8 +343,7 @@
       const date = new Date(selectedMonthStart.year, selectedMonthStart.month, day);
       const dateKey = toDateKey(date);
       const items = monthBookings[dateKey] || [];
-      const visibleItems = items.slice(0, maxEvents);
-      const remainingCount = Math.max(items.length - maxEvents, 0);
+      const visibleItems = items;
       const isToday = dateKey === todayKey;
       const holidayName = getHolidayName(date, dateKey);
       const isHoliday = !!holidayName;
@@ -354,11 +358,6 @@
         })
         .join("");
 
-      const moreText =
-        remainingCount > 0
-          ? `<div class="calendar-event calendar-more">และอีก ${remainingCount} รายการ</div>`
-          : "";
-
       const classes = ["calendar-day"];
       if (isToday) classes.push("calendar-day-today");
       if (items.length) classes.push("calendar-day-has-events");
@@ -372,7 +371,6 @@
             ${isHoliday ? `<span class="calendar-holiday-pill" title="${escapeText(holidayName)}">วันหยุด</span>` : ""}
           </div>
           ${eventRows}
-          ${moreText}
         </div>
       `);
     }
@@ -456,35 +454,72 @@
   };
 
   const subscribeBookings = () => {
+    if (typeof unsubscribeBookings === "function") {
+      try {
+        unsubscribeBookings();
+      } catch (_) {
+        // ignore unsubscribe errors
+      }
+      unsubscribeBookings = null;
+    }
     const colRef = firestore.collection(firestore.db, BOOKING_COLLECTION_NAME);
-    firestore.onSnapshot(
+    const handleSnapshot = (snapshot) => {
+      bookings = snapshot.docs.map((docItem) => {
+        const data = docItem.data() || {};
+        const normalizedStatus = normalizeStatus(data.status);
+        return {
+          id: docItem.id,
+          roomId: data.roomId || "",
+          roomName: data.roomName || "",
+          date: data.date || "",
+          startTime: data.startTime || "",
+          endTime: data.endTime || "",
+          requester: data.requester || "",
+          purpose: data.purpose || "",
+          status: normalizedStatus
+        };
+      });
+      renderCalendar();
+      if (activeDayDate) setDayModalBody(activeDayDate);
+    };
+    const subscribeFallback = () => {
+      unsubscribeBookings = firestore.onSnapshot(
+        colRef,
+        handleSnapshot,
+        () => {
+          setState("โหลดข้อมูลการจองไม่สำเร็จในขณะนี้", "#b91c1c");
+        }
+      );
+    };
+    if (!firestore.where) {
+      subscribeFallback();
+      return;
+    }
+    const windowRange = getPublicBookingWindow();
+    const q = firestore.query(
       colRef,
-      (snapshot) => {
-        bookings = snapshot.docs.map((docItem) => {
-          const data = docItem.data() || {};
-          const normalizedStatus = normalizeStatus(data.status);
-          return {
-            id: docItem.id,
-            roomId: data.roomId || "",
-            roomName: data.roomName || "",
-            date: data.date || "",
-            startTime: data.startTime || "",
-            endTime: data.endTime || "",
-            requester: data.requester || "",
-            purpose: data.purpose || "",
-            status: normalizedStatus
-          };
-        });
-        renderCalendar();
-        if (activeDayDate) setDayModalBody(activeDayDate);
-      },
+      firestore.where("date", ">=", windowRange.start),
+      firestore.where("date", "<=", windowRange.end),
+      firestore.orderBy("date", "asc")
+    );
+    unsubscribeBookings = firestore.onSnapshot(
+      q,
+      handleSnapshot,
       (err) => {
         const code = (err?.code || "").toString().trim();
         if (code === "permission-denied") {
           setState("ไม่สามารถอ่านข้อมูลได้: โปรดเปิดสิทธิ์อ่านปฏิทินใน Firestore Rules", "#b91c1c");
           return;
         }
-        setState("โหลดข้อมูลการจองไม่สำเร็จในขณะนี้", "#b91c1c");
+        if (typeof unsubscribeBookings === "function") {
+          try {
+            unsubscribeBookings();
+          } catch (_) {
+            // ignore unsubscribe errors
+          }
+          unsubscribeBookings = null;
+        }
+        subscribeFallback();
       }
     );
   };
@@ -492,6 +527,7 @@
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+      subscribeBookings();
       renderCalendar();
     });
   }
@@ -499,6 +535,7 @@
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+      subscribeBookings();
       renderCalendar();
     });
   }
@@ -507,6 +544,7 @@
     todayBtn.addEventListener("click", () => {
       const now = new Date();
       calendarCursor = new Date(now.getFullYear(), now.getMonth(), 1);
+      subscribeBookings();
       renderCalendar();
     });
   }

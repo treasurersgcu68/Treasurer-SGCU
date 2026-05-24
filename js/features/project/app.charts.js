@@ -91,6 +91,8 @@ function initCharts(ctxKey = activeProjectStatusContext) {
   const budgetCtx = budgetCanvas ? budgetCanvas.getContext("2d") : null;
   const statusCtx = statusCanvas ? statusCanvas.getContext("2d") : null;
   const trendCtx = trendCanvas ? trendCanvas.getContext("2d") : null;
+  const isMobileChart = window.matchMedia("(max-width: 720px)").matches;
+  const closureYAxisWidth = isMobileChart ? 118 : 170;
   const makeStackDataset = (label, backgroundColor, datasetIndex) => ({
     label,
     data: [],
@@ -154,7 +156,7 @@ function initCharts(ctxKey = activeProjectStatusContext) {
           externalAxisLabels: {
             y: {
               enabled: true,
-              width: 170,
+              width: closureYAxisWidth,
               gap: 8,
               formatter: (label) => getClosureAxisWrappedLabel(label)
             }
@@ -168,7 +170,7 @@ function initCharts(ctxKey = activeProjectStatusContext) {
           y: {
             stacked: true,
             afterFit(scale) {
-              scale.width = Math.max(scale.width || 0, 170);
+              scale.width = closureYAxisWidth;
             },
             ticks: {
               display: false,

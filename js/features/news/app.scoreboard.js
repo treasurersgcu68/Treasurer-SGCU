@@ -91,7 +91,7 @@ function refreshScoreboardForProjectYear() {
 
 function getScoreboardCacheKey() {
   const year = (typeof selectedProjectSourceYear === "string" ? selectedProjectSourceYear : "").trim();
-  return `${CACHE_KEYS.SCOREBOARD}:project-derived:v3:${SCOREBOARD_ACADEMIC_YEAR}:${year || "active"}`;
+  return `${CACHE_KEYS.SCOREBOARD}:project-derived:v5:${SCOREBOARD_ACADEMIC_YEAR}:${year || "active"}`;
 }
 
 function setScoreboardSectionVisible(anchorEl, isVisible) {
@@ -160,6 +160,7 @@ function buildScoreboardFromProjects(projectList) {
     }))
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
+      if (b.projectCount !== a.projectCount) return b.projectCount - a.projectCount;
       return a.org.localeCompare(b.org, "th");
     });
 }
@@ -175,8 +176,16 @@ function calculateProjectScore(project) {
   const lateMultiplier = getScoreLateMultiplier(budget);
   const earlyScore = days <= 14 ? (14 - days) * earlyMultiplier : 0;
   const latePenalty = days >= 15 ? 2 * (days - 14) * lateMultiplier : 0;
+  const score = earlyScore - latePenalty;
 
-  return earlyScore - latePenalty;
+  if (score > 0 && isZeroScoreBudgetProject(project)) return 0;
+  return score;
+}
+
+function isZeroScoreBudgetProject(project) {
+  const approvedBudget = Number(project?.approvedBudget100 ?? project?.budget ?? 0);
+  const actualBudget = Number(project?.actualBudget ?? 0);
+  return approvedBudget === 0 || actualBudget === 0;
 }
 
 function isScoreboardEligibleProject(project) {

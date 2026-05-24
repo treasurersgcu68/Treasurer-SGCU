@@ -1153,9 +1153,8 @@ function getStaffProfileByEmail(email) {
   const isOverrideHead = STAFF_HEAD_OVERRIDES.has(normalized);
   const isCurrentUserApproved =
     currentStaffApprovalState.email === normalized && currentStaffApprovalState.hasApproved === true;
-  if (!isOverrideHead && !isCurrentUserApproved) return null;
   const hasRealProfile = staffEmails.has(normalized);
-  if (!isOverrideHead && !hasRealProfile) return null;
+  if (!isOverrideHead && !hasRealProfile && !isCurrentUserApproved) return null;
   const profile = staffProfilesByEmail[normalized] || {};
   if (isOverrideHead) {
     return {

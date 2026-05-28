@@ -1572,11 +1572,15 @@ th.sortable.sort-desc::after {
   overflow: hidden;
 }
 
+.chart-inner.is-loading .chart-external-axis-labels {
+  display: none;
+}
+
 .chart-skeleton {
   display: none;
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 4;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.96);
 }

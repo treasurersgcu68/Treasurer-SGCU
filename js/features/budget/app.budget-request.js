@@ -177,16 +177,23 @@ function initBudgetApprovalRequestPage() {
     return Number.isInteger(num) && num > 0 ? String(num) : "";
   };
 
+  const normalizeAcademicYearText = (value) => {
+    const normalized = normalizePositiveIntegerText(value);
+    if (!normalized) return "";
+    const num = Number(normalized);
+    return num < 100 ? String(2500 + num) : normalized;
+  };
+
   const normalizeRoundName = (value) => (value || "").toString().trim().replace(/\s+/g, " ");
 
   const buildBudgetRoundId = (year, roundNo) => {
-    const y = normalizePositiveIntegerText(year);
+    const y = normalizeAcademicYearText(year);
     const r = normalizeRoundName(roundNo);
     return y && r ? `${y}-${r}` : "";
   };
 
   const formatBudgetRoundLabel = (year, roundNo) => {
-    const y = normalizePositiveIntegerText(year);
+    const y = normalizeAcademicYearText(year);
     const r = normalizeRoundName(roundNo);
     return y && r ? `ปี ${y} รอบ ${r}` : "";
   };
@@ -206,7 +213,7 @@ function initBudgetApprovalRequestPage() {
   const normalizeBudgetActiveRounds = (value, fallback = {}) => {
     const rows = (Array.isArray(value) ? value : [])
       .map((item) => {
-        const year = normalizePositiveIntegerText(item?.year || item?.budgetRoundYear);
+        const year = normalizeAcademicYearText(item?.year || item?.budgetRoundYear);
         const roundNo = normalizeRoundName(item?.roundNo || item?.budgetRoundNo);
         const deadline = (item?.deadline || item?.budgetRequestDeadline || "").toString().trim().slice(0, 10);
         const id = (item?.id || buildBudgetRoundId(year, roundNo)).toString().trim();
@@ -215,7 +222,7 @@ function initBudgetApprovalRequestPage() {
       })
       .filter(Boolean);
     if (rows.length) return rows;
-    const year = normalizePositiveIntegerText(fallback.budgetRoundYear);
+    const year = normalizeAcademicYearText(fallback.budgetRoundYear);
     const roundNo = normalizeRoundName(fallback.budgetRoundNo);
     const deadline = (fallback.budgetRequestDeadline || "").toString().trim().slice(0, 10);
     const id = (fallback.currentBudgetRoundId || buildBudgetRoundId(year, roundNo)).toString().trim();
@@ -464,7 +471,7 @@ function initBudgetApprovalRequestPage() {
   const setBudgetRequestCloseState = (settings = "") => {
     const data = typeof settings === "object" && settings ? settings : { budgetRequestDeadline: settings };
     budgetRequestDeadline = (data.budgetRequestDeadline || "").toString().trim();
-    budgetRoundYear = normalizePositiveIntegerText(data.budgetRoundYear);
+    budgetRoundYear = normalizeAcademicYearText(data.budgetRoundYear);
     budgetRoundNo = normalizeRoundName(data.budgetRoundNo);
     currentBudgetRoundId = (data.currentBudgetRoundId || buildBudgetRoundId(budgetRoundYear, budgetRoundNo)).toString().trim();
     activeBudgetRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);

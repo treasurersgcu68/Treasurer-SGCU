@@ -83,7 +83,10 @@
         "js/features/content/app.content-management.js?v=20260506-1"
       ],
       "system-data-staff": "js/features/staff/app.health-check.js?v=20260520-1",
-      "budget-approval-staff": "js/features/budget/app.budget-staff.js?v=20260510-round-wording-1"
+      "budget-approval-staff": [
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1",
+        "js/features/budget/app.budget-staff.js?v=20260510-round-wording-1"
+      ]
     },
     idlePrefetchPages: []
   };

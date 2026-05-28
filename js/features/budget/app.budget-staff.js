@@ -190,16 +190,23 @@
     return Number.isInteger(num) && num > 0 ? String(num) : "";
   };
 
+  const normalizeAcademicYearText = (value) => {
+    const normalized = normalizePositiveIntegerText(value);
+    if (!normalized) return "";
+    const num = Number(normalized);
+    return num < 100 ? String(2500 + num) : normalized;
+  };
+
   const normalizeRoundName = (value) => normalizeText(value).replace(/\s+/g, " ");
 
   const buildBudgetRoundId = (year, roundNo) => {
-    const y = normalizePositiveIntegerText(year);
+    const y = normalizeAcademicYearText(year);
     const r = normalizeRoundName(roundNo);
     return y && r ? `${y}-${r}` : "";
   };
 
   const formatBudgetRoundLabel = (year, roundNo) => {
-    const y = normalizePositiveIntegerText(year);
+    const y = normalizeAcademicYearText(year);
     const r = normalizeRoundName(roundNo);
     return y && r ? `ปี ${y} รอบ ${r}` : "";
   };
@@ -207,7 +214,7 @@
   const normalizeBudgetActiveRounds = (value, fallback = {}) => {
     const rows = (Array.isArray(value) ? value : [])
       .map((item) => {
-        const year = normalizePositiveIntegerText(item?.year || item?.budgetRoundYear);
+        const year = normalizeAcademicYearText(item?.year || item?.budgetRoundYear);
         const roundNo = normalizeRoundName(item?.roundNo || item?.budgetRoundNo);
         const deadline = toDateOnlyText(item?.deadline || item?.budgetRequestDeadline);
         const id = normalizeText(item?.id) || buildBudgetRoundId(year, roundNo);
@@ -225,7 +232,7 @@
       })
       .filter(Boolean);
     if (rows.length) return rows;
-    const year = normalizePositiveIntegerText(fallback.budgetRoundYear);
+    const year = normalizeAcademicYearText(fallback.budgetRoundYear);
     const roundNo = normalizeRoundName(fallback.budgetRoundNo);
     const deadline = toDateOnlyText(fallback.budgetRequestDeadline);
     const id = normalizeText(fallback.currentBudgetRoundId) || buildBudgetRoundId(year, roundNo);
@@ -878,7 +885,7 @@
         roundNo: selectedRound.roundNo
       };
     }
-    const year = normalizePositiveIntegerText(budgetRoundYear || roundYearInputEl.value);
+    const year = normalizeAcademicYearText(budgetRoundYear || roundYearInputEl.value);
     const roundNo = normalizeRoundName(budgetRoundNo || roundNoInputEl.value);
     return {
       id: selectedId || buildBudgetRoundId(year, roundNo),
@@ -1312,7 +1319,7 @@
 
   const applyBudgetSettings = (data = {}) => {
     const deadline = toDateOnlyText(data.budgetRequestDeadline || "");
-    budgetRoundYear = normalizePositiveIntegerText(data.budgetRoundYear);
+    budgetRoundYear = normalizeAcademicYearText(data.budgetRoundYear);
     budgetRoundNo = normalizeRoundName(data.budgetRoundNo);
     budgetActiveRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);
     budgetCeiling = readMoneyInput(data.budgetCeiling);
@@ -1382,11 +1389,11 @@
       setMessage(actionMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
       return;
     }
-    const year = normalizePositiveIntegerText(roundYearInputEl.value);
+    const year = normalizeAcademicYearText(roundYearInputEl.value);
     const roundNo = normalizeRoundName(roundNoInputEl.value);
     const roundId = buildBudgetRoundId(year, roundNo);
     if (!roundId) {
-      setMessage(actionMessageEl, "กรุณาระบุปีงบประมาณและชื่อรอบ", "#b91c1c");
+      setMessage(actionMessageEl, "กรุณาระบุปีการศึกษาและชื่อรอบ", "#b91c1c");
       return;
     }
     const deadline = toDateOnlyText(deadlineInputEl.value);
@@ -1715,6 +1722,73 @@
     return map;
   };
 
+  const getProjectCodeSequence = (value) => {
+    const code = normalizeText(value);
+    if (!code) return 0;
+    const match = code.match(/(?:^|[.-])([0-9]+)$/);
+    const sequence = match ? Number(match[1]) : 0;
+    return Number.isFinite(sequence) && sequence > 0 ? sequence : 0;
+  };
+
+  const getLoadedProjectRowsForYear = (academicYear) => {
+    const year = normalizeAcademicYearText(academicYear);
+    if (!year || typeof projects === "undefined" || !Array.isArray(projects)) return [];
+    return projects.filter((project) => normalizeAcademicYearText(project?.year) === year);
+  };
+
+  const loadProjectStatusRowsForYear = async (academicYear) => {
+    const year = normalizeAcademicYearText(academicYear);
+    if (!year) return [];
+
+    try {
+      if (
+        typeof resolveProjectSourceConfig !== "function" ||
+        typeof isPublishedHtmlSheetUrl !== "function" ||
+        typeof loadRowsFromPublishedHtmlWorkbook !== "function" ||
+        typeof fetchTextWithProgress !== "function" ||
+        typeof parseCsvRows !== "function" ||
+        typeof extractProjectsFromRows !== "function"
+      ) {
+        return getLoadedProjectRowsForYear(year);
+      }
+
+      const sourceConfig = await resolveProjectSourceConfig(year);
+      const projectUrl = normalizeText(sourceConfig?.projectUrl || SHEET_CSV_URL);
+      if (!projectUrl) return getLoadedProjectRowsForYear(year);
+
+      let rows = [];
+      if (isPublishedHtmlSheetUrl(projectUrl)) {
+        const workbookRows = await loadRowsFromPublishedHtmlWorkbook(projectUrl, null, { cache: "no-store" });
+        rows = workbookRows.projectRows || [];
+      } else {
+        await window.sgcuVendorLoader?.ensurePapa?.();
+        const csvText = await fetchTextWithProgress(projectUrl, null, { cache: "no-store" });
+        rows = parseCsvRows(csvText);
+      }
+
+      if (!Array.isArray(rows) || rows.length < 2) return getLoadedProjectRowsForYear(year);
+      return extractProjectsFromRows(rows.slice(2), rows[1] || [], year);
+    } catch (error) {
+      console.error("load project status rows for budget codes failed - app.budget-staff.js", error);
+      return getLoadedProjectRowsForYear(year);
+    }
+  };
+
+  const getProjectStatusMaxSequence = async (academicYear, orgName, orgCode) => {
+    const rows = await loadProjectStatusRowsForYear(academicYear);
+    const targetOrg = normalizeText(orgName);
+    const codePrefix = normalizeText(orgCode).toUpperCase();
+    return rows.reduce((max, project) => {
+      const projectOrg = normalizeText(project?.orgName);
+      const projectCode = normalizeText(project?.code).toUpperCase();
+      const orgMatches =
+        (targetOrg && projectOrg === targetOrg) ||
+        (codePrefix && projectCode.startsWith(`${codePrefix}.`));
+      if (!orgMatches) return max;
+      return Math.max(max, getProjectCodeSequence(project?.code));
+    }, 0);
+  };
+
   const runProjectCodes = async () => {
     const firestore = getFirestore();
     const canWrite = !!(firestore.db && firestore.doc && firestore.updateDoc && firestore.serverTimestamp);
@@ -1727,19 +1801,22 @@
     setCodeActionBusy(true);
     try {
       const orgCodeMap = await getOrgCodeMap();
-      const byOrg = new Map();
+      const byOrgYear = new Map();
       requestRows.forEach((row) => {
         const status = normalizeText(row.status || "pending").toLowerCase();
         if (status === "cancelled" || status === "rejected") return;
         const orgName = normalizeText(row.organizationName);
         if (!orgName) return;
-        const list = byOrg.get(orgName) || [];
+        const academicYear = normalizeAcademicYearText(row.budgetRoundYear);
+        const key = `${orgName}||${academicYear}`;
+        const list = byOrgYear.get(key) || [];
         list.push(row);
-        byOrg.set(orgName, list);
+        byOrgYear.set(key, list);
       });
 
       const updates = [];
-      byOrg.forEach((rows, orgName) => {
+      for (const [key, rows] of byOrgYear.entries()) {
+        const [orgName, academicYear] = key.split("||");
         const code = orgCodeMap.get(orgName) || "ORG";
         const sortedRows = rows
           .sort((a, b) => {
@@ -1754,11 +1831,10 @@
         const maxExistingSequence = sortedRows.reduce((max, row) => {
           const existing = normalizeText(row.projectCodeGenerated);
           if (!existing) return max;
-          const match = existing.match(/\.([0-9]+)$/);
-          const sequence = match ? Number(match[1]) : 0;
-          return Number.isFinite(sequence) && sequence > max ? sequence : max;
+          return Math.max(max, getProjectCodeSequence(existing));
         }, 0);
-        let nextSequence = maxExistingSequence + 1;
+        const maxProjectStatusSequence = await getProjectStatusMaxSequence(academicYear, orgName, code);
+        let nextSequence = Math.max(maxExistingSequence, maxProjectStatusSequence) + 1;
         sortedRows
           .filter((row) => !normalizeText(row.projectCodeGenerated))
           .forEach((row) => {
@@ -1767,7 +1843,7 @@
             const generated = `${code}.${sequence}`;
             updates.push({ id: row.id, code: generated });
           });
-      });
+      }
 
       for (const item of updates) {
         await firestore.updateDoc(

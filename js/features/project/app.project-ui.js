@@ -183,8 +183,12 @@ function isClubDebtProject(project) {
   const closeStatus = (project.statusClose || "").toString().trim();
   const daysToDeadline = Number(project.daysToDeadline);
   const advanceAmount = Number(project.advanceAmount || 0);
+  const debtAdvanceStatuses = new Set([
+    "โครงการรับเงินแล้ว",
+    "เหรัญญิกรับเงินจากกิจการนิสิต"
+  ]);
   return (
-    advanceStatus === "โครงการรับเงินแล้ว" &&
+    debtAdvanceStatuses.has(advanceStatus) &&
     Number.isFinite(daysToDeadline) &&
     daysToDeadline < 0 &&
     closeStatus !== "ส่งกิจการนิสิตเรียบร้อย" &&

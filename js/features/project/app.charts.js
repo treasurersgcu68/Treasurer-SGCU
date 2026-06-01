@@ -532,6 +532,7 @@ function downloadClosureStatusChartPng(ctxKey = activeProjectStatusContext) {
   exportCtx.fillStyle = "#ffffff";
   exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
   exportCtx.drawImage(sourceCanvas, 0, 0);
+  drawClosureExportYAxisLabels(exportCtx, chart, sourceCanvas);
 
   const yearValue = (yearSelect?.value || selectedProjectSourceYear || "all").toString().trim() || "all";
   const orgGroupValue = (orgTypeSelect?.value || "all").toString().trim() || "all";
@@ -554,4 +555,35 @@ function downloadClosureStatusChartPng(ctxKey = activeProjectStatusContext) {
   document.body.appendChild(link);
   link.click();
   link.remove();
+}
+
+function drawClosureExportYAxisLabels(exportCtx, chart, sourceCanvas) {
+  const labels = chart?.data?.labels || [];
+  const scale = chart?.scales?.y;
+  const chartArea = chart?.chartArea;
+  if (!labels.length || !scale || !chartArea) return;
+
+  const pixelRatio = sourceCanvas.width / Math.max(chart.width || sourceCanvas.clientWidth || 1, 1);
+  const gap = Number(chart.options?.plugins?.externalAxisLabels?.y?.gap) || 8;
+  const x = Math.max(0, chartArea.left - gap);
+  const lineHeight = 14;
+
+  exportCtx.save();
+  exportCtx.scale(pixelRatio, pixelRatio);
+  exportCtx.fillStyle = "#6b7280";
+  exportCtx.font = "600 11px Kanit, sans-serif";
+  exportCtx.textAlign = "right";
+  exportCtx.textBaseline = "middle";
+
+  labels.forEach((label, index) => {
+    const lines = normalizeExternalAxisLines(getClosureAxisWrappedLabel(label));
+    if (!lines.length) return;
+    const y = scale.getPixelForValue(index);
+    const startY = y - ((lines.length - 1) * lineHeight) / 2;
+    lines.forEach((line, lineIndex) => {
+      exportCtx.fillText(line, x, startY + lineIndex * lineHeight);
+    });
+  });
+
+  exportCtx.restore();
 }

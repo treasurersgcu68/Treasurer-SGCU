@@ -129,7 +129,7 @@ function initBudgetApprovalRequestPage() {
         ? projects.map((item) => (item?.orgGroup || "").toString().trim())
         : [];
     return Array.from(new Set([...fromFilters, ...fromProjects].filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b, "th"));
+      .sort((a, b) => b.localeCompare(a, "th"));
   };
 
   const compareBudgetOrgNameByCode = (a, b, codeByName = new Map()) => {
@@ -144,6 +144,15 @@ function initBudgetApprovalRequestPage() {
     return a.localeCompare(b, "th");
   };
 
+  const getBudgetOrgCodeForYear = (item = {}) => {
+    const year = normalizeAcademicYearText(budgetRoundYear);
+    const codeByAcademicYear = item?.codeByAcademicYear && typeof item.codeByAcademicYear === "object"
+      ? item.codeByAcademicYear
+      : {};
+    const yearCode = year ? codeByAcademicYear[year] : "";
+    return (yearCode || item?.code || "").toString().trim();
+  };
+
   const collectBudgetOrgNameOptions = (orgType) => {
     const selectedType = (orgType || "").toString().trim();
     if (!selectedType) return [];
@@ -155,7 +164,7 @@ function initBudgetApprovalRequestPage() {
         .forEach((item) => {
           const name = (item?.name || "").toString().trim();
           if (!name) return;
-          const code = (item?.code || "").toString().trim();
+          const code = getBudgetOrgCodeForYear(item);
           if (code && !codeByName.has(name)) codeByName.set(name, code);
           fromFilters.push(name);
         });

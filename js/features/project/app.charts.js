@@ -367,10 +367,11 @@ function updateClosureXAxisMax(chart = budgetByMonthChart) {
 }
 
 function getChartOrgGroups() {
+  const sortThaiDescending = (list) => list.sort((a, b) => b.localeCompare(a, "th"));
   if (orgFilters.length) {
-    return Array.from(new Set(orgFilters.map((o) => o.group).filter(Boolean)));
+    return sortThaiDescending(Array.from(new Set(orgFilters.map((o) => o.group).filter(Boolean))));
   }
-  return [...DEFAULT_BASE_GROUPS];
+  return sortThaiDescending([...DEFAULT_BASE_GROUPS]);
 }
 
 function getOrgsByGroup(group) {

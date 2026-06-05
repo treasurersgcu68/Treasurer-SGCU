@@ -616,6 +616,49 @@ function normalizeOrganizationCatalogDoc(docSnap) {
   const name = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
   const code = (data.code || data.orgCode || row[2] || "").toString().trim().toUpperCase();
   const documentRunCode = (data.documentRunCode || data.runCode || row[3] || "").toString().trim();
+  const normalizeRunMap = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.entries(value).reduce((acc, [year, runCode]) => {
+      const normalizedYear = (year || "").toString().trim();
+      const normalizedRunCode = (runCode || "").toString().trim();
+      if (/^\d{4}$/.test(normalizedYear) && normalizedRunCode) {
+        acc[normalizedYear] = normalizedRunCode;
+      }
+      return acc;
+    }, {});
+  };
+  const documentRunCodeByAcademicYear = {
+    ...normalizeRunMap(data.runCodeByAcademicYear),
+    ...normalizeRunMap(data.documentRunCodeByAcademicYear)
+  };
+  if (documentRunCode && !Object.keys(documentRunCodeByAcademicYear).length) {
+    documentRunCodeByAcademicYear["2568"] = documentRunCode;
+  }
+  const normalizeCodeMap = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.entries(value).reduce((acc, [year, orgCode]) => {
+      const normalizedYear = (year || "").toString().trim();
+      const normalizedCode = (orgCode || "").toString().trim().toUpperCase();
+      if (/^\d{4}$/.test(normalizedYear) && normalizedCode) {
+        acc[normalizedYear] = normalizedCode;
+      }
+      return acc;
+    }, {});
+  };
+  const isManualDocumentRunGroup = group === "องค์การบริหารสโมสรนิสิต";
+  const codeByAcademicYear = {
+    ...normalizeCodeMap(data.orgCodeByAcademicYear),
+    ...normalizeCodeMap(data.codeByAcademicYear)
+  };
+  if (isManualDocumentRunGroup) {
+    Object.entries(documentRunCodeByAcademicYear).forEach(([year, runCode]) => {
+      const normalizedRunCode = (runCode || "").toString().trim();
+      if (normalizedRunCode) codeByAcademicYear[year] = `SGCU-${normalizedRunCode}`.toUpperCase();
+    });
+  }
+  if (code && !Object.keys(codeByAcademicYear).length) {
+    codeByAcademicYear["2568"] = code;
+  }
   const accountNo = (data.accountNo || data.bankAccount || data.bankAccountNo || row[4] || "").toString().trim();
   if (!group || !name) return null;
   return {
@@ -623,7 +666,9 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     group,
     name,
     code,
+    codeByAcademicYear,
     documentRunCode,
+    documentRunCodeByAcademicYear,
     accountNo,
     sortOrder: Number(data.sortOrder ?? data.order ?? 0)
   };

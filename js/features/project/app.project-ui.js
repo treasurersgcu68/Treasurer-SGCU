@@ -20,7 +20,7 @@ function initOrgTypeOptions() {
   const groups = orgFilters.length
     ? Array.from(new Set(orgFilters.map((o) => o.group).filter(Boolean)))
     : Array.from(new Set(projects.map((p) => p.orgGroup).filter(Boolean)));
-  groups.sort();
+  groups.sort((a, b) => b.localeCompare(a, "th"));
   groups.forEach((g) => {
     const opt = document.createElement("option");
     opt.value = g;
@@ -206,7 +206,7 @@ function getClubDebtSummaryScope(sourceProjects) {
         .map((project) => (project.orgGroup || "").toString().trim())
         .filter(Boolean)
     )
-  );
+  ).sort((a, b) => b.localeCompare(a, "th"));
   const getFallbackOrgs = (group) => Array.from(
     new Set(
       (sourceProjects || [])

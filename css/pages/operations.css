@@ -4470,18 +4470,44 @@
   color: #b91c1c;
 }
 
+.organization-catalog-responsibility {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.organization-catalog-responsibility[hidden],
+.organization-catalog-custom-responsibility[hidden] {
+  display: none !important;
+}
+
+.organization-catalog-custom-responsibility {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 720px) {
+  .organization-catalog-responsibility,
+  .organization-catalog-custom-responsibility {
+    grid-template-columns: 1fr;
+  }
+}
+
 .organization-catalog-toolbar {
   display: grid;
-  grid-template-columns: minmax(180px, 0.45fr) minmax(240px, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 14px;
   align-items: end;
   padding: 0;
 }
 
 .organization-catalog-filter-bar {
   display: grid;
-  grid-template-columns: minmax(220px, 0.4fr) minmax(260px, 1fr) auto;
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 14px;
   align-items: end;
   padding: 14px 16px;
   border-top: 1px solid rgba(236, 72, 153, 0.1);

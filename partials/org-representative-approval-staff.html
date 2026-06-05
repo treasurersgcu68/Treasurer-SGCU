@@ -72,8 +72,9 @@
                           <div class="borrow-form-row">
                             <div class="borrow-form-field">
                               <label class="login-label" for="organizationCatalogGroup">ประเภทองค์กร</label>
-                              <input id="organizationCatalogGroup" class="login-input" type="text" list="organizationCatalogGroupList" required>
-                              <datalist id="organizationCatalogGroupList"></datalist>
+                              <select id="organizationCatalogGroup" class="login-input" required>
+                                <option value="">เลือกประเภทองค์กร</option>
+                              </select>
                             </div>
                             <div class="borrow-form-field budget-request-field-wide">
                               <label class="login-label" for="organizationCatalogName">ชื่อองค์กร</label>
@@ -83,18 +84,48 @@
                         </div>
                         <div class="budget-request-form-section">
                           <div class="budget-request-form-section-title">รหัสและข้อมูลเอกสาร</div>
+                          <div class="borrow-form-row">
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogAcademicYear">ปีการศึกษาที่แก้</label>
+                              <select id="organizationCatalogAcademicYear" class="login-input">
+                                <option value="">ปีการศึกษาปัจจุบัน</option>
+                              </select>
+                            </div>
+                          </div>
                           <div class="borrow-form-row is-3">
                             <div class="borrow-form-field">
                               <label class="login-label" for="organizationCatalogCode">รหัสชมรม</label>
-                              <input id="organizationCatalogCode" class="login-input" type="text">
+                              <input id="organizationCatalogCode" class="login-input" type="text" placeholder="ระบบเติมตามประเภทองค์กร">
                             </div>
                             <div class="borrow-form-field">
                               <label class="login-label" for="organizationCatalogRunCode">เลขรันเอกสาร</label>
-                              <input id="organizationCatalogRunCode" class="login-input" type="text">
+                              <input id="organizationCatalogRunCode" class="login-input" type="text" readonly aria-readonly="true" placeholder="ระบบเติมจากรหัสชมรม">
                             </div>
                             <div class="borrow-form-field">
                               <label class="login-label" for="organizationCatalogAccountNo">เลขที่บัญชี</label>
                               <input id="organizationCatalogAccountNo" class="login-input" type="text">
+                            </div>
+                          </div>
+                          <div id="organizationCatalogResponsibilityControls" class="organization-catalog-responsibility" hidden>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogResponsibilityDivision">ฝ่ายรับผิดชอบหลัก</label>
+                              <select id="organizationCatalogResponsibilityDivision" class="login-input">
+                                <option value="">เลือกฝ่ายหลัก</option>
+                              </select>
+                            </div>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogResponsibilitySubCode">เลขย่อย</label>
+                              <input id="organizationCatalogResponsibilitySubCode" class="login-input" type="text" inputmode="numeric" placeholder="เช่น 03">
+                            </div>
+                            <div id="organizationCatalogCustomResponsibilityControls" class="organization-catalog-custom-responsibility" hidden>
+                              <div class="borrow-form-field">
+                                <label class="login-label" for="organizationCatalogCustomDivisionCode">รหัสฝ่ายหลักใหม่</label>
+                                <input id="organizationCatalogCustomDivisionCode" class="login-input" type="text" inputmode="numeric" placeholder="เช่น 11">
+                              </div>
+                              <div class="borrow-form-field">
+                                <label class="login-label" for="organizationCatalogCustomDivisionName">ชื่อฝ่ายหลักใหม่</label>
+                                <input id="organizationCatalogCustomDivisionName" class="login-input" type="text" placeholder="เช่น ฝ่ายกิจการพิเศษ">
+                              </div>
                             </div>
                           </div>
                         </div>

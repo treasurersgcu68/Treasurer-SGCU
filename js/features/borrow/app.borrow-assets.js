@@ -337,7 +337,7 @@ function initBorrowAssetsApp() {
         ? projects.map((item) => (item?.orgGroup || "").toString().trim())
         : [];
     return Array.from(new Set([...fromFilters, ...fromProjects].filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b, "th"));
+      .sort((a, b) => b.localeCompare(a, "th"));
   };
 
   const compareBorrowOrgNameByCode = (a, b, codeByName = new Map()) => {

@@ -542,7 +542,7 @@
     const groups = filterRows.length
       ? filterRows.map((item) => normalizeText(item?.group)).filter(Boolean)
       : requestRows.map((item) => normalizeText(item.organizationType)).filter(Boolean);
-    Array.from(new Set(groups)).sort((a, b) => a.localeCompare(b, "th")).forEach((group) => {
+    Array.from(new Set(groups)).sort((a, b) => b.localeCompare(a, "th")).forEach((group) => {
       const opt = document.createElement("option");
       opt.value = group;
       opt.textContent = group;
@@ -579,7 +579,7 @@
     const groups = filterRows.length
       ? filterRows.map((item) => normalizeText(item?.group)).filter(Boolean)
       : requestRows.map((item) => normalizeText(item.organizationType)).filter(Boolean);
-    return Array.from(new Set(groups)).sort((a, b) => a.localeCompare(b, "th"));
+    return Array.from(new Set(groups)).sort((a, b) => b.localeCompare(a, "th"));
   };
 
   const getStaffOrgNameOptions = (orgType = "") => {
@@ -663,7 +663,7 @@
     const groups = filterRows.length
       ? filterRows.map((item) => normalizeText(item?.group)).filter(Boolean)
       : requestRows.map((item) => normalizeText(item.organizationType)).filter(Boolean);
-    Array.from(new Set(groups)).sort((a, b) => a.localeCompare(b, "th")).forEach((group) => {
+    Array.from(new Set(groups)).sort((a, b) => b.localeCompare(a, "th")).forEach((group) => {
       const opt = document.createElement("option");
       opt.value = group;
       opt.textContent = group;
@@ -703,7 +703,7 @@
     const groups = filterRows.length
       ? filterRows.map((item) => normalizeText(item?.group)).filter(Boolean)
       : requestRows.map((item) => normalizeText(item.organizationType)).filter(Boolean);
-    return Array.from(new Set(groups)).sort((a, b) => a.localeCompare(b, "th"));
+    return Array.from(new Set(groups)).sort((a, b) => b.localeCompare(a, "th"));
   };
 
   const getBudgetGroupRecommendationMap = () => {
@@ -1146,8 +1146,14 @@
     await window.sgcuVendorLoader?.ensureChart?.();
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
-    const summaryUnit = groupFilter === "all" && orgFilter === "all" ? "ประเภทองค์กร" : "องค์กร";
-    const allRows = buildOrgSummaryRows().sort((a, b) => b.requested - a.requested || b.approved - a.approved);
+    const isGroupSummary = groupFilter === "all" && orgFilter === "all";
+    const summaryUnit = isGroupSummary ? "ประเภทองค์กร" : "องค์กร";
+    const allRows = buildOrgSummaryRows().sort((a, b) => {
+      if (isGroupSummary) {
+        return b.organizationName.localeCompare(a.organizationName, "th");
+      }
+      return b.requested - a.requested || b.approved - a.approved;
+    });
     const limit = 10;
     const visibleRows = allRows.slice(0, limit);
     const hiddenRows = allRows.slice(limit);
@@ -1169,7 +1175,9 @@
     }
 
     orgSummaryCaptionEl.textContent = allRows.length
-      ? `แสดง Top ${visibleRows.length}${hiddenRows.length ? ` + อื่น ๆ ${hiddenRows.length}` : ""} จาก ${allRows.length} ${summaryUnit}`
+      ? isGroupSummary
+        ? `แสดง ${visibleRows.length}${hiddenRows.length ? ` + อื่น ๆ ${hiddenRows.length}` : ""} จาก ${allRows.length} ${summaryUnit}`
+        : `แสดง Top ${visibleRows.length}${hiddenRows.length ? ` + อื่น ๆ ${hiddenRows.length}` : ""} จาก ${allRows.length} ${summaryUnit}`
       : "ยังไม่มีข้อมูลคำขอ";
 
     if (!rows.length || typeof window.Chart !== "function") {
@@ -1717,6 +1725,16 @@
     rows.forEach((item) => {
       const name = normalizeText(item?.name);
       const code = normalizeText(item?.code).toUpperCase();
+      const codeByAcademicYear = item?.codeByAcademicYear && typeof item.codeByAcademicYear === "object"
+        ? item.codeByAcademicYear
+        : {};
+      Object.entries(codeByAcademicYear).forEach(([year, yearCode]) => {
+        const academicYear = normalizeAcademicYearText(year);
+        const normalizedCode = normalizeText(yearCode).toUpperCase();
+        if (name && academicYear && normalizedCode) {
+          map.set(`${name}||${academicYear}`, normalizedCode);
+        }
+      });
       if (name && code) map.set(name, code);
     });
     return map;
@@ -1817,7 +1835,7 @@
       const updates = [];
       for (const [key, rows] of byOrgYear.entries()) {
         const [orgName, academicYear] = key.split("||");
-        const code = orgCodeMap.get(orgName) || "ORG";
+        const code = orgCodeMap.get(`${orgName}||${academicYear}`) || orgCodeMap.get(orgName) || "ORG";
         const sortedRows = rows
           .sort((a, b) => {
             const da = getDateOnlyTime(a.operationEndDate);

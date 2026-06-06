@@ -900,6 +900,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const navLinks = document.querySelectorAll("header nav a[data-page]");
   const pageViews = document.querySelectorAll(".page-view");
   const mainContainerEl = document.querySelector("main.main");
+  const mobileBottomNav = document.querySelector(".mobile-bottom-nav");
+  let mobileBottomNavSyncFrame = 0;
   let currentPage = null;
   let pendingConsentPage = null;
   let consentAuthIdentity = { uid: "", email: "" };
@@ -926,6 +928,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   const ensurePageFeatureLoaded = async (page) => {
     if (!featureLoader || typeof featureLoader.ensurePageLoaded !== "function") return;
     await featureLoader.ensurePageLoaded(page);
+  };
+  const syncMobileBottomIndicator = () => {
+    if (!mobileBottomNav) return;
+    const expandedMenu = mobileBottomNav.querySelector('.mobile-bottom-menu[aria-expanded="true"]');
+    const activeItems = Array.from(mobileBottomNav.querySelectorAll(".mobile-bottom-item.active"));
+    const targetItem = [expandedMenu, ...activeItems].find((item) => {
+      if (!(item instanceof HTMLElement)) return false;
+      const rect = item.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
+
+    if (!(targetItem instanceof HTMLElement)) {
+      mobileBottomNav.style.setProperty("--mobile-bottom-indicator-opacity", "0");
+      return;
+    }
+
+    const navRect = mobileBottomNav.getBoundingClientRect();
+    const itemRect = targetItem.getBoundingClientRect();
+    mobileBottomNav.style.setProperty("--mobile-bottom-indicator-x", `${itemRect.left - navRect.left}px`);
+    mobileBottomNav.style.setProperty("--mobile-bottom-indicator-w", `${itemRect.width}px`);
+    mobileBottomNav.style.setProperty("--mobile-bottom-indicator-opacity", "1");
+  };
+  const scheduleMobileBottomIndicatorSync = () => {
+    if (!mobileBottomNav || mobileBottomNavSyncFrame) return;
+    mobileBottomNavSyncFrame = requestAnimationFrame(() => {
+      mobileBottomNavSyncFrame = 0;
+      syncMobileBottomIndicator();
+    });
   };
   const prefetchFeatureScriptsInIdle = () => {
     if (!featureLoader || typeof featureLoader.prefetchInIdle !== "function") return;
@@ -1354,6 +1384,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     navLinks.forEach((link) => {
       link.classList.toggle("active", link.dataset.page === page);
     });
+    scheduleMobileBottomIndicatorSync();
 
     if (page === "home") {
       scrollPageToTop(page, "auto");
@@ -1475,7 +1506,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   configureLoaderForInitialPage(initialPage);
   await switchPage(initialPage, { fromHash: true });
+  scheduleMobileBottomIndicatorSync();
   prefetchFeatureScriptsInIdle();
+
+  window.addEventListener("resize", scheduleMobileBottomIndicatorSync, { passive: true });
+  window.addEventListener("orientationchange", scheduleMobileBottomIndicatorSync, { passive: true });
+  window.addEventListener("sgcu:mobile-menu-state", scheduleMobileBottomIndicatorSync);
+  window.addEventListener("sgcu:mobile-bottom-nav-visibility", scheduleMobileBottomIndicatorSync);
 
   // รองรับเปลี่ยน hash ด้วยตนเอง (#about, #status ฯลฯ)
   window.addEventListener("hashchange", () => {

@@ -440,9 +440,9 @@
 
 @media (max-width: 840px) {
   :root {
-    --mobile-bottom-nav-height: calc(66px + env(safe-area-inset-bottom, 0px));
-    --mobile-context-action-height: 62px;
-    --mobile-fixed-gap: 10px;
+    --mobile-bottom-nav-height: calc(58px + env(safe-area-inset-bottom, 0px));
+    --mobile-context-action-height: 52px;
+    --mobile-fixed-gap: 7px;
   }
 
   .site-header {
@@ -522,29 +522,62 @@
     grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
     align-items: stretch;
     gap: 2px;
-    min-height: calc(66px + env(safe-area-inset-bottom, 0px));
-    padding: 7px max(8px, env(safe-area-inset-right, 0px))
-      calc(7px + env(safe-area-inset-bottom, 0px))
+    min-height: calc(58px + env(safe-area-inset-bottom, 0px));
+    padding: 5px max(8px, env(safe-area-inset-right, 0px))
+      calc(5px + env(safe-area-inset-bottom, 0px))
       max(8px, env(safe-area-inset-left, 0px));
-    border-top: 1px solid rgba(236, 72, 153, 0.16);
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 -12px 34px rgba(15, 23, 42, 0.12);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    border-top: 1px solid rgba(255, 255, 255, 0.7);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.58)),
+      rgba(255, 255, 255, 0.52);
+    box-shadow:
+      0 -18px 44px rgba(15, 23, 42, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(24px) saturate(1.55);
+    -webkit-backdrop-filter: blur(24px) saturate(1.55);
     overflow: hidden;
+  }
+
+  .mobile-bottom-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.76), transparent 28%),
+      linear-gradient(90deg, rgba(236, 72, 153, 0.1), rgba(255, 255, 255, 0.04), rgba(14, 165, 233, 0.08));
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .mobile-bottom-nav > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mobile-bottom-nav > .mobile-bottom-indicator {
+    z-index: 0;
   }
 
   .mobile-bottom-indicator {
     position: absolute;
-    top: 7px;
+    top: 5px;
     left: 0;
     z-index: 0;
     display: block;
     width: var(--mobile-bottom-indicator-w);
-    height: calc(100% - 14px - env(safe-area-inset-bottom, 0px));
-    border-radius: 14px;
-    background: linear-gradient(135deg, #fff7fb 0%, #ffe4f1 100%);
-    box-shadow: 0 8px 18px rgba(157, 23, 77, 0.14);
+    height: calc(100% - 10px - env(safe-area-inset-bottom, 0px));
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.46)),
+      rgba(255, 255, 255, 0.36);
+    box-shadow:
+      0 10px 28px rgba(157, 23, 77, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -1px 0 rgba(236, 72, 153, 0.08);
+    backdrop-filter: blur(18px) saturate(1.45);
+    -webkit-backdrop-filter: blur(18px) saturate(1.45);
     opacity: var(--mobile-bottom-indicator-opacity);
     transform: translate3d(var(--mobile-bottom-indicator-x), 0, 0);
     transition: transform 0.34s var(--motion-ease), width 0.34s var(--motion-ease),
@@ -555,7 +588,7 @@
   .mobile-bottom-item {
     appearance: none;
     border: 0;
-    border-radius: 14px;
+    border-radius: 12px;
     background: transparent;
     color: #6b7280;
     cursor: pointer;
@@ -563,10 +596,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    min-height: 52px;
-    padding: 6px 3px 5px;
-    font-size: 10.5px;
+    gap: 2px;
+    min-height: 46px;
+    padding: 4px 2px;
+    font-size: 10px;
     font-weight: 600;
     line-height: 1.1;
     text-align: center;
@@ -581,7 +614,7 @@
   }
 
   .mobile-bottom-item:hover {
-    background: rgba(255, 241, 242, 0.72);
+    background: rgba(255, 255, 255, 0.28);
     color: #be185d;
   }
 
@@ -604,8 +637,8 @@
   }
 
   .mobile-bottom-icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -613,8 +646,8 @@
   }
 
   .mobile-bottom-icon svg {
-    width: 21px;
-    height: 21px;
+    width: 19px;
+    height: 19px;
     display: block;
     fill: currentColor;
   }
@@ -629,6 +662,7 @@
 
   .page-view[data-page="project-status"].active,
   .page-view[data-page="meeting-room-staff"].active {
+    min-height: 0;
     padding-bottom: calc(
       var(--mobile-context-action-height) + var(--mobile-fixed-gap) + var(--mobile-fixed-gap)
     );
@@ -769,16 +803,16 @@
   .mobile-project-action-bar.is-visible,
   .mobile-meeting-action-bar.is-visible {
     position: fixed;
-    left: max(10px, env(safe-area-inset-left, 0px));
-    right: max(10px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
     bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-fixed-gap));
     z-index: 76;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
-    padding: 7px;
+    gap: 4px;
+    padding: 5px;
     border: 1px solid rgba(236, 72, 153, 0.16);
-    border-radius: 18px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 16px 38px rgba(15, 23, 42, 0.14);
     backdrop-filter: blur(18px);
@@ -791,16 +825,16 @@
   }
 
   .mobile-project-action-bar.is-summary-actions {
-    left: max(10px, env(safe-area-inset-left, 0px));
-    right: max(10px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
     width: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     transform: none;
   }
 
   .mobile-project-action-bar.is-calendar-actions {
-    left: max(10px, env(safe-area-inset-left, 0px));
-    right: max(10px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
     width: auto;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     transform: none;
@@ -811,9 +845,9 @@
     appearance: none;
     position: relative;
     min-width: 0;
-    min-height: 46px;
+    min-height: 40px;
     border: 0;
-    border-radius: 13px;
+    border-radius: 11px;
     background: transparent;
     color: #64748b;
     cursor: pointer;
@@ -821,10 +855,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    padding: 5px 3px;
+    gap: 2px;
+    padding: 4px 2px;
     font-family: inherit;
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 700;
     line-height: 1.1;
     text-align: center;
@@ -843,7 +877,7 @@
 
   .mobile-project-action-icon,
   .mobile-meeting-action-icon {
-    font-size: 17px;
+    font-size: 15px;
     line-height: 1;
   }
 
@@ -1068,13 +1102,13 @@
   }
 
   .mobile-bottom-nav {
-    left: max(8px, env(safe-area-inset-left, 0px));
-    right: max(8px, env(safe-area-inset-right, 0px));
-    bottom: max(8px, env(safe-area-inset-bottom, 0px));
-    min-height: 64px;
-    padding: 7px 8px;
+    left: max(6px, env(safe-area-inset-left, 0px));
+    right: max(6px, env(safe-area-inset-right, 0px));
+    bottom: max(6px, env(safe-area-inset-bottom, 0px));
+    min-height: 54px;
+    padding: 5px 6px;
     border: 1px solid rgba(236, 72, 153, 0.16);
-    border-radius: 18px;
+    border-radius: 16px;
   }
 
   .mobile-project-action-bar.is-visible,
@@ -1085,9 +1119,9 @@
 
 @media (max-width: 1180px) {
   html.sgcu-standalone {
-    --mobile-bottom-nav-height: calc(66px + env(safe-area-inset-bottom, 0px));
-    --mobile-context-action-height: 62px;
-    --mobile-fixed-gap: 10px;
+    --mobile-bottom-nav-height: calc(58px + env(safe-area-inset-bottom, 0px));
+    --mobile-context-action-height: 52px;
+    --mobile-fixed-gap: 7px;
   }
 
   html.sgcu-standalone .site-header {
@@ -1146,36 +1180,69 @@
 
   html.sgcu-standalone .mobile-bottom-nav {
     position: fixed;
-    left: max(8px, env(safe-area-inset-left, 0px));
-    right: max(8px, env(safe-area-inset-right, 0px));
-    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: max(6px, env(safe-area-inset-left, 0px));
+    right: max(6px, env(safe-area-inset-right, 0px));
+    bottom: max(6px, env(safe-area-inset-bottom, 0px));
     z-index: 80;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
     align-items: stretch;
     gap: 2px;
-    min-height: 64px;
-    padding: 7px 8px;
-    border: 1px solid rgba(236, 72, 153, 0.16);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 -12px 34px rgba(15, 23, 42, 0.12);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    min-height: 54px;
+    padding: 5px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    border-radius: 16px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.58)),
+      rgba(255, 255, 255, 0.52);
+    box-shadow:
+      0 -18px 44px rgba(15, 23, 42, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(24px) saturate(1.55);
+    -webkit-backdrop-filter: blur(24px) saturate(1.55);
     overflow: hidden;
+  }
+
+  html.sgcu-standalone .mobile-bottom-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.76), transparent 28%),
+      linear-gradient(90deg, rgba(236, 72, 153, 0.1), rgba(255, 255, 255, 0.04), rgba(14, 165, 233, 0.08));
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  html.sgcu-standalone .mobile-bottom-nav > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  html.sgcu-standalone .mobile-bottom-nav > .mobile-bottom-indicator {
+    z-index: 0;
   }
 
   html.sgcu-standalone .mobile-bottom-indicator {
     position: absolute;
-    top: 7px;
+    top: 5px;
     left: 0;
     z-index: 0;
     display: block;
     width: var(--mobile-bottom-indicator-w);
-    height: calc(100% - 14px);
-    border-radius: 14px;
-    background: linear-gradient(135deg, #fff7fb 0%, #ffe4f1 100%);
-    box-shadow: 0 8px 18px rgba(157, 23, 77, 0.14);
+    height: calc(100% - 10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.46)),
+      rgba(255, 255, 255, 0.36);
+    box-shadow:
+      0 10px 28px rgba(157, 23, 77, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -1px 0 rgba(236, 72, 153, 0.08);
+    backdrop-filter: blur(18px) saturate(1.45);
+    -webkit-backdrop-filter: blur(18px) saturate(1.45);
     opacity: var(--mobile-bottom-indicator-opacity);
     transform: translate3d(var(--mobile-bottom-indicator-x), 0, 0);
     transition: transform 0.34s var(--motion-ease), width 0.34s var(--motion-ease),
@@ -1186,16 +1253,16 @@
   html.sgcu-standalone .mobile-project-action-bar.is-visible,
   html.sgcu-standalone .mobile-meeting-action-bar.is-visible {
     position: fixed;
-    left: max(10px, env(safe-area-inset-left, 0px));
-    right: max(10px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
     bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-fixed-gap));
     z-index: 76;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
-    padding: 7px;
+    gap: 4px;
+    padding: 5px;
     border: 1px solid rgba(236, 72, 153, 0.16);
-    border-radius: 18px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 16px 38px rgba(15, 23, 42, 0.14);
     backdrop-filter: blur(18px);
@@ -1203,16 +1270,16 @@
   }
 
   html.sgcu-standalone .mobile-project-action-bar.is-summary-actions {
-    left: max(10px, env(safe-area-inset-left, 0px));
-    right: max(10px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
     width: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     transform: none;
   }
 
   html.sgcu-standalone .mobile-project-action-bar.is-calendar-actions {
-    left: max(10px, env(safe-area-inset-left, 0px));
-    right: max(10px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
     width: auto;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     transform: none;
@@ -1223,9 +1290,9 @@
     appearance: none;
     position: relative;
     min-width: 0;
-    min-height: 46px;
+    min-height: 40px;
     border: 0;
-    border-radius: 13px;
+    border-radius: 11px;
     background: transparent;
     color: #64748b;
     cursor: pointer;
@@ -1233,10 +1300,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    padding: 5px 3px;
+    gap: 2px;
+    padding: 4px 2px;
     font-family: inherit;
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 700;
     line-height: 1.1;
     text-align: center;
@@ -1251,7 +1318,7 @@
   html.sgcu-standalone .mobile-bottom-item {
     appearance: none;
     border: 0;
-    border-radius: 14px;
+    border-radius: 12px;
     background: transparent;
     color: #6b7280;
     cursor: pointer;
@@ -1259,10 +1326,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    min-height: 52px;
-    padding: 6px 3px 5px;
-    font-size: 10.5px;
+    gap: 2px;
+    min-height: 46px;
+    padding: 4px 2px;
+    font-size: 10px;
     font-weight: 600;
     line-height: 1.1;
     text-align: center;
@@ -1295,8 +1362,8 @@
   }
 
   html.sgcu-standalone .mobile-bottom-icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1304,8 +1371,8 @@
   }
 
   html.sgcu-standalone .mobile-bottom-icon svg {
-    width: 21px;
-    height: 21px;
+    width: 19px;
+    height: 19px;
     display: block;
     fill: currentColor;
   }

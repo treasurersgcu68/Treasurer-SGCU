@@ -368,6 +368,10 @@
       calc(28px + env(safe-area-inset-bottom, 0px))
       max(12px, env(safe-area-inset-left, 0px));
   }
+
+  .main:has(.page-view[data-page="project-status"].active) {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
   .home-snap-panel:first-child {
     min-height: calc(100dvh - 56px - 14px);
   }
@@ -641,6 +645,24 @@
 
   .page {
     padding-top: 4px;
+  }
+
+  .page-view[data-page="project-status"].active {
+    min-height: 0;
+    padding-bottom: calc(var(--mobile-context-action-height) + var(--mobile-fixed-gap));
+  }
+
+  .page-view[data-page="project-status"] .page {
+    padding-bottom: 0;
+  }
+
+  .page-view[data-page="project-status"] #statusView > .panel:last-child,
+  .page-view[data-page="project-status"] #calendarView > .panel:last-child {
+    margin-bottom: 0;
+  }
+
+  .page-view[data-page="project-status"] #projectTableArea {
+    margin-bottom: 0;
   }
 
   .page-header-flex,

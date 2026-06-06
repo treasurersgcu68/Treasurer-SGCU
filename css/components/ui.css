@@ -1485,6 +1485,7 @@ th.sortable.sort-desc::after {
 .chart-inner {
   position: relative;
   height: 260px;
+  isolation: isolate;
 }
 
 .chart-inner canvas {
@@ -1495,7 +1496,7 @@ th.sortable.sort-desc::after {
 .chart-external-axis-labels {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 0;
   pointer-events: none;
   color: #6b7280;
   font-size: 11px;

@@ -1374,6 +1374,10 @@ function renderHomeKpis(sourceProjects = projects) {
         }
       },
       tooltip: {
+        displayColors: false,
+        yAlign: "bottom",
+        caretPadding: 10,
+        bodySpacing: 4,
         callbacks: {
           label: (ctx) => {
             const label = ctx.dataset.label || "";
@@ -1385,7 +1389,10 @@ function renderHomeKpis(sourceProjects = projects) {
             const status = actualBudgetStatuses[ctx.dataIndex];
             if (!status) return "";
             if (status.isFinalized) return "สถานะ: สรุปงบครบแล้ว";
-            return `สถานะ: ยังรอปิด/สรุปงบ ${status.pendingCloseCount} จาก ${status.projectCount} โครงการ`;
+            return [
+              "สถานะ: ยังรอปิด/สรุปงบ",
+              `${status.pendingCloseCount} จาก ${status.projectCount} โครงการ`
+            ];
           }
         }
       }

@@ -212,7 +212,7 @@ function initStaffAccessPages() {
     { name: "ประธานฝ่ายกายภาพและพัสดุ", divisionCodeYY: "04", levelCodeZZ: "01" },
     { name: "เลขานุการฝ่ายกายภาพและพัสดุ", divisionCodeYY: "04", levelCodeZZ: "03" },
     { name: "ผู้ช่วยฝ่ายกายภาพและพัสดุ", divisionCodeYY: "04", levelCodeZZ: "04" },
-    { name: "บุคลากร", divisionCodeYY: "09", levelCodeZZ: "04" }
+    { name: "เจ้าหน้าที่สำนักบริหารกิจการนิสิต", divisionCodeYY: "09", levelCodeZZ: "04" }
   ];
   const STAFF_PAGE_OPTIONS = [
     { id: "dashboard-staff", label: "ภาพรวมโครงการ" },
@@ -1135,7 +1135,7 @@ function initStaffAccessPages() {
     if (code === "02") return "บริหารและพัฒนางบประมาณ";
     if (code === "03") return "หาทุนและสิทธิประโยชน์";
     if (code === "04") return "กายภาพและพัสดุ";
-    if (code === "09") return "บุคลากร";
+    if (code === "09") return "เจ้าหน้าที่สำนักบริหารกิจการนิสิต";
     return code ? `หมวดงาน ${code}` : "-";
   };
 
@@ -2197,11 +2197,11 @@ function initStaffAccessPages() {
       const affairsPosition = currentPositionCatalog.find((item) => normalizeCode2(item.divisionCodeYY) === "09")
         || DEFAULT_POSITION_OPTIONS.find((item) => normalizeCode2(item.divisionCodeYY) === "09")
         || null;
-      const positionName = normalizePositionText(affairsPosition?.name || "บุคลากร");
+      const positionName = normalizePositionText(affairsPosition?.name || "เจ้าหน้าที่สำนักบริหารกิจการนิสิต");
       if (appResolvedPositionEl) appResolvedPositionEl.value = positionName;
       if (appPositionEl) appPositionEl.value = positionName;
       if (appDivisionEl) {
-        appDivisionEl.innerHTML = '<option value="09" selected>บุคลากร</option>';
+        appDivisionEl.innerHTML = '<option value="09" selected>เจ้าหน้าที่สำนักบริหารกิจการนิสิต</option>';
         appDivisionEl.value = "09";
       }
       if (appLevelEl) {
@@ -5037,7 +5037,7 @@ function initStaffAccessPages() {
 
     const requestedPosition = normalizePositionText(appPositionEl?.value || "");
     if (!requestedPosition) {
-      setMessage(appMessageEl, profileType === "affairs" ? "ไม่พบตำแหน่งสำหรับบุคลากร" : "กรุณาเลือกหมวดงานและระดับตำแหน่งให้ครบ", "#b91c1c");
+      setMessage(appMessageEl, profileType === "affairs" ? "ไม่พบตำแหน่งสำหรับเจ้าหน้าที่สำนักบริหารกิจการนิสิต" : "กรุณาเลือกหมวดงานและระดับตำแหน่งให้ครบ", "#b91c1c");
       return;
     }
     if (hasPendingApplication()) {

@@ -1,27 +1,29 @@
 .site-footer {
-  border-top: 1px solid rgba(236, 72, 153, 0.12);
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(248, 250, 252, 0.92);
 }
 
 .footer-inner {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: minmax(320px, 1.35fr) minmax(280px, 1fr);
+  align-items: start;
   gap: 24px;
   font-size: 12px;
   line-height: 1.5;
   color: #64748b;
 }
 
-.footer-info {
+.footer-section {
   min-width: 0;
+}
+
+.footer-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .footer-brand {
@@ -41,27 +43,38 @@
 }
 
 .footer-contact {
-  color: #64748b;
+  max-width: none;
+  color: #94a3b8;
 }
 
 .footer-contact a {
-  color: #0f766e;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  min-height: 22px;
+  padding: 1px 8px;
+  border: 1px solid rgba(236, 72, 153, 0.18);
+  border-radius: 999px;
+  background: rgba(253, 242, 248, 0.88);
+  color: #be185d;
   font-weight: 600;
   text-decoration: none;
+  transition: background-color 0.16s ease-out, border-color 0.16s ease-out, color 0.16s ease-out;
 }
 
 .footer-contact a:hover,
 .footer-contact a:focus-visible {
-  color: #0d9488;
-  text-decoration: underline;
+  border-color: rgba(219, 39, 119, 0.34);
+  background: #fce7f3;
+  color: #9d174d;
 }
 
 .footer-copyright {
   color: #94a3b8;
-  flex: 0 1 380px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-end;
+  gap: 4px;
   text-align: right;
 }
 

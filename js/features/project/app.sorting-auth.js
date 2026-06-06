@@ -842,6 +842,7 @@ function syncMobileBottomNavVisibility() {
       (navRole === "staff" && !isStaffMode);
     role.style.display = roleHidden ? "none" : "";
   });
+  window.dispatchEvent(new CustomEvent("sgcu:mobile-bottom-nav-visibility"));
 }
 
 function syncRoleNavContainers() {

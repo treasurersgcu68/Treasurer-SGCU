@@ -91,6 +91,7 @@ const SGCU_DIALOG = (() => {
     buttonEl.setAttribute("aria-expanded", isExpanded ? "true" : "false");
     if (!menuEl.hasAttribute("tabindex")) menuEl.setAttribute("tabindex", "-1");
     document.body.classList.toggle("mobile-menu-open", isExpanded);
+    window.dispatchEvent(new CustomEvent("sgcu:mobile-menu-state", { detail: { isExpanded } }));
 
     if (isExpanded) {
       lastMenuFocusedEl = document.activeElement;

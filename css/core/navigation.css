@@ -406,6 +406,9 @@
 
 .mobile-bottom-nav {
   display: none;
+  --mobile-bottom-indicator-x: 0px;
+  --mobile-bottom-indicator-w: 0px;
+  --mobile-bottom-indicator-opacity: 0;
 }
 
 .mobile-bottom-role {
@@ -413,7 +416,13 @@
 }
 
 .mobile-bottom-item {
+  position: relative;
   min-width: 0;
+  z-index: 1;
+}
+
+.mobile-bottom-indicator {
+  display: none;
 }
 
 .mobile-project-action-bar,
@@ -522,6 +531,25 @@
     box-shadow: 0 -12px 34px rgba(15, 23, 42, 0.12);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
+    overflow: hidden;
+  }
+
+  .mobile-bottom-indicator {
+    position: absolute;
+    top: 7px;
+    left: 0;
+    z-index: 0;
+    display: block;
+    width: var(--mobile-bottom-indicator-w);
+    height: calc(100% - 14px - env(safe-area-inset-bottom, 0px));
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fff7fb 0%, #ffe4f1 100%);
+    box-shadow: 0 8px 18px rgba(157, 23, 77, 0.14);
+    opacity: var(--mobile-bottom-indicator-opacity);
+    transform: translate3d(var(--mobile-bottom-indicator-x), 0, 0);
+    transition: transform 0.34s var(--motion-ease), width 0.34s var(--motion-ease),
+      opacity 0.18s ease;
+    pointer-events: none;
   }
 
   .mobile-bottom-item {
@@ -548,6 +576,10 @@
       box-shadow 0.16s ease;
   }
 
+  .mobile-bottom-item > span {
+    transition: transform 0.22s var(--motion-ease);
+  }
+
   .mobile-bottom-item:hover {
     background: rgba(255, 241, 242, 0.72);
     color: #be185d;
@@ -555,9 +587,20 @@
 
   .mobile-bottom-item.active,
   .mobile-bottom-menu[aria-expanded="true"] {
-    background: linear-gradient(135deg, #fff7fb 0%, #ffe4f1 100%);
+    background: transparent;
     color: #9d174d;
-    box-shadow: 0 8px 18px rgba(157, 23, 77, 0.14);
+    box-shadow: none;
+    transform: translateY(-1px);
+  }
+
+  .mobile-bottom-item.active .mobile-bottom-icon,
+  .mobile-bottom-menu[aria-expanded="true"] .mobile-bottom-icon {
+    transform: translateY(-1px) scale(1.08);
+  }
+
+  .mobile-bottom-item.active > span:last-child,
+  .mobile-bottom-menu[aria-expanded="true"] > span:last-child {
+    transform: translateY(1px);
   }
 
   .mobile-bottom-icon {
@@ -987,6 +1030,12 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .mobile-bottom-indicator,
+    .mobile-bottom-item,
+    .mobile-bottom-item > span {
+      transition: none;
+    }
+
     .mobile-filter-backdrop,
     .mobile-filter-dialog {
       animation: none;
@@ -1113,6 +1162,25 @@
     box-shadow: 0 -12px 34px rgba(15, 23, 42, 0.12);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
+    overflow: hidden;
+  }
+
+  html.sgcu-standalone .mobile-bottom-indicator {
+    position: absolute;
+    top: 7px;
+    left: 0;
+    z-index: 0;
+    display: block;
+    width: var(--mobile-bottom-indicator-w);
+    height: calc(100% - 14px);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fff7fb 0%, #ffe4f1 100%);
+    box-shadow: 0 8px 18px rgba(157, 23, 77, 0.14);
+    opacity: var(--mobile-bottom-indicator-opacity);
+    transform: translate3d(var(--mobile-bottom-indicator-x), 0, 0);
+    transition: transform 0.34s var(--motion-ease), width 0.34s var(--motion-ease),
+      opacity 0.18s ease;
+    pointer-events: none;
   }
 
   html.sgcu-standalone .mobile-project-action-bar.is-visible,
@@ -1204,11 +1272,26 @@
       box-shadow 0.16s ease;
   }
 
+  html.sgcu-standalone .mobile-bottom-item > span {
+    transition: transform 0.22s var(--motion-ease);
+  }
+
   html.sgcu-standalone .mobile-bottom-item.active,
   html.sgcu-standalone .mobile-bottom-menu[aria-expanded="true"] {
-    background: linear-gradient(135deg, #fff7fb 0%, #ffe4f1 100%);
+    background: transparent;
     color: #9d174d;
-    box-shadow: 0 8px 18px rgba(157, 23, 77, 0.14);
+    box-shadow: none;
+    transform: translateY(-1px);
+  }
+
+  html.sgcu-standalone .mobile-bottom-item.active .mobile-bottom-icon,
+  html.sgcu-standalone .mobile-bottom-menu[aria-expanded="true"] .mobile-bottom-icon {
+    transform: translateY(-1px) scale(1.08);
+  }
+
+  html.sgcu-standalone .mobile-bottom-item.active > span:last-child,
+  html.sgcu-standalone .mobile-bottom-menu[aria-expanded="true"] > span:last-child {
+    transform: translateY(1px);
   }
 
   html.sgcu-standalone .mobile-bottom-icon {

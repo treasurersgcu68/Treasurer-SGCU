@@ -61,6 +61,7 @@ function initStaffAccessPages() {
   const orgRepresentativeOverviewBodyEl = document.getElementById("orgRepresentativeOverviewBody");
   const orgRepresentativeShowOverviewBtnEl = document.getElementById("orgRepresentativeShowOverviewBtn");
   const orgRepresentativeExportCsvBtnEl = document.getElementById("orgRepresentativeExportCsvBtn");
+  const orgRepresentativeDeleteYearBtnEl = document.getElementById("orgRepresentativeDeleteYearBtn");
   const orgRepresentativeShowPendingBtnEl = document.getElementById("orgRepresentativeShowPendingBtn");
   const orgRepresentativeShowHistoryBtnEl = document.getElementById("orgRepresentativeShowHistoryBtn");
   const orgRepresentativeSearchInputEl = document.getElementById("orgRepresentativeSearchInput");
@@ -90,6 +91,7 @@ function initStaffAccessPages() {
   const organizationCatalogSearchInputEl = document.getElementById("organizationCatalogSearchInput");
   const organizationCatalogFilterResetBtnEl = document.getElementById("organizationCatalogFilterResetBtn");
   const organizationCatalogShowMoreBtnEl = document.getElementById("organizationCatalogShowMoreBtn");
+  const organizationCatalogTableActionsEl = document.getElementById("organizationCatalogTableActions");
   const organizationCatalogAcademicYearEl = document.getElementById("organizationCatalogAcademicYear");
   const organizationCatalogTotalCountEl = document.getElementById("organizationCatalogTotalCount");
   const organizationCatalogGroupCountEl = document.getElementById("organizationCatalogGroupCount");
@@ -121,6 +123,9 @@ function initStaffAccessPages() {
   const positionDivisionNameEl = document.getElementById("staffPositionDivisionName");
   const positionLevelCodeEl = document.getElementById("staffPositionLevelCode");
   const positionAllowedPagesEl = document.getElementById("staffPositionAllowedPages");
+  const positionManageSubmitBtnEl = document.getElementById("staffPositionManageAddBtn");
+  const positionManageDeleteBtnEl = document.getElementById("staffPositionManageDeleteBtn");
+  const positionManageCancelBtnEl = document.getElementById("staffPositionManageCancelBtn");
   const positionManageMessageEl = document.getElementById("staffPositionManageMessage");
   const positionListEl = document.getElementById("staffPositionList");
   const positionOptionsDatalistEl = document.getElementById("staffPositionOptionsList");
@@ -216,6 +221,7 @@ function initStaffAccessPages() {
   ];
   const STAFF_PAGE_OPTIONS = [
     { id: "dashboard-staff", label: "ภาพรวมโครงการ" },
+    { id: "treasurer-handover-staff", label: "คู่มือ เหรัญญิก อบจ." },
     { id: "system-data-staff", label: "ข้อมูลระบบ" },
     { id: "budget-approval-staff", label: "คำของบประมาณ" },
     { id: "borrow-assets-staff", label: "ยืม-คืนพัสดุ" },
@@ -226,7 +232,7 @@ function initStaffAccessPages() {
     { id: "content-news-staff", label: "ข่าวสาร" },
     { id: "content-documents-staff", label: "เอกสารการเงิน" }
   ];
-  const STAFF_IMPLICIT_ALLOWED_PAGES = ["login", "project-status-staff"];
+  const STAFF_IMPLICIT_ALLOWED_PAGES = ["login"];
   const REQUIRED_ORG_REPRESENTATIVE_ROLES = [
     { key: "president", label: "ประธาน" },
     { key: "vice_president", label: "รองประธาน" },
@@ -268,6 +274,7 @@ function initStaffAccessPages() {
   let orgRepresentativeOrgFiltersLoadPromise = null;
   let orgRepresentativeOrgFiltersLoadedForPage = false;
   let currentPositionCatalog = [];
+  let positionCatalogLoadState = "idle";
   let currentEditingPositionId = "";
   let appFormStatusLocked = false;
   let currentApprovalView = "pending";
@@ -285,6 +292,8 @@ function initStaffAccessPages() {
   };
   let deferredBootstrapTimer = 0;
   let approvalUiSyncTimer = 0;
+  let organizationCatalogManualRunSyncTimer = 0;
+  let organizationCatalogManualRunSyncSignature = "";
 
   const syncApprovalPanelCaption = () => {
     if (!approvalPanelCaptionEl) return;
@@ -1023,10 +1032,12 @@ function initStaffAccessPages() {
       ["dashboard", "dashboard-staff"],
       ["staff-dashboard", "dashboard-staff"],
       ["ภาพรวมโครงการ", "dashboard-staff"],
-      ["project-status", "project-status-staff"],
-      ["project-status-staff", "project-status-staff"],
-      ["สถานะโครงการ", "project-status-staff"],
-      ["สถานะโครงการฝั่ง-staff", "project-status-staff"],
+      ["project-status-staff", "treasurer-handover-staff"],
+      ["project-status", "treasurer-handover-staff"],
+      ["treasurer-handover-staff", "treasurer-handover-staff"],
+      ["คู่มือ-เหรัญญิก-อบจ", "treasurer-handover-staff"],
+      ["คู่มือ เหรัญญิก อบจ.", "treasurer-handover-staff"],
+      ["คู่มือ เหรัญญิก อบจ", "treasurer-handover-staff"],
       ["system-data", "system-data-staff"],
       ["health-check", "system-data-staff"],
       ["ข้อมูลระบบ", "system-data-staff"],
@@ -1107,7 +1118,6 @@ function initStaffAccessPages() {
     const explicit = STAFF_PAGE_OPTIONS.find((item) => item.id === id);
     if (explicit) return explicit.label;
     if (id === "login") return "เข้าสู่ระบบ / บัญชีผู้ใช้";
-    if (id === "project-status-staff") return "สถานะโครงการฝั่ง Staff";
     return id || "-";
   };
   const getDefaultAllowedPagesByYY = (yy) => {
@@ -1123,6 +1133,12 @@ function initStaffAccessPages() {
       .filter(Boolean);
     const filtered = Array.from(new Set(list.filter((page) => isKnownStaffPage(page))));
     return filtered.length ? filtered : getDefaultAllowedPagesByYY(fallbackYY);
+  };
+  const normalizeConfiguredAllowedPages = (pages) => {
+    const list = flattenAllowedPageValues(pages)
+      .map((item) => normalizeAllowedPageId(item))
+      .filter(Boolean);
+    return Array.from(new Set(list.filter((page) => isKnownStaffPage(page))));
   };
 
   const divisionCodeLabel = (yy) => {
@@ -1184,7 +1200,7 @@ function initStaffAccessPages() {
     const normalized = normalizePositionText(positionText);
     if (!normalized) return "00";
     if (normalized === "เหรัญญิก" || normalized === "เลขานุการฝ่ายเหรัญญิก") return "00";
-    if (normalized === "ผู้ช่วยเหรัญญิก") return "00";
+    if (normalized === "ผู้ช่วยเหรัญญิก") return "01";
     if (normalized.includes("บริหารและพัฒนางบประมาณ")) return "02";
     if (normalized.includes("หาทุนและสิทธิประโยชน์")) return "03";
     if (normalized.includes("กายภาพและพัสดุ")) return "04";
@@ -1441,9 +1457,8 @@ function initStaffAccessPages() {
     };
   };
 
-  const getAllowedPagesForCatalogPosition = (item = {}) => {
-    const yy = normalizeCode2(item.divisionCodeYY || item.yy || "");
-    return normalizeAllowedPages(readAllowedPagesInput(item), yy);
+  const getConfiguredAllowedPagesForCatalogPosition = (item = {}) => {
+    return normalizeConfiguredAllowedPages(readAllowedPagesInput(item));
   };
 
   const findPositionAccessMeta = (positionText, yyHint = "", zzHint = "") => {
@@ -1914,17 +1929,14 @@ function initStaffAccessPages() {
     if (positionDivisionCodeEl) positionDivisionCodeEl.disabled = disabled;
     if (positionDivisionNameEl) positionDivisionNameEl.disabled = disabled;
     if (positionLevelCodeEl) positionLevelCodeEl.disabled = disabled;
-    const addBtn = document.getElementById("staffPositionManageAddBtn");
-    if (addBtn) addBtn.disabled = disabled;
+    if (positionManageSubmitBtnEl) positionManageSubmitBtnEl.disabled = disabled;
+    if (positionManageDeleteBtnEl) positionManageDeleteBtnEl.disabled = disabled;
+    if (positionManageCancelBtnEl) positionManageCancelBtnEl.disabled = disabled;
     if (positionAllowedPagesEl) {
       positionAllowedPagesEl.querySelectorAll(".staff-position-page-checkbox").forEach((input) => {
         if (input instanceof HTMLInputElement) input.disabled = disabled;
       });
     }
-    if (!positionListEl) return;
-    positionListEl.querySelectorAll("button[data-position-id], button[data-edit-position-id], button[data-save-position-id]").forEach((btn) => {
-      btn.disabled = disabled;
-    });
   };
 
   const readLoginProfiles = () => {
@@ -2046,38 +2058,6 @@ function initStaffAccessPages() {
       .join("");
   };
 
-  const renderPositionAllowedPageOptionsMarkup = (selectedPages = [], fallbackYY = "", prefix = "edit") => {
-    const selected = new Set(normalizeAllowedPages(selectedPages, fallbackYY));
-    const allSelected = STAFF_PAGE_OPTIONS.every((item) => selected.has(item.id));
-    return [
-      `
-        <label class="staff-position-page-option staff-position-page-option-all">
-          <input
-            type="checkbox"
-            class="staff-position-page-checkbox staff-position-page-checkbox-all"
-            data-role="${toSafeText(prefix)}-all-page-checkbox"
-            ${allSelected ? "checked" : ""}
-          />
-          <span>แสดงทุกหน้า</span>
-        </label>
-      `,
-      ...STAFF_PAGE_OPTIONS
-      .map((item) => `
-        <label class="staff-position-page-option">
-          <input
-            type="checkbox"
-            class="staff-position-page-checkbox"
-            data-role="${toSafeText(prefix)}-page-checkbox"
-            value="${toSafeText(item.id)}"
-            ${selected.has(item.id) ? "checked" : ""}
-          />
-          <span>${toSafeText(item.label)}</span>
-        </label>
-      `)
-    ]
-      .join("");
-  };
-
   const updateManageResolvedPositionName = () => {
     if (!positionManageInputEl) return;
     const divisionCodeYY = normalizeCode2(positionDivisionCodeEl?.value || "");
@@ -2092,29 +2072,55 @@ function initStaffAccessPages() {
     positionManageInputEl.value = buildPositionNameFromParts(divisionCodeYY, levelCodeZZ, divisionLabel);
   };
 
-  const updatePositionEditorResolvedName = (container) => {
-    if (!(container instanceof Element)) return;
-    const nameInput = container.querySelector('[data-role="edit-name"]');
-    const yyInput = container.querySelector('[data-role="edit-yy"]');
-    const divisionLabelInput = container.querySelector('[data-role="edit-division-label"]');
-    const zzSelect = container.querySelector('[data-role="edit-zz"]');
-    if (!(nameInput instanceof HTMLInputElement)) return;
-    const divisionCodeYY = yyInput instanceof HTMLInputElement ? yyInput.value : "";
-    const divisionLabel = divisionLabelInput instanceof HTMLInputElement ? divisionLabelInput.value : "";
-    const levelCodeZZ = zzSelect instanceof HTMLSelectElement ? zzSelect.value : "";
-    nameInput.value = buildPositionNameFromParts(divisionCodeYY, levelCodeZZ, divisionLabel);
+  const syncPositionManageModeUi = () => {
+    const isEditing = Boolean(currentEditingPositionId);
+    if (positionManageSubmitBtnEl) {
+      positionManageSubmitBtnEl.textContent = isEditing ? "บันทึกตำแหน่ง" : "ปรับตำแหน่ง";
+    }
+    if (positionManageDeleteBtnEl) {
+      positionManageDeleteBtnEl.hidden = !isEditing;
+    }
+    if (positionManageCancelBtnEl) {
+      positionManageCancelBtnEl.hidden = !isEditing;
+    }
+  };
+
+  const resetPositionManageForm = ({ message = "" } = {}) => {
+    currentEditingPositionId = "";
+    if (positionManageInputEl) positionManageInputEl.value = "";
+    if (positionDivisionCodeEl) positionDivisionCodeEl.value = "";
+    if (positionDivisionNameEl) positionDivisionNameEl.value = "";
+    if (positionLevelCodeEl) positionLevelCodeEl.value = "";
+    renderPositionAllowedPageOptions([], "");
+    syncPositionManageModeUi();
+    renderPositionCatalog();
+    if (message) setMessage(positionManageMessageEl, message, "#6b7280");
+  };
+
+  const loadPositionIntoManageForm = (positionId = "") => {
+    if (!isSuperStaff()) return;
+    const safeId = (positionId || "").toString().trim();
+    const target = currentPositionCatalog.find((item) => item.id === safeId);
+    if (!target) return;
+
+    currentEditingPositionId = safeId;
+    const yy = normalizeCode2(target.divisionCodeYY || target.yy || "");
+    const zz = normalizeCode2(target.levelCodeZZ || target.zz || "");
+    const divisionLabel = normalizePositionText(target.divisionLabel || target.divisionName || divisionCodeLabel(yy));
+    if (positionDivisionCodeEl) positionDivisionCodeEl.value = yy;
+    if (positionDivisionNameEl) positionDivisionNameEl.value = divisionLabel;
+    if (positionLevelCodeEl) positionLevelCodeEl.value = zz;
+    updateManageResolvedPositionName();
+    renderPositionAllowedPageOptions(getConfiguredAllowedPagesForCatalogPosition(target), yy);
+    syncPositionManageModeUi();
+    renderPositionCatalog();
+    positionManagePanelEl?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    setMessage(positionManageMessageEl, "กำลังแก้ไขตำแหน่งที่เลือก กดบันทึกตำแหน่งเพื่ออัปเดต", "#1d4ed8");
   };
 
   const readSelectedPositionAllowedPages = () => {
     if (!positionAllowedPagesEl) return [];
     return Array.from(positionAllowedPagesEl.querySelectorAll(".staff-position-page-checkbox:checked"))
-      .map((input) => (input instanceof HTMLInputElement ? input.value : ""))
-      .filter(Boolean);
-  };
-
-  const readSelectedPositionAllowedPagesFrom = (container) => {
-    if (!(container instanceof Element)) return [];
-    return Array.from(container.querySelectorAll('[data-role="edit-page-checkbox"]:checked'))
       .map((input) => (input instanceof HTMLInputElement ? input.value : ""))
       .filter(Boolean);
   };
@@ -2156,20 +2162,20 @@ function initStaffAccessPages() {
   };
 
   const renderAllowedPageBadges = (allowedPages = []) => {
-    const pages = new Set(normalizeAllowedPages(allowedPages, ""));
-    const orderedPages = [
-      ...STAFF_PAGE_OPTIONS.map((item) => item.id),
-      "project-status-staff"
-    ]
+    const pages = new Set(normalizeConfiguredAllowedPages(allowedPages));
+    const orderedPages = STAFF_PAGE_OPTIONS.map((item) => item.id)
       .filter((page) => pages.has(page));
     if (!orderedPages.length) return '<span class="staff-position-page-badge is-summary">ไม่มีหน้าฝั่ง Staff</span>';
     const hasAllSelectableStaffPages = STAFF_PAGE_OPTIONS.every((item) => pages.has(item.id));
     if (hasAllSelectableStaffPages) {
-      return `<span class="staff-position-page-badge is-summary">ทุกหน้า (${toSafeText(STAFF_PAGE_OPTIONS.length)} หน้า)</span>`;
+      return `<span class="staff-position-page-badge is-summary">ทุกหน้าฝั่ง Staff (${toSafeText(STAFF_PAGE_OPTIONS.length)} หน้า)</span>`;
     }
-    return orderedPages
-      .map((page) => `<span class="staff-position-page-badge">${toSafeText(getStaffPageLabel(page))}</span>`)
-      .join("");
+    const visiblePages = orderedPages.slice(0, 3);
+    const hiddenCount = orderedPages.length - visiblePages.length;
+    return [
+      ...visiblePages.map((page) => `<span class="staff-position-page-badge">${toSafeText(getStaffPageLabel(page))}</span>`),
+      hiddenCount > 0 ? `<span class="staff-position-page-badge is-summary">+${toSafeText(hiddenCount)}</span>` : ""
+    ].join("");
   };
 
   const renderApplicationPositionSelect = () => {
@@ -2269,106 +2275,43 @@ function initStaffAccessPages() {
     if (!positionListEl) return;
 
     if (!currentPositionCatalog.length) {
-      positionListEl.innerHTML = '<div class="section-text-sm">ยังไม่มีรายการตำแหน่ง</div>';
+      const emptyText = positionCatalogLoadState === "loading"
+        ? "กำลังโหลดรายการตำแหน่งจาก Firebase..."
+        : positionCatalogLoadState === "signed-out"
+          ? "กรุณาเข้าสู่ระบบเพื่อโหลดรายการตำแหน่งจาก Firebase"
+          : positionCatalogLoadState === "error"
+            ? "โหลดรายการตำแหน่งจาก Firebase ไม่สำเร็จ"
+            : "ยังไม่มีรายการตำแหน่งใน Firebase";
+      positionListEl.innerHTML = `<div class="section-text-sm">${toSafeText(emptyText)}</div>`;
       refreshSummaryCounts();
       return;
     }
 
     const allowManage = isSuperStaff();
+    syncPositionManageModeUi();
     positionListEl.innerHTML = currentPositionCatalog
       .map((item) => {
-        const removeBtn = allowManage
-          ? `<button type="button" class="btn-ghost staff-position-remove-btn" data-position-id="${toSafeText(item.id)}">ลบ</button>`
-          : "";
-        const editBtn = allowManage
-          ? `<button type="button" class="btn-ghost staff-position-edit-btn" data-edit-position-id="${toSafeText(item.id)}">${currentEditingPositionId === item.id ? "ยกเลิก" : "แก้ไข"}</button>`
-          : "";
         const yy = normalizeCode2(item.divisionCodeYY || "00");
         const zz = normalizeCode2(item.levelCodeZZ || "00");
         const divisionLabel = normalizePositionText(item.divisionLabel || item.divisionName || divisionCodeLabel(yy));
         const generatedName = buildPositionNameFromParts(yy, zz, divisionLabel) || item.name;
-        const allowedPages = getAllowedPagesForCatalogPosition(item);
+        const configuredAllowedPages = getConfiguredAllowedPagesForCatalogPosition(item);
         const isEditing = allowManage && currentEditingPositionId === item.id;
         return `
-          <div class="staff-position-chip${isEditing ? " is-editing" : ""}">
+          <div
+            class="staff-position-chip${isEditing ? " is-editing" : ""}${allowManage ? " is-selectable" : ""}"
+            data-select-position-id="${toSafeText(item.id)}"
+            role="${allowManage ? "button" : "group"}"
+            tabindex="${allowManage ? "0" : "-1"}"
+            aria-label="${allowManage ? `แก้ไขตำแหน่ง ${toSafeText(generatedName)}` : toSafeText(generatedName)}"
+          >
             <div class="staff-position-chip-main">
               <div class="staff-position-chip-summary">
                 <span class="staff-position-chip-name">${toSafeText(generatedName)}</span>
               </div>
-              <div class="staff-position-chip-pages${isEditing ? " is-muted" : ""}">
-                ${renderAllowedPageBadges(allowedPages)}
+              <div class="staff-position-chip-pages">
+                ${renderAllowedPageBadges(configuredAllowedPages)}
               </div>
-              ${isEditing ? `
-                <div class="staff-position-editor">
-                  <div class="staff-position-editor-head">
-                    <div>
-                      <div class="staff-position-editor-title">แก้ไขตำแหน่ง</div>
-                    </div>
-                    <div class="staff-position-editor-source">ใช้เป็นสิทธิ์หลัก</div>
-                  </div>
-                  <div class="staff-position-editor-grid">
-                    <div class="staff-position-editor-field staff-position-editor-result-field">
-                      <label class="login-label" for="staffPositionEditName-${toSafeText(item.id)}">ชื่อตำแหน่ง</label>
-                      <input
-                        id="staffPositionEditName-${toSafeText(item.id)}"
-                        class="login-input staff-position-result-input"
-                        type="text"
-                        data-role="edit-name"
-                        value="${toSafeText(generatedName)}"
-                        readonly
-                        aria-readonly="true"
-                      />
-                    </div>
-                    <div class="staff-position-editor-field">
-                      <label class="login-label" for="staffPositionEditYY-${toSafeText(item.id)}">หมวดงาน</label>
-                      <input
-                        id="staffPositionEditYY-${toSafeText(item.id)}"
-                        class="login-input"
-                        type="text"
-                        inputmode="numeric"
-                        pattern="\\d{2}"
-                        maxlength="2"
-                        list="staffDivisionCodeOptionsList"
-                        data-role="edit-yy"
-                        value="${toSafeText(yy)}"
-                      />
-                    </div>
-                    <div class="staff-position-editor-field">
-                      <label class="login-label" for="staffPositionEditDivisionName-${toSafeText(item.id)}">ชื่อหมวดงาน</label>
-                      <input
-                        id="staffPositionEditDivisionName-${toSafeText(item.id)}"
-                        class="login-input"
-                        type="text"
-                        list="staffDivisionNameOptionsList"
-                        data-role="edit-division-label"
-                        value="${toSafeText(divisionLabel)}"
-                      />
-                    </div>
-                    <div class="staff-position-editor-field">
-                      <label class="login-label" for="staffPositionEditZZ-${toSafeText(item.id)}">ระดับตำแหน่ง</label>
-                      <select id="staffPositionEditZZ-${toSafeText(item.id)}" class="login-input" data-role="edit-zz">
-                        <option value="01" ${zz === "01" ? "selected" : ""}>ประธานฝ่าย</option>
-                        <option value="02" ${zz === "02" ? "selected" : ""}>รองประธานฝ่าย</option>
-                        <option value="03" ${zz === "03" ? "selected" : ""}>เลขานุการฝ่าย</option>
-                        <option value="04" ${zz === "04" ? "selected" : ""}>ผู้ช่วยฝ่าย</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="staff-position-editor-pages">
-                    <div class="staff-position-editor-pages-title">หน้าที่อนุญาตให้แสดง</div>
-                    <div class="staff-position-pages-grid">
-                      ${renderPositionAllowedPageOptionsMarkup(allowedPages, yy, "edit")}
-                    </div>
-                  </div>
-                  <div class="staff-position-editor-actions">
-                    <button type="button" class="btn-primary staff-position-save-btn" data-save-position-id="${toSafeText(item.id)}">บันทึกการแก้ไข</button>
-                  </div>
-                </div>
-              ` : ""}
-            </div>
-            <div class="staff-position-chip-actions">
-              ${editBtn}
-              ${removeBtn}
             </div>
           </div>
         `;
@@ -2804,11 +2747,12 @@ function initStaffAccessPages() {
   };
 
   const getOrganizationCatalogManualRunForYear = (item = {}, academicYear = getOrganizationCatalogDisplayAcademicYear()) => {
+    const source = item && typeof item === "object" ? item : {};
     const year = normalizeOrganizationCatalogText(academicYear);
     const runMap = buildOrganizationCatalogDocumentRunMap({
-      documentRunCode: item.documentRunCode || item.runCode,
-      documentRunCodeByAcademicYear: item.documentRunCodeByAcademicYear,
-      runCodeByAcademicYear: item.runCodeByAcademicYear
+      documentRunCode: source.documentRunCode || source.runCode,
+      documentRunCodeByAcademicYear: source.documentRunCodeByAcademicYear,
+      runCodeByAcademicYear: source.runCodeByAcademicYear
     });
     return stripOrganizationCatalogDocumentRunYear(runMap[year] || "");
   };
@@ -2837,10 +2781,17 @@ function initStaffAccessPages() {
     const excluded = new Set(excludeIds.map((id) => normalizeOrganizationCatalogText(id)).filter(Boolean));
     const year = normalizeOrganizationCatalogText(academicYear) || getOrganizationCatalogDisplayAcademicYear();
     let maxSubCode = 0;
-    getOrganizationCatalogRows().forEach((item) => {
-      if (excluded.has(normalizeOrganizationCatalogText(item.id))) return;
-      if (normalizeOrganizationCatalogText(item.group) !== normalizeOrganizationCatalogText(group)) return;
-      const parsed = parseOrganizationCatalogManualDocumentRunBase(getOrganizationCatalogManualRunForYear(item, year));
+    getKnownOrganizationFilters().forEach((item) => {
+      const itemId = normalizeOrganizationCatalogText(item?.id);
+      if (excluded.has(itemId)) return;
+      const itemGroup = normalizeOrganizationCatalogText(item?.group || item?.organizationType || item?.orgGroup);
+      if (itemGroup !== normalizeOrganizationCatalogText(group)) return;
+      const runMap = buildOrganizationCatalogDocumentRunMap({
+        documentRunCode: item?.documentRunCode || item?.runCode,
+        documentRunCodeByAcademicYear: item?.documentRunCodeByAcademicYear,
+        runCodeByAcademicYear: item?.runCodeByAcademicYear
+      });
+      const parsed = parseOrganizationCatalogManualDocumentRunBase(runMap[year] || "");
       if (parsed.divisionCode !== divisionCode) return;
       const subNumber = Number(parsed.subCode);
       if (Number.isFinite(subNumber) && subNumber > maxSubCode) maxSubCode = subNumber;
@@ -3195,7 +3146,10 @@ function initStaffAccessPages() {
       );
 
   const syncOrganizationCatalogGroupOptions = (rows = getOrganizationCatalogRows()) => {
-    const groups = Array.from(new Set(rows.map((item) => item.group).filter(Boolean)))
+    const groups = Array.from(new Set([
+      ...Array.from(ORGANIZATION_CATALOG_CODE_PREFIX_BY_GROUP.keys()),
+      ...rows.map((item) => item.group).filter(Boolean)
+    ]))
       .sort((a, b) => b.localeCompare(a, "th"));
     if (organizationCatalogFields.group?.tagName === "SELECT") {
       const currentValue = normalizeOrganizationCatalogText(organizationCatalogFields.group.value);
@@ -3256,6 +3210,7 @@ function initStaffAccessPages() {
       organizationCatalogShowMoreBtnEl.textContent = remaining > 0
         ? `แสดงเพิ่มอีก ${Math.min(ORGANIZATION_CATALOG_PAGE_SIZE, remaining).toLocaleString("th-TH")} รายการ`
         : "";
+      if (organizationCatalogTableActionsEl) organizationCatalogTableActionsEl.hidden = remaining <= 0;
     }
     if (!organizationCatalogTableBodyEl) return;
     if (!rows.length) {
@@ -3338,6 +3293,11 @@ function initStaffAccessPages() {
     const id = normalizeOrganizationCatalogText(organizationCatalogFields.id?.value);
     const currentCode = normalizeOrganizationCatalogText(organizationCatalogFields.code?.value).toUpperCase();
     if (!organizationCatalogFields.code || !group) return;
+    if (isOrganizationCatalogManualDocumentRunGroup(group)) {
+      if (!id) organizationCatalogFields.code.value = "";
+      refreshOrganizationCatalogDocumentRunPreview();
+      return;
+    }
     if (!force && currentCode) return;
     const code = generateOrganizationCatalogCode({ id, group });
     if (code) {
@@ -3364,6 +3324,57 @@ function initStaffAccessPages() {
         organizationCatalogFields.code.value = buildOrganizationCatalogManualCodeFromRunBase(group, base);
       }
     }
+  };
+
+  const refreshOrganizationCatalogManualDocumentRunFromControls = () => {
+    const group = normalizeOrganizationCatalogText(organizationCatalogFields.group?.value);
+    if (!isOrganizationCatalogManualDocumentRunGroup(group)) {
+      refreshOrganizationCatalogDocumentRunPreview();
+      return;
+    }
+    const divisionCode = getOrganizationCatalogSelectedDivisionCode();
+    if (!divisionCode) {
+      if (organizationCatalogFields.code) organizationCatalogFields.code.value = "";
+      if (organizationCatalogFields.documentRunCode) organizationCatalogFields.documentRunCode.value = "";
+      if (organizationCatalogResponsibilitySubCodeEl) organizationCatalogResponsibilitySubCodeEl.value = "";
+      return;
+    }
+    const id = normalizeOrganizationCatalogText(organizationCatalogFields.id?.value);
+    const academicYear = getOrganizationCatalogDisplayAcademicYear();
+    const existingItem = id ? getOrganizationCatalogRows().find((item) => item.id === id) : null;
+    const existingParsed = parseOrganizationCatalogManualDocumentRunBase(getOrganizationCatalogManualRunForYear(existingItem, academicYear));
+    const subCode = existingParsed.divisionCode === divisionCode && existingParsed.subCode
+      ? existingParsed.subCode
+      : getOrganizationCatalogNextManualSubCode({ group, divisionCode, academicYear, excludeIds: [id] });
+    const base = `${divisionCode}.${subCode}`;
+    if (organizationCatalogResponsibilitySubCodeEl) organizationCatalogResponsibilitySubCodeEl.value = subCode;
+    if (organizationCatalogFields.code) organizationCatalogFields.code.value = buildOrganizationCatalogManualCodeFromRunBase(group, base);
+    if (organizationCatalogFields.documentRunCode) {
+      organizationCatalogFields.documentRunCode.value = formatOrganizationCatalogDocumentRunCode(base, group);
+    }
+  };
+
+  const syncOrganizationCatalogManualRunFromDomState = ({ force = false } = {}) => {
+    if (!organizationCatalogFormEl || !organizationCatalogFields.group) return;
+    const signature = [
+      organizationCatalogFields.id?.value || "",
+      organizationCatalogFields.group?.value || "",
+      organizationCatalogAcademicYearEl?.value || "",
+      organizationCatalogResponsibilityDivisionEl?.value || "",
+      organizationCatalogCustomDivisionCodeEl?.value || ""
+    ].join("|");
+    if (!force && signature === organizationCatalogManualRunSyncSignature) return;
+    organizationCatalogManualRunSyncSignature = signature;
+    syncOrganizationCatalogDocumentRunInputMode();
+    refreshOrganizationCatalogManualDocumentRunFromControls();
+  };
+
+  const startOrganizationCatalogManualRunAutosync = () => {
+    if (!organizationCatalogFormEl || organizationCatalogManualRunSyncTimer) return;
+    syncOrganizationCatalogManualRunFromDomState({ force: true });
+    organizationCatalogManualRunSyncTimer = window.setInterval(() => {
+      syncOrganizationCatalogManualRunFromDomState();
+    }, 300);
   };
 
   const normalizeOrganizationCatalogDocumentRunInput = () => {
@@ -3536,7 +3547,7 @@ function initStaffAccessPages() {
       ? codeByAcademicYear[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] || code
       : code;
     const accountNo = normalizeOrganizationCatalogText(organizationCatalogFields.accountNo?.value);
-    const docId = id || slugifyOrganizationCatalogId(`${group}-${code || name}`);
+    const docId = id || slugifyOrganizationCatalogId(`${group}-${isOrganizationCatalogManualDocumentRunGroup(group) ? name : code || name}`);
     return {
       id: docId,
       group,
@@ -3545,6 +3556,7 @@ function initStaffAccessPages() {
       codeByAcademicYear,
       documentRunCode: storedDocumentRunCode,
       documentRunCodeByAcademicYear,
+      requiresDocumentRunCode: isOrganizationCatalogManualDocumentRunGroup(group),
       accountNo,
       bankAccount: accountNo,
       status: "active"
@@ -3553,6 +3565,7 @@ function initStaffAccessPages() {
 
   const saveOrganizationCatalogForm = async (event) => {
     event?.preventDefault?.();
+    syncOrganizationCatalogManualRunFromDomState({ force: true });
     if (!resolveStore() || !firestore.setDoc || !firestore.doc) {
       setMessage(organizationCatalogFormMessageEl, "ระบบยังไม่พร้อมบันทึก Firebase", "#b91c1c");
       return;
@@ -3562,6 +3575,10 @@ function initStaffAccessPages() {
       setMessage(organizationCatalogFormMessageEl, "กรุณากรอกประเภทองค์กรและชื่อองค์กร", "#b91c1c");
       return;
     }
+    if (payload.requiresDocumentRunCode && !payload.documentRunCodeByAcademicYear?.[getOrganizationCatalogDisplayAcademicYear()]) {
+      setMessage(organizationCatalogFormMessageEl, "กรุณาเลือกฝ่ายรับผิดชอบหลักก่อนบันทึก", "#b91c1c");
+      return;
+    }
 
     const currentUser = readCurrentUser();
     const updatedBy = (currentUser?.email || getCurrentAuthEmail() || "").toString().trim().toLowerCase();
@@ -3569,7 +3586,7 @@ function initStaffAccessPages() {
     try {
       if (organizationCatalogSaveBtnEl) organizationCatalogSaveBtnEl.disabled = true;
       setMessage(organizationCatalogFormMessageEl, "กำลังบันทึก...", "#1d4ed8");
-      const { id, ...fields } = payload;
+      const { id, requiresDocumentRunCode, ...fields } = payload;
       const moveUpdates = buildOrganizationCatalogManualMoveUpdates({
         payload,
         academicYear: getOrganizationCatalogDisplayAcademicYear()
@@ -4069,16 +4086,22 @@ function initStaffAccessPages() {
         const applicant = getOrgRepresentativeApplicant(item);
         return `${applicant.displayName || "-"} (${item.representativeRole || "-"})`;
       });
+      const rejectedPeople = entry.rejected.map((item) => {
+        const applicant = getOrgRepresentativeApplicant(item);
+        return `${applicant.displayName || "-"} (${item.representativeRole || "-"})`;
+      });
       return {
         "ปีการศึกษา": currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE()),
         "ประเภทองค์กร": entry.orgType || "",
         "องค์กร": entry.orgName || "",
         "ตัวแทนอนุมัติแล้ว": entry.approved.length,
         "คำขอรออนุมัติ": entry.pending.length,
+        "คำขอไม่อนุมัติ": entry.rejected.length,
         "ตำแหน่งที่ยังขาด": missingRoles.join(", "),
         "สถานะข้อมูล": complete.label,
         "รายชื่อตัวแทนอนุมัติแล้ว": approvedPeople.join("; "),
-        "รายชื่อคำขอรออนุมัติ": pendingPeople.join("; ")
+        "รายชื่อคำขอรออนุมัติ": pendingPeople.join("; "),
+        "รายชื่อคำขอไม่อนุมัติ": rejectedPeople.join("; ")
       };
     });
     const headers = [
@@ -4087,10 +4110,12 @@ function initStaffAccessPages() {
       "องค์กร",
       "ตัวแทนอนุมัติแล้ว",
       "คำขอรออนุมัติ",
+      "คำขอไม่อนุมัติ",
       "ตำแหน่งที่ยังขาด",
       "สถานะข้อมูล",
       "รายชื่อตัวแทนอนุมัติแล้ว",
-      "รายชื่อคำขอรออนุมัติ"
+      "รายชื่อคำขอรออนุมัติ",
+      "รายชื่อคำขอไม่อนุมัติ"
     ];
     if (window.sgcuCsvExport?.download) {
       window.sgcuCsvExport.download({
@@ -4113,6 +4138,161 @@ function initStaffAccessPages() {
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const getOrgRepresentativeAcademicYearDeleteTarget = () => {
+    const selectedAcademicYear = currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE());
+    const targetItems = currentOrgRepresentativeApplications.filter((item) => {
+      const id = (item.id || "").toString();
+      return id && getOrgRepresentativeAcademicYear(item) === selectedAcademicYear;
+    });
+    const orgCount = new Set(targetItems.map((item) => getOrgRepresentativeOrgKey(item.organizationType || "", item.organizationName || ""))).size;
+    return { selectedAcademicYear, targetItems, orgCount };
+  };
+
+  const openOrgRepresentativeDeleteYearConfirmModal = () => {
+    if (!resolveStore()) {
+      setMessage(orgRepresentativeMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
+      return false;
+    }
+    if (!isSuperStaff()) {
+      setMessage(orgRepresentativeMessageEl, "หน้านี้สำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
+      return false;
+    }
+    if (!approvalDetailModalEl || !approvalDetailBodyEl) return false;
+
+    const { selectedAcademicYear, targetItems, orgCount } = getOrgRepresentativeAcademicYearDeleteTarget();
+    if (!targetItems.length) {
+      setMessage(orgRepresentativeMessageEl, "ยังไม่มีรายชื่อตัวแทนองค์กรในปีที่เลือก", "#6b7280");
+      return false;
+    }
+
+    const detailTitleEl = document.getElementById("staffApprovalDetailTitle");
+    if (detailTitleEl) detailTitleEl.textContent = "ยืนยันลบรายชื่อทั้งปี";
+    approvalDetailBodyEl.removeAttribute("data-application-id");
+    approvalDetailBodyEl.innerHTML = `
+      <div class="staff-approval-detail-layout org-representative-delete-confirm">
+        <div class="modal-section">
+          <div class="modal-section-title">ลบรายชื่อตัวแทนปีการศึกษา ${toSafeText(selectedAcademicYear)}</div>
+          <div class="modal-section-caption">
+            แนะนำให้โหลด CSV เพื่อดาวน์โหลดสำเนารายชื่อก่อนลบ การลบนี้จะลบคำขอตัวแทนองค์กรทั้งหมดของปีนี้
+          </div>
+          <div class="org-representative-delete-summary">
+            <div>
+              <div class="modal-item-label">จำนวนรายการที่จะลบ</div>
+              <div class="modal-item-value">${toSafeText(String(targetItems.length))}</div>
+            </div>
+            <div>
+              <div class="modal-item-label">จำนวนองค์กรที่เกี่ยวข้อง</div>
+              <div class="modal-item-value">${toSafeText(String(orgCount))}</div>
+            </div>
+          </div>
+          <div id="orgRepresentativeDeleteYearMessage" class="section-text-sm staff-access-status" aria-live="polite"></div>
+        </div>
+        <div class="staff-approval-manage-actions org-representative-delete-confirm-actions">
+          <button type="button" class="btn-ghost csv-export-btn" data-role="export-org-representative-year-csv">โหลด CSV</button>
+          <button type="button" class="btn-ghost" data-role="cancel-org-representative-year-delete">ยกเลิก</button>
+          <button
+            type="button"
+            class="btn-primary is-danger"
+            data-role="confirm-org-representative-year-delete"
+            data-academic-year="${toSafeText(selectedAcademicYear)}"
+          >
+            ยืนยันลบรายชื่อ
+          </button>
+        </div>
+      </div>
+    `;
+    if (typeof openDialog === "function") {
+      openDialog(approvalDetailModalEl, { focusSelector: '[data-role="export-org-representative-year-csv"]' });
+    } else {
+      approvalDetailModalEl.classList.add("show");
+      approvalDetailModalEl.setAttribute("aria-hidden", "false");
+      document.body.classList.add("has-modal");
+    }
+    return true;
+  };
+
+  const deleteOrgRepresentativeAcademicYearRoster = async (expectedAcademicYear = "") => {
+    if (!resolveStore()) {
+      setMessage(orgRepresentativeMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
+      return false;
+    }
+    if (!isSuperStaff()) {
+      setMessage(orgRepresentativeMessageEl, "หน้านี้สำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
+      return false;
+    }
+
+    const { selectedAcademicYear, targetItems } = getOrgRepresentativeAcademicYearDeleteTarget();
+    if (expectedAcademicYear && expectedAcademicYear !== selectedAcademicYear) {
+      setMessage(orgRepresentativeMessageEl, "ปีการศึกษาที่เลือกเปลี่ยนไป กรุณากดยืนยันใหม่", "#b91c1c");
+      return false;
+    }
+    if (!targetItems.length) {
+      setMessage(orgRepresentativeMessageEl, "ยังไม่มีรายชื่อตัวแทนองค์กรในปีที่เลือก", "#6b7280");
+      return false;
+    }
+
+    const deleteBtn = approvalDetailBodyEl?.querySelector('[data-role="confirm-org-representative-year-delete"]') || orgRepresentativeDeleteYearBtnEl;
+    const modalMessageEl = approvalDetailBodyEl?.querySelector("#orgRepresentativeDeleteYearMessage");
+    if (deleteBtn instanceof HTMLButtonElement) {
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "กำลังลบ...";
+    }
+    if (modalMessageEl instanceof HTMLElement) {
+      modalMessageEl.textContent = "กำลังลบรายชื่อ...";
+      modalMessageEl.style.color = "#1d4ed8";
+    }
+
+    try {
+      const refs = targetItems.map((item) => firestore.doc(firestore.db, COLLECTION_ORG_REPRESENTATIVES, (item.id || "").toString()));
+      if (firestore.writeBatch && refs.length > 1) {
+        const batch = firestore.writeBatch(firestore.db);
+        if (typeof batch.delete === "function") {
+          refs.forEach((ref) => batch.delete(ref));
+          await batch.commit();
+        } else {
+          for (const ref of refs) {
+            await firestore.deleteDoc(ref);
+          }
+        }
+      } else {
+        for (const ref of refs) {
+          await firestore.deleteDoc(ref);
+        }
+      }
+
+      const deletedIds = new Set(targetItems.map((item) => (item.id || "").toString()));
+      currentOrgRepresentativeApplications = currentOrgRepresentativeApplications
+        .filter((item) => !deletedIds.has((item.id || "").toString()));
+      renderOrgRepresentativeApplications();
+      if (deleteBtn instanceof HTMLButtonElement) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "ยืนยันลบรายชื่อ";
+      }
+      closeApprovalDetailModal();
+      setMessage(orgRepresentativeMessageEl, `ลบรายชื่อตัวแทนทั้งหมดของปี ${selectedAcademicYear} เรียบร้อยแล้ว`, "#047857");
+      return true;
+    } catch (error) {
+      console.error("delete organization representative year roster failed - app.staff-access.js", error);
+      const code = (error?.code || "unknown").toString();
+      if (code === "permission-denied") {
+        setMessage(orgRepresentativeMessageEl, "ไม่มีสิทธิ์ลบรายชื่อตัวแทนองค์กร (permission-denied)", "#b91c1c");
+      } else if (code === "unauthenticated") {
+        setMessage(orgRepresentativeMessageEl, "เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่", "#b91c1c");
+      } else {
+        setMessage(orgRepresentativeMessageEl, "ลบรายชื่อตัวแทนองค์กรไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
+      }
+      if (modalMessageEl instanceof HTMLElement) {
+        modalMessageEl.textContent = "ลบรายชื่อไม่สำเร็จ กรุณาลองใหม่";
+        modalMessageEl.style.color = "#b91c1c";
+      }
+      if (deleteBtn instanceof HTMLButtonElement) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "ยืนยันลบรายชื่อ";
+      }
+      return false;
+    }
   };
 
   const openOrgRepresentativeOrganizationModal = (orgKey) => {
@@ -4435,28 +4615,17 @@ function initStaffAccessPages() {
 
   const startPositionCatalogListener = () => {
     if (!resolveStore()) {
-      currentPositionCatalog = sortPositionCatalogItems(DEFAULT_POSITION_OPTIONS.map((item) => ({
-        id: slugifyPosition(item.name),
-        name: item.name,
-        divisionCodeYY: item.divisionCodeYY,
-        divisionLabel: divisionCodeLabel(item.divisionCodeYY),
-        levelCodeZZ: item.levelCodeZZ,
-        allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), item.divisionCodeYY)
-      })));
+      positionCatalogLoadState = "loading";
+      currentPositionCatalog = [];
       renderPositionDatalist();
       renderPositionCatalog();
       renderPositionAllowedPageOptions([], "");
+      scheduleDeferredBootstrap();
       return;
     }
     if (!getCurrentAuthEmail()) {
-      currentPositionCatalog = sortPositionCatalogItems(DEFAULT_POSITION_OPTIONS.map((item) => ({
-        id: slugifyPosition(item.name),
-        name: item.name,
-        divisionCodeYY: item.divisionCodeYY,
-        divisionLabel: divisionCodeLabel(item.divisionCodeYY),
-        levelCodeZZ: item.levelCodeZZ,
-        allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), item.divisionCodeYY)
-      })));
+      positionCatalogLoadState = "signed-out";
+      currentPositionCatalog = [];
       renderPositionDatalist();
       renderPositionCatalog();
       renderPositionAllowedPageOptions([], "");
@@ -4469,6 +4638,9 @@ function initStaffAccessPages() {
     }
 
     const q = firestore.query(firestore.collection(firestore.db, COLLECTION_POSITIONS));
+    positionCatalogLoadState = "loading";
+    currentPositionCatalog = [];
+    renderPositionCatalog();
     unsubscribePositionCatalog = firestore.onSnapshot(
       q,
       (snapshot) => {
@@ -4490,29 +4662,20 @@ function initStaffAccessPages() {
               divisionCodeYY: yy,
               divisionLabel: normalizePositionText(item.divisionLabel || item.divisionName || divisionCodeLabel(yy)),
               levelCodeZZ: zz,
-              allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), yy)
+              allowedPages: normalizeConfiguredAllowedPages(readAllowedPagesInput(item))
             };
           })
           .filter((item) => item.name);
 
         const uniqueByName = new Map();
-        [
-          ...fromStore,
-          ...DEFAULT_POSITION_OPTIONS.map((item) => ({
-            id: slugifyPosition(item.name),
-            name: item.name,
-            divisionCodeYY: item.divisionCodeYY,
-            divisionLabel: item.divisionLabel || divisionCodeLabel(item.divisionCodeYY),
-            levelCodeZZ: item.levelCodeZZ,
-            allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), item.divisionCodeYY)
-          }))
-        ].forEach((item) => {
+        fromStore.forEach((item) => {
           const key = normalizePositionText(item.name).toLowerCase();
           if (!key) return;
           if (!uniqueByName.has(key)) uniqueByName.set(key, item);
         });
 
         currentPositionCatalog = sortPositionCatalogItems(Array.from(uniqueByName.values()));
+        positionCatalogLoadState = "loaded";
         renderPositionDatalist();
         renderApplicationPositionSelect();
         renderPositionCatalog();
@@ -4522,17 +4685,13 @@ function initStaffAccessPages() {
       },
       (error) => {
         console.error("staff position catalog listener failed - app.staff-access.js:2240", error);
-        currentPositionCatalog = DEFAULT_POSITION_OPTIONS.map((item) => ({
-          id: slugifyPosition(item.name),
-          name: item.name,
-          divisionCodeYY: item.divisionCodeYY,
-          levelCodeZZ: item.levelCodeZZ,
-          allowedPages: normalizeAllowedPages(readAllowedPagesInput(item), item.divisionCodeYY)
-        }));
+        positionCatalogLoadState = "error";
+        currentPositionCatalog = [];
         renderPositionDatalist();
         renderApplicationPositionSelect();
         renderPositionCatalog();
         renderPositionAllowedPageOptions([], "");
+        setMessage(positionManageMessageEl, buildListenerErrorText("โหลดรายการตำแหน่งจาก Firebase ไม่สำเร็จ", error), "#b91c1c");
       }
     );
   };
@@ -4996,7 +5155,7 @@ function initStaffAccessPages() {
         void refreshAccessProfileForCurrentUser();
       }
     } else if (!positionManageMessageEl?.textContent) {
-      setMessage(positionManageMessageEl, "เพิ่มหรือลบตำแหน่งได้จากส่วนนี้", "#6b7280");
+      setMessage(positionManageMessageEl, "ปรับ บันทึก หรือลบตำแหน่งได้จากส่วนนี้", "#6b7280");
     }
   };
 
@@ -5158,16 +5317,11 @@ function initStaffAccessPages() {
         },
         { merge: true }
       );
-      if (positionManageInputEl) positionManageInputEl.value = "";
-      if (positionDivisionCodeEl) positionDivisionCodeEl.value = "";
-      if (positionDivisionNameEl) positionDivisionNameEl.value = "";
-      if (positionLevelCodeEl) positionLevelCodeEl.value = "";
-      updateManageResolvedPositionName();
-      renderPositionAllowedPageOptions([], "");
-      setMessage(positionManageMessageEl, "เพิ่มตำแหน่งเรียบร้อยแล้ว", "#047857");
+      resetPositionManageForm();
+      setMessage(positionManageMessageEl, "ปรับตำแหน่งเรียบร้อยแล้ว", "#047857");
     } catch (error) {
       console.error("add position failed - app.staff-access.js:2816", error);
-      setMessage(positionManageMessageEl, "เพิ่มตำแหน่งไม่สำเร็จ", "#b91c1c");
+      setMessage(positionManageMessageEl, "ปรับตำแหน่งไม่สำเร็จ", "#b91c1c");
     }
   };
 
@@ -5191,6 +5345,9 @@ function initStaffAccessPages() {
 
     try {
       await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_POSITIONS, safeId));
+      if (currentEditingPositionId === safeId) {
+        resetPositionManageForm();
+      }
       setMessage(positionManageMessageEl, "ลบตำแหน่งเรียบร้อยแล้ว", "#047857");
     } catch (error) {
       console.error("remove position failed - app.staff-access.js:2843", error);
@@ -5264,6 +5421,7 @@ function initStaffAccessPages() {
         { merge: true }
       );
       currentEditingPositionId = "";
+      resetPositionManageForm();
       setMessage(positionManageMessageEl, "อัปเดตตำแหน่งเรียบร้อยแล้ว", "#047857");
       return true;
     } catch (error) {
@@ -5574,6 +5732,7 @@ function initStaffAccessPages() {
       closeApplicationModal();
     }
     setApprovalAvailabilityByRole();
+    startPositionCatalogListener();
     startMyApplicationsListener();
     startPendingApplicationsListener();
     startApprovedHistoryListener();
@@ -5768,13 +5927,23 @@ function initStaffAccessPages() {
   organizationCatalogFormEl?.addEventListener("submit", (event) => {
     void saveOrganizationCatalogForm(event);
   });
+  organizationCatalogFormEl?.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.id === "organizationCatalogResponsibilityDivision") {
+      handleOrganizationCatalogResponsibilityChange();
+    }
+  });
   organizationCatalogFields.group?.addEventListener("change", () => {
     syncOrganizationCatalogDocumentRunInputMode();
     refreshOrganizationCatalogGeneratedCode({ force: !organizationCatalogFields.id?.value });
-    refreshOrganizationCatalogDocumentRunPreview();
+    refreshOrganizationCatalogManualDocumentRunFromControls();
     updateOrganizationCatalogFormUi();
   });
-  organizationCatalogFields.name?.addEventListener("input", updateOrganizationCatalogFormUi);
+  organizationCatalogFields.name?.addEventListener("input", () => {
+    refreshOrganizationCatalogManualDocumentRunFromControls();
+    updateOrganizationCatalogFormUi();
+  });
   organizationCatalogFields.code?.addEventListener("input", () => {
     refreshOrganizationCatalogDocumentRunPreview();
     updateOrganizationCatalogFormUi();
@@ -5789,20 +5958,49 @@ function initStaffAccessPages() {
     refreshOrganizationCatalogDocumentRunPreview();
     updateOrganizationCatalogFormUi();
   });
-  organizationCatalogResponsibilityDivisionEl?.addEventListener("change", () => {
+  const handleOrganizationCatalogResponsibilityChange = () => {
     syncOrganizationCatalogCustomResponsibilityControls();
-    refreshOrganizationCatalogDocumentRunPreview();
+    refreshOrganizationCatalogManualDocumentRunFromControls();
     updateOrganizationCatalogFormUi();
-  });
+  };
+  organizationCatalogResponsibilityDivisionEl?.addEventListener("input", handleOrganizationCatalogResponsibilityChange);
+  organizationCatalogResponsibilityDivisionEl?.addEventListener("change", handleOrganizationCatalogResponsibilityChange);
   organizationCatalogResponsibilitySubCodeEl?.addEventListener("input", () => {
-    refreshOrganizationCatalogDocumentRunPreview();
+    refreshOrganizationCatalogManualDocumentRunFromControls();
     updateOrganizationCatalogFormUi();
   });
   organizationCatalogCustomDivisionCodeEl?.addEventListener("input", () => {
-    refreshOrganizationCatalogDocumentRunPreview();
+    refreshOrganizationCatalogManualDocumentRunFromControls();
     updateOrganizationCatalogFormUi();
   });
-  organizationCatalogCustomDivisionNameEl?.addEventListener("input", updateOrganizationCatalogFormUi);
+  organizationCatalogCustomDivisionNameEl?.addEventListener("input", () => {
+    refreshOrganizationCatalogManualDocumentRunFromControls();
+    updateOrganizationCatalogFormUi();
+  });
+  document.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.id === "organizationCatalogGroup") {
+      syncOrganizationCatalogDocumentRunInputMode();
+      refreshOrganizationCatalogGeneratedCode({ force: !organizationCatalogFields.id?.value });
+      refreshOrganizationCatalogManualDocumentRunFromControls();
+      updateOrganizationCatalogFormUi();
+    }
+    if (target.id === "organizationCatalogResponsibilityDivision") {
+      handleOrganizationCatalogResponsibilityChange();
+    }
+  });
+  document.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (
+      target.id === "organizationCatalogResponsibilityDivision" ||
+      target.id === "organizationCatalogCustomDivisionCode"
+    ) {
+      refreshOrganizationCatalogManualDocumentRunFromControls();
+      updateOrganizationCatalogFormUi();
+    }
+  });
   organizationCatalogResetBtnEl?.addEventListener("click", resetOrganizationCatalogForm);
   organizationCatalogArchiveBtnEl?.addEventListener("click", () => {
     void archiveCurrentOrganizationCatalogItem();
@@ -5843,6 +6041,11 @@ function initStaffAccessPages() {
   }
   if (orgRepresentativeExportCsvBtnEl) {
     orgRepresentativeExportCsvBtnEl.addEventListener("click", exportOrgRepresentativeOverviewCsv);
+  }
+  if (orgRepresentativeDeleteYearBtnEl) {
+    orgRepresentativeDeleteYearBtnEl.addEventListener("click", () => {
+      openOrgRepresentativeDeleteYearConfirmModal();
+    });
   }
   if (orgRepresentativeShowPendingBtnEl) {
     orgRepresentativeShowPendingBtnEl.addEventListener("click", () => setOrgRepresentativeView("pending"));
@@ -6036,6 +6239,28 @@ function initStaffAccessPages() {
     approvalDetailModalEl.addEventListener("click", (event) => {
       const target = event.target;
       if (target instanceof Element) {
+        const exportOrgRepresentativeYearCsvBtn = target.closest('[data-role="export-org-representative-year-csv"]');
+        if (exportOrgRepresentativeYearCsvBtn instanceof HTMLButtonElement) {
+          exportOrgRepresentativeOverviewCsv();
+          const msgEl = approvalDetailBodyEl?.querySelector("#orgRepresentativeDeleteYearMessage");
+          if (msgEl instanceof HTMLElement) {
+            msgEl.textContent = "ดาวน์โหลด CSV แล้ว กรุณาตรวจสอบไฟล์ก่อนกดยืนยันลบ";
+            msgEl.style.color = "#047857";
+          }
+          return;
+        }
+        const cancelOrgRepresentativeYearDeleteBtn = target.closest('[data-role="cancel-org-representative-year-delete"]');
+        if (cancelOrgRepresentativeYearDeleteBtn instanceof HTMLButtonElement) {
+          closeApprovalDetailModal();
+          setMessage(orgRepresentativeMessageEl, "ยกเลิกการลบรายชื่อ", "#6b7280");
+          return;
+        }
+        const confirmOrgRepresentativeYearDeleteBtn = target.closest('[data-role="confirm-org-representative-year-delete"]');
+        if (confirmOrgRepresentativeYearDeleteBtn instanceof HTMLButtonElement) {
+          const academicYear = (confirmOrgRepresentativeYearDeleteBtn.dataset.academicYear || "").toString();
+          void deleteOrgRepresentativeAcademicYearRoster(academicYear);
+          return;
+        }
         const orgRepresentativeRow = target.closest(".org-representative-org-detail tr[data-org-representative-id]");
         if (orgRepresentativeRow && !target.closest("select, button, input, textarea, a")) {
           const id = (orgRepresentativeRow.getAttribute("data-org-representative-id") || "").toString();
@@ -6100,9 +6325,32 @@ function initStaffAccessPages() {
   if (positionManageFormEl) {
     positionManageFormEl.addEventListener("submit", (event) => {
       event.preventDefault();
+      const nextData = {
+        name: positionManageInputEl instanceof HTMLInputElement ? positionManageInputEl.value : "",
+        divisionCodeYY: positionDivisionCodeEl instanceof HTMLInputElement ? positionDivisionCodeEl.value : "",
+        divisionLabel: positionDivisionNameEl instanceof HTMLInputElement ? positionDivisionNameEl.value : "",
+        levelCodeZZ: positionLevelCodeEl instanceof HTMLSelectElement ? positionLevelCodeEl.value : "",
+        allowedPages: readSelectedPositionAllowedPages()
+      };
+      if (currentEditingPositionId) {
+        void updatePosition(currentEditingPositionId, nextData);
+        return;
+      }
       void addPosition();
     });
   }
+
+  positionManageCancelBtnEl?.addEventListener("click", () => {
+    resetPositionManageForm({ message: "ยกเลิกการแก้ไขแล้ว" });
+  });
+
+  positionManageDeleteBtnEl?.addEventListener("click", () => {
+    if (!currentEditingPositionId) {
+      setMessage(positionManageMessageEl, "กรุณาเลือกรายการตำแหน่งก่อนลบ", "#b45309");
+      return;
+    }
+    void removePosition(currentEditingPositionId);
+  });
 
   if (positionDivisionCodeEl) {
     const syncDivisionManageFields = ({ commit = false } = {}) => {
@@ -6149,55 +6397,21 @@ function initStaffAccessPages() {
   }
 
   if (positionListEl) {
-    const syncEditorNameFromEvent = (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (!target.matches('[data-role="edit-yy"], [data-role="edit-division-label"], [data-role="edit-zz"]')) return;
-      const cardEl = target.closest(".staff-position-chip");
-      updatePositionEditorResolvedName(cardEl);
-    };
-    positionListEl.addEventListener("input", syncEditorNameFromEvent);
-    positionListEl.addEventListener("change", syncEditorNameFromEvent);
-    positionListEl.addEventListener("change", (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (!target.matches('[data-role="edit-all-page-checkbox"], [data-role="edit-page-checkbox"]')) return;
-      const cardEl = target.closest(".staff-position-chip");
-      if (!(cardEl instanceof Element)) return;
-      handleAllowedPagesToggle(event, cardEl, "edit");
-    });
     positionListEl.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const editBtn = target.closest("button[data-edit-position-id]");
-      if (editBtn instanceof HTMLButtonElement) {
-        const positionId = (editBtn.dataset.editPositionId || "").toString();
-        currentEditingPositionId = currentEditingPositionId === positionId ? "" : positionId;
-        renderPositionCatalog();
-        return;
-      }
-      const saveBtn = target.closest("button[data-save-position-id]");
-      if (saveBtn instanceof HTMLButtonElement) {
-        const positionId = (saveBtn.dataset.savePositionId || "").toString();
-        const cardEl = saveBtn.closest(".staff-position-chip");
-        if (!(cardEl instanceof Element)) return;
-        const nameInput = cardEl.querySelector('[data-role="edit-name"]');
-        const yyInput = cardEl.querySelector('[data-role="edit-yy"]');
-        const divisionLabelInput = cardEl.querySelector('[data-role="edit-division-label"]');
-        const zzSelect = cardEl.querySelector('[data-role="edit-zz"]');
-        void updatePosition(positionId, {
-          name: nameInput instanceof HTMLInputElement ? nameInput.value : "",
-          divisionCodeYY: yyInput instanceof HTMLInputElement ? yyInput.value : "",
-          divisionLabel: divisionLabelInput instanceof HTMLInputElement ? divisionLabelInput.value : "",
-          levelCodeZZ: zzSelect instanceof HTMLSelectElement ? zzSelect.value : "",
-          allowedPages: readSelectedPositionAllowedPagesFrom(cardEl)
-        });
-        return;
-      }
-      const removeBtn = target.closest("button[data-position-id]");
-      if (!(removeBtn instanceof HTMLButtonElement)) return;
-      const positionId = (removeBtn.dataset.positionId || "").toString();
-      void removePosition(positionId);
+      const cardEl = target.closest(".staff-position-chip[data-select-position-id]");
+      if (!(cardEl instanceof HTMLElement)) return;
+      loadPositionIntoManageForm(cardEl.dataset.selectPositionId || "");
+    });
+    positionListEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const cardEl = target.closest(".staff-position-chip[data-select-position-id]");
+      if (!(cardEl instanceof HTMLElement)) return;
+      event.preventDefault();
+      loadPositionIntoManageForm(cardEl.dataset.selectPositionId || "");
     });
   }
 
@@ -6236,6 +6450,7 @@ function initStaffAccessPages() {
   setOrgRepresentativeView("overview");
   setApprovalType("staff");
   updateOrgStructurePhotoPreview();
+  startOrganizationCatalogManualRunAutosync();
 
   window.addEventListener("beforeunload", () => {
     if (deferredBootstrapTimer) {
@@ -6245,6 +6460,10 @@ function initStaffAccessPages() {
     if (approvalUiSyncTimer) {
       window.clearTimeout(approvalUiSyncTimer);
       approvalUiSyncTimer = 0;
+    }
+    if (organizationCatalogManualRunSyncTimer) {
+      window.clearInterval(organizationCatalogManualRunSyncTimer);
+      organizationCatalogManualRunSyncTimer = 0;
     }
     [
       unsubscribeMyApplications,

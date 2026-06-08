@@ -36,14 +36,7 @@
         "js/features/project/app.calendar.js",
         "js/features/project/app.data.js?v=20260518-csv-refresh-1"
       ],
-      "project-status-staff": [
-        "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
-        "js/features/project/app.project-modal.js",
-        "js/features/project/app.charts.js",
-        "js/features/project/app.pie.js",
-        "js/features/project/app.calendar.js",
-        "js/features/project/app.data.js?v=20260518-csv-refresh-1"
-      ],
+      "treasurer-handover-staff": [],
       "dashboard-staff": [
         "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
         "js/features/project/app.project-modal.js",

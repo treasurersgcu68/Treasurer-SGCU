@@ -412,7 +412,7 @@ registerCenterTextPlugin();
 // ===== Helpers: Project Status contexts (public / staff) =====
 function buildProjectStatusContext(suffix = "", key = "public") {
   const get = (idBase) => document.getElementById(idBase + suffix);
-  const sectionPage = key === "staff" ? "project-status-staff" : "project-status";
+  const sectionPage = key === "staff" ? "dashboard-staff" : "project-status";
   const sectionEl = document.querySelector(`section[data-page="${sectionPage}"]`);
 
   return {

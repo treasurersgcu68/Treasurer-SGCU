@@ -399,10 +399,10 @@
 }
 
 .page-view[data-page="staff-approval"] .page {
-  max-width: 980px;
-  margin: 0 auto;
-  padding-left: 8px;
-  padding-right: 8px;
+  max-width: none;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .staff-application-shell {
@@ -844,6 +844,16 @@
   border-color: #9d174d;
 }
 
+#staffApprovalDetailModal .org-representative-delete-confirm-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, 0.72fr) minmax(0, 1.18fr);
+}
+
+#staffApprovalDetailModal .org-representative-delete-confirm-actions > button {
+  min-width: 0;
+  width: 100%;
+}
+
 .staff-approval-manage-hint {
   margin-top: 8px;
   color: #9d174d;
@@ -1031,6 +1041,16 @@
   .staff-approval-detail-layout .modal-section-grid {
     grid-template-columns: 1fr;
   }
+
+  #staffApprovalDetailModal .org-representative-delete-confirm-actions {
+    grid-template-columns: minmax(0, 1fr) minmax(72px, 0.7fr) minmax(0, 1.2fr);
+  }
+
+  #staffApprovalDetailModal .org-representative-delete-confirm-actions > button {
+    font-size: 0.88rem;
+    line-height: 1.2;
+    padding-inline: 8px;
+  }
 }
 
 .staff-approval-history-code {
@@ -1093,13 +1113,32 @@
 }
 
 .staff-position-field-submit {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: 8px;
+  justify-content: flex-end;
   align-self: end;
 }
 
-.staff-position-field-submit .btn-primary {
+.staff-position-field-submit .btn-primary,
+.staff-position-field-submit .btn-ghost {
   min-height: 42px;
   white-space: nowrap;
   min-width: 120px;
+}
+
+.staff-position-manage-delete-btn {
+  border-color: rgba(190, 18, 60, 0.24);
+  color: #be123c;
+  background: rgba(255, 241, 242, 0.8);
+}
+
+.staff-position-manage-delete-btn:hover,
+.staff-position-manage-delete-btn:focus-visible {
+  border-color: rgba(190, 18, 60, 0.44);
+  background: #ffe4e6;
+  color: #9f1239;
 }
 
 .staff-position-code-select {
@@ -1197,20 +1236,32 @@
   font-size: 12px;
   font-weight: 600;
   box-shadow: 0 8px 22px rgba(236, 72, 153, 0.08);
-  transition: border-color 180ms ease, box-shadow 180ms ease;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .staff-position-chip.is-editing {
-  grid-column: 1 / -1;
-  padding: 16px;
   border-color: rgba(236, 72, 153, 0.34);
   background: #fff;
   box-shadow: 0 14px 34px rgba(236, 72, 153, 0.14);
 }
 
+.staff-position-chip.is-selectable {
+  cursor: pointer;
+}
+
 .staff-position-chip:hover {
   border-color: rgba(236, 72, 153, 0.32);
   box-shadow: 0 12px 26px rgba(236, 72, 153, 0.14);
+}
+
+.staff-position-chip.is-selectable:hover,
+.staff-position-chip.is-selectable:focus-visible {
+  transform: translateY(-1px);
+}
+
+.staff-position-chip:focus-visible {
+  outline: 3px solid rgba(236, 72, 153, 0.22);
+  outline-offset: 2px;
 }
 
 .staff-position-chip-main {
@@ -1289,118 +1340,6 @@
   font-weight: 800;
 }
 
-.staff-position-chip-actions {
-  display: grid;
-  gap: 8px;
-  align-content: start;
-}
-
-.staff-position-edit-btn {
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border-color: rgba(244, 114, 182, 0.22);
-  color: var(--theme-pink-700);
-  background: rgba(255, 255, 255, 0.92);
-}
-
-.staff-position-editor {
-  margin-top: 12px;
-  display: grid;
-  gap: 14px;
-}
-
-.staff-position-editor-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(255, 247, 252, 0.76);
-  border: 1px solid rgba(244, 114, 182, 0.14);
-}
-
-.staff-position-editor-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--theme-pink-800);
-}
-
-.staff-position-editor-caption {
-  margin-top: 2px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--theme-pink-700);
-}
-
-.staff-position-editor-source {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(236, 72, 153, 0.12);
-  border: 1px solid rgba(236, 72, 153, 0.18);
-  color: var(--theme-pink-800);
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.staff-position-editor-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(110px, 0.6fr) minmax(220px, 1.25fr) minmax(180px, 0.9fr);
-}
-
-.staff-position-editor-field {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-
-.staff-position-editor-result-field {
-  grid-column: 1 / -1;
-}
-
-.staff-position-editor-pages {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(244, 114, 182, 0.16);
-  background: rgba(255, 247, 252, 0.75);
-}
-
-.staff-position-editor-pages-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--theme-pink-800);
-}
-
-.staff-position-editor-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.staff-position-remove-btn {
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border-color: rgba(244, 114, 182, 0.2);
-  color: var(--theme-pink-700);
-  background: #fff;
-}
-
-.staff-position-remove-btn:hover {
-  border-color: var(--theme-pink-500);
-  color: var(--theme-pink-800);
-  background: rgba(252, 231, 243, 0.85);
-}
-
 .staff-approval-position-input,
 .staff-approval-role-select {
   min-width: 210px;
@@ -1455,7 +1394,14 @@
     grid-template-columns: 1fr;
   }
 
+  .staff-position-field-submit {
+    justify-content: stretch;
+  }
+
+  .staff-position-field-submit .btn-primary,
+  .staff-position-field-submit .btn-ghost,
   .staff-position-form .btn-primary {
+    flex: 1 1 100%;
     width: 100%;
   }
 
@@ -1465,33 +1411,6 @@
 
   .staff-position-chip {
     grid-template-columns: 1fr;
-  }
-
-  .staff-position-chip-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-
-  .staff-position-editor-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .staff-position-editor-actions {
-    flex-direction: column;
-  }
-
-  .staff-position-editor-actions .btn-primary,
-  .staff-position-editor-actions .btn-ghost {
-    width: 100%;
-  }
-
-  .staff-position-edit-btn,
-  .staff-position-remove-btn {
-    width: auto;
-    min-height: 30px;
-    padding: 0 10px;
-    font-size: 12px;
   }
 
   .staff-application-intro-item {

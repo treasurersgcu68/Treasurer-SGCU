@@ -1288,7 +1288,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function switchPage(page, { fromHash = false, bypassConsent = false } = {}) {
     const previousPage = currentPage;
-    const targetPage = page;
+    const targetPage = page === "project-status-staff" ? "treasurer-handover-staff" : page;
     const pageExists = Array.from(pageViews).some((section) => section.dataset.page === targetPage);
     if (!pageExists) {
       return;
@@ -1308,7 +1308,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             "dashboard-staff",
             "system-data-staff",
             "project-status",
-            "project-status-staff",
+            "treasurer-handover-staff",
             "login"
           ]
         : targetRequiresAuth
@@ -1352,7 +1352,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     if (["dashboard-staff", "system-data-staff"].includes(targetPage) && staffViewMode !== "staff") {
-      await switchPage("project-status-staff", { fromHash });
+      await switchPage("treasurer-handover-staff", { fromHash });
       return;
     }
 
@@ -1390,10 +1390,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       scrollPageToTop(page, "auto");
     }
 
+    page = targetPage;
+
     if (page === "project-status") {
       setActiveProjectStatusContext("public");
-    } else if (page === "project-status-staff") {
-      setActiveProjectStatusContext("staff");
     } else if (page === "dashboard-staff") {
       setActiveProjectStatusContext("staff");
       window.sgcuSetStaffProjectWorkflowTab?.("overview");
@@ -1447,8 +1447,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (page === "dashboard-staff" && hostDashboard) {
         hostDashboard.appendChild(filterBar);
         filterBar.style.display = "grid";
-      } else if (page === "project-status-staff" && hostStatus) {
-        hostStatus.appendChild(filterBar);
       } else if (hostStatus) {
         hostStatus.appendChild(filterBar);
       }

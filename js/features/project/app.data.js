@@ -734,7 +734,7 @@ async function loadOrgFilters() {
 }
 
 function shouldLoadProjectDataForPage(page) {
-  return ["project-status", "project-status-staff", "dashboard-staff"].includes(page);
+  return ["project-status", "dashboard-staff"].includes(page);
 }
 
 async function ensureProjectDataLoaded() {

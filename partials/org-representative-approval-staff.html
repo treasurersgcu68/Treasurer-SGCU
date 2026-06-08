@@ -68,7 +68,7 @@
                       <input id="organizationCatalogId" type="hidden">
                       <div class="budget-request-form-main">
                         <div class="budget-request-form-section">
-                          <div class="budget-request-form-section-title">ข้อมูลองค์กร</div>
+                          <div class="budget-request-form-section-title">ข้อมูลองค์กรและเอกสาร</div>
                           <div class="borrow-form-row">
                             <div class="borrow-form-field">
                               <label class="login-label" for="organizationCatalogGroup">ประเภทองค์กร</label>
@@ -81,15 +81,34 @@
                               <input id="organizationCatalogName" class="login-input" type="text" required>
                             </div>
                           </div>
-                        </div>
-                        <div class="budget-request-form-section">
-                          <div class="budget-request-form-section-title">รหัสและข้อมูลเอกสาร</div>
-                          <div class="borrow-form-row">
+                          <div class="borrow-form-row is-3 organization-catalog-year-responsibility-row">
                             <div class="borrow-form-field">
                               <label class="login-label" for="organizationCatalogAcademicYear">ปีการศึกษาที่แก้</label>
                               <select id="organizationCatalogAcademicYear" class="login-input">
                                 <option value="">ปีการศึกษาปัจจุบัน</option>
                               </select>
+                            </div>
+                            <div id="organizationCatalogResponsibilityControls" class="organization-catalog-responsibility" hidden>
+                              <div class="borrow-form-field">
+                                <label class="login-label" for="organizationCatalogResponsibilityDivision">ฝ่ายรับผิดชอบหลัก</label>
+                                <select id="organizationCatalogResponsibilityDivision" class="login-input">
+                                  <option value="">เลือกฝ่ายหลัก</option>
+                                </select>
+                              </div>
+                              <div class="borrow-form-field">
+                                <label class="login-label" for="organizationCatalogResponsibilitySubCode">เลขย่อย</label>
+                                <input id="organizationCatalogResponsibilitySubCode" class="login-input" type="text" inputmode="numeric" placeholder="เช่น 03">
+                              </div>
+                            </div>
+                          </div>
+                          <div id="organizationCatalogCustomResponsibilityControls" class="organization-catalog-custom-responsibility" hidden>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogCustomDivisionCode">รหัสฝ่ายหลักใหม่</label>
+                              <input id="organizationCatalogCustomDivisionCode" class="login-input" type="text" inputmode="numeric" placeholder="เช่น 11">
+                            </div>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="organizationCatalogCustomDivisionName">ชื่อฝ่ายหลักใหม่</label>
+                              <input id="organizationCatalogCustomDivisionName" class="login-input" type="text" placeholder="เช่น ฝ่ายกิจการพิเศษ">
                             </div>
                           </div>
                           <div class="borrow-form-row is-3">
@@ -104,28 +123,6 @@
                             <div class="borrow-form-field">
                               <label class="login-label" for="organizationCatalogAccountNo">เลขที่บัญชี</label>
                               <input id="organizationCatalogAccountNo" class="login-input" type="text">
-                            </div>
-                          </div>
-                          <div id="organizationCatalogResponsibilityControls" class="organization-catalog-responsibility" hidden>
-                            <div class="borrow-form-field">
-                              <label class="login-label" for="organizationCatalogResponsibilityDivision">ฝ่ายรับผิดชอบหลัก</label>
-                              <select id="organizationCatalogResponsibilityDivision" class="login-input">
-                                <option value="">เลือกฝ่ายหลัก</option>
-                              </select>
-                            </div>
-                            <div class="borrow-form-field">
-                              <label class="login-label" for="organizationCatalogResponsibilitySubCode">เลขย่อย</label>
-                              <input id="organizationCatalogResponsibilitySubCode" class="login-input" type="text" inputmode="numeric" placeholder="เช่น 03">
-                            </div>
-                            <div id="organizationCatalogCustomResponsibilityControls" class="organization-catalog-custom-responsibility" hidden>
-                              <div class="borrow-form-field">
-                                <label class="login-label" for="organizationCatalogCustomDivisionCode">รหัสฝ่ายหลักใหม่</label>
-                                <input id="organizationCatalogCustomDivisionCode" class="login-input" type="text" inputmode="numeric" placeholder="เช่น 11">
-                              </div>
-                              <div class="borrow-form-field">
-                                <label class="login-label" for="organizationCatalogCustomDivisionName">ชื่อฝ่ายหลักใหม่</label>
-                                <input id="organizationCatalogCustomDivisionName" class="login-input" type="text" placeholder="เช่น ฝ่ายกิจการพิเศษ">
-                              </div>
                             </div>
                           </div>
                         </div>
@@ -147,7 +144,7 @@
                 <div class="panel panel-hover organization-catalog-list-card">
                   <div class="panel-header budget-org-totals-header">
                     <div>
-                      <div class="panel-title">รายองค์กรใน Firebase</div>
+                      <div class="panel-title">รายชื่อองค์กร</div>
                       <div class="panel-caption" id="organizationCatalogTableCaption">กำลังโหลดข้อมูล</div>
                     </div>
                   </div>
@@ -180,7 +177,7 @@
                       </tbody>
                     </table>
                   </div>
-                  <div class="organization-catalog-table-actions">
+                  <div id="organizationCatalogTableActions" class="organization-catalog-table-actions" hidden>
                     <button id="organizationCatalogShowMoreBtn" class="btn-ghost" type="button" hidden>แสดงเพิ่ม</button>
                   </div>
                 </div>
@@ -244,7 +241,10 @@
                     <h3 id="orgRepresentativeApprovalPanelTitle" class="panel-title">อนุมัติตัวแทนองค์กร</h3>
                     <p id="orgRepresentativeApprovalPanelCaption" class="panel-caption">แสดงผล 0 รายการ</p>
                   </div>
-                  <button id="orgRepresentativeExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
+                  <div class="org-representative-panel-actions">
+                    <button id="orgRepresentativeExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
+                    <button id="orgRepresentativeDeleteYearBtn" class="btn-ghost is-danger org-representative-delete-year-btn" type="button">ลบรายชื่อทั้งปี</button>
+                  </div>
                 </div>
 
                 <div id="orgRepresentativeApprovalMessage" class="section-text-sm staff-access-status" aria-live="polite"></div>

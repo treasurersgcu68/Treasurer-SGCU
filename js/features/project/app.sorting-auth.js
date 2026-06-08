@@ -195,7 +195,7 @@ function exportVisibleProjectsCsv(ctxKey = activeProjectStatusContext) {
   window.sgcuCsvExport.download({
     headers,
     rows,
-    fileName: ctxKey === "staff" ? "sgcu-project-status-staff" : "sgcu-project-status"
+    fileName: ctxKey === "staff" ? "sgcu-treasurer-handover-staff" : "sgcu-project-status"
   });
 }
 
@@ -878,7 +878,7 @@ const STAFF_HEAD_OVERRIDES = new Set([
 ]);
 const STAFF_PAGE_OPTIONS = [
   "dashboard-staff",
-  "project-status-staff",
+  "treasurer-handover-staff",
   "system-data-staff",
   "borrow-assets-staff",
   "meeting-room-staff",
@@ -1020,7 +1020,10 @@ function isHeadStaffProfile(profile) {
 
 function normalizeAllowedStaffPages(pages, fallbackYY = "") {
   const list = Array.isArray(pages)
-    ? pages.map((item) => (item || "").toString().trim()).filter(Boolean)
+    ? pages.map((item) => {
+        const page = (item || "").toString().trim();
+        return page === "project-status-staff" ? "treasurer-handover-staff" : page;
+      }).filter(Boolean)
     : [];
   const filtered = Array.from(new Set(list.filter((page) => STAFF_PAGE_OPTIONS.includes(page))));
   return filtered.length ? filtered : Array.from(getAllowedStaffPagesByYY(fallbackYY));
@@ -1029,7 +1032,7 @@ function normalizeAllowedStaffPages(pages, fallbackYY = "") {
 function getAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
-    return new Set(["project-status-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
+    return new Set(["treasurer-handover-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
   }
   return new Set(["login"]);
 }
@@ -1106,7 +1109,7 @@ function getAllowedPagesForCurrentState() {
 
   if (staffAuthUser && staffViewMode === "staff") {
     const yyAllowed = getAllowedStaffPagesByProfile(staffAuthUser);
-    yyAllowed.add("project-status-staff");
+    yyAllowed.add("treasurer-handover-staff");
     if (isHeadStaffProfile(staffAuthUser)) {
       yyAllowed.add("staff-approval");
       yyAllowed.add("org-representative-approval-staff");
@@ -1132,7 +1135,7 @@ function getAllowedPagesForCurrentState() {
     allowed.delete("dashboard-staff");
     allowed.delete("system-data-staff");
     allowed.delete("borrow-assets-staff");
-    allowed.delete("project-status-staff");
+    allowed.delete("treasurer-handover-staff");
     allowed.delete("meeting-room-staff");
     if (!isHeadStaffProfile(staffAuthUser)) {
       allowed.delete("staff-approval");
@@ -1212,12 +1215,13 @@ function isNavPageVisible(page) {
 
 function getModeMappedPage(currentPage, mode) {
   const toStaff = {
-    "project-status": "project-status-staff",
+    "project-status": "dashboard-staff",
     "borrow-assets": "borrow-assets-staff",
     "meeting-room-booking": "meeting-room-staff"
   };
   const toNormal = {
     "project-status-staff": "project-status",
+    "treasurer-handover-staff": "project-status",
     "borrow-assets-staff": "borrow-assets",
     "meeting-room-staff": "meeting-room-booking"
   };

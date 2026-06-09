@@ -4103,6 +4103,7 @@ function initStaffAccessPages() {
         : String(incompleteOrgCount);
     }
     if (orgRepresentativeApprovedTotalCountEl) orgRepresentativeApprovedTotalCountEl.textContent = String(approvedTotalCount);
+    syncOrgRepresentativeDeleteYearButton();
 
     if (!orgRepresentativeOverviewBodyEl) {
       syncOrgRepresentativePanelCaption();
@@ -4324,6 +4325,18 @@ function initStaffAccessPages() {
     return { selectedAcademicYear, targetItems, orgCount };
   };
 
+  const syncOrgRepresentativeDeleteYearButton = () => {
+    if (!orgRepresentativeDeleteYearBtnEl) return;
+    const { selectedAcademicYear, targetItems } = getOrgRepresentativeAcademicYearDeleteTarget();
+    const hasItems = targetItems.length > 0;
+    orgRepresentativeDeleteYearBtnEl.hidden = false;
+    orgRepresentativeDeleteYearBtnEl.disabled = !hasItems;
+    orgRepresentativeDeleteYearBtnEl.title = hasItems
+      ? `ลบรายชื่อตัวแทน ${targetItems.length.toLocaleString("th-TH")} รายการของปี ${selectedAcademicYear}`
+      : `ยังไม่มีรายชื่อตัวแทนองค์กรของปี ${selectedAcademicYear} ให้ลบ`;
+    orgRepresentativeDeleteYearBtnEl.setAttribute("aria-disabled", hasItems ? "false" : "true");
+  };
+
   const openOrgRepresentativeDeleteYearConfirmModal = () => {
     if (!resolveStore()) {
       setMessage(orgRepresentativeMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
@@ -4337,6 +4350,7 @@ function initStaffAccessPages() {
 
     const { selectedAcademicYear, targetItems, orgCount } = getOrgRepresentativeAcademicYearDeleteTarget();
     if (!targetItems.length) {
+      syncOrgRepresentativeDeleteYearButton();
       setMessage(orgRepresentativeMessageEl, "ยังไม่มีรายชื่อตัวแทนองค์กรในปีที่เลือก", "#6b7280");
       return false;
     }

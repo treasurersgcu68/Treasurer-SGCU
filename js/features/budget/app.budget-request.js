@@ -1620,6 +1620,42 @@ function initBudgetApprovalRequestPage() {
     return (user?.displayName || user?.email || "").toString().trim();
   };
 
+  const getRepresentativeProfileMissingFields = (profile = {}) => {
+    const profileType = (profile.profileType || "student").toString().trim().toLowerCase();
+    const isAffairs = profileType === "affairs";
+    const requiredFields = [
+      ["firstName", "ชื่อ"],
+      ["lastName", "นามสกุล"],
+      ["phone", isAffairs ? "ข้อมูลติดต่อกลับ" : "เบอร์โทรติดต่อกลับ"]
+    ];
+    if (!isAffairs) {
+      requiredFields.push(
+        ["nickname", "ชื่อเล่น"],
+        ["studentId", "เลขประจำตัวนิสิต"],
+        ["faculty", "คณะ"],
+        ["year", "ชั้นปี"],
+        ["lineId", "Line ID"]
+      );
+    }
+    return requiredFields
+      .filter(([key]) => !(profile[key] || "").toString().trim())
+      .map(([, label]) => label);
+  };
+
+  const validateRepresentativeProfile = () => {
+    const user = readCurrentUser();
+    const email = (user?.email || "").toString().trim().toLowerCase();
+    const profile = readLocalLoginProfileByEmail(email);
+    const missingFields = getRepresentativeProfileMissingFields(profile);
+    if (!missingFields.length) return true;
+
+    setRepresentativeApplicationMessage(
+      `กรุณาบันทึกข้อมูลผู้ใช้ให้ครบก่อนสมัครเป็นตัวแทนองค์กร: ${missingFields.join(", ")}`,
+      "#b91c1c"
+    );
+    return false;
+  };
+
   const buildRequestPayload = () => {
     const user = readCurrentUser();
     const email = (user?.email || "").toString().trim().toLowerCase();
@@ -1795,6 +1831,8 @@ function initBudgetApprovalRequestPage() {
 
   const validateRepresentativeForm = () => {
     if (!representativeFormEl || !representativeOrgTypeEl || !representativeOrgDeptEl || !representativeRoleEl) return false;
+    if (!validateRepresentativeProfile()) return false;
+
     const controls = [representativeOrgTypeEl, representativeOrgDeptEl, representativeRoleEl];
     const invalidControl = controls.find((control) => !control.reportValidity());
     if (invalidControl) return false;

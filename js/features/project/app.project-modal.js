@@ -125,6 +125,10 @@ function openProjectModal(project) {
         </div>
         <div class="modal-section-grid">
           <div>
+            <div class="modal-item-label">รหัสโครงการ</div>
+            <div class="modal-item-value">${code}</div>
+          </div>
+          <div>
             <div class="modal-item-label">ชื่อโครงการ</div>
             <div class="modal-item-value">${name}</div>
           </div>

@@ -181,16 +181,21 @@ function updateApprovedBudgetPie(filtered) {
     const idx = labels.indexOf(highlightLabel);
     if (idx !== -1) {
       const targetVal = data[idx];
-      const sortedDesc = [...data].sort((a, b) => b - a);
-      const rank = sortedDesc.findIndex((v) => v === targetVal) + 1;
-      const totalPositive =
-        sortedDesc.filter((v) => v > 0).length || labels.length;
-
       const percent =
         sumBase > 0 ? Math.round((sumApproved / sumBase) * 100) : 0;
+
       statusPieChart.options.plugins.centerText.text = percent + "%";
-      statusPieChart.options.plugins.centerText.subText =
-        `อันดับ ${rank} จาก ${totalPositive}`;
+
+      if (targetVal > 0) {
+        const positiveValues = data.filter((v) => v > 0);
+        const rankedValues = [...new Set(positiveValues)].sort((a, b) => b - a);
+        const rank = rankedValues.findIndex((v) => v === targetVal) + 1;
+
+        statusPieChart.options.plugins.centerText.subText =
+          rank > 0 ? `อันดับงบ ${rank}/${positiveValues.length}` : "";
+      } else {
+        statusPieChart.options.plugins.centerText.subText = "ไม่มีงบอนุมัติ";
+      }
     } else {
       statusPieChart.options.plugins.centerText.text = "0%";
       statusPieChart.options.plugins.centerText.subText = "";

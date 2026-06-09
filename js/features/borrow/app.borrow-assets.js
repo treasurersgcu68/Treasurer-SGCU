@@ -83,14 +83,9 @@ function initBorrowAssetsApp() {
       : !!borrowAssetConfig.enableAssetAvailabilityCheck;
   const BORROW_ASSETS_CSV_URL = appConfig.sheets?.borrowAssets || "";
   const BORROW_REQUEST_COLLECTION = firestoreCollections.borrowAssetRequests || "borrowAssetRequests";
-  const BORROW_REQUEST_COLLECTION_FALLBACK =
-    firestoreCollections.borrowAssetRequestsFallback || "borrowAssetsRequests";
   const BORROW_ASSET_STOCK_COLLECTION =
     firestoreCollections.borrowAssetStockReservations || "borrowAssetStockReservations";
-  const BORROW_REQUEST_COLLECTIONS = [
-    BORROW_REQUEST_COLLECTION,
-    BORROW_REQUEST_COLLECTION_FALLBACK
-  ];
+  const BORROW_REQUEST_COLLECTIONS = [BORROW_REQUEST_COLLECTION];
   const STATUS_PENDING = "pending";
   const STATUS_APPROVED = "approved";
   const STATUS_RECEIVED = "received";

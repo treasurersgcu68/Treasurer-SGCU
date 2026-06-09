@@ -3,7 +3,6 @@
 const HOME_NEWS_PREVIEW_DESKTOP_LIMIT = 4;
 const HOME_NEWS_PREVIEW_MOBILE_LIMIT = 2;
 const HOME_NEWS_PREVIEW_MOBILE_QUERY = "(max-width: 640px)";
-const NEWS_PAGE_SIZE = 9;
 const NEWS_AUTO_POPUP_RECENT_DAYS = 7;
 const NEWS_AUTO_POPUP_STORAGE_KEY = "sgcu:auto-news-popup:v1";
 const newsFilterState = {
@@ -14,7 +13,6 @@ const newsFilterState = {
   sort: "latest"
 };
 let newsFilterInitialized = false;
-let newsVisibleCount = NEWS_PAGE_SIZE;
 const NEWS_CACHE_SOURCE_FIRESTORE = "firestore";
 const NEWS_CACHE_SOURCE_SHEETS = "sheets";
 let newsScheduleRefreshTimer = null;
@@ -325,7 +323,6 @@ function renderNewsList() {
 
   initNewsFilters();
   syncNewsFilterOptions();
-  updateNewsLoadMoreVisibility(false);
   scheduleNextNewsRefresh();
 
   const visibleNewsItems = getVisibleNewsItems();
@@ -343,7 +340,7 @@ function renderNewsList() {
   }
 
   const processedItems = getProcessedNewsItems();
-  const filteredItems = processedItems.slice(0, newsVisibleCount);
+  const filteredItems = processedItems;
   updateNewsFilterSummary(filteredItems.length, processedItems.length, visibleNewsItems.length);
 
   if (!processedItems.length) {
@@ -402,7 +399,6 @@ function renderNewsList() {
     card.addEventListener("click", () => openNewsModal(id));
   });
 
-  updateNewsLoadMoreVisibility(processedItems.length > filteredItems.length);
   renderHomeNewsPreview();
   scheduleRecentNewsAutoPopup();
 }
@@ -416,33 +412,27 @@ function initNewsFilters() {
   const audienceFilter = document.getElementById("newsAudienceFilter");
   const sortSelect = document.getElementById("newsSortSelect");
   const resetButton = document.getElementById("newsFilterReset");
-  const loadMoreButton = document.getElementById("newsLoadMoreBtn");
 
-  if (!searchInput || !yearFilter || !categoryFilter || !audienceFilter || !sortSelect || !resetButton || !loadMoreButton) return;
+  if (!searchInput || !yearFilter || !categoryFilter || !audienceFilter || !sortSelect || !resetButton) return;
 
   searchInput.addEventListener("input", () => {
     newsFilterState.query = searchInput.value.trim();
-    resetNewsVisibleCount();
     renderNewsList();
   });
   yearFilter.addEventListener("change", () => {
     newsFilterState.year = yearFilter.value;
-    resetNewsVisibleCount();
     renderNewsList();
   });
   categoryFilter.addEventListener("change", () => {
     newsFilterState.category = categoryFilter.value;
-    resetNewsVisibleCount();
     renderNewsList();
   });
   audienceFilter.addEventListener("change", () => {
     newsFilterState.audience = audienceFilter.value;
-    resetNewsVisibleCount();
     renderNewsList();
   });
   sortSelect.addEventListener("change", () => {
     newsFilterState.sort = sortSelect.value;
-    resetNewsVisibleCount();
     renderNewsList();
   });
   resetButton.addEventListener("click", () => {
@@ -451,7 +441,6 @@ function initNewsFilters() {
     newsFilterState.category = "all";
     newsFilterState.audience = "all";
     newsFilterState.sort = "latest";
-    resetNewsVisibleCount();
     searchInput.value = "";
     yearFilter.value = "all";
     categoryFilter.value = "all";
@@ -459,11 +448,6 @@ function initNewsFilters() {
     sortSelect.value = "latest";
     renderNewsList();
   });
-  loadMoreButton.addEventListener("click", () => {
-    newsVisibleCount += NEWS_PAGE_SIZE;
-    renderNewsList();
-  });
-
   newsFilterInitialized = true;
 }
 
@@ -595,18 +579,6 @@ function updateNewsFilterSummary(visibleCount, filteredCount, totalCount) {
   }
 
   summaryEl.textContent = `แสดง ${filteredCount} จาก ${totalCount} รายการ`;
-}
-
-function updateNewsLoadMoreVisibility(shouldShow) {
-  const actionEl = document.querySelector(".news-list-actions");
-  const buttonEl = document.getElementById("newsLoadMoreBtn");
-  if (!actionEl || !buttonEl) return;
-  actionEl.hidden = !shouldShow;
-  buttonEl.hidden = !shouldShow;
-}
-
-function resetNewsVisibleCount() {
-  newsVisibleCount = NEWS_PAGE_SIZE;
 }
 
 function escapeNewsHtml(text) {

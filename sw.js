@@ -64,6 +64,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (requestUrl.searchParams.has("v")) {
+    event.respondWith(
+      updateCache().catch(() => caches.match(request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {

@@ -25,7 +25,11 @@
   const roundYearInputEl = document.getElementById("budgetRoundYearInput");
   const roundNoInputEl = document.getElementById("budgetRoundNoInput");
   const deadlineInputEl = document.getElementById("budgetRequestDeadlineInput");
+  const deadlineTimeInputEl = document.getElementById("budgetRequestDeadlineTimeInput");
   const roundAddBtnEl = document.getElementById("budgetRoundAddBtn");
+  const roundCancelEditBtnEl = document.getElementById("budgetRoundCancelEditBtn");
+  const roundDeleteSelectedBtnEl = document.getElementById("budgetRoundDeleteSelectedBtn");
+  const roundActionFieldEl = document.getElementById("budgetRoundActionsRow") || roundAddBtnEl?.closest(".budget-round-actions-row");
   const activeRoundListEl = document.getElementById("budgetActiveRoundList");
   const ceilingInputEl = document.getElementById("budgetCeilingInput");
   const groupCeilingListEl = document.getElementById("budgetGroupCeilingList");
@@ -95,7 +99,11 @@
     !roundYearInputEl ||
     !roundNoInputEl ||
     !deadlineInputEl ||
+    !deadlineTimeInputEl ||
     !roundAddBtnEl ||
+    !roundCancelEditBtnEl ||
+    !roundDeleteSelectedBtnEl ||
+    !roundActionFieldEl ||
     !activeRoundListEl ||
     !ceilingInputEl ||
     !groupCeilingListEl ||
@@ -172,6 +180,7 @@
   let budgetRoundYear = "";
   let budgetRoundNo = "";
   let budgetActiveRounds = [];
+  let editingBudgetRoundId = "";
   let roundDeleteResolve = null;
   let roundDeleteContext = null;
   let clearCodeResolve = null;
@@ -217,6 +226,7 @@
         const year = normalizeAcademicYearText(item?.year || item?.budgetRoundYear);
         const roundNo = normalizeRoundName(item?.roundNo || item?.budgetRoundNo);
         const deadline = toDateOnlyText(item?.deadline || item?.budgetRequestDeadline);
+        const deadlineTime = toTimeOnlyText(item?.deadlineTime || item?.budgetRequestDeadlineTime) || "23:59";
         const id = normalizeText(item?.id) || buildBudgetRoundId(year, roundNo);
         if (!id || !year || !roundNo || !deadline) return null;
         const ceiling = readMoneyInput(item?.budgetCeiling);
@@ -225,6 +235,7 @@
           year,
           roundNo,
           deadline,
+          deadlineTime,
           label: formatBudgetRoundLabel(year, roundNo),
           budgetCeiling: Number.isFinite(ceiling) && ceiling > 0 ? ceiling : 0,
           budgetGroupCeilings: normalizeBudgetGroupCeilings(item?.budgetGroupCeilings)
@@ -235,6 +246,7 @@
     const year = normalizeAcademicYearText(fallback.budgetRoundYear);
     const roundNo = normalizeRoundName(fallback.budgetRoundNo);
     const deadline = toDateOnlyText(fallback.budgetRequestDeadline);
+    const deadlineTime = toTimeOnlyText(fallback.budgetRequestDeadlineTime) || "23:59";
     const id = normalizeText(fallback.currentBudgetRoundId) || buildBudgetRoundId(year, roundNo);
     return id && year && roundNo && deadline
       ? [{
@@ -242,6 +254,7 @@
         year,
         roundNo,
         deadline,
+        deadlineTime,
         label: formatBudgetRoundLabel(year, roundNo),
         budgetCeiling: readMoneyInput(fallback.budgetCeiling),
         budgetGroupCeilings: normalizeBudgetGroupCeilings(fallback.budgetGroupCeilings)
@@ -260,6 +273,29 @@
     const s = normalizeText(value);
     if (!s) return "";
     return s.length >= 10 ? s.slice(0, 10) : s;
+  };
+
+  const toTimeOnlyText = (value) => {
+    const match = normalizeText(value).match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return "";
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return "";
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  };
+
+  const getRoundDeadlineTime = (round = {}) => toTimeOnlyText(round.deadlineTime || round.budgetRequestDeadlineTime) || "23:59";
+
+  const getRoundDeadlineTimestamp = (round = {}) => {
+    const deadline = toDateOnlyText(round.deadline || round.budgetRequestDeadline);
+    if (!deadline) return Number.NaN;
+    return new Date(`${deadline}T${getRoundDeadlineTime(round)}:59`).getTime();
+  };
+
+  const formatRoundDeadline = (round = {}) => {
+    const deadline = toDateOnlyText(round.deadline || round.budgetRequestDeadline);
+    if (!deadline) return "";
+    return `${deadline} ${getRoundDeadlineTime(round)}`;
   };
 
   const readLocalBudgetCeiling = () => {
@@ -352,33 +388,58 @@
       `;
       return;
     }
-    const editingRoundId = buildBudgetRoundId(roundYearInputEl.value, roundNoInputEl.value);
     activeRoundListEl.innerHTML = budgetActiveRounds.map((round) => {
-      const endTime = new Date(`${round.deadline}T23:59:59`).getTime();
+      const endTime = getRoundDeadlineTimestamp(round);
       const isPast = Number.isFinite(endTime) && Date.now() > endTime;
-      const isActive = editingRoundId && round.id === editingRoundId;
+      const isActive = editingBudgetRoundId && round.id === editingBudgetRoundId;
       return `
-        <div class="budget-active-round-item${isActive ? " is-active" : ""}">
+        <div
+          class="budget-active-round-item${isActive ? " is-active" : ""}"
+          role="button"
+          tabindex="0"
+          data-budget-round-select="${escapeHtml(round.id)}"
+          aria-label="แก้ไข ${escapeHtml(round.label)}"
+        >
           <div>
             <div class="budget-active-round-title-row">
               <div class="budget-active-round-title">${escapeHtml(round.label)}</div>
               ${isActive ? '<span class="budget-active-round-state">กำลังแก้ไข</span>' : ""}
             </div>
-            <div class="budget-active-round-meta">${isPast ? "หมดเขตแล้ว" : "เปิดรับอยู่"} • ถึง ${escapeHtml(round.deadline)} • เพดาน ${round.budgetCeiling > 0 ? formatMoney(round.budgetCeiling) : "ยังไม่กำหนด"}</div>
-          </div>
-          <div class="budget-active-round-actions">
-            <button class="btn-ghost" type="button" data-budget-round-edit="${escapeHtml(round.id)}">แก้ไข</button>
-            <button class="btn-ghost" type="button" data-budget-round-remove="${escapeHtml(round.id)}">ลบ</button>
+            <div class="budget-active-round-meta">${isPast ? "หมดเขตแล้ว" : "เปิดรับอยู่"} • ถึง ${escapeHtml(formatRoundDeadline(round))} • เพดาน ${round.budgetCeiling > 0 ? formatMoney(round.budgetCeiling) : "ยังไม่กำหนด"}</div>
           </div>
         </div>
       `;
     }).join("");
   };
 
+  const applyRoundActionLayout = (hasEditingRound) => {
+    const isMobile = window.matchMedia?.("(max-width: 768px)")?.matches;
+    const hasVisibleSecondaryActions = hasEditingRound || !roundCancelEditBtnEl.hidden || !roundDeleteSelectedBtnEl.hidden;
+    roundActionFieldEl.classList.toggle("is-editing-round", hasVisibleSecondaryActions);
+    roundActionFieldEl.style.display = "flex";
+    roundActionFieldEl.style.flexDirection = isMobile ? "column" : "row";
+    roundActionFieldEl.style.alignItems = "stretch";
+    roundActionFieldEl.style.gap = "8px";
+    roundActionFieldEl.style.gridColumn = "1 / -1";
+    roundActionFieldEl.style.gridTemplateColumns = "";
+    [roundAddBtnEl, roundCancelEditBtnEl, roundDeleteSelectedBtnEl].forEach((btn) => {
+      btn.style.width = "100%";
+      btn.style.minWidth = "0";
+      btn.style.flex = isMobile ? "0 0 auto" : "1 1 0";
+      btn.style.gridColumn = "";
+    });
+  };
+
   const syncRoundStatus = () => {
     renderActiveRoundList();
+    const hasEditingRound = !!editingBudgetRoundId && budgetActiveRounds.some((round) => round.id === editingBudgetRoundId);
+    roundCancelEditBtnEl.hidden = !hasEditingRound;
+    roundDeleteSelectedBtnEl.hidden = !hasEditingRound;
+    roundDeleteSelectedBtnEl.disabled = !hasEditingRound;
+    roundAddBtnEl.textContent = hasEditingRound ? "บันทึกการแก้ไข" : "บันทึกรอบใหม่";
+    applyRoundActionLayout(hasEditingRound);
     const openRounds = budgetActiveRounds.filter((round) => {
-      const endTime = new Date(`${round.deadline}T23:59:59`).getTime();
+      const endTime = getRoundDeadlineTimestamp(round);
       return Number.isFinite(endTime) && Date.now() <= endTime;
     });
     if (!budgetActiveRounds.length) {
@@ -608,7 +669,7 @@
   };
 
   const isBudgetRoundPast = (round) => {
-    const endTime = new Date(`${round?.deadline || ""}T23:59:59`).getTime();
+    const endTime = getRoundDeadlineTimestamp(round);
     return Number.isFinite(endTime) && Date.now() > endTime;
   };
 
@@ -616,7 +677,7 @@
 
   const getBudgetRoundOptionLabel = (round) => {
     const state = isBudgetRoundPast(round) ? "หมดเขตแล้ว" : "เปิดรับอยู่";
-    return `${round?.label || round?.id || "ไม่ระบุรอบ"} (${state}${round?.deadline ? ` ถึง ${round.deadline}` : ""})`;
+    return `${round?.label || round?.id || "ไม่ระบุรอบ"} (${state}${round?.deadline ? ` ถึง ${formatRoundDeadline(round)}` : ""})`;
   };
 
   const populateStaffRoundOptions = (preferredValue = staffRoundInputEl.value) => {
@@ -757,6 +818,22 @@
         </div>
       `).join("")
       : '<div class="section-text-sm">ยังไม่มีข้อมูลประเภทองค์กร</div>';
+  };
+
+  const clearRoundSettingsForm = () => {
+    editingBudgetRoundId = "";
+    budgetRoundYear = "";
+    budgetRoundNo = "";
+    budgetCeiling = 0;
+    budgetGroupCeilings = {};
+    roundYearInputEl.value = "";
+    roundNoInputEl.value = "";
+    deadlineInputEl.value = "";
+    deadlineTimeInputEl.value = "";
+    ceilingInputEl.value = "";
+    populateStaffRoundOptions("");
+    renderBudgetGroupCeilingInputs();
+    syncRoundStatus();
   };
 
   const readBudgetGroupCeilingsFromInputs = () => {
@@ -1326,33 +1403,13 @@
   };
 
   const applyBudgetSettings = (data = {}) => {
-    const deadline = toDateOnlyText(data.budgetRequestDeadline || "");
-    budgetRoundYear = normalizeAcademicYearText(data.budgetRoundYear);
-    budgetRoundNo = normalizeRoundName(data.budgetRoundNo);
     budgetActiveRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);
-    budgetCeiling = readMoneyInput(data.budgetCeiling);
-    if (!Number.isFinite(budgetCeiling) || budgetCeiling < 0) budgetCeiling = 0;
-    if (budgetCeiling <= 0) budgetCeiling = readLocalBudgetCeiling();
-    budgetGroupCeilings = normalizeBudgetGroupCeilings(data.budgetGroupCeilings);
-    if (!Object.keys(budgetGroupCeilings).length) budgetGroupCeilings = readLocalBudgetGroupCeilings();
-    const selectedRound = budgetActiveRounds.find((round) => round.id === normalizeText(data.currentBudgetRoundId)) || budgetActiveRounds[0];
-    if (selectedRound) {
-      budgetRoundYear = selectedRound.year;
-      budgetRoundNo = selectedRound.roundNo;
-      budgetCeiling = Number(selectedRound.budgetCeiling || 0) > 0 ? Number(selectedRound.budgetCeiling || 0) : budgetCeiling;
-      if (Object.keys(selectedRound.budgetGroupCeilings || {}).length) budgetGroupCeilings = selectedRound.budgetGroupCeilings;
-    }
-    roundYearInputEl.value = budgetRoundYear;
-    roundNoInputEl.value = budgetRoundNo;
-    deadlineInputEl.value = deadline;
-    ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
     populateRoundOptions(orgSummaryRoundEl, { includeRequestRows: false });
     populateRoundOptions(reviewRoundEl);
-    renderBudgetGroupCeilingInputs();
+    clearRoundSettingsForm();
     updateSummary();
     renderRows();
     void renderOrgSummaryChart();
-    syncRoundStatus();
   };
 
   const loadDeadline = () => {
@@ -1409,6 +1466,7 @@
       setMessage(actionMessageEl, "กรุณาเลือกวันสิ้นสุดการเปิดรับ", "#b91c1c");
       return;
     }
+    const deadlineTime = toTimeOnlyText(deadlineTimeInputEl.value) || "23:59";
     const ceiling = readMoneyInput(ceilingInputEl.value);
     if (!Number.isFinite(ceiling) || ceiling < 0) {
       setMessage(actionMessageEl, "เพดานงบประมาณต้องเป็นตัวเลขที่ไม่ติดลบ", "#b91c1c");
@@ -1427,8 +1485,8 @@
       return;
     }
     const nextActiveRounds = [
-      ...budgetActiveRounds.filter((round) => round.id !== roundId),
-      { id: roundId, year, roundNo, deadline, label: formatBudgetRoundLabel(year, roundNo), budgetCeiling: ceiling, budgetGroupCeilings: groupCeilings }
+      ...budgetActiveRounds.filter((round) => round.id !== roundId && round.id !== editingBudgetRoundId),
+      { id: roundId, year, roundNo, deadline, deadlineTime, label: formatBudgetRoundLabel(year, roundNo), budgetCeiling: ceiling, budgetGroupCeilings: groupCeilings }
     ].sort((a, b) => a.year.localeCompare(b.year, "th", { numeric: true }) || a.roundNo.localeCompare(b.roundNo, "th", { numeric: true }));
     setMessage(actionMessageEl, "กำลังบันทึกการตั้งค่า...", "#1d4ed8");
     try {
@@ -1436,6 +1494,7 @@
         firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID),
         {
           budgetRequestDeadline: deadline,
+          budgetRequestDeadlineTime: deadlineTime,
           budgetRoundYear: year,
           budgetRoundNo: roundNo,
           currentBudgetRoundId: roundId,
@@ -1450,10 +1509,12 @@
       budgetGroupCeilings = groupCeilings;
       budgetRoundYear = year;
       budgetRoundNo = roundNo;
+      editingBudgetRoundId = roundId;
       budgetActiveRounds = nextActiveRounds;
       writeLocalBudgetCeiling(ceiling);
       writeLocalBudgetGroupCeilings(groupCeilings);
       updateSummary();
+      syncRoundStatus();
       setMessage(actionMessageEl, "บันทึกการตั้งค่าเรียบร้อย", "#047857");
       void window.sgcuAuditLog?.write?.({
         action: "budget.settings.update",
@@ -1461,6 +1522,7 @@
         entityId: SETTINGS_DOC_ID,
         after: {
           budgetRequestDeadline: deadline,
+          budgetRequestDeadlineTime: deadlineTime,
           budgetRoundYear: year,
           budgetRoundNo: roundNo,
           currentBudgetRoundId: roundId,
@@ -1476,6 +1538,7 @@
           firestore.doc(firestore.db, COLLECTION_SETTINGS, SETTINGS_DOC_ID),
           {
             budgetRequestDeadline: deadline,
+            budgetRequestDeadlineTime: deadlineTime,
             budgetRoundYear: year,
             budgetRoundNo: roundNo,
             currentBudgetRoundId: roundId,
@@ -1488,10 +1551,12 @@
         budgetGroupCeilings = groupCeilings;
         budgetRoundYear = year;
         budgetRoundNo = roundNo;
+        editingBudgetRoundId = roundId;
         budgetActiveRounds = nextActiveRounds;
         writeLocalBudgetCeiling(ceiling);
         writeLocalBudgetGroupCeilings(groupCeilings);
         updateSummary();
+        syncRoundStatus();
         const code = normalizeText(error?.code);
         const detail = code ? ` (${code})` : "";
         setMessage(actionMessageEl, `บันทึกเส้นตายแล้ว แต่เพดานงบบันทึกเฉพาะเครื่องนี้${detail}`, "#b45309");
@@ -1500,10 +1565,12 @@
         budgetGroupCeilings = groupCeilings;
         budgetRoundYear = year;
         budgetRoundNo = roundNo;
+        editingBudgetRoundId = roundId;
         budgetActiveRounds = nextActiveRounds;
         writeLocalBudgetCeiling(ceiling);
         writeLocalBudgetGroupCeilings(groupCeilings);
         updateSummary();
+        syncRoundStatus();
         const code = normalizeText(fallbackError?.code || error?.code);
         const detail = code ? ` (${code})` : "";
         setMessage(actionMessageEl, `บันทึกเพดานงบเฉพาะเครื่องนี้แล้ว แต่บันทึกเส้นตายไม่สำเร็จ${detail}`, "#b45309");
@@ -1610,6 +1677,7 @@
       budgetRoundNo: nextCurrent.roundNo || "",
       currentBudgetRoundId: nextCurrent.id || "",
       budgetRequestDeadline: nextCurrent.deadline || "",
+      budgetRequestDeadlineTime: getRoundDeadlineTime(nextCurrent),
       updatedAt: firestore.serverTimestamp()
     };
     const requestRowsToDelete = (Array.isArray(rowsForRound) ? rowsForRound : []).filter((row) => normalizeText(row.id));
@@ -1664,12 +1732,7 @@
     try {
       const deletedRequestCount = await persistRoundDeletion(firestore, nextActiveRounds, nextCurrent, rowsForRound);
       budgetActiveRounds = nextActiveRounds;
-      budgetRoundYear = nextCurrent.year || "";
-      budgetRoundNo = nextCurrent.roundNo || "";
-      roundYearInputEl.value = budgetRoundYear;
-      roundNoInputEl.value = budgetRoundNo;
-      deadlineInputEl.value = nextCurrent.deadline || "";
-      syncRoundStatus();
+      clearRoundSettingsForm();
       setMessage(actionMessageEl, `ลบรอบและรายการคำขอ ${deletedRequestCount.toLocaleString("th-TH")} รายการเรียบร้อย`, "#047857");
       void window.sgcuAuditLog?.write?.({
         action: "budget.round.delete",
@@ -1696,6 +1759,7 @@
   const fillRoundSettings = (roundId = "") => {
     const round = budgetActiveRounds.find((item) => item.id === normalizeText(roundId));
     if (!round) return;
+    editingBudgetRoundId = round.id;
     budgetRoundYear = round.year;
     budgetRoundNo = round.roundNo;
     budgetCeiling = Number(round.budgetCeiling || 0);
@@ -1703,6 +1767,7 @@
     roundYearInputEl.value = budgetRoundYear;
     roundNoInputEl.value = budgetRoundNo;
     deadlineInputEl.value = round.deadline;
+    deadlineTimeInputEl.value = getRoundDeadlineTime(round);
     ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
     populateStaffRoundOptions(round.id);
     renderBudgetGroupCeilingInputs();
@@ -2126,14 +2191,25 @@
   });
   activeRoundListEl.addEventListener("click", (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
-    const editBtn = target?.closest("[data-budget-round-edit]");
-    if (editBtn) {
-      fillRoundSettings(editBtn.getAttribute("data-budget-round-edit") || "");
-      return;
-    }
-    const btn = target?.closest("[data-budget-round-remove]");
-    if (!btn) return;
-    void removeBudgetRound(btn.getAttribute("data-budget-round-remove") || "");
+    const item = target?.closest("[data-budget-round-select]");
+    if (!item) return;
+    fillRoundSettings(item.getAttribute("data-budget-round-select") || "");
+  });
+  activeRoundListEl.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const item = target?.closest("[data-budget-round-select]");
+    if (!item) return;
+    event.preventDefault();
+    fillRoundSettings(item.getAttribute("data-budget-round-select") || "");
+  });
+  roundCancelEditBtnEl.addEventListener("click", () => {
+    clearRoundSettingsForm();
+    setMessage(actionMessageEl, "ยกเลิกการแก้ไขรอบแล้ว", "#6b7280");
+  });
+  roundDeleteSelectedBtnEl.addEventListener("click", () => {
+    if (!editingBudgetRoundId) return;
+    void removeBudgetRound(editingBudgetRoundId);
   });
   runCodeBtnEl.addEventListener("click", () => { void runProjectCodes(); });
   clearCodeBtnEl.addEventListener("click", () => { void clearProjectCodes(); });
@@ -2165,6 +2241,10 @@
   roundNoInputEl.addEventListener("input", () => {
     renderBudgetGroupCeilingInputs();
     syncRoundStatus();
+  });
+  window.addEventListener("resize", () => {
+    const hasEditingRound = !!editingBudgetRoundId && budgetActiveRounds.some((round) => round.id === editingBudgetRoundId);
+    applyRoundActionLayout(hasEditingRound);
   });
   orgSummaryRoundEl.addEventListener("change", () => {
     updateSummary();

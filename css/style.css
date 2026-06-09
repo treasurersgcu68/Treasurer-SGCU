@@ -1,7 +1,7 @@
 /* Split stylesheet entrypoint. Keep imports ordered to preserve the original cascade. */
 @import url("./core/base.css?v=20260510-budget-spacing-fix-1");
 @import url("./core/prelude-layout.css?v=20260510-budget-spacing-fix-1");
-@import url("./pages/operations.css?v=20260510-budget-spacing-fix-1");
+@import url("./pages/operations.css?v=20260609-round-actions-flex-2");
 @import url("./pages/meeting-room.css?v=20260510-budget-spacing-fix-1");
 @import url("./pages/login-staff.css?v=20260510-budget-spacing-fix-1");
 @import url("./core/layout.css?v=20260518-csv-refresh-5");

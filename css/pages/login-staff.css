@@ -844,16 +844,6 @@
   border-color: #9d174d;
 }
 
-#staffApprovalDetailModal .org-representative-delete-confirm-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(88px, 0.72fr) minmax(0, 1.18fr);
-}
-
-#staffApprovalDetailModal .org-representative-delete-confirm-actions > button {
-  min-width: 0;
-  width: 100%;
-}
-
 .staff-approval-manage-hint {
   margin-top: 8px;
   color: #9d174d;
@@ -1042,15 +1032,6 @@
     grid-template-columns: 1fr;
   }
 
-  #staffApprovalDetailModal .org-representative-delete-confirm-actions {
-    grid-template-columns: minmax(0, 1fr) minmax(72px, 0.7fr) minmax(0, 1.2fr);
-  }
-
-  #staffApprovalDetailModal .org-representative-delete-confirm-actions > button {
-    font-size: 0.88rem;
-    line-height: 1.2;
-    padding-inline: 8px;
-  }
 }
 
 .staff-approval-history-code {

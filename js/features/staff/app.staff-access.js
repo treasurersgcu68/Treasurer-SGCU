@@ -4338,31 +4338,36 @@ function initStaffAccessPages() {
     approvalDetailBodyEl.removeAttribute("data-application-id");
     approvalDetailBodyEl.innerHTML = `
       <div class="staff-approval-detail-layout org-representative-delete-confirm">
-        <div class="modal-section">
-          <div class="modal-section-title">ลบรายชื่อตัวแทนปีการศึกษา ${toSafeText(selectedAcademicYear)}</div>
-          <div class="modal-section-caption">
-            แนะนำให้โหลด CSV เพื่อดาวน์โหลดสำเนารายชื่อก่อนลบ การลบนี้จะลบคำขอตัวแทนองค์กรทั้งหมดของปีนี้
-          </div>
-          <div class="org-representative-delete-summary">
+        <div class="budget-round-delete-body org-representative-delete-body">
+          <div class="budget-round-delete-warning">
             <div>
-              <div class="modal-item-label">จำนวนรายการที่จะลบ</div>
-              <div class="modal-item-value">${toSafeText(String(targetItems.length))}</div>
-            </div>
-            <div>
-              <div class="modal-item-label">จำนวนองค์กรที่เกี่ยวข้อง</div>
-              <div class="modal-item-value">${toSafeText(String(orgCount))}</div>
+              <div class="budget-round-delete-name">ปีการศึกษา ${toSafeText(selectedAcademicYear)}</div>
+              <div class="budget-round-delete-summary">
+                พบรายชื่อตัวแทน ${toSafeText(targetItems.length.toLocaleString("th-TH"))} รายการ จาก ${toSafeText(orgCount.toLocaleString("th-TH"))} องค์กร ระบบจะลบคำขอทั้งหมดของปีนี้
+              </div>
             </div>
           </div>
-          <div id="orgRepresentativeDeleteYearMessage" class="section-text-sm staff-access-status" aria-live="polite"></div>
+          <div class="budget-round-delete-export">
+            <div>
+              <div class="budget-round-delete-step-title">สำรองข้อมูลก่อนลบ</div>
+              <div class="budget-round-delete-step-text">กรุณาโหลด CSV ของรายชื่อปีนี้เก็บไว้ก่อนกดยืนยัน เพราะหลังลบแล้วข้อมูลคำขอตัวแทนองค์กรของปีนี้จะถูกลบออกจากระบบ</div>
+            </div>
+            <button type="button" class="btn-ghost csv-export-btn" data-role="export-org-representative-year-csv">โหลด CSV</button>
+          </div>
+          <label class="budget-round-delete-check">
+            <input id="orgRepresentativeDeleteYearConfirmCheck" type="checkbox" data-role="confirm-org-representative-year-delete-check" />
+            <span>ฉันดาวน์โหลด CSV หรือยืนยันว่าไม่ต้องสำรองข้อมูลแล้ว และเข้าใจว่ารายชื่อตัวแทนองค์กรของปีนี้จะถูกลบถาวร</span>
+          </label>
+          <div id="orgRepresentativeDeleteYearMessage" class="section-text-sm budget-round-delete-message" aria-live="polite"></div>
         </div>
-        <div class="staff-approval-manage-actions org-representative-delete-confirm-actions">
-          <button type="button" class="btn-ghost csv-export-btn" data-role="export-org-representative-year-csv">โหลด CSV</button>
+        <div class="modal-actions budget-round-delete-actions org-representative-delete-confirm-actions">
           <button type="button" class="btn-ghost" data-role="cancel-org-representative-year-delete">ยกเลิก</button>
           <button
             type="button"
-            class="btn-primary is-danger"
+            class="btn-primary budget-round-delete-confirm"
             data-role="confirm-org-representative-year-delete"
             data-academic-year="${toSafeText(selectedAcademicYear)}"
+            disabled
           >
             ยืนยันลบรายชื่อ
           </button>
@@ -6407,8 +6412,12 @@ function initStaffAccessPages() {
         if (exportOrgRepresentativeYearCsvBtn instanceof HTMLButtonElement) {
           exportOrgRepresentativeOverviewCsv();
           const msgEl = approvalDetailBodyEl?.querySelector("#orgRepresentativeDeleteYearMessage");
+          const checkEl = approvalDetailBodyEl?.querySelector('[data-role="confirm-org-representative-year-delete-check"]');
+          const confirmBtn = approvalDetailBodyEl?.querySelector('[data-role="confirm-org-representative-year-delete"]');
+          if (checkEl instanceof HTMLInputElement) checkEl.checked = true;
+          if (confirmBtn instanceof HTMLButtonElement) confirmBtn.disabled = false;
           if (msgEl instanceof HTMLElement) {
-            msgEl.textContent = "ดาวน์โหลด CSV แล้ว กรุณาตรวจสอบไฟล์ก่อนกดยืนยันลบ";
+            msgEl.textContent = "โหลด CSV ของปีนี้แล้ว ตรวจไฟล์ดาวน์โหลดก่อนยืนยันลบ";
             msgEl.style.color = "#047857";
           }
           return;
@@ -6476,6 +6485,15 @@ function initStaffAccessPages() {
       }
       if (event.target === approvalDetailModalEl) {
         closeApprovalDetailModal();
+      }
+    });
+    approvalDetailModalEl.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.dataset.role !== "confirm-org-representative-year-delete-check") return;
+      const confirmBtn = approvalDetailBodyEl?.querySelector('[data-role="confirm-org-representative-year-delete"]');
+      if (confirmBtn instanceof HTMLButtonElement) {
+        confirmBtn.disabled = !target.checked;
       }
     });
     approvalDetailModalEl.addEventListener("keydown", (event) => {

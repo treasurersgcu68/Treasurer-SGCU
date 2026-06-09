@@ -54,6 +54,7 @@ function initBudgetApprovalRequestPage() {
   const representativeFormEl = document.getElementById("budgetRepresentativeApplicationForm");
   const representativeOrgTypeEl = document.getElementById("budgetRepresentativeOrgType");
   const representativeOrgDeptEl = document.getElementById("budgetRepresentativeOrgDept");
+  const representativeAcademicYearDisplayEl = document.getElementById("budgetRepresentativeAcademicYearDisplay");
   const representativeRoleEl = document.getElementById("budgetRepresentativeRole");
   const representativeRoleOtherEl = document.getElementById("budgetRepresentativeRoleOther");
   const representativeEvidenceEl = document.getElementById("budgetRepresentativeEvidence");
@@ -132,6 +133,51 @@ function initBudgetApprovalRequestPage() {
       .sort((a, b) => b.localeCompare(a, "th"));
   };
 
+  const normalizeOrgText = (value) => (value || "").toString().trim();
+
+  const normalizePositiveIntegerText = (value) => {
+    const num = Number((value || "").toString().trim());
+    return Number.isInteger(num) && num > 0 ? String(num) : "";
+  };
+
+  const normalizeAcademicYearText = (value) => {
+    const normalized = normalizePositiveIntegerText(value);
+    if (!normalized) return "";
+    const num = Number(normalized);
+    return num < 100 ? String(2500 + num) : normalized;
+  };
+
+  const getRepresentativeApplicationAcademicYear = () =>
+    normalizeAcademicYearText(budgetRoundYear) || String(getCurrentAcademicYearBE());
+
+  const updateRepresentativeAcademicYearDisplay = () => {
+    if (representativeAcademicYearDisplayEl) {
+      representativeAcademicYearDisplayEl.textContent = `ปีการศึกษา ${getRepresentativeApplicationAcademicYear()}`;
+    }
+  };
+
+  const normalizeBudgetYearMap = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.entries(value).reduce((acc, [year, text]) => {
+      const normalizedYear = normalizeAcademicYearText(year);
+      const normalizedText = (text || "").toString().trim();
+      if (/^\d{4}$/.test(normalizedYear) && normalizedText) acc[normalizedYear] = normalizedText;
+      return acc;
+    }, {});
+  };
+
+  const getBudgetYearValue = (map = {}, academicYear = getRepresentativeApplicationAcademicYear()) => {
+    const year = Number(normalizeAcademicYearText(academicYear));
+    if (!Number.isFinite(year)) return "";
+    const normalized = normalizeBudgetYearMap(map);
+    if (normalized[String(year)]) return normalized[String(year)];
+    const previousYear = Object.keys(normalized)
+      .map((key) => Number(key))
+      .filter((itemYear) => Number.isFinite(itemYear) && itemYear < year)
+      .sort((a, b) => b - a)[0];
+    return previousYear ? normalized[String(previousYear)] || "" : "";
+  };
+
   const compareBudgetOrgNameByCode = (a, b, codeByName = new Map()) => {
     const codeA = (codeByName.get(a) || "").toString().trim();
     const codeB = (codeByName.get(b) || "").toString().trim();
@@ -145,12 +191,21 @@ function initBudgetApprovalRequestPage() {
   };
 
   const getBudgetOrgCodeForYear = (item = {}) => {
-    const year = normalizeAcademicYearText(budgetRoundYear);
+    const year = getRepresentativeApplicationAcademicYear();
     const codeByAcademicYear = item?.codeByAcademicYear && typeof item.codeByAcademicYear === "object"
       ? item.codeByAcademicYear
       : {};
-    const yearCode = year ? codeByAcademicYear[year] : "";
+    const yearCode = year ? getBudgetYearValue(codeByAcademicYear, year) : "";
     return (yearCode || item?.code || "").toString().trim();
+  };
+
+  const getBudgetOrgNameForRepresentativeYear = (item = {}) => {
+    const rawName = (item?.name || item?.organizationName || item?.orgName || "").toString().trim();
+    const nameByAcademicYear = normalizeBudgetYearMap(item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear);
+    if (Object.keys(nameByAcademicYear).length) {
+      return getBudgetYearValue(nameByAcademicYear, getRepresentativeApplicationAcademicYear());
+    }
+    return rawName;
   };
 
   const collectBudgetOrgNameOptions = (orgType) => {
@@ -162,7 +217,7 @@ function initBudgetApprovalRequestPage() {
       orgFilters
         .filter((item) => (item?.group || "").toString().trim() === selectedType)
         .forEach((item) => {
-          const name = (item?.name || "").toString().trim();
+          const name = getBudgetOrgNameForRepresentativeYear(item);
           if (!name) return;
           const code = getBudgetOrgCodeForYear(item);
           if (code && !codeByName.has(name)) codeByName.set(name, code);
@@ -177,20 +232,6 @@ function initBudgetApprovalRequestPage() {
         : [];
     return Array.from(new Set([...fromFilters, ...fromProjects].filter(Boolean)))
       .sort((a, b) => compareBudgetOrgNameByCode(a, b, codeByName));
-  };
-
-  const normalizeOrgText = (value) => (value || "").toString().trim();
-
-  const normalizePositiveIntegerText = (value) => {
-    const num = Number((value || "").toString().trim());
-    return Number.isInteger(num) && num > 0 ? String(num) : "";
-  };
-
-  const normalizeAcademicYearText = (value) => {
-    const normalized = normalizePositiveIntegerText(value);
-    if (!normalized) return "";
-    const num = Number(normalized);
-    return num < 100 ? String(2500 + num) : normalized;
   };
 
   const normalizeRoundName = (value) => (value || "").toString().trim().replace(/\s+/g, " ");
@@ -485,6 +526,9 @@ function initBudgetApprovalRequestPage() {
     currentBudgetRoundId = (data.currentBudgetRoundId || buildBudgetRoundId(budgetRoundYear, budgetRoundNo)).toString().trim();
     activeBudgetRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);
     populateOrgTotalsRoundOptions();
+    updateRepresentativeAcademicYearDisplay();
+    populateRepresentativeOrgTypeOptions();
+    populateRepresentativeOrgDeptOptions();
     const openRounds = getOpenBudgetRounds();
     const selectedRoundId = requestRoundSelectEl.value;
     requestRoundSelectEl.innerHTML = "";
@@ -760,6 +804,7 @@ function initBudgetApprovalRequestPage() {
 
   const populateRepresentativeOrgTypeOptions = () => {
     if (!representativeOrgTypeEl) return;
+    updateRepresentativeAcademicYearDisplay();
     const currentValue = representativeOrgTypeEl.value;
     while (representativeOrgTypeEl.options.length) {
       representativeOrgTypeEl.remove(0);
@@ -785,6 +830,7 @@ function initBudgetApprovalRequestPage() {
 
   const populateRepresentativeOrgDeptOptions = () => {
     if (!representativeOrgTypeEl || !representativeOrgDeptEl) return;
+    updateRepresentativeAcademicYearDisplay();
     const selectedType = normalizeOrgText(representativeOrgTypeEl.value);
     const currentValue = representativeOrgDeptEl.value;
     while (representativeOrgDeptEl.options.length) {
@@ -1744,7 +1790,7 @@ function initBudgetApprovalRequestPage() {
     return {
       requestType: "organization_representative",
       status: "pending",
-      academicYear: String(getCurrentAcademicYearBE()),
+      academicYear: getRepresentativeApplicationAcademicYear(),
       organizationType: normalizeOrgText(representativeOrgTypeEl?.value),
       organizationName: normalizeOrgText(representativeOrgDeptEl?.value),
       representativeRole: getRepresentativeRoleValue(),

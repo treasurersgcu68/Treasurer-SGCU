@@ -339,7 +339,7 @@
             <div class="modal-header">
               <div>
                 <div id="budgetRepresentativeApplicationTitle" class="modal-title">สมัครเป็นตัวแทนองค์กร</div>
-                <div class="modal-subtitle">ยื่นคำขอเพื่อใช้บัญชีนี้แทนชมรมหรือองค์กรในการทำรายการของบประมาณ</div>
+                <div class="modal-subtitle">ยื่นคำขอตามปีการศึกษาที่ระบบเปิดรับสมัคร</div>
               </div>
               <button id="budgetRepresentativeApplicationClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
             </div>
@@ -354,6 +354,10 @@
                 <div class="panel-body">
                   <form id="budgetRepresentativeApplicationForm" class="staff-access-form" aria-label="แบบฟอร์มสมัครเป็นตัวแทนองค์กร">
                     <div class="staff-application-position-grid">
+                      <div class="borrow-form-field">
+                        <label class="login-label">ปีการศึกษาที่สมัคร</label>
+                        <div id="budgetRepresentativeAcademicYearDisplay" class="login-input readonly-field" aria-live="polite">-</div>
+                      </div>
                       <div class="borrow-form-field">
                         <label class="login-label" for="budgetRepresentativeOrgType">ประเภทองค์กร</label>
                         <select id="budgetRepresentativeOrgType" class="login-input" required>

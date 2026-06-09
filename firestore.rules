@@ -159,15 +159,14 @@ service cloud.firestore {
         unchanged("requesterEmail");
     }
 
-    match /borrowAssetRequests/{requestId} {
-      allow create: if canCreateBorrowRequest();
-      allow get: if canReadBorrowRequest();
-      allow list: if canReadBorrowRequest();
-      allow update: if canStaffUpdateBorrowRequest() || canUserCancelBorrowRequest();
-      allow delete: if false;
+    match /borrowAssetCatalog/{assetCode} {
+      allow get, list: if isStaff() ||
+        resource.data.approved == true ||
+        resource.data.status == "active";
+      allow create, update, delete: if isStaff();
     }
 
-    match /borrowAssetsRequests/{requestId} {
+    match /borrowAssetRequests/{requestId} {
       allow create: if canCreateBorrowRequest();
       allow get: if canReadBorrowRequest();
       allow list: if canReadBorrowRequest();

@@ -1931,6 +1931,84 @@
   margin-top: 0;
 }
 
+@media (max-width: 768px) {
+  .page-view[data-page="budget-approval-request"] .budget-org-totals-table-wrapper {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable thead {
+    display: none;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable tr {
+    display: block;
+    padding: 12px;
+    border: 1px solid rgba(236, 72, 153, 0.18);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(148, 163, 184, 0.14);
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 6px 10px;
+    width: 100%;
+    padding: 7px 0;
+    border: 0;
+    text-align: left !important;
+    white-space: normal;
+    align-items: start;
+    overflow-wrap: anywhere;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td[data-label="องค์กร"] {
+    display: block;
+    padding-top: 0;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td[data-label="องค์กร"]::before {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td[data-label="องค์กร"] > * {
+    min-width: 0;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td[colspan] {
+    display: block;
+    text-align: center !important;
+  }
+
+  .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td[colspan]::before {
+    content: none;
+  }
+}
+
 .budget-staff-panel .panel-body {
   display: grid;
   gap: 14px;
@@ -2682,14 +2760,61 @@
   gap: 10px;
 }
 
-.budget-staff-round-action-field .btn-ghost {
+.budget-round-actions-row .btn-ghost {
   width: 100%;
   justify-content: center;
 }
 
-.budget-staff-round-action-field .btn-primary {
+.budget-round-actions-row .btn-primary {
   width: 100%;
   justify-content: center;
+}
+
+.budget-round-actions-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-content: end;
+  align-items: stretch;
+  grid-column: 1 / -1;
+}
+
+.budget-round-actions-row.is-editing-round {
+  flex-direction: row;
+}
+
+.budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])),
+.budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) {
+  flex-direction: row;
+}
+
+.budget-round-actions-row .btn-primary {
+  flex: 1 1 0;
+}
+
+.budget-round-actions-row.is-editing-round .btn-primary,
+.budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) .btn-primary,
+.budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) .btn-primary {
+  flex: 1 1 0;
+}
+
+.budget-round-actions-row.is-editing-round #budgetRoundCancelEditBtn,
+.budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) #budgetRoundCancelEditBtn,
+.budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) #budgetRoundCancelEditBtn {
+  flex: 1 1 0;
+}
+
+.budget-round-actions-row .budget-round-delete-selected-btn {
+  flex: 1 1 0;
+  border-color: #fecaca;
+  background: #fff7f7;
+  color: #b91c1c;
+}
+
+.budget-round-actions-row.is-editing-round .budget-round-delete-selected-btn,
+.budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) .budget-round-delete-selected-btn,
+.budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) .budget-round-delete-selected-btn {
+  flex: 1 1 0;
 }
 
 .budget-active-round-list {
@@ -2709,6 +2834,19 @@
   border: 1px solid rgba(244, 114, 182, 0.16);
   border-radius: 12px;
   background: #ffffff;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.budget-active-round-item:hover {
+  border-color: rgba(236, 72, 153, 0.34);
+  background: #fffafd;
+  transform: translateY(-1px);
+}
+
+.budget-active-round-item:focus-visible {
+  outline: 3px solid rgba(236, 72, 153, 0.24);
+  outline-offset: 2px;
 }
 
 .budget-active-round-item.is-active {
@@ -2738,18 +2876,6 @@
   font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
-}
-
-.budget-active-round-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.budget-active-round-actions .btn-ghost {
-  justify-content: center;
-  min-height: 34px;
-  padding: 7px 10px;
 }
 
 .budget-active-round-title {
@@ -4482,43 +4608,6 @@
   border-color: rgba(185, 28, 28, 0.24);
   color: #b91c1c;
   flex: 0 0 auto;
-}
-
-.org-representative-delete-summary {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 16px;
-}
-
-.org-representative-delete-confirm-actions {
-  align-items: center;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(88px, 0.72fr) minmax(0, 1.18fr);
-  justify-content: flex-end;
-}
-
-.org-representative-delete-confirm-actions > button {
-  min-width: 0;
-  width: 100%;
-}
-
-.org-representative-delete-confirm-actions .btn-primary.is-danger {
-  background: #b91c1c;
-  border-color: #b91c1c;
-  color: #fff;
-}
-
-@media (max-width: 720px) {
-  .org-representative-delete-confirm-actions {
-    grid-template-columns: minmax(0, 1fr) minmax(72px, 0.7fr) minmax(0, 1.2fr);
-  }
-
-  .org-representative-delete-confirm-actions > button {
-    font-size: 0.88rem;
-    line-height: 1.2;
-    padding-inline: 8px;
-  }
 }
 
 .organization-catalog-responsibility {
@@ -8577,6 +8666,47 @@
   }
 }
 
+@media (max-width: 768px) {
+  .page-view[data-page="budget-approval-request"] .page,
+  .page-view[data-page="budget-approval-request"] .page-header-flex,
+  .page-view[data-page="budget-approval-request"] .budget-org-overview-panel,
+  .page-view[data-page="budget-approval-request"] .budget-org-overview,
+  .page-view[data-page="budget-approval-request"] .budget-request-form,
+  .page-view[data-page="budget-approval-request"] .panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .page-view[data-page="budget-approval-request"] .budget-org-overview {
+    overflow-x: hidden;
+  }
+
+  .page-view[data-page="budget-approval-request"] .budget-org-overview .budget-org-floating-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .page-view[data-page="budget-approval-request"] .budget-org-floating-card,
+  .page-view[data-page="budget-approval-request"] .budget-org-floating-card:nth-child(n + 5) {
+    grid-column: auto;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .page-view[data-page="budget-approval-request"] .budget-org-overview .budget-org-floating-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .page-view[data-page="budget-approval-request"] .budget-org-floating-card,
+  .page-view[data-page="budget-approval-request"] .budget-org-floating-card:nth-child(n + 5) {
+    min-height: 0;
+  }
+}
+
 .page-view[data-page="org-representative-approval-staff"] .org-representative-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -8858,5 +8988,76 @@
 @media (max-width: 1024px) {
   .page-view[data-page="org-representative-approval-staff"] .budget-org-overview .organization-catalog-summary-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.page-view[data-page="budget-approval-staff"] .budget-staff-deadline-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row > button {
+  flex: 1 1 0 !important;
+  grid-column: auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row.is-editing-round {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])),
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row.is-editing-round #budgetRoundAddBtn,
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row.is-editing-round #budgetRoundCancelEditBtn,
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row.is-editing-round #budgetRoundDeleteSelectedBtn,
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) #budgetRoundAddBtn,
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) #budgetRoundCancelEditBtn,
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) #budgetRoundDeleteSelectedBtn,
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) #budgetRoundAddBtn,
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) #budgetRoundCancelEditBtn,
+.page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) #budgetRoundDeleteSelectedBtn {
+  grid-column: auto !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row {
+    flex-direction: column !important;
+  }
+
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row > button {
+    flex: 0 0 auto !important;
+  }
+
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row.is-editing-round,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])),
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) {
+    flex-direction: column !important;
+  }
+
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row.is-editing-round #budgetRoundAddBtn,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row.is-editing-round #budgetRoundCancelEditBtn,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row.is-editing-round #budgetRoundDeleteSelectedBtn,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) #budgetRoundAddBtn,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) #budgetRoundCancelEditBtn,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundCancelEditBtn:not([hidden])) #budgetRoundDeleteSelectedBtn,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) #budgetRoundAddBtn,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) #budgetRoundCancelEditBtn,
+  .page-view[data-page="budget-approval-staff"] .budget-round-actions-row:has(#budgetRoundDeleteSelectedBtn:not([hidden])) #budgetRoundDeleteSelectedBtn {
+    grid-column: 1 / -1 !important;
+    flex: 0 0 auto !important;
   }
 }

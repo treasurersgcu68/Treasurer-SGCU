@@ -16,7 +16,7 @@ const SGCU_APP_CONFIG = {
       auditLogs: "auditLogs",
       appSettings: "appSettings",
       borrowAssetRequests: "borrowAssetRequests",
-      borrowAssetRequestsFallback: "borrowAssetsRequests",
+      borrowAssetCatalog: "borrowAssetCatalog",
       borrowAssetStockReservations: "borrowAssetStockReservations",
       budgetApprovalRequests: "budgetApprovalRequests",
       budgetApprovalSettings: "budgetApprovalSettings",

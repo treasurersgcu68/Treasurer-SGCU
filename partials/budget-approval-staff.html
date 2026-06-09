@@ -117,9 +117,14 @@
                               <label class="login-label" for="budgetRequestDeadlineInput">วันสิ้นสุดการเปิดรับคำของบ</label>
                               <input id="budgetRequestDeadlineInput" class="login-input" type="date" />
                             </div>
-                            <div class="borrow-form-field budget-staff-round-action-field">
-                              <label class="login-label">&nbsp;</label>
+                            <div class="borrow-form-field">
+                              <label class="login-label" for="budgetRequestDeadlineTimeInput">เวลาปิดรับคำของบ</label>
+                              <input id="budgetRequestDeadlineTimeInput" class="login-input" type="time" />
+                            </div>
+                            <div id="budgetRoundActionsRow" class="budget-round-actions-row">
                               <button id="budgetRoundAddBtn" class="btn-primary" type="button">บันทึกรอบนี้</button>
+                              <button id="budgetRoundCancelEditBtn" class="btn-ghost" type="button" hidden>ยกเลิกการแก้ไข</button>
+                              <button id="budgetRoundDeleteSelectedBtn" class="btn-ghost budget-round-delete-selected-btn" type="button" hidden>ลบรอบที่เลือก</button>
                             </div>
                           </div>
                         </div>

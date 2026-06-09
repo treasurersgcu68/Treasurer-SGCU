@@ -19,6 +19,32 @@
 
 ## Recommended Firestore Collections
 
+ใช้ชื่อ collection ตามรายการนี้เป็น canonical schema ของระบบ หลีกเลี่ยงการสร้าง collection ชื่อใกล้เคียงกันซ้ำ เช่น `borrowAssetsRequests` เพราะจะทำให้ rules, หน้า staff, และรายงานแยกข้อมูลกันคนละที่
+
+| Area | Canonical collection/doc | Document id |
+| --- | --- | --- |
+| Runtime config | `appSettings/global` | fixed id `global` |
+| Users | `userProfiles/{uid}` | Firebase Auth uid |
+| Staff | `staffProfiles/{email}` | lowercase email |
+| Staff applications | `staffApplications/{applicationId}` | auto id |
+| Organization representatives | `organizationRepresentativeApplications/{applicationId}` | auto id |
+| Organization catalog | `organizationCatalog/{orgId}` | stable org code or slug |
+| Treasurer org chart | `orgStructureMembers/{memberId}` | stable slug |
+| News | `newsItems/{newsId}` | auto id or stable imported id |
+| Downloads | `downloadDocuments/{documentId}` | auto id or stable imported id |
+| Borrow asset catalog | `borrowAssetCatalog/{assetCode}` | asset code |
+| Borrow requests | `borrowAssetRequests/{requestId}` | auto id |
+| Borrow stock reservations | `borrowAssetStockReservations/{assetCode}` | asset code |
+| Budget requests | `budgetApprovalRequests/{requestId}` | auto id |
+| Budget settings | `budgetApprovalSettings/global` | fixed id `global` |
+| Meeting rooms | `meetingRooms/{roomId}` | stable room code or auto id |
+| Meeting bookings | `meetingRoomBookings/{bookingId}` | auto id |
+| Meeting holidays | `meetingRoomHolidays/{holidayId}` | `YYYY-MM-DD` when possible |
+| Audit logs | `auditLogs/{logId}` | auto id |
+| Visitor stats | `site_stats/visitors_all_time`, `site_daily_visitors/{date}` | fixed/stat date ids |
+
+ทุก document ที่ staff แก้ไขได้ควรมี `createdAt`, `updatedAt`, `createdBy`, `updatedBy` เมื่อสร้าง/แก้จากหน้าเว็บได้จริง ส่วน catalog ควรมี `status` สำหรับซ่อน/archived โดยไม่ต้องลบข้อมูล
+
 ### `newsItems`
 
 ใช้แทน `SGCU_APP_CONFIG.sheets.news`
@@ -106,6 +132,15 @@
 4. เมื่อใช้งานจริงนิ่งแล้ว ค่อยปิด fallback ของ feature นั้น
 
 หมายเหตุ: `organizationCatalog` ปิด fallback ไป Google Sheets แล้ว เว็บอ่านทะเบียนองค์กรจาก Firestore เท่านั้น และใช้การ import CSV เก่าเพื่อเติมข้อมูลเริ่มต้น
+
+### Legacy Collection Cleanup
+
+ถ้า Firebase project มี collection เก่า `borrowAssetsRequests` ให้ย้าย document ทั้งหมดไป `borrowAssetRequests` ก่อน deploy rules ใหม่ เพราะระบบใช้ชื่อ canonical เดียวแล้ว
+
+1. export/สำรองข้อมูล `borrowAssetsRequests`
+2. copy document ไป `borrowAssetRequests` โดยคง field เดิมและเติม `migratedFrom: "borrowAssetsRequests"`, `migratedAt`
+3. ตรวจหน้า staff ว่าคำขอเดิมแสดงครบ
+4. ค่อย archive/delete collection เก่าในภายหลัง
 
 ## Ownership
 

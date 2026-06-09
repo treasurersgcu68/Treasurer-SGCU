@@ -4610,6 +4610,60 @@
   flex: 0 0 auto;
 }
 
+.org-representative-missing-note {
+  margin-top: 4px;
+}
+
+.org-representative-delete-dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-width: 520px;
+}
+
+.org-representative-delete-confirm-body {
+  display: grid;
+  gap: 12px;
+}
+
+.org-representative-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable {
+  width: 100%;
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th,
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td {
+  vertical-align: top;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(1),
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(1) {
+  width: 42%;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(2),
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(2) {
+  width: 18%;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(3),
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(3) {
+  width: 16%;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(4),
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(4) {
+  width: 24%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .organization-catalog-responsibility {
   display: contents;
 }

@@ -613,8 +613,12 @@ function initStaffAccessPages() {
     if (!approvalDetailModalEl || !approvalDetailBodyEl || !item) return;
     const approvedAt = item.updatedAt || item.createdAt || null;
     const detailTitleEl = document.getElementById("staffApprovalDetailTitle");
+    const detailSubtitleEl = document.getElementById("staffApprovalDetailSubtitle");
     if (detailTitleEl) {
       detailTitleEl.textContent = "รายละเอียดผู้ปฏิบัติงาน";
+    }
+    if (detailSubtitleEl) {
+      detailSubtitleEl.textContent = "ข้อมูลเพิ่มเติมของรายการที่อนุมัติแล้ว";
     }
     const applicationId = (item.primaryApplicationId || item.id || "").toString();
     const approvedPosition = (item.approvedPosition || item.requestedPosition || "").toString();
@@ -847,8 +851,12 @@ function initStaffAccessPages() {
   const closeApprovalDetailModal = () => {
     if (!approvalDetailModalEl) return;
     const detailTitleEl = document.getElementById("staffApprovalDetailTitle");
+    const detailSubtitleEl = document.getElementById("staffApprovalDetailSubtitle");
     if (detailTitleEl) {
       detailTitleEl.textContent = "รายละเอียดผู้ปฏิบัติงาน";
+    }
+    if (detailSubtitleEl) {
+      detailSubtitleEl.textContent = "ข้อมูลเพิ่มเติมของรายการที่อนุมัติแล้ว";
     }
     if (typeof closeDialog === "function") {
       closeDialog(approvalDetailModalEl);
@@ -1518,7 +1526,7 @@ function initStaffAccessPages() {
       setApprovalAvailabilityByRole();
       return currentAccessProfile;
     } catch (error) {
-      console.warn("load current staff access profile failed - app.staff-access.js", error);
+      console.warn("load current staff access profile failed - app.staff-access.js:1529", error);
       return currentAccessProfile;
     } finally {
       if (currentAccessProfileLoadingEmail === email) {
@@ -1839,7 +1847,7 @@ function initStaffAccessPages() {
       resetOrgStructureForm();
       setMessage(orgStructureFormMessageEl, "บันทึกรายชื่อทำเนียบรุ่นแล้ว", "#047857");
     } catch (error) {
-      console.error("save org structure member failed - app.staff-access.js", error);
+      console.error("save org structure member failed - app.staff-access.js:1850", error);
       setMessage(orgStructureFormMessageEl, error.message || "บันทึกทำเนียบรุ่นไม่สำเร็จ", "#b91c1c");
     } finally {
       controls.forEach((control) => {
@@ -1870,7 +1878,7 @@ function initStaffAccessPages() {
         renderOrgStructureMembers();
       },
       (error) => {
-        console.error("load org structure members failed - app.staff-access.js", error);
+        console.error("load org structure members failed - app.staff-access.js:1881", error);
         orgStructureListCaptionEl.textContent = "โหลดทำเนียบรุ่นไม่สำเร็จ";
         orgStructureTableBodyEl.innerHTML = `<tr><td colspan="4">ไม่สามารถโหลดรายชื่อจาก Firestore ได้</td></tr>`;
       }
@@ -2410,7 +2418,7 @@ function initStaffAccessPages() {
       refreshSummaryCounts();
       syncApprovalPanelCaption();
     } catch (error) {
-      console.error("renderApprovalRows failed - app.staff-access.js:1683", error);
+      console.error("renderApprovalRows failed - app.staff-access.js:2421", error);
       approvalBodyEl.innerHTML = `<tr><td colspan="4">แสดงผลคำขอไม่สำเร็จ: ${toSafeText(error?.message || "unknown")}</td></tr>`;
       setMessage(approvalMessageEl, "แสดงผลคำขอไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
     }
@@ -2534,7 +2542,7 @@ function initStaffAccessPages() {
       refreshSummaryCounts();
       syncApprovalPanelCaption();
     } catch (error) {
-      console.error("renderApprovedHistory failed - app.staff-access.js:1807", error);
+      console.error("renderApprovedHistory failed - app.staff-access.js:2545", error);
       approvalHistoryBodyEl.innerHTML = `<tr><td colspan="3">แสดงผลรายชื่อไม่สำเร็จ: ${toSafeText(error?.message || "unknown")}</td></tr>`;
     }
   };
@@ -2662,7 +2670,7 @@ function initStaffAccessPages() {
         return !!loaded || getKnownOrganizationFilters().length > 0;
       })
       .catch((error) => {
-        console.warn("load organization filters for representative overview failed", error);
+        console.warn("load organization filters for representative overview failed - app.staff-access.js:2673", error);
         orgRepresentativeOrgFiltersLoadedForPage = true;
         return false;
       })
@@ -3778,7 +3786,7 @@ function initStaffAccessPages() {
       setMessage(organizationCatalogFormMessageEl, "บันทึกทะเบียนองค์กรแล้ว", "#047857");
       renderOrgRepresentativeApplications();
     } catch (error) {
-      console.error("save organization catalog failed - app.staff-access.js", error);
+      console.error("save organization catalog failed - app.staff-access.js:3789", error);
       const message = (error?.code || "") === "permission-denied"
         ? "ไม่มีสิทธิ์บันทึกทะเบียนองค์กร"
         : (error?.message || "บันทึกทะเบียนองค์กรไม่สำเร็จ");
@@ -3816,7 +3824,7 @@ function initStaffAccessPages() {
       setMessage(organizationCatalogFormMessageEl, "ลบออกจากทะเบียนแล้ว", "#047857");
       renderOrgRepresentativeApplications();
     } catch (error) {
-      console.error("archive organization catalog failed - app.staff-access.js", error);
+      console.error("archive organization catalog failed - app.staff-access.js:3827", error);
       const message = (error?.code || "") === "permission-denied"
         ? "ไม่มีสิทธิ์ลบทะเบียนองค์กร"
         : (error?.message || "ลบทะเบียนองค์กรไม่สำเร็จ");
@@ -3855,7 +3863,7 @@ function initStaffAccessPages() {
         skipEmptyLines: true
       });
       if (parsed.errors && parsed.errors.length) {
-        console.warn("organization catalog csv parse warnings - app.staff-access.js", parsed.errors);
+        console.warn("organization catalog csv parse warnings - app.staff-access.js:3866", parsed.errors);
       }
 
       const items = parseOrganizationCatalogCsvRows(parsed.data || []);
@@ -3869,7 +3877,7 @@ function initStaffAccessPages() {
       refreshOrganizationCatalogAfterImport(items);
       setMessage(organizationCatalogImportMessageEl, `อัปโหลดทะเบียนองค์กร ${written.toLocaleString("th-TH")} รายการเข้า Firebase แล้ว`, "#047857");
     } catch (error) {
-      console.error("import organization catalog csv failed - app.staff-access.js", error);
+      console.error("import organization catalog csv failed - app.staff-access.js:3880", error);
       const code = (error?.code || "").toString();
       const message = code === "permission-denied"
         ? "ไม่มีสิทธิ์อัปโหลดทะเบียนองค์กรเข้า Firebase"
@@ -4043,7 +4051,7 @@ function initStaffAccessPages() {
   const renderOrgRepresentativeOverview = () => {
     if (!orgRepresentativeOrgFiltersLoadedForPage && canLoadOrgRepresentativeOrgFilters()) {
       if (orgRepresentativeOverviewBodyEl) {
-        orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="5">กำลังโหลดทะเบียนองค์กร...</td></tr>';
+        orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="4">กำลังโหลดทะเบียนองค์กร...</td></tr>';
       }
       if (orgRepresentativePanelCaptionEl && currentOrgRepresentativeView === "overview") {
         orgRepresentativePanelCaptionEl.textContent = "กำลังโหลดทะเบียนองค์กร...";
@@ -4102,16 +4110,13 @@ function initStaffAccessPages() {
     }
 
     if (!currentOrgRepresentativeFilteredOrganizations.length) {
-      orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="5">ไม่พบองค์กรตามตัวกรองที่เลือก</td></tr>';
+      orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="4">ไม่พบองค์กรตามตัวกรองที่เลือก</td></tr>';
       syncOrgRepresentativePanelCaption();
       return;
     }
 
     orgRepresentativeOverviewBodyEl.innerHTML = currentOrgRepresentativeFilteredOrganizations.map((entry) => {
-      const complete = getOrgRepresentativeCompleteness(entry.approved, entry.pending.length);
       const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
-      const approvedNames = entry.approved.slice(0, 4).map((item) => getOrgRepresentativeApplicant(item).displayName).filter(Boolean);
-      const pendingNames = entry.pending.slice(0, 3).map((item) => getOrgRepresentativeApplicant(item).displayName).filter(Boolean);
       return `
         <tr class="org-representative-org-row" data-org-key="${toSafeText(entry.key)}">
           <td data-label="องค์กร">
@@ -4120,14 +4125,11 @@ function initStaffAccessPages() {
           </td>
           <td data-label="ตัวแทนอนุมัติแล้ว">
             <div class="org-representative-count">${toSafeText(String(entry.approved.length))}/4</div>
-            <div class="section-text-sm">${toSafeText(approvedNames.join(", ") || "-")}</div>
           </td>
           <td data-label="คำขอรออนุมัติ">
             <div class="org-representative-count">${toSafeText(String(entry.pending.length))}</div>
-            <div class="section-text-sm">${toSafeText(pendingNames.join(", ") || "-")}</div>
           </td>
           <td data-label="ตำแหน่งที่ยังขาด">${toSafeText(missingRoles.join(", ") || "-")}</td>
-          <td data-label="สถานะข้อมูล"><span class="badge ${complete.className}">${toSafeText(complete.label)}</span></td>
         </tr>
       `;
     }).join("");
@@ -4200,13 +4202,19 @@ function initStaffAccessPages() {
       const applicant = getOrgRepresentativeApplicant(item);
       const orgType = (item.organizationType || "-").toString();
       const orgName = (item.organizationName || "-").toString();
+      const academicYear = getOrgRepresentativeAcademicYear(item);
+      const representativeContext = [
+        item.organizationName,
+        item.organizationType,
+        academicYear ? `ปีการศึกษา ${academicYear}` : ""
+      ].map((value) => (value || "").toString().trim()).filter(Boolean).join(" · ");
       const role = (item.representativeRole || "-").toString();
       const id = (item.id || "").toString();
       return `
         <tr class="org-representative-row" data-org-representative-id="${toSafeText(id)}">
           <td data-label="ตัวแทน">
             <div>${toSafeText(applicant.displayName)}</div>
-            <div class="section-text-sm">${toSafeText(applicant.email || "-")}</div>
+            <div class="section-text-sm">${toSafeText(representativeContext || "-")}</div>
           </td>
           <td data-label="องค์กร">
             <div>${toSafeText(orgName)}</div>
@@ -4334,7 +4342,9 @@ function initStaffAccessPages() {
     }
 
     const detailTitleEl = document.getElementById("staffApprovalDetailTitle");
+    const detailSubtitleEl = document.getElementById("staffApprovalDetailSubtitle");
     if (detailTitleEl) detailTitleEl.textContent = "ยืนยันลบรายชื่อทั้งปี";
+    if (detailSubtitleEl) detailSubtitleEl.textContent = `ปีการศึกษา ${selectedAcademicYear}`;
     approvalDetailBodyEl.removeAttribute("data-application-id");
     approvalDetailBodyEl.innerHTML = `
       <div class="staff-approval-detail-layout org-representative-delete-confirm">
@@ -4445,7 +4455,7 @@ function initStaffAccessPages() {
       setMessage(orgRepresentativeMessageEl, `ลบรายชื่อตัวแทนทั้งหมดของปี ${selectedAcademicYear} เรียบร้อยแล้ว`, "#047857");
       return true;
     } catch (error) {
-      console.error("delete organization representative year roster failed - app.staff-access.js", error);
+      console.error("delete organization representative year roster failed - app.staff-access.js:4458", error);
       const code = (error?.code || "unknown").toString();
       if (code === "permission-denied") {
         setMessage(orgRepresentativeMessageEl, "ไม่มีสิทธิ์ลบรายชื่อตัวแทนองค์กร (permission-denied)", "#b91c1c");
@@ -4471,8 +4481,14 @@ function initStaffAccessPages() {
     const entry = currentOrgRepresentativeOrganizations.find((item) => (item.key || "").toString() === (orgKey || "").toString());
     if (!entry) return;
     const detailTitleEl = document.getElementById("staffApprovalDetailTitle");
+    const detailSubtitleEl = document.getElementById("staffApprovalDetailSubtitle");
     if (detailTitleEl) detailTitleEl.textContent = "จัดการตัวแทนรายองค์กร";
-    const complete = getOrgRepresentativeCompleteness(entry.approved, entry.pending.length);
+    const organizationContext = [
+      entry.orgName,
+      entry.orgType,
+      `ปีการศึกษา ${currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE())}`
+    ].map((value) => (value || "").toString().trim()).filter(Boolean).join(" · ");
+    if (detailSubtitleEl) detailSubtitleEl.textContent = organizationContext || "ข้อมูลตัวแทนรายองค์กร";
     const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
     const sortedApplications = [...entry.pending, ...entry.approved, ...entry.rejected];
     const rowHtml = sortedApplications.length
@@ -4511,29 +4527,8 @@ function initStaffAccessPages() {
     approvalDetailBodyEl.innerHTML = `
       <div class="staff-approval-detail-layout org-representative-org-detail">
         <div class="modal-section">
-          <div class="modal-section-title">${toSafeText(entry.orgName || "-")}</div>
-          <div class="modal-section-caption">${toSafeText(entry.orgType || "-")} · ปีการศึกษา ${toSafeText(currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE()))}</div>
-          <div class="org-representative-detail-summary">
-            <div>
-              <div class="modal-item-label">ตัวแทนอนุมัติแล้ว</div>
-              <div class="modal-item-value">${toSafeText(String(entry.approved.length))}/4</div>
-            </div>
-            <div>
-              <div class="modal-item-label">รออนุมัติ</div>
-              <div class="modal-item-value">${toSafeText(String(entry.pending.length))}</div>
-            </div>
-            <div>
-              <div class="modal-item-label">สถานะข้อมูล</div>
-              <div class="modal-item-value"><span class="badge ${complete.className}">${toSafeText(complete.label)}</span></div>
-            </div>
-            <div>
-              <div class="modal-item-label">ตำแหน่งที่ยังขาด</div>
-              <div class="modal-item-value">${toSafeText(missingRoles.join(", ") || "-")}</div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-section">
           <div class="modal-section-title">รายชื่อตัวแทน</div>
+          ${missingRoles.length ? `<div class="modal-section-caption org-representative-missing-note">ยังขาด: ${toSafeText(missingRoles.join(", "))}</div>` : ""}
           <div class="modal-table-wrap">
             <table class="modal-table">
               <thead>
@@ -4562,8 +4557,12 @@ function initStaffAccessPages() {
   const openOrgRepresentativeDetailModal = (item) => {
     if (!approvalDetailModalEl || !approvalDetailBodyEl || !item) return;
     const detailTitleEl = document.getElementById("staffApprovalDetailTitle");
+    const detailSubtitleEl = document.getElementById("staffApprovalDetailSubtitle");
     if (detailTitleEl) {
       detailTitleEl.textContent = "รายละเอียดตัวแทนองค์กร";
+    }
+    if (detailSubtitleEl) {
+      detailSubtitleEl.textContent = "ข้อมูลเพิ่มเติมของรายการตัวแทนองค์กร";
     }
     const applicant = getOrgRepresentativeApplicant(item);
     const applicationId = (item.id || "").toString();
@@ -4855,7 +4854,7 @@ function initStaffAccessPages() {
         }
       },
       (error) => {
-        console.error("staff position catalog listener failed - app.staff-access.js:2240", error);
+        console.error("staff position catalog listener failed - app.staff-access.js:4857", error);
         positionCatalogLoadState = "error";
         currentPositionCatalog = [];
         renderPositionDatalist();
@@ -4911,7 +4910,7 @@ function initStaffAccessPages() {
         scheduleApprovalUiSync();
       },
       (error) => {
-        console.error("staff applications listener failed - app.staff-access.js:2300", error);
+        console.error("staff applications listener failed - app.staff-access.js:4913", error);
         const msg = buildListenerErrorText("ไม่สามารถโหลดคำขอสมัครได้ในขณะนี้", error);
         myTableBodyEl.innerHTML = `<tr><td colspan="4">${toSafeText(msg)}</td></tr>`;
         setMessage(appMessageEl, msg, "#b91c1c");
@@ -4963,7 +4962,7 @@ function initStaffAccessPages() {
         scheduleApprovalUiSync();
       },
       (error) => {
-        console.error("staff pending listener failed - app.staff-access.js:2338", error);
+        console.error("staff pending listener failed - app.staff-access.js:4965", error);
         const code = (error?.code || "").toString();
         const msg = code === "unauthenticated"
           ? "กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้"
@@ -5017,7 +5016,7 @@ function initStaffAccessPages() {
         scheduleApprovalUiSync();
       },
       (error) => {
-        console.error("staff approved history listener failed - app.staff-access.js:2379", error);
+        console.error("staff approved history listener failed - app.staff-access.js:5019", error);
         const code = (error?.code || "").toString();
         const msg = code === "unauthenticated"
           ? "กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้"
@@ -5083,7 +5082,7 @@ function initStaffAccessPages() {
         renderLoadedApplications();
       },
       (error) => {
-        console.error("organization representative listener failed - app.staff-access.js:2417", error);
+        console.error("organization representative listener failed - app.staff-access.js:5085", error);
         if (!getCurrentAuthEmail()) {
           if (orgRepresentativePendingBodyEl) {
             orgRepresentativePendingBodyEl.innerHTML = '<tr><td colspan="5">กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูล...</td></tr>';
@@ -5173,7 +5172,7 @@ function initStaffAccessPages() {
         "#047857"
       );
     } catch (error) {
-      console.error("revoke approved application failed - app.staff-access.js:2500", error);
+      console.error("revoke approved application failed - app.staff-access.js:5175", error);
       const code = (error?.code || "unknown").toString();
       if (code === "permission-denied") {
         setMessage(approvalMessageEl, "ไม่มีสิทธิ์ยกเลิกอนุมัติ (permission-denied)", "#b91c1c");
@@ -5287,7 +5286,7 @@ function initStaffAccessPages() {
       setMessage(approvalMessageEl, "ปรับตำแหน่งเรียบร้อยแล้ว", "#047857");
       return true;
     } catch (error) {
-      console.error("update approved position failed - app.staff-access.js:2614", error);
+      console.error("update approved position failed - app.staff-access.js:5289", error);
       const code = (error?.code || "unknown").toString();
       if (error?.message === "position-code-segment-unresolved") {
         setMessage(approvalMessageEl, "ไม่สามารถสร้างรหัสตำแหน่งได้: ตรวจชื่อตำแหน่งให้ตรงหมวดที่กำหนด", "#b91c1c");
@@ -5410,7 +5409,7 @@ function initStaffAccessPages() {
       try {
         await ensurePositionExists(requestedPosition, user);
       } catch (catalogError) {
-        console.warn("sync staff position catalog after application failed - app.staff-access.js", catalogError);
+        console.warn("sync staff position catalog after application failed - app.staff-access.js:5412", catalogError);
       }
       setMessage(appMessageEl, "ส่งคำขอสมัครสตาฟเรียบร้อยแล้ว", "#047857");
       window.setTimeout(() => {
@@ -5418,7 +5417,7 @@ function initStaffAccessPages() {
         setApplicationAvailabilityByAuth();
       }, 1800);
     } catch (error) {
-      console.error("submit staff application failed - app.staff-access.js:2740", error);
+      console.error("submit staff application failed - app.staff-access.js:5420", error);
       const debugInfo = `email=${applicantEmail || "-"} project=${firestore?.db?.app?.options?.projectId || "-"}`;
       const msg = buildActionErrorText("ส่งคำขอไม่สำเร็จ", error, debugInfo);
       setMessage(appMessageEl, msg, "#b91c1c");
@@ -5488,7 +5487,7 @@ function initStaffAccessPages() {
       resetPositionManageForm();
       setMessage(positionManageMessageEl, "ปรับตำแหน่งเรียบร้อยแล้ว", "#047857");
     } catch (error) {
-      console.error("add position failed - app.staff-access.js:2816", error);
+      console.error("add position failed - app.staff-access.js:5490", error);
       setMessage(positionManageMessageEl, "ปรับตำแหน่งไม่สำเร็จ", "#b91c1c");
     }
   };
@@ -5517,7 +5516,7 @@ function initStaffAccessPages() {
       }
       setMessage(positionManageMessageEl, "ลบตำแหน่งเรียบร้อยแล้ว", "#047857");
     } catch (error) {
-      console.error("remove position failed - app.staff-access.js:2843", error);
+      console.error("remove position failed - app.staff-access.js:5519", error);
       setMessage(positionManageMessageEl, "ลบตำแหน่งไม่สำเร็จ", "#b91c1c");
     }
   };
@@ -5591,7 +5590,7 @@ function initStaffAccessPages() {
       setMessage(positionManageMessageEl, "อัปเดตตำแหน่งเรียบร้อยแล้ว", "#047857");
       return true;
     } catch (error) {
-      console.error("update position failed - app.staff-access.js:2917", error);
+      console.error("update position failed - app.staff-access.js:5593", error);
       setMessage(positionManageMessageEl, "อัปเดตตำแหน่งไม่สำเร็จ", "#b91c1c");
       return false;
     }
@@ -5669,7 +5668,7 @@ function initStaffAccessPages() {
       );
       return true;
     } catch (error) {
-      console.error("update organization representative status failed - app.staff-access.js:2994", error);
+      console.error("update organization representative status failed - app.staff-access.js:5671", error);
       const code = (error?.code || "unknown").toString();
       if (code === "permission-denied") {
         setMessage(orgRepresentativeMessageEl, "ไม่มีสิทธิ์อัปเดตคำขอตัวแทนองค์กร (permission-denied)", "#b91c1c");
@@ -5858,7 +5857,7 @@ function initStaffAccessPages() {
       );
       return true;
     } catch (error) {
-      console.error("update staff application status failed - app.staff-access.js:3183", error);
+      console.error("update staff application status failed - app.staff-access.js:5860", error);
       const code = (error?.code || "unknown").toString();
       if (error?.message === "position-code-segment-unresolved") {
         setMessage(approvalMessageEl, "ไม่สามารถสร้างรหัสตำแหน่งได้: ตรวจชื่อตำแหน่งให้ตรงหมวดที่กำหนด", "#b91c1c");

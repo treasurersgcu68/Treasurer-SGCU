@@ -634,20 +634,6 @@
   font-weight: 800;
 }
 
-.org-representative-detail-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.org-representative-detail-summary > div {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 10px 12px;
-}
-
 .org-representative-org-detail tr[data-org-representative-id] {
   cursor: pointer;
 }
@@ -721,20 +707,6 @@
 .org-representative-count {
   color: #111827;
   font-weight: 800;
-}
-
-.org-representative-detail-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.org-representative-detail-summary > div {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 10px 12px;
 }
 
 .org-representative-org-detail tr[data-org-representative-id] {

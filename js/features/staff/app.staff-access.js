@@ -3237,7 +3237,7 @@ function initStaffAccessPages() {
       })
       .filter((item) => item.group && item.name)
       .sort((a, b) =>
-        a.group.localeCompare(b.group, "th") ||
+        b.group.localeCompare(a.group, "th") ||
         (a.code || "").localeCompare(b.code || "", "th", { numeric: true }) ||
         a.name.localeCompare(b.name, "th")
       );
@@ -3964,13 +3964,19 @@ function initStaffAccessPages() {
   const buildOrgRepresentativeOrganizations = () => {
     const orgMap = new Map();
     const selectedAcademicYear = currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE());
-    getKnownOrganizationFilters().forEach((item) => {
-      const orgType = (item?.group || item?.organizationType || "").toString().trim();
-      const orgName = (item?.name || item?.organizationName || "").toString().trim();
+    getOrganizationCatalogRows().forEach((item) => {
+      const orgType = (item?.group || "").toString().trim();
+      const orgName = (item?.name || "").toString().trim();
+      const orgCode = (item?.code || "").toString().trim();
+      const documentRunCode = (item?.documentRunCode || "").toString().trim();
       if (!orgName) return;
       const key = getOrgRepresentativeOrgKey(orgType, orgName);
       if (!orgMap.has(key)) {
-        orgMap.set(key, { key, orgType, orgName, applications: [], approved: [], pending: [], rejected: [] });
+        orgMap.set(key, { key, orgType, orgName, orgCode, documentRunCode, applications: [], approved: [], pending: [], rejected: [] });
+      } else {
+        const entry = orgMap.get(key);
+        if (!entry.orgCode) entry.orgCode = orgCode;
+        if (!entry.documentRunCode) entry.documentRunCode = documentRunCode;
       }
     });
 
@@ -3982,7 +3988,7 @@ function initStaffAccessPages() {
       if (!orgName) return;
       const key = getOrgRepresentativeOrgKey(orgType, orgName);
       if (!orgMap.has(key)) {
-        orgMap.set(key, { key, orgType, orgName, applications: [], approved: [], pending: [], rejected: [] });
+        orgMap.set(key, { key, orgType, orgName, orgCode: "", documentRunCode: "", applications: [], approved: [], pending: [], rejected: [] });
       }
       const entry = orgMap.get(key);
       entry.applications.push(item);
@@ -3998,6 +4004,8 @@ function initStaffAccessPages() {
         searchText: [
           entry.orgType,
           entry.orgName,
+          entry.orgCode,
+          entry.documentRunCode,
           ...entry.applications.flatMap((item) => {
             const applicant = getOrgRepresentativeApplicant(item);
             return [applicant.displayName, applicant.email, applicant.phone, applicant.lineId, item.representativeRole, getOrgRepresentativeAcademicYear(item)];
@@ -4007,6 +4015,14 @@ function initStaffAccessPages() {
       .sort((a, b) => {
         const typeCompare = (b.orgType || "").localeCompare(a.orgType || "", "th");
         if (typeCompare) return typeCompare;
+        const aCode = (a.orgCode || a.documentRunCode || "").toString();
+        const bCode = (b.orgCode || b.documentRunCode || "").toString();
+        if (aCode || bCode) {
+          if (!aCode) return 1;
+          if (!bCode) return -1;
+          const codeCompare = aCode.localeCompare(bCode, "th", { numeric: true, sensitivity: "base" });
+          if (codeCompare) return codeCompare;
+        }
         return (a.orgName || "").localeCompare(b.orgName || "", "th");
       });
   };
@@ -4066,7 +4082,10 @@ function initStaffAccessPages() {
       .filter((entry) => getOrgRepresentativeCompleteness(entry.approved, entry.pending.length).status === "empty").length;
     const incompleteOrgCount = Math.max(0, totalOrgCount - completeOrgCount);
     const approvedTotalCount = currentOrgRepresentativeApplications
-      .filter((item) => normalizeApplicationStatus(item.status) === "approved").length;
+      .filter((item) =>
+        normalizeApplicationStatus(item.status) === "approved" &&
+        getOrgRepresentativeAcademicYear(item) === (currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE()))
+      ).length;
 
     if (orgRepresentativeTotalOrgCountEl) orgRepresentativeTotalOrgCountEl.textContent = String(totalOrgCount);
     if (orgRepresentativeCompleteOrgCountEl) orgRepresentativeCompleteOrgCountEl.textContent = String(completeOrgCount);
@@ -5297,12 +5316,10 @@ function initStaffAccessPages() {
       positionManageFormEl.style.opacity = allowManage ? "1" : "0.7";
     }
     if (!allowManage) {
-      setMessage(positionManageMessageEl, "ส่วนจัดการตำแหน่งสำหรับหัวหน้าสตาฟเท่านั้น", "#b45309");
+      setMessage(positionManageMessageEl, "");
       if (getCurrentAuthEmail() && currentAccessProfileEmail !== getCurrentAuthEmail()) {
         void refreshAccessProfileForCurrentUser();
       }
-    } else if (!positionManageMessageEl?.textContent) {
-      setMessage(positionManageMessageEl, "ปรับ บันทึก หรือลบตำแหน่งได้จากส่วนนี้", "#6b7280");
     }
   };
 
@@ -5411,7 +5428,6 @@ function initStaffAccessPages() {
       return;
     }
     if (!isSuperStaff()) {
-      setMessage(positionManageMessageEl, "ส่วนจัดการตำแหน่งสำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
       return;
     }
 
@@ -5478,7 +5494,6 @@ function initStaffAccessPages() {
       return;
     }
     if (!isSuperStaff()) {
-      setMessage(positionManageMessageEl, "ส่วนจัดการตำแหน่งสำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
       return;
     }
 
@@ -5508,7 +5523,6 @@ function initStaffAccessPages() {
       return false;
     }
     if (!isSuperStaff()) {
-      setMessage(positionManageMessageEl, "ส่วนจัดการตำแหน่งสำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
       return false;
     }
 

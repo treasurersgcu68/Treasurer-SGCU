@@ -1203,7 +1203,12 @@
 .staff-position-list-head {
   display: grid;
   gap: 4px;
-  margin: 8px 0 12px;
+  margin: 0 0 12px;
+}
+
+.staff-position-list-panel .panel-body {
+  display: grid;
+  gap: 12px;
 }
 
 .staff-position-list-title {

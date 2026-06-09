@@ -4633,7 +4633,7 @@
 
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable {
   width: 100%;
-  min-width: 760px;
+  min-width: 900px;
   table-layout: fixed;
 }
 
@@ -4644,24 +4644,30 @@
 
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(1),
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(1) {
-  width: 42%;
+  width: 32%;
 }
 
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(2),
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(2) {
-  width: 18%;
+  width: 20%;
 }
 
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(3),
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(3) {
-  width: 16%;
+  width: 18%;
 }
 
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(4),
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(4) {
-  width: 24%;
+  width: 18%;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(5),
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(5) {
+  width: 12%;
+  white-space: normal;
 }
 
 .organization-catalog-responsibility {

@@ -4168,7 +4168,7 @@ function initStaffAccessPages() {
   const renderOrgRepresentativeOverview = () => {
     if (!orgRepresentativeOrgFiltersLoadedForPage && canLoadOrgRepresentativeOrgFilters()) {
       if (orgRepresentativeOverviewBodyEl) {
-        orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="4">กำลังโหลดทะเบียนองค์กร...</td></tr>';
+        orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="5">กำลังโหลดทะเบียนองค์กร...</td></tr>';
       }
       if (orgRepresentativePanelCaptionEl && currentOrgRepresentativeView === "overview") {
         orgRepresentativePanelCaptionEl.textContent = "กำลังโหลดทะเบียนองค์กร...";
@@ -4227,13 +4227,16 @@ function initStaffAccessPages() {
     }
 
     if (!currentOrgRepresentativeFilteredOrganizations.length) {
-      orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="4">ไม่พบองค์กรตามตัวกรองที่เลือก</td></tr>';
+      orgRepresentativeOverviewBodyEl.innerHTML = '<tr><td colspan="5">ไม่พบองค์กรตามตัวกรองที่เลือก</td></tr>';
       syncOrgRepresentativePanelCaption();
       return;
     }
 
     orgRepresentativeOverviewBodyEl.innerHTML = currentOrgRepresentativeFilteredOrganizations.map((entry) => {
+      const complete = getOrgRepresentativeCompleteness(entry.approved, entry.pending.length);
       const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
+      const approvedNames = entry.approved.slice(0, 4).map((item) => getOrgRepresentativeApplicant(item).displayName).filter(Boolean);
+      const pendingNames = entry.pending.slice(0, 3).map((item) => getOrgRepresentativeApplicant(item).displayName).filter(Boolean);
       return `
         <tr class="org-representative-org-row" data-org-key="${toSafeText(entry.key)}">
           <td data-label="องค์กร">
@@ -4242,11 +4245,14 @@ function initStaffAccessPages() {
           </td>
           <td data-label="ตัวแทนอนุมัติแล้ว">
             <div class="org-representative-count">${toSafeText(String(entry.approved.length))}/4</div>
+            <div class="section-text-sm">${toSafeText(approvedNames.join(", ") || "-")}</div>
           </td>
           <td data-label="คำขอรออนุมัติ">
             <div class="org-representative-count">${toSafeText(String(entry.pending.length))}</div>
+            <div class="section-text-sm">${toSafeText(pendingNames.join(", ") || "-")}</div>
           </td>
           <td data-label="ตำแหน่งที่ยังขาด">${toSafeText(missingRoles.join(", ") || "-")}</td>
+          <td data-label="สถานะข้อมูล"><span class="badge ${complete.className}">${toSafeText(complete.label)}</span></td>
         </tr>
       `;
     }).join("");

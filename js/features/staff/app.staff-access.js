@@ -93,6 +93,7 @@ function initStaffAccessPages() {
   const organizationCatalogShowMoreBtnEl = document.getElementById("organizationCatalogShowMoreBtn");
   const organizationCatalogTableActionsEl = document.getElementById("organizationCatalogTableActions");
   const organizationCatalogAcademicYearEl = document.getElementById("organizationCatalogAcademicYear");
+  const organizationCatalogTableAcademicYearFilterEl = document.getElementById("organizationCatalogTableAcademicYearFilter");
   const organizationCatalogTotalCountEl = document.getElementById("organizationCatalogTotalCount");
   const organizationCatalogGroupCountEl = document.getElementById("organizationCatalogGroupCount");
   const organizationCatalogFilteredCountEl = document.getElementById("organizationCatalogFilteredCount");
@@ -2591,12 +2592,18 @@ function initStaffAccessPages() {
       if (status && status !== "active") return;
       const group = normalizeOrganizationCatalogText(data.group || data.organizationType || data.orgGroup);
       const name = normalizeOrganizationCatalogText(data.name || data.organizationName || data.orgName);
-      if (!group || !name) return;
+      const nameByAcademicYear = buildOrganizationCatalogYearTextMap({
+        text: name,
+        textByAcademicYear: data.nameByAcademicYear || data.organizationNameByAcademicYear || data.orgNameByAcademicYear
+      });
+      if (!group || (!name && !Object.keys(nameByAcademicYear).length)) return;
       const code = normalizeOrganizationCatalogText(data.code || data.orgCode).toUpperCase();
+      const accountNo = normalizeOrganizationCatalogText(data.accountNo || data.bankAccount || data.bankAccountNo);
       rows.push({
         id: normalizeOrganizationCatalogText(docSnap.id),
         group,
         name,
+        nameByAcademicYear,
         code,
         documentRunCode: resolveOrganizationCatalogDocumentRunBaseForGroup({
           group,
@@ -2617,7 +2624,7 @@ function initStaffAccessPages() {
           orgCodeByAcademicYear: data.orgCodeByAcademicYear,
           documentRunCodeByAcademicYear: data.documentRunCodeByAcademicYear
         }),
-        accountNo: normalizeOrganizationCatalogText(data.accountNo || data.bankAccount || data.bankAccountNo)
+        accountNo
       });
     });
     rows.sort((a, b) =>
@@ -2736,6 +2743,25 @@ function initStaffAccessPages() {
       .replace(/^(?:อบจ(?:\.(?:กฬ|พฒ|วชก|ศป))?\.?)\s*/u, "")
       .replace(/\s*\/\s*\d{4}\s*$/u, "");
 
+  const getOrganizationCatalogYearValue = (map = {}, academicYear = getOrganizationCatalogDisplayAcademicYear()) => {
+    if (!map || typeof map !== "object" || Array.isArray(map)) return "";
+    const year = Number(normalizeOrganizationCatalogText(academicYear));
+    if (!Number.isFinite(year)) return "";
+    const normalized = Object.entries(map).reduce((acc, [key, value]) => {
+      const itemYear = Number(normalizeOrganizationCatalogText(key));
+      if (Number.isFinite(itemYear) && /^\d{4}$/.test(normalizeOrganizationCatalogText(key)) && normalizeOrganizationCatalogText(value)) {
+        acc[String(itemYear)] = value;
+      }
+      return acc;
+    }, {});
+    if (normalized[String(year)]) return normalized[String(year)];
+    const previousYear = Object.keys(normalized)
+      .map((key) => Number(key))
+      .filter((itemYear) => Number.isFinite(itemYear) && itemYear < year)
+      .sort((a, b) => b - a)[0];
+    return previousYear ? normalized[String(previousYear)] || "" : "";
+  };
+
   const parseOrganizationCatalogManualDocumentRunBase = (value) => {
     const base = stripOrganizationCatalogDocumentRunYear(value);
     const match = base.match(/^(\d{1,2})(?:[.-](\d{1,3}))?$/);
@@ -2754,7 +2780,7 @@ function initStaffAccessPages() {
       documentRunCodeByAcademicYear: source.documentRunCodeByAcademicYear,
       runCodeByAcademicYear: source.runCodeByAcademicYear
     });
-    return stripOrganizationCatalogDocumentRunYear(runMap[year] || "");
+    return stripOrganizationCatalogDocumentRunYear(getOrganizationCatalogYearValue(runMap, year));
   };
 
   const getOrganizationCatalogManualRunSubNumber = (value) => {
@@ -2791,7 +2817,7 @@ function initStaffAccessPages() {
         documentRunCodeByAcademicYear: item?.documentRunCodeByAcademicYear,
         runCodeByAcademicYear: item?.runCodeByAcademicYear
       });
-      const parsed = parseOrganizationCatalogManualDocumentRunBase(runMap[year] || "");
+      const parsed = parseOrganizationCatalogManualDocumentRunBase(getOrganizationCatalogYearValue(runMap, year));
       if (parsed.divisionCode !== divisionCode) return;
       const subNumber = Number(parsed.subCode);
       if (Number.isFinite(subNumber) && subNumber > maxSubCode) maxSubCode = subNumber;
@@ -2861,7 +2887,7 @@ function initStaffAccessPages() {
       ...normalizeOrganizationCatalogDocumentRunMap(documentRunCodeByAcademicYear)
     };
     const legacyRunCode = stripOrganizationCatalogDocumentRunYear(documentRunCode);
-    if (legacyRunCode && !Object.keys(map).length) {
+    if (legacyRunCode && !map[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR]) {
       map[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] = legacyRunCode;
     }
     return map;
@@ -2887,7 +2913,7 @@ function initStaffAccessPages() {
       documentRunCodeByAcademicYear,
       runCodeByAcademicYear
     });
-    return stripOrganizationCatalogDocumentRunYear(runMap[year] || "");
+    return stripOrganizationCatalogDocumentRunYear(getOrganizationCatalogYearValue(runMap, year));
   };
 
   const resolveOrganizationCatalogDocumentRunBaseFromForm = ({ group = "", code = "" } = {}) =>
@@ -2930,6 +2956,33 @@ function initStaffAccessPages() {
     }, {});
   };
 
+  const normalizeOrganizationCatalogYearTextMap = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.entries(value).reduce((acc, [year, text]) => {
+      const normalizedYear = normalizeOrganizationCatalogText(year);
+      const normalizedText = normalizeOrganizationCatalogText(text);
+      if (/^\d{4}$/.test(normalizedYear) && normalizedText) {
+        acc[normalizedYear] = normalizedText;
+      }
+      return acc;
+    }, {});
+  };
+
+  const buildOrganizationCatalogYearTextMap = ({ text = "", textByAcademicYear = {} } = {}) => {
+    const map = normalizeOrganizationCatalogYearTextMap(textByAcademicYear);
+    const legacyText = normalizeOrganizationCatalogText(text);
+    if (legacyText && !Object.keys(map).length) {
+      map[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] = legacyText;
+    }
+    return map;
+  };
+
+  const getOrganizationCatalogYearText = ({ text = "", textByAcademicYear = {}, academicYear = getOrganizationCatalogDisplayAcademicYear() } = {}) => {
+    const year = normalizeOrganizationCatalogText(academicYear);
+    const map = buildOrganizationCatalogYearTextMap({ text, textByAcademicYear });
+    return Object.keys(map).length ? normalizeOrganizationCatalogText(getOrganizationCatalogYearValue(map, year)) : normalizeOrganizationCatalogText(text);
+  };
+
   const buildOrganizationCatalogCodeMap = ({ group = "", code = "", codeByAcademicYear = {}, orgCodeByAcademicYear = {}, documentRunCodeByAcademicYear = {} } = {}) => {
     const map = {
       ...normalizeOrganizationCatalogCodeMap(orgCodeByAcademicYear),
@@ -2942,7 +2995,7 @@ function initStaffAccessPages() {
       });
     }
     const legacyCode = normalizeOrganizationCatalogText(code).toUpperCase();
-    if (legacyCode && !Object.keys(map).length) {
+    if (legacyCode && !map[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR]) {
       map[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] = legacyCode;
     }
     return map;
@@ -3012,6 +3065,7 @@ function initStaffAccessPages() {
         id,
         group,
         name,
+        nameByAcademicYear: buildOrganizationCatalogYearTextMap({ text: name }),
         code,
         codeByAcademicYear,
         documentRunCode,
@@ -3077,6 +3131,7 @@ function initStaffAccessPages() {
       id: item.id,
       group: item.group,
       name: item.name,
+      nameByAcademicYear: item.nameByAcademicYear,
       code: item.code,
       codeByAcademicYear: item.codeByAcademicYear,
       documentRunCode: item.documentRunCode,
@@ -3101,11 +3156,48 @@ function initStaffAccessPages() {
     } catch (_) {}
   };
 
+  const getOrganizationCatalogSharedAccountNoForGroup = (group = "") => {
+    const targetGroup = normalizeOrganizationCatalogText(group);
+    if (!isOrganizationCatalogManualDocumentRunGroup(targetGroup)) return "";
+    const match = getKnownOrganizationFilters().find((item) => {
+      const itemGroup = normalizeOrganizationCatalogText(item?.group || item?.organizationType || item?.orgGroup);
+      const accountNo = normalizeOrganizationCatalogText(item?.accountNo || item?.bankAccount || item?.bankAccountNo);
+      return itemGroup === targetGroup && accountNo;
+    });
+    return normalizeOrganizationCatalogText(match?.accountNo || match?.bankAccount || match?.bankAccountNo);
+  };
+
+  const getRawOrganizationCatalogItemById = (id = "") => {
+    const targetId = normalizeOrganizationCatalogText(id);
+    if (!targetId) return null;
+    return getKnownOrganizationFilters().find((item) => normalizeOrganizationCatalogText(item?.id) === targetId) || null;
+  };
+
+  const getRawOrganizationCatalogRows = () =>
+    getKnownOrganizationFilters()
+      .map((item) => ({
+        ...item,
+        id: normalizeOrganizationCatalogText(item?.id)
+      }))
+      .filter((item) => {
+        const status = normalizeOrganizationCatalogText(item?.status || "active").toLowerCase();
+        return item.id && (!status || status === "active");
+      });
+
   const getOrganizationCatalogRows = () =>
     getKnownOrganizationFilters()
       .map((item) => {
         const group = normalizeOrganizationCatalogText(item?.group || item?.organizationType || item?.orgGroup);
+        const isManualGroup = isOrganizationCatalogManualDocumentRunGroup(group);
         const rawCode = normalizeOrganizationCatalogText(item?.code || item?.orgCode).toUpperCase();
+        const rawName = normalizeOrganizationCatalogText(item?.name || item?.organizationName || item?.orgName);
+        const rawAccountNo = isManualGroup
+          ? getOrganizationCatalogSharedAccountNoForGroup(group) || normalizeOrganizationCatalogText(item?.accountNo || item?.bankAccount || item?.bankAccountNo)
+          : normalizeOrganizationCatalogText(item?.accountNo || item?.bankAccount || item?.bankAccountNo);
+        const nameByAcademicYear = buildOrganizationCatalogYearTextMap({
+          text: rawName,
+          textByAcademicYear: item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear
+        });
         const documentRunCode = resolveOrganizationCatalogDocumentRunBaseForGroup({
           group,
           code: rawCode,
@@ -3121,12 +3213,17 @@ function initStaffAccessPages() {
           documentRunCodeByAcademicYear: item?.documentRunCodeByAcademicYear || item?.runCodeByAcademicYear
         });
         const code = isOrganizationCatalogManualDocumentRunGroup(group)
-          ? codeByAcademicYear[getOrganizationCatalogDisplayAcademicYear()] || buildOrganizationCatalogManualCodeFromRunBase(group, documentRunCode) || rawCode
+          ? normalizeOrganizationCatalogText(getOrganizationCatalogYearValue(codeByAcademicYear, getOrganizationCatalogDisplayAcademicYear())).toUpperCase() ||
+            buildOrganizationCatalogManualCodeFromRunBase(group, documentRunCode) ||
+            rawCode
           : rawCode;
         return {
           id: normalizeOrganizationCatalogText(item?.id),
           group,
-          name: normalizeOrganizationCatalogText(item?.name || item?.organizationName || item?.orgName),
+          name: isManualGroup
+            ? getOrganizationCatalogYearText({ text: rawName, textByAcademicYear: nameByAcademicYear })
+            : rawName,
+          nameByAcademicYear,
           code,
           codeByAcademicYear,
           documentRunCode,
@@ -3135,7 +3232,7 @@ function initStaffAccessPages() {
             documentRunCodeByAcademicYear: item?.documentRunCodeByAcademicYear,
             runCodeByAcademicYear: item?.runCodeByAcademicYear
           }),
-          accountNo: normalizeOrganizationCatalogText(item?.accountNo || item?.bankAccount || item?.bankAccountNo)
+          accountNo: rawAccountNo
         };
       })
       .filter((item) => item.group && item.name)
@@ -3184,6 +3281,7 @@ function initStaffAccessPages() {
       return [
         item.group,
         item.name,
+        ...Object.values(item.nameByAcademicYear || {}),
         item.code,
         item.documentRunCode,
         ...Object.values(item.documentRunCodeByAcademicYear || {}),
@@ -3442,7 +3540,11 @@ function initStaffAccessPages() {
   };
 
   const buildOrganizationCatalogManualDocumentRunSaveFields = ({ item = {}, documentRunCodeByAcademicYear = {}, currentRunCode = "" } = {}) => {
-    const runMap = normalizeOrganizationCatalogDocumentRunMap(documentRunCodeByAcademicYear);
+    const runMap = buildOrganizationCatalogDocumentRunMap({
+      documentRunCode: currentRunCode || item.documentRunCode || item.runCode,
+      documentRunCodeByAcademicYear,
+      runCodeByAcademicYear: item.runCodeByAcademicYear
+    });
     const legacyRunCode = runMap[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] || stripOrganizationCatalogDocumentRunYear(currentRunCode);
     const activeRunCode = runMap[getOrganizationCatalogDisplayAcademicYear()] || legacyRunCode || Object.values(runMap)[0] || "";
     const codeMap = {
@@ -3454,12 +3556,13 @@ function initStaffAccessPages() {
       })
     };
     return {
-      documentRunCode: legacyRunCode || Object.values(runMap)[0] || "",
+      documentRunCode: legacyRunCode || normalizeOrganizationCatalogText(item.documentRunCode || item.runCode),
       documentRunCodeByAcademicYear: runMap,
-      code: codeMap[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] || buildOrganizationCatalogManualCodeFromRunBase(item.group, activeRunCode) || normalizeOrganizationCatalogText(item.code).toUpperCase(),
+      code: codeMap[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] || normalizeOrganizationCatalogText(item.code).toUpperCase() || buildOrganizationCatalogManualCodeFromRunBase(item.group, activeRunCode),
       codeByAcademicYear: codeMap,
       accountNo: normalizeOrganizationCatalogText(item.accountNo || item.bankAccount || item.bankAccountNo),
-      bankAccount: normalizeOrganizationCatalogText(item.accountNo || item.bankAccount || item.bankAccountNo)
+      bankAccount: normalizeOrganizationCatalogText(item.accountNo || item.bankAccount || item.bankAccountNo),
+      nameByAcademicYear: normalizeOrganizationCatalogYearTextMap(item.nameByAcademicYear)
     };
   };
 
@@ -3502,12 +3605,27 @@ function initStaffAccessPages() {
         return {
           id: item.id,
           group: item.group,
-          name: item.name,
           ...saveFields,
           status: "active"
         };
       })
       .filter(Boolean);
+  };
+
+  const buildOrganizationCatalogSharedAccountUpdates = ({ payload = {} } = {}) => {
+    const group = normalizeOrganizationCatalogText(payload.group);
+    if (!isOrganizationCatalogManualDocumentRunGroup(group)) return [];
+    const accountNo = normalizeOrganizationCatalogText(payload.accountNo || payload.bankAccount || payload.bankAccountNo);
+    return getRawOrganizationCatalogRows()
+      .filter((item) => {
+        const itemGroup = normalizeOrganizationCatalogText(item?.group || item?.organizationType || item?.orgGroup);
+        return item.id && item.id !== payload.id && itemGroup === group;
+      })
+      .map((item) => ({
+        id: item.id,
+        accountNo,
+        bankAccount: accountNo
+      }));
   };
 
   const buildOrganizationCatalogPayloadFromForm = () => {
@@ -3527,31 +3645,52 @@ function initStaffAccessPages() {
       ? buildOrganizationCatalogManualCodeFromRunBase(group, documentRunCode) || formCode
       : formCode;
     const academicYear = getOrganizationCatalogDisplayAcademicYear();
-    const existingItem = id ? getOrganizationCatalogRows().find((item) => item.id === id) : null;
-    const documentRunCodeByAcademicYear = {
-      ...normalizeOrganizationCatalogDocumentRunMap(existingItem?.documentRunCodeByAcademicYear)
-    };
+    const existingItem = id ? getRawOrganizationCatalogItemById(id) : null;
+    const documentRunCodeByAcademicYear = buildOrganizationCatalogDocumentRunMap({
+      documentRunCode: existingItem?.documentRunCode || existingItem?.runCode,
+      documentRunCodeByAcademicYear: existingItem?.documentRunCodeByAcademicYear,
+      runCodeByAcademicYear: existingItem?.runCodeByAcademicYear
+    });
     if (documentRunCode && isOrganizationCatalogManualDocumentRunGroup(group)) {
       documentRunCodeByAcademicYear[academicYear] = documentRunCode;
     }
-    const codeByAcademicYear = {
-      ...normalizeOrganizationCatalogCodeMap(existingItem?.codeByAcademicYear)
-    };
+    const codeByAcademicYear = buildOrganizationCatalogCodeMap({
+      group,
+      code: existingItem?.code || existingItem?.orgCode,
+      codeByAcademicYear: existingItem?.codeByAcademicYear,
+      orgCodeByAcademicYear: existingItem?.orgCodeByAcademicYear,
+      documentRunCodeByAcademicYear
+    });
     if (code && isOrganizationCatalogManualDocumentRunGroup(group)) {
       codeByAcademicYear[academicYear] = code;
     }
+    const isManualGroup = isOrganizationCatalogManualDocumentRunGroup(group);
+    const accountNo = normalizeOrganizationCatalogText(organizationCatalogFields.accountNo?.value);
+    const nameByAcademicYear = buildOrganizationCatalogYearTextMap({
+      text: existingItem?.name || existingItem?.organizationName || existingItem?.orgName,
+      textByAcademicYear: existingItem?.nameByAcademicYear || existingItem?.organizationNameByAcademicYear || existingItem?.orgNameByAcademicYear
+    });
+    if (name && isManualGroup) {
+      nameByAcademicYear[academicYear] = name;
+    }
     const storedDocumentRunCode = isOrganizationCatalogManualDocumentRunGroup(group)
-      ? documentRunCodeByAcademicYear[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] || documentRunCode || ""
+      ? documentRunCodeByAcademicYear[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] || normalizeOrganizationCatalogText(existingItem?.documentRunCode || existingItem?.runCode)
       : documentRunCode;
     const storedCode = isOrganizationCatalogManualDocumentRunGroup(group)
-      ? codeByAcademicYear[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] || code
+      ? codeByAcademicYear[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] || normalizeOrganizationCatalogText(existingItem?.code || existingItem?.orgCode).toUpperCase() || code
       : code;
-    const accountNo = normalizeOrganizationCatalogText(organizationCatalogFields.accountNo?.value);
+    const storedName = isManualGroup
+      ? nameByAcademicYear[ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR] ||
+        normalizeOrganizationCatalogText(existingItem?.name || existingItem?.organizationName || existingItem?.orgName) ||
+        (academicYear === ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR ? name : "")
+      : name;
     const docId = id || slugifyOrganizationCatalogId(`${group}-${isOrganizationCatalogManualDocumentRunGroup(group) ? name : code || name}`);
     return {
       id: docId,
       group,
-      name,
+      name: storedName,
+      nameByAcademicYear,
+      formName: name,
       code: storedCode,
       codeByAcademicYear,
       documentRunCode: storedDocumentRunCode,
@@ -3571,7 +3710,7 @@ function initStaffAccessPages() {
       return;
     }
     const payload = buildOrganizationCatalogPayloadFromForm();
-    if (!payload.group || !payload.name) {
+    if (!payload.group || !payload.formName) {
       setMessage(organizationCatalogFormMessageEl, "กรุณากรอกประเภทองค์กรและชื่อองค์กร", "#b91c1c");
       return;
     }
@@ -3586,11 +3725,21 @@ function initStaffAccessPages() {
     try {
       if (organizationCatalogSaveBtnEl) organizationCatalogSaveBtnEl.disabled = true;
       setMessage(organizationCatalogFormMessageEl, "กำลังบันทึก...", "#1d4ed8");
-      const { id, requiresDocumentRunCode, ...fields } = payload;
+      const { id, requiresDocumentRunCode, formName, ...fields } = payload;
       const moveUpdates = buildOrganizationCatalogManualMoveUpdates({
         payload,
         academicYear: getOrganizationCatalogDisplayAcademicYear()
       });
+      const sharedAccountUpdates = buildOrganizationCatalogSharedAccountUpdates({ payload });
+      const secondaryUpdates = Array.from(
+        [...moveUpdates, ...sharedAccountUpdates]
+          .reduce((map, item) => {
+            if (!item?.id) return map;
+            map.set(item.id, { ...(map.get(item.id) || {}), ...item });
+            return map;
+          }, new Map())
+          .values()
+      );
       const writeFields = (item) => {
         const { id: itemId, ...itemFields } = item;
         return {
@@ -3604,7 +3753,7 @@ function initStaffAccessPages() {
       };
       const writes = [
         writeFields({ id, ...fields }),
-        ...moveUpdates.map(writeFields)
+        ...secondaryUpdates.map(writeFields)
       ];
       if (firestore.writeBatch && writes.length > 1) {
         const batch = firestore.writeBatch(firestore.db);
@@ -3616,22 +3765,16 @@ function initStaffAccessPages() {
         }
       }
 
-      const updatedById = new Map(moveUpdates.map((item) => [item.id, item]));
-      const nextRows = getOrganizationCatalogRows()
+      const updatedById = new Map(secondaryUpdates.map((item) => [item.id, item]));
+      const nextRows = getRawOrganizationCatalogRows()
         .filter((item) => item.id !== id)
-        .map((item) => updatedById.get(item.id) || item);
+        .map((item) => updatedById.has(item.id) ? { ...item, ...updatedById.get(item.id) } : item);
       nextRows.push({
         id,
-        group: payload.group,
-        name: payload.name,
-        code: payload.code,
-        codeByAcademicYear: payload.codeByAcademicYear,
-        documentRunCode: payload.documentRunCode,
-        documentRunCodeByAcademicYear: payload.documentRunCodeByAcademicYear,
-        accountNo: payload.accountNo
+        ...fields
       });
       setLocalOrganizationCatalogRows(nextRows);
-      fillOrganizationCatalogForm(nextRows.find((item) => item.id === id));
+      fillOrganizationCatalogForm(getOrganizationCatalogRows().find((item) => item.id === id));
       setMessage(organizationCatalogFormMessageEl, "บันทึกทะเบียนองค์กรแล้ว", "#047857");
       renderOrgRepresentativeApplications();
     } catch (error) {
@@ -3668,7 +3811,7 @@ function initStaffAccessPages() {
           updatedBy
         }
       );
-      setLocalOrganizationCatalogRows(getOrganizationCatalogRows().filter((item) => item.id !== id));
+      setLocalOrganizationCatalogRows(getRawOrganizationCatalogRows().filter((item) => item.id !== id));
       resetOrganizationCatalogForm();
       setMessage(organizationCatalogFormMessageEl, "ลบออกจากทะเบียนแล้ว", "#047857");
       renderOrgRepresentativeApplications();
@@ -3778,9 +3921,10 @@ function initStaffAccessPages() {
       String(getCurrentAcademicYearBE()),
       ORGANIZATION_CATALOG_LEGACY_DOCUMENT_RUN_ACADEMIC_YEAR,
       ...currentOrgRepresentativeApplications.map((item) => getOrgRepresentativeAcademicYear(item)),
-      ...getOrganizationCatalogRows().flatMap((item) => [
+      ...getRawOrganizationCatalogRows().flatMap((item) => [
         ...Object.keys(item.documentRunCodeByAcademicYear || {}),
-        ...Object.keys(item.codeByAcademicYear || {})
+        ...Object.keys(item.codeByAcademicYear || {}),
+        ...Object.keys(item.nameByAcademicYear || {})
       ])
     ].filter(Boolean))).sort((a, b) => Number(b) - Number(a));
 
@@ -3799,9 +3943,11 @@ function initStaffAccessPages() {
     currentOrgRepresentativeAcademicYear =
       syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, years, selected) ||
       syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, years, selected) ||
+      syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, years, selected) ||
       String(getCurrentAcademicYearBE());
     syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, years, currentOrgRepresentativeAcademicYear);
     syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, years, currentOrgRepresentativeAcademicYear);
+    syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, years, currentOrgRepresentativeAcademicYear);
   };
 
   const setOrgRepresentativeAcademicYear = (value) => {
@@ -3810,6 +3956,7 @@ function initStaffAccessPages() {
     const years = getOrgRepresentativeAcademicYearOptions();
     syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, years, nextYear);
     syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, years, nextYear);
+    syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, years, nextYear);
     refreshSelectedOrganizationCatalogFormForAcademicYear();
     renderOrganizationCatalogTable();
   };
@@ -6004,6 +6151,9 @@ function initStaffAccessPages() {
   organizationCatalogResetBtnEl?.addEventListener("click", resetOrganizationCatalogForm);
   organizationCatalogArchiveBtnEl?.addEventListener("click", () => {
     void archiveCurrentOrganizationCatalogItem();
+  });
+  organizationCatalogTableAcademicYearFilterEl?.addEventListener("change", () => {
+    setOrgRepresentativeAcademicYear(organizationCatalogTableAcademicYearFilterEl.value);
   });
   organizationCatalogGroupFilterEl?.addEventListener("change", () => {
     organizationCatalogFilters.group = organizationCatalogGroupFilterEl.value || "all";

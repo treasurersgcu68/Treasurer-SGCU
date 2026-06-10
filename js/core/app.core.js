@@ -267,15 +267,30 @@ const centerTextPlugin = {
     ctx.textBaseline = "middle";
 
     const fontFamily = options.fontFamily || "Kanit";
-    const mainSize = options.fontSize || 20;
-    const subSize = options.subFontSize || 11;
+    const requestedMainSize = options.fontSize || 20;
+    const requestedSubSize = options.subFontSize || 11;
+    const firstArc = datasetMeta.data[0];
+    const innerRadius = Number(firstArc.innerRadius) || Math.min(chart.width, chart.height) * 0.28;
+    const maxTextWidth = Math.max(44, innerRadius * 1.56);
+
+    ctx.font = `${requestedMainSize}px ${fontFamily}`;
+    const mainWidth = ctx.measureText(text).width;
+    ctx.font = `${requestedSubSize}px ${fontFamily}`;
+    const subWidth = subText ? ctx.measureText(subText).width : 0;
+    const fitScale = Math.min(1, maxTextWidth / Math.max(mainWidth, subWidth, 1));
+    const mainSize = Math.max(14, Math.floor(requestedMainSize * fitScale));
+    const subSize = Math.max(8, Math.floor(requestedSubSize * fitScale));
 
     if (subText) {
       ctx.font = `${mainSize}px ${fontFamily}`;
-      ctx.fillText(text, centerX, centerY - 6);
+      const lineGap = Math.max(5, Math.round(subSize * 0.45));
+      const totalHeight = mainSize + lineGap + subSize;
+      const mainY = centerY - totalHeight / 2 + mainSize / 2;
+      const subY = centerY + totalHeight / 2 - subSize / 2;
+      ctx.fillText(text, centerX, mainY);
 
       ctx.font = `${subSize}px ${fontFamily}`;
-      ctx.fillText(subText, centerX, centerY + mainSize * 0.4);
+      ctx.fillText(subText, centerX, subY);
     } else {
       ctx.font = `${mainSize}px ${fontFamily}`;
       ctx.fillText(text, centerX, centerY);

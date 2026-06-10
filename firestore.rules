@@ -3,13 +3,24 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
-      return request.auth != null;
+      return request.auth != null && allowedAuthenticatedEmail();
+    }
+
+    function rawAuthEmail() {
+      return request.auth != null && request.auth.token.email is string
+        ? request.auth.token.email
+        : "";
+    }
+
+    function allowedAuthenticatedEmail() {
+      return rawAuthEmail().matches(".*@([^@]+\\.)?chula\\.ac\\.th$") ||
+        rawAuthEmail() in [
+          "tuwanon.kimchiang@gmail.com"
+        ];
     }
 
     function userEmail() {
-      return signedIn() && request.auth.token.email is string
-        ? request.auth.token.email
-        : "";
+      return signedIn() ? rawAuthEmail() : "";
     }
 
     function userUid() {

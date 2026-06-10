@@ -45,6 +45,39 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const ALLOWED_AUTH_EMAIL_DOMAIN = "chula.ac.th";
+const AUTH_EMAIL_EXCEPTIONS = new Set([
+  "tuwanon.kimchiang@gmail.com"
+]);
+
+function normalizeAuthEmail(email) {
+  return (email || "").toString().trim().toLowerCase();
+}
+
+function getAuthEmailDomain(email) {
+  const normalized = normalizeAuthEmail(email);
+  const atIndex = normalized.lastIndexOf("@");
+  return atIndex >= 0 ? normalized.slice(atIndex + 1) : "";
+}
+
+function isAllowedAuthEmail(email) {
+  const normalized = normalizeAuthEmail(email);
+  const domain = getAuthEmailDomain(normalized);
+  return (
+    domain === ALLOWED_AUTH_EMAIL_DOMAIN ||
+    domain.endsWith(`.${ALLOWED_AUTH_EMAIL_DOMAIN}`) ||
+    AUTH_EMAIL_EXCEPTIONS.has(normalized)
+  );
+}
+
+function getAuthEmailRequirementMessage(email) {
+  const normalized = normalizeAuthEmail(email);
+  const suffix = normalized ? `\nอีเมลที่ใช้: ${normalized}` : "";
+  return [
+    `กรุณาเข้าสู่ระบบด้วยอีเมลที่ลงท้าย ${ALLOWED_AUTH_EMAIL_DOMAIN}`,
+    "ยกเว้นบัญชีที่ได้รับอนุญาตเป็นรายกรณี"
+  ].join("\n") + suffix;
+}
 
 window.sgcuFirestore = {
   db,
@@ -72,7 +105,11 @@ window.sgcuAuth = {
   signInWithPopup,
   signOut,
   onAuthStateChanged,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  allowedEmailDomain: ALLOWED_AUTH_EMAIL_DOMAIN,
+  allowedEmailExceptions: Array.from(AUTH_EMAIL_EXCEPTIONS),
+  isAllowedAuthEmail,
+  getAuthEmailRequirementMessage
 };
 
 window.sgcuAnalytics = {

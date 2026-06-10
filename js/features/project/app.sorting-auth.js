@@ -1329,6 +1329,9 @@ function initAuthUI() {
   const budgetRepresentativeApplyBtnEl = document.getElementById("budgetRepresentativeApplyBtn");
   const loginHeroEl = document.querySelector(".login-hero");
   const loginHeroContentEl = document.getElementById("loginHeroContent");
+  const authAlertModalEl = document.getElementById("authAlertModal");
+  const authAlertMessageEl = document.getElementById("authAlertMessage");
+  const authAlertCloseEl = document.getElementById("authAlertClose");
 
   if (!window.sgcuAuth) {
     const panel = document.getElementById("authPanel");
@@ -1381,7 +1384,9 @@ function initAuthUI() {
     GoogleAuthProvider,
     signInWithPopup,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    isAllowedAuthEmail = () => true,
+    getAuthEmailRequirementMessage = () => "บัญชีนี้ไม่ได้รับอนุญาตให้เข้าสู่ระบบ"
   } = window.sgcuAuth;
 
   if (!auth) return;
@@ -2280,6 +2285,23 @@ function initAuthUI() {
   }
 
   onAuthStateChanged(auth, (user) => {
+    if (user && !isAllowedAuthEmail(user.email)) {
+      const message = getAuthEmailRequirementMessage(user.email);
+      clearAuthSession();
+      signOut(auth).catch((err) => {
+        console.error("auto logout error (email domain not allowed)", err);
+      });
+      refreshAuthDisplay(null);
+      if (loginPageStatusEl) {
+        loginPageStatusEl.textContent = message;
+      }
+      window.dispatchEvent(
+        new CustomEvent("sgcu:auth-state", {
+          detail: { isAuthenticated: false }
+        })
+      );
+      return;
+    }
     watchCurrentStaffApproval(user || null);
     watchCurrentRepresentativeApproval(user || null);
     if (user) {
@@ -2325,6 +2347,10 @@ function initAuthUI() {
         ].join("\n");
       }
 
+      if (code === "auth/email-domain-not-allowed") {
+        return err?.message || getAuthEmailRequirementMessage();
+      }
+
       if (protocol !== "https:" && host !== "localhost") {
         return [
           "ล็อกอินไม่สำเร็จ: หน้าเว็บไม่ได้เปิดผ่าน HTTPS",
@@ -2336,9 +2362,56 @@ function initAuthUI() {
       return `ล็อกอินไม่สำเร็จ (${code || "unknown"}): ${err?.message || err}`;
     }
 
-    signInWithPopup(auth, new GoogleAuthProvider()).catch((err) => {
-      alert(getAuthErrorMessage(err));
-    });
+    function closeAuthAlert() {
+      if (authAlertModalEl && typeof closeDialog === "function") {
+        closeDialog(authAlertModalEl);
+      } else if (authAlertModalEl) {
+        authAlertModalEl.classList.remove("show");
+        authAlertModalEl.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    function showAuthAlert(message) {
+      const safeMessage = (message || "ไม่สามารถเข้าสู่ระบบได้ กรุณาลองอีกครั้ง").toString();
+      if (!authAlertModalEl || !authAlertMessageEl) {
+        alert(safeMessage);
+        return;
+      }
+      authAlertMessageEl.textContent = safeMessage;
+      if (typeof openDialog === "function") {
+        openDialog(authAlertModalEl, { focusSelector: "#authAlertClose" });
+      } else {
+        authAlertModalEl.classList.add("show");
+        authAlertModalEl.setAttribute("aria-hidden", "false");
+      }
+    }
+
+    if (authAlertCloseEl && !authAlertCloseEl.dataset.authAlertBound) {
+      authAlertCloseEl.dataset.authAlertBound = "true";
+      authAlertCloseEl.addEventListener("click", closeAuthAlert);
+    }
+    if (authAlertModalEl && !authAlertModalEl.dataset.authAlertBound) {
+      authAlertModalEl.dataset.authAlertBound = "true";
+      authAlertModalEl.addEventListener("click", (event) => {
+        if (event.target === authAlertModalEl) closeAuthAlert();
+      });
+    }
+
+    signInWithPopup(auth, new GoogleAuthProvider())
+      .then(async (credential) => {
+        const user = credential?.user || auth.currentUser;
+        if (!isAllowedAuthEmail(user?.email)) {
+          await signOut(auth).catch((err) => {
+            console.error("logout error (email domain not allowed)", err);
+          });
+          const err = new Error(getAuthEmailRequirementMessage(user?.email));
+          err.code = "auth/email-domain-not-allowed";
+          throw err;
+        }
+      })
+      .catch((err) => {
+        showAuthAlert(getAuthErrorMessage(err));
+      });
   }
 
   if (loginBtnEl) {

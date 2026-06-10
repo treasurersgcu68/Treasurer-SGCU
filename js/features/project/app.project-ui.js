@@ -25,7 +25,9 @@ function getProjectOrgYearValue(map = {}, academicYear = "") {
 }
 
 function getProjectOrgDisplayYear() {
-  return normalizeProjectOrgAcademicYear(yearSelect?.value) ||
+  const activeContextYear = projectStatusContexts?.[activeProjectStatusContext]?.yearSelect?.value;
+  return normalizeProjectOrgAcademicYear(activeContextYear) ||
+    normalizeProjectOrgAcademicYear(yearSelect?.value) ||
     normalizeProjectOrgAcademicYear(typeof selectedProjectSourceYear !== "undefined" ? selectedProjectSourceYear : "");
 }
 

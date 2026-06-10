@@ -1,6 +1,6 @@
 /* Data loading (Google Sheets + localStorage cache) */
 const ORG_FILTERS_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
-const ORG_FILTERS_CACHE_SCHEMA_VERSION = 2;
+const ORG_FILTERS_CACHE_SCHEMA_VERSION = 3;
 const ORG_FILTERS_LEGACY_ACADEMIC_YEAR = "2568";
 
 function isPublishedHtmlSheetUrl(url) {
@@ -617,7 +617,7 @@ function normalizeOrganizationCatalogDoc(docSnap) {
   const data = docSnap?.data ? docSnap.data() : {};
   const row = Array.isArray(data.row) ? data.row : [];
   const group = (data.group || data.orgGroup || data.type || row[0] || "").toString().trim();
-  const name = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
+  const rawName = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
   const normalizeYearTextMap = (value) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
     return Object.entries(value).reduce((acc, [year, text]) => {
@@ -634,9 +634,15 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     ...normalizeYearTextMap(data.organizationNameByAcademicYear),
     ...normalizeYearTextMap(data.orgNameByAcademicYear)
   };
-  if (name && !Object.keys(nameByAcademicYear).length) {
-    nameByAcademicYear[ORG_FILTERS_LEGACY_ACADEMIC_YEAR] = name;
+  if (rawName && !Object.keys(nameByAcademicYear).length) {
+    nameByAcademicYear[ORG_FILTERS_LEGACY_ACADEMIC_YEAR] = rawName;
   }
+  const fallbackName =
+    rawName ||
+    nameByAcademicYear[(selectedProjectSourceYear || "").toString().trim()] ||
+    nameByAcademicYear[(activeProjectSourceConfig?.year || "").toString().trim()] ||
+    Object.values(nameByAcademicYear)[0] ||
+    "";
   const code = (data.code || data.orgCode || row[2] || "").toString().trim().toUpperCase();
   const documentRunCode = (data.documentRunCode || data.runCode || row[3] || "").toString().trim();
   const normalizeRunMap = (value) => {
@@ -683,11 +689,11 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     codeByAcademicYear["2568"] = code;
   }
   const accountNo = (data.accountNo || data.bankAccount || data.bankAccountNo || row[4] || "").toString().trim();
-  if (!group || !name) return null;
+  if (!group || (!fallbackName && !Object.keys(nameByAcademicYear).length)) return null;
   return {
     id: docSnap.id,
     group,
-    name,
+    name: fallbackName,
     nameByAcademicYear,
     code,
     codeByAcademicYear,

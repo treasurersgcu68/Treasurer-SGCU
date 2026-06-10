@@ -5,6 +5,8 @@ const HOME_NEWS_PREVIEW_MOBILE_LIMIT = 2;
 const HOME_NEWS_PREVIEW_MOBILE_QUERY = "(max-width: 640px)";
 const NEWS_AUTO_POPUP_RECENT_DAYS = 7;
 const NEWS_AUTO_POPUP_STORAGE_KEY = "sgcu:auto-news-popup:v1";
+const NEWS_PUBLIC_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const NEWS_PUBLIC_FIRESTORE_LIMIT = 30;
 const newsFilterState = {
   query: "",
   year: "all",
@@ -175,10 +177,10 @@ async function loadNewsFromFirestore() {
   if (!store.db || !store.collection || !store.getDocs) return null;
 
   const collectionRef = store.collection(store.db, collectionName);
-  const listQuery =
-    store.query && store.where
-      ? store.query(collectionRef, store.where("status", "==", "published"))
-      : collectionRef;
+  const constraints = [];
+  if (store.where) constraints.push(store.where("status", "==", "published"));
+  if (store.limit) constraints.push(store.limit(NEWS_PUBLIC_FIRESTORE_LIMIT));
+  const listQuery = store.query && constraints.length ? store.query(collectionRef, ...constraints) : collectionRef;
   const snapshot = await store.getDocs(listQuery);
   const items = [];
   snapshot.forEach((docSnap) => {
@@ -192,7 +194,7 @@ async function loadNewsFromSheet() {
   try {
     toggleNewsSkeleton(true);
 
-    const cached = getCache(CACHE_KEYS.NEWS, CACHE_TTL_MS);
+    const cached = getCache(CACHE_KEYS.NEWS, NEWS_PUBLIC_CACHE_TTL_MS);
     if (
       cached?.source === NEWS_CACHE_SOURCE_FIRESTORE &&
       Array.isArray(cached.items) &&

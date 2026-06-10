@@ -1,4 +1,6 @@
 /* Data loading (Google Sheets + localStorage cache) */
+const ORG_FILTERS_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+
 function isPublishedHtmlSheetUrl(url) {
   return /\/pubhtml(?:$|[/?#])/i.test((url || "").toString());
 }
@@ -704,6 +706,13 @@ async function loadOrgFiltersFromFirestore() {
 // โหลดตัวเลือก filter จาก Firestore collection `organizationCatalog` เท่านั้น
 async function loadOrgFilters() {
   try {
+    const cached = getCache(CACHE_KEYS.ORG_FILTERS, ORG_FILTERS_CACHE_TTL_MS);
+    if (Array.isArray(cached) && cached.length) {
+      orgFilters = cached;
+      clearLoadError("orgFilters");
+      return;
+    }
+
     const firestoreItems = await loadOrgFiltersFromFirestore();
     if (firestoreItems && firestoreItems.length) {
       orgFilters = firestoreItems;

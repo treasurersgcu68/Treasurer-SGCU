@@ -1,4 +1,77 @@
 /* Pie chart: สัดส่วนงบประมาณที่ได้รับอนุมัติ */
+function updateStatusPieCenterText(text, subText = "") {
+  const centerEl = document.getElementById("statusPieCenterText");
+  if (!centerEl || !statusPieChart) return;
+
+  const mainEl = centerEl.querySelector(".status-pie-center-main");
+  const subEl = centerEl.querySelector(".status-pie-center-sub");
+  if (mainEl) mainEl.textContent = text || "";
+  if (subEl) subEl.textContent = subText || "";
+
+  centerEl.hidden = !text;
+  if (!text) return;
+
+  const canvas = statusPieChart.canvas;
+  const chartInner = centerEl.offsetParent;
+  const arc = statusPieChart.getDatasetMeta(0)?.data?.[0];
+  if (!canvas || !chartInner || !arc) return;
+
+  bindStatusPieCenterTextEvents(canvas);
+
+  const canvasRect = canvas.getBoundingClientRect();
+  const innerRect = chartInner.getBoundingClientRect();
+  centerEl.style.left = `${canvasRect.left - innerRect.left + arc.x}px`;
+  centerEl.style.top = `${canvasRect.top - innerRect.top + arc.y}px`;
+  syncStatusPieCenterTextVisibility();
+}
+
+function repositionStatusPieCenterText() {
+  const centerEl = document.getElementById("statusPieCenterText");
+  if (!centerEl || centerEl.hidden) return;
+  const text = centerEl.querySelector(".status-pie-center-main")?.textContent || "";
+  const subText = centerEl.querySelector(".status-pie-center-sub")?.textContent || "";
+  updateStatusPieCenterText(text, subText);
+}
+
+function syncStatusPieCenterTextVisibility(forceVisible = false) {
+  const centerEl = document.getElementById("statusPieCenterText");
+  if (!centerEl || centerEl.hidden || !statusPieChart) return;
+
+  const activeElements = statusPieChart.getActiveElements?.() || [];
+  const tooltipVisible = Number(statusPieChart.tooltip?.opacity || 0) > 0;
+  centerEl.classList.toggle(
+    "is-suppressed",
+    !forceVisible && (activeElements.length > 0 || tooltipVisible)
+  );
+}
+
+function bindStatusPieCenterTextEvents(canvas) {
+  if (!canvas || canvas.dataset.statusPieCenterEvents === "bound") return;
+  canvas.dataset.statusPieCenterEvents = "bound";
+
+  const scheduleSync = () => {
+    window.requestAnimationFrame(() => syncStatusPieCenterTextVisibility());
+  };
+
+  canvas.addEventListener("pointermove", scheduleSync, { passive: true });
+  canvas.addEventListener("pointerdown", scheduleSync, { passive: true });
+  canvas.addEventListener(
+    "pointerleave",
+    () => {
+      window.requestAnimationFrame(() => syncStatusPieCenterTextVisibility(true));
+    },
+    { passive: true }
+  );
+}
+
+window.addEventListener(
+  "resize",
+  () => {
+    window.requestAnimationFrame(repositionStatusPieCenterText);
+  },
+  { passive: true }
+);
+
 function updateApprovedBudgetPie(filtered) {
   if (!statusPieChart) return;
 
@@ -177,6 +250,9 @@ function updateApprovedBudgetPie(filtered) {
   statusPieChart.data.datasets[0].backgroundColor = bgColors;
   statusPieChart.data.datasets[0].offset = offsets;
 
+  let centerText = "";
+  let centerSubText = "";
+
   if (highlightLabel) {
     const idx = labels.indexOf(highlightLabel);
     if (idx !== -1) {
@@ -184,28 +260,30 @@ function updateApprovedBudgetPie(filtered) {
       const percent =
         sumBase > 0 ? Math.round((sumApproved / sumBase) * 100) : 0;
 
-      statusPieChart.options.plugins.centerText.text = percent + "%";
+      centerText = percent + "%";
 
       if (targetVal > 0) {
         const positiveValues = data.filter((v) => v > 0);
         const rankedValues = [...new Set(positiveValues)].sort((a, b) => b - a);
         const rank = rankedValues.findIndex((v) => v === targetVal) + 1;
 
-        statusPieChart.options.plugins.centerText.subText =
-          rank > 0 ? `อันดับงบ ${rank}/${positiveValues.length}` : "";
+        centerSubText = rank > 0 ? `อันดับงบ ${rank}/${positiveValues.length}` : "";
       } else {
-        statusPieChart.options.plugins.centerText.subText = "ไม่มีงบอนุมัติ";
+        centerSubText = "ไม่มีงบอนุมัติ";
       }
     } else {
-      statusPieChart.options.plugins.centerText.text = "0%";
-      statusPieChart.options.plugins.centerText.subText = "";
+      centerText = "0%";
     }
   } else {
     const percent =
       sumBase > 0 ? Math.round((sumApproved / sumBase) * 100) : 0;
-    statusPieChart.options.plugins.centerText.text = percent + "%";
-    statusPieChart.options.plugins.centerText.subText = "";
+    centerText = percent + "%";
   }
 
+  if (statusPieChart.options.plugins.centerText) {
+    statusPieChart.options.plugins.centerText.text = "";
+    statusPieChart.options.plugins.centerText.subText = "";
+  }
   statusPieChart.update("none");
+  updateStatusPieCenterText(centerText, centerSubText);
 }

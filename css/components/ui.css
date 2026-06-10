@@ -1493,6 +1493,45 @@ th.sortable.sort-desc::after {
   z-index: 1;
 }
 
+.status-pie-center-text {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  min-width: 74px;
+  max-width: 128px;
+  color: #111827;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.status-pie-center-text[hidden] {
+  display: none;
+}
+
+.status-pie-center-text.is-suppressed {
+  opacity: 0;
+}
+
+.status-pie-center-main {
+  font-size: clamp(21px, 6.2vw, 30px);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.status-pie-center-sub {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(10px, 3vw, 13px);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+}
+
 .chart-external-axis-labels {
   position: absolute;
   inset: 0;

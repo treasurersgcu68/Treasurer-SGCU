@@ -609,6 +609,123 @@ function initStaffAccessPages() {
     });
   };
 
+  const ensureOrgRepresentativeDeleteConfirmModal = () => {
+    let modalEl = document.getElementById("orgRepresentativeDeleteConfirmModal");
+    if (modalEl) return modalEl;
+    if (!document.body) return null;
+
+    document.body.insertAdjacentHTML("beforeend", `
+      <div
+        id="orgRepresentativeDeleteConfirmModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden="true"
+        aria-labelledby="orgRepresentativeDeleteConfirmTitle"
+      >
+        <div class="modal-dialog org-representative-delete-dialog">
+          <div class="modal-header">
+            <div>
+              <div id="orgRepresentativeDeleteConfirmTitle" class="modal-title">ลบออกจากรายชื่อ</div>
+              <div id="orgRepresentativeDeleteConfirmSubtitle" class="modal-subtitle">ยืนยันการลบตัวแทนรายคน</div>
+            </div>
+            <button id="orgRepresentativeDeleteConfirmClose" type="button" class="modal-close" aria-label="ปิด">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-section org-representative-delete-confirm-body">
+              <div class="budget-round-delete-warning">
+                <div>
+                  <div id="orgRepresentativeDeleteConfirmName" class="budget-round-delete-name">-</div>
+                  <div id="orgRepresentativeDeleteConfirmSummary" class="budget-round-delete-summary">-</div>
+                </div>
+              </div>
+              <div class="budget-round-delete-step-text">
+                หลังยืนยันแล้ว รายการคำขอตัวแทนนี้จะถูกลบออกจากระบบ
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer org-representative-delete-actions">
+            <button id="orgRepresentativeDeleteConfirmCancel" type="button" class="btn-ghost">ยกเลิก</button>
+            <button id="orgRepresentativeDeleteConfirmSubmit" type="button" class="btn-primary budget-round-delete-confirm">ลบออกจากรายชื่อ</button>
+          </div>
+        </div>
+      </div>
+    `);
+    return document.getElementById("orgRepresentativeDeleteConfirmModal");
+  };
+
+  const askOrgRepresentativeDeleteConfirm = (item) => {
+    const modalEl = ensureOrgRepresentativeDeleteConfirmModal();
+    const nameEl = document.getElementById("orgRepresentativeDeleteConfirmName");
+    const summaryEl = document.getElementById("orgRepresentativeDeleteConfirmSummary");
+    const subtitleEl = document.getElementById("orgRepresentativeDeleteConfirmSubtitle");
+    const submitEl = document.getElementById("orgRepresentativeDeleteConfirmSubmit");
+    const cancelEl = document.getElementById("orgRepresentativeDeleteConfirmCancel");
+    const closeEl = document.getElementById("orgRepresentativeDeleteConfirmClose");
+    const applicant = getOrgRepresentativeApplicant(item);
+    const displayName = applicant.displayName || applicant.email || "-";
+    const orgName = (item?.organizationName || "-").toString();
+    const orgType = (item?.organizationType || "-").toString();
+    const academicYear = getOrgRepresentativeAcademicYear(item);
+
+    if (
+      !modalEl ||
+      !(submitEl instanceof HTMLButtonElement) ||
+      !(cancelEl instanceof HTMLButtonElement) ||
+      !(closeEl instanceof HTMLButtonElement)
+    ) {
+      return Promise.resolve(window.confirm(`ยืนยันลบ "${displayName}" ออกจากรายชื่อตัวแทนของ "${orgName}" ?`));
+    }
+
+    if (nameEl) nameEl.textContent = displayName;
+    if (summaryEl) summaryEl.textContent = `${orgName} · ${orgType} · ปีการศึกษา ${academicYear || "-"}`;
+    if (subtitleEl) subtitleEl.textContent = `ตำแหน่ง ${item?.representativeRole || "-"}`;
+
+    return new Promise((resolve) => {
+      const cleanup = () => {
+        submitEl.removeEventListener("click", onSubmit);
+        cancelEl.removeEventListener("click", onCancel);
+        closeEl.removeEventListener("click", onCancel);
+        modalEl.removeEventListener("click", onBackdropClick);
+        modalEl.removeEventListener("keydown", onKeydown);
+      };
+      const closeDeleteDialog = (value) => {
+        cleanup();
+        if (typeof closeDialog === "function") {
+          closeDialog(modalEl);
+        } else {
+          modalEl.classList.remove("show");
+          modalEl.setAttribute("aria-hidden", "true");
+        }
+        resolve(value);
+      };
+      const onSubmit = () => closeDeleteDialog(true);
+      const onCancel = () => closeDeleteDialog(false);
+      const onBackdropClick = (event) => {
+        if (event.target === modalEl) onCancel();
+      };
+      const onKeydown = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+      };
+
+      submitEl.addEventListener("click", onSubmit);
+      cancelEl.addEventListener("click", onCancel);
+      closeEl.addEventListener("click", onCancel);
+      modalEl.addEventListener("click", onBackdropClick);
+      modalEl.addEventListener("keydown", onKeydown);
+
+      if (typeof openDialog === "function") {
+        openDialog(modalEl, { focusSelector: "#orgRepresentativeDeleteConfirmCancel" });
+      } else {
+        modalEl.classList.add("show");
+        modalEl.setAttribute("aria-hidden", "false");
+      }
+    });
+  };
+
   const openApprovalDetailModal = (item) => {
     if (!approvalDetailModalEl || !approvalDetailBodyEl || !item) return;
     const approvedAt = item.updatedAt || item.createdAt || null;
@@ -4178,6 +4295,7 @@ function initStaffAccessPages() {
               <option value="pending" selected>รออนุมัติ</option>
               <option value="approved">อนุมัติแล้ว</option>
               <option value="rejected">ไม่อนุมัติ</option>
+              <option value="remove">ลบออกจากรายชื่อ</option>
             </select>
           </td>
         </tr>
@@ -4232,6 +4350,7 @@ function initStaffAccessPages() {
               <option value="approved" selected>อนุมัติแล้ว</option>
               <option value="pending">ยกเลิกอนุมัติ</option>
               <option value="rejected">ลบสิทธิ์/ไม่อนุมัติ</option>
+              <option value="remove">ลบออกจากรายชื่อ</option>
             </select>
           </td>
         </tr>
@@ -4516,6 +4635,7 @@ function initStaffAccessPages() {
                 <option value="pending" ${status === "pending" ? "selected" : ""}>รออนุมัติ</option>
                 <option value="approved" ${status === "approved" ? "selected" : ""}>อนุมัติแล้ว</option>
                 <option value="rejected" ${status === "rejected" ? "selected" : ""}>ไม่อนุมัติ</option>
+                <option value="remove">ลบออกจากรายชื่อ</option>
               </select>
             </td>
           </tr>
@@ -5684,6 +5804,67 @@ function initStaffAccessPages() {
     }
   };
 
+  const deleteOrgRepresentativeApplication = async (applicationId) => {
+    if (!resolveStore()) {
+      setMessage(orgRepresentativeMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
+      return false;
+    }
+    if (!isSuperStaff()) {
+      setMessage(orgRepresentativeMessageEl, "หน้านี้สำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
+      return false;
+    }
+
+    const id = (applicationId || "").toString();
+    if (!id) return false;
+
+    const target = currentOrgRepresentativeApplications.find((item) => (item.id || "").toString() === id);
+    if (!target) return false;
+
+    const ok = await askOrgRepresentativeDeleteConfirm(target);
+    if (!ok) {
+      setMessage(orgRepresentativeMessageEl, "ยกเลิกการลบรายชื่อ", "#6b7280");
+      return false;
+    }
+
+    const rowEls = [
+      ...(orgRepresentativePendingBodyEl ? Array.from(orgRepresentativePendingBodyEl.querySelectorAll("tr")) : []),
+      ...(orgRepresentativeHistoryBodyEl ? Array.from(orgRepresentativeHistoryBodyEl.querySelectorAll("tr")) : []),
+      ...(approvalDetailBodyEl ? Array.from(approvalDetailBodyEl.querySelectorAll("tr")) : [])
+    ].filter((tr) => tr.getAttribute("data-org-representative-id") === id);
+    const rowControls = rowEls.flatMap((rowEl) => Array.from(rowEl.querySelectorAll("button, select, input")));
+    rowControls.forEach((control) => {
+      control.disabled = true;
+    });
+
+    try {
+      await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_ORG_REPRESENTATIVES, id));
+      const orgKey = getOrgRepresentativeOrgKey(target.organizationType || "", target.organizationName || "");
+      const shouldRefreshOrgModal = !!approvalDetailBodyEl?.querySelector(".org-representative-org-detail");
+      currentOrgRepresentativeApplications = currentOrgRepresentativeApplications
+        .filter((item) => (item.id || "").toString() !== id);
+      renderOrgRepresentativeApplications();
+      if (shouldRefreshOrgModal && orgKey) {
+        openOrgRepresentativeOrganizationModal(orgKey);
+      }
+      setMessage(orgRepresentativeMessageEl, "ลบรายชื่อตัวแทนองค์กรเรียบร้อยแล้ว", "#047857");
+      return true;
+    } catch (error) {
+      console.error("delete organization representative application failed - app.staff-access.js", error);
+      const code = (error?.code || "unknown").toString();
+      if (code === "permission-denied") {
+        setMessage(orgRepresentativeMessageEl, "ไม่มีสิทธิ์ลบรายชื่อตัวแทนองค์กร (permission-denied)", "#b91c1c");
+      } else if (code === "unauthenticated") {
+        setMessage(orgRepresentativeMessageEl, "เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่", "#b91c1c");
+      } else {
+        setMessage(orgRepresentativeMessageEl, "ลบรายชื่อตัวแทนองค์กรไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
+      }
+      rowControls.forEach((control) => {
+        control.disabled = false;
+      });
+      return false;
+    }
+  };
+
   const updateApplicationStatus = async (applicationId, action) => {
     if (!resolveStore()) {
       setMessage(approvalMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
@@ -5964,6 +6145,14 @@ function initStaffAccessPages() {
       const id = (select.dataset.applicationId || "").toString();
       const value = (select.value || "").toString();
       if (!id) return;
+
+      if (value === "remove") {
+        select.value = "pending";
+        select.classList.remove("is-approved", "is-rejected");
+        select.classList.add("is-pending");
+        void deleteOrgRepresentativeApplication(id);
+        return;
+      }
 
       if (value === "pending") {
         select.classList.remove("is-approved", "is-rejected");
@@ -6319,6 +6508,14 @@ function initStaffAccessPages() {
       const value = (select.value || "").toString();
       if (!id) return;
 
+      if (value === "remove") {
+        select.value = "approved";
+        select.classList.remove("is-pending", "is-rejected");
+        select.classList.add("is-approved");
+        void deleteOrgRepresentativeApplication(id);
+        return;
+      }
+
       if (value === "approved") {
         select.classList.remove("is-pending", "is-rejected");
         select.classList.add("is-approved");
@@ -6376,6 +6573,13 @@ function initStaffAccessPages() {
         const item = currentOrgRepresentativeApplications.find((entry) => (entry.id || "").toString() === id);
         const currentValue = normalizeApplicationStatus(item?.status);
         if (!id || !item || nextValue === currentValue) return;
+        if (nextValue === "remove") {
+          target.value = currentValue;
+          target.classList.remove("is-approved", "is-rejected", "is-pending");
+          target.classList.add(currentValue === "approved" ? "is-approved" : currentValue === "rejected" ? "is-rejected" : "is-pending");
+          void deleteOrgRepresentativeApplication(id);
+          return;
+        }
         const action = nextValue === "approved" ? "approve" : nextValue === "rejected" ? "reject" : "pending";
         target.value = currentValue;
         target.classList.remove("is-approved", "is-rejected", "is-pending");

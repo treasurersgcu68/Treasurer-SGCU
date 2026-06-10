@@ -127,6 +127,16 @@
       await promise;
     } catch (error) {
       const [fallbackSrc] = scriptSrc.split("?");
+      const canRetryWithCacheBust = fallbackSrc && !/^https?:\/\//i.test(scriptSrc) && !/[?&]retry=/.test(scriptSrc);
+      if (canRetryWithCacheBust) {
+        const retrySrc = `${fallbackSrc}?v=${encodeURIComponent(config.assetVersion)}&retry=${Date.now()}`;
+        try {
+          await loadScriptOnce(retrySrc);
+          return;
+        } catch (_) {
+          // fall through to the unversioned fallback below
+        }
+      }
       if (!fallbackSrc || fallbackSrc === scriptSrc || /^https?:\/\//i.test(scriptSrc)) {
         throw error;
       }

@@ -1,5 +1,7 @@
 /* Data loading (Google Sheets + localStorage cache) */
 const ORG_FILTERS_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const ORG_FILTERS_CACHE_SCHEMA_VERSION = 2;
+const ORG_FILTERS_LEGACY_ACADEMIC_YEAR = "2568";
 
 function isPublishedHtmlSheetUrl(url) {
   return /\/pubhtml(?:$|[/?#])/i.test((url || "").toString());
@@ -616,6 +618,25 @@ function normalizeOrganizationCatalogDoc(docSnap) {
   const row = Array.isArray(data.row) ? data.row : [];
   const group = (data.group || data.orgGroup || data.type || row[0] || "").toString().trim();
   const name = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
+  const normalizeYearTextMap = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.entries(value).reduce((acc, [year, text]) => {
+      const normalizedYear = (year || "").toString().trim();
+      const normalizedText = (text || "").toString().trim();
+      if (/^\d{4}$/.test(normalizedYear) && normalizedText) {
+        acc[normalizedYear] = normalizedText;
+      }
+      return acc;
+    }, {});
+  };
+  const nameByAcademicYear = {
+    ...normalizeYearTextMap(data.nameByAcademicYear),
+    ...normalizeYearTextMap(data.organizationNameByAcademicYear),
+    ...normalizeYearTextMap(data.orgNameByAcademicYear)
+  };
+  if (name && !Object.keys(nameByAcademicYear).length) {
+    nameByAcademicYear[ORG_FILTERS_LEGACY_ACADEMIC_YEAR] = name;
+  }
   const code = (data.code || data.orgCode || row[2] || "").toString().trim().toUpperCase();
   const documentRunCode = (data.documentRunCode || data.runCode || row[3] || "").toString().trim();
   const normalizeRunMap = (value) => {
@@ -667,6 +688,7 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     id: docSnap.id,
     group,
     name,
+    nameByAcademicYear,
     code,
     codeByAcademicYear,
     documentRunCode,
@@ -703,10 +725,32 @@ async function loadOrgFiltersFromFirestore() {
   return items.map(({ sortOrder, ...item }) => item);
 }
 
+function readOrgFiltersCache() {
+  const cached = getCache(CACHE_KEYS.ORG_FILTERS, ORG_FILTERS_CACHE_TTL_MS);
+  if (cached?.schemaVersion === ORG_FILTERS_CACHE_SCHEMA_VERSION && Array.isArray(cached.items)) {
+    return cached.items;
+  }
+  if (
+    Array.isArray(cached) &&
+    cached.length &&
+    cached.every((item) => item && Object.prototype.hasOwnProperty.call(item, "nameByAcademicYear"))
+  ) {
+    return cached;
+  }
+  return null;
+}
+
+function writeOrgFiltersCache(items) {
+  setCache(CACHE_KEYS.ORG_FILTERS, {
+    schemaVersion: ORG_FILTERS_CACHE_SCHEMA_VERSION,
+    items
+  });
+}
+
 // โหลดตัวเลือก filter จาก Firestore collection `organizationCatalog` เท่านั้น
 async function loadOrgFilters() {
   try {
-    const cached = getCache(CACHE_KEYS.ORG_FILTERS, ORG_FILTERS_CACHE_TTL_MS);
+    const cached = readOrgFiltersCache();
     if (Array.isArray(cached) && cached.length) {
       orgFilters = cached;
       clearLoadError("orgFilters");
@@ -716,7 +760,7 @@ async function loadOrgFilters() {
     const firestoreItems = await loadOrgFiltersFromFirestore();
     if (firestoreItems && firestoreItems.length) {
       orgFilters = firestoreItems;
-      setCache(CACHE_KEYS.ORG_FILTERS, orgFilters);
+      writeOrgFiltersCache(orgFilters);
       clearLoadError("orgFilters");
       return;
     }

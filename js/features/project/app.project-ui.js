@@ -1,14 +1,55 @@
 /* Project Status UI: filters, summary cards, tables, dashboard KPIs */
+function normalizeProjectOrgAcademicYear(value) {
+  const normalized = (value || "").toString().trim();
+  if (!normalized || normalized === "all") return "";
+  const number = Number(normalized);
+  if (!Number.isFinite(number)) return normalized;
+  return number < 100 ? String(2500 + number) : normalized;
+}
+
+function getProjectOrgYearValue(map = {}, academicYear = "") {
+  const year = Number(normalizeProjectOrgAcademicYear(academicYear));
+  if (!Number.isFinite(year) || !map || typeof map !== "object" || Array.isArray(map)) return "";
+  const normalized = Object.entries(map).reduce((acc, [key, value]) => {
+    const normalizedYear = normalizeProjectOrgAcademicYear(key);
+    const normalizedValue = (value || "").toString().trim();
+    if (/^\d{4}$/.test(normalizedYear) && normalizedValue) acc[normalizedYear] = normalizedValue;
+    return acc;
+  }, {});
+  if (normalized[String(year)]) return normalized[String(year)];
+  const previousYear = Object.keys(normalized)
+    .map((key) => Number(key))
+    .filter((itemYear) => Number.isFinite(itemYear) && itemYear < year)
+    .sort((a, b) => b - a)[0];
+  return previousYear ? normalized[String(previousYear)] || "" : "";
+}
+
+function getProjectOrgDisplayYear() {
+  return normalizeProjectOrgAcademicYear(yearSelect?.value) ||
+    normalizeProjectOrgAcademicYear(typeof selectedProjectSourceYear !== "undefined" ? selectedProjectSourceYear : "");
+}
+
+function getProjectOrgFilterNameForYear(item = {}, academicYear = getProjectOrgDisplayYear()) {
+  return getProjectOrgYearValue(item.nameByAcademicYear, academicYear) ||
+    (item.name || item.organizationName || item.orgName || "").toString().trim();
+}
+
+function getProjectOrgFilterCodeForYear(item = {}, academicYear = getProjectOrgDisplayYear()) {
+  return getProjectOrgYearValue(item.codeByAcademicYear, academicYear) ||
+    (item.code || item.orgCode || "").toString().trim();
+}
+
 function compareOrgFilterByCodeThenName(a, b) {
-  const codeA = (a?.code || "").toString().trim();
-  const codeB = (b?.code || "").toString().trim();
+  const academicYear = getProjectOrgDisplayYear();
+  const codeA = getProjectOrgFilterCodeForYear(a, academicYear);
+  const codeB = getProjectOrgFilterCodeForYear(b, academicYear);
   if (codeA && codeB) {
     const codeCompare = codeA.localeCompare(codeB, "th", { numeric: true });
     if (codeCompare) return codeCompare;
   } else if (codeA || codeB) {
     return codeA ? -1 : 1;
   }
-  return (a?.name || "").toString().localeCompare((b?.name || "").toString(), "th");
+  return getProjectOrgFilterNameForYear(a, academicYear).localeCompare(getProjectOrgFilterNameForYear(b, academicYear), "th");
 }
 
 function initOrgTypeOptions() {
@@ -43,7 +84,7 @@ function initOrgOptions() {
     ? sourceList
       .slice()
       .sort(compareOrgFilterByCodeThenName)
-      .map((item) => (item.name || "").toString().trim())
+      .map((item) => getProjectOrgFilterNameForYear(item))
       .filter((name, index, list) => name && list.indexOf(name) === index)
     : Array.from(
       new Set(

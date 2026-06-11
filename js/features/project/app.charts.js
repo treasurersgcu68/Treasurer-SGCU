@@ -368,32 +368,26 @@ function updateClosureXAxisMax(chart = budgetByMonthChart) {
 
 function getChartOrgGroups() {
   const sortThaiDescending = (list) => list.sort((a, b) => b.localeCompare(a, "th"));
-  if (orgFilters.length) {
-    return sortThaiDescending(Array.from(new Set(orgFilters.map((o) => o.group).filter(Boolean))));
-  }
-  return sortThaiDescending([...DEFAULT_BASE_GROUPS]);
+  const groups = Array.from(
+    new Set(
+      (projects || [])
+        .map((project) => (project.orgGroup || "").toString().trim())
+        .filter(Boolean)
+    )
+  );
+  return sortThaiDescending(groups.length ? groups : [...DEFAULT_BASE_GROUPS]);
 }
 
 function getOrgsByGroup(group) {
   if (!group) return [];
-  if (orgFilters.length) {
-    return Array.from(
-      new Set(
-        orgFilters
-          .filter((o) => o.group === group)
-          .map((o) => o.name)
-          .filter(Boolean)
-      )
-    );
-  }
   return Array.from(
     new Set(
-      projects
-        .filter((p) => p.orgGroup === group)
-        .map((p) => p.orgName)
+      (projects || [])
+        .filter((project) => group === "all" || project.orgGroup === group)
+        .map((project) => (project.orgName || "").toString().trim())
         .filter(Boolean)
     )
-  );
+  ).sort((a, b) => a.localeCompare(b, "th"));
 }
 
 function updateClosureStatusChart(filtered) {

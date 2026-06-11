@@ -707,9 +707,9 @@ function updateDashboardInsights(filtered, summary) {
     const activeOrgs = new Set(
       filtered.map((p) => (p.orgName || "").trim()).filter(Boolean)
     );
-    const allOrgCount = orgFilters.length
-      ? new Set(orgFilters.map((o) => (o.name || "").trim()).filter(Boolean)).size
-      : activeOrgs.size;
+    const allOrgCount = new Set(
+      (projects || []).map((p) => (p.orgName || "").trim()).filter(Boolean)
+    ).size || activeOrgs.size;
 
     if (activeOrgCountEl) {
       activeOrgCountEl.textContent = activeOrgs.size.toLocaleString("th-TH");

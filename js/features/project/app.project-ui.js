@@ -60,9 +60,7 @@ function initOrgTypeOptions() {
   while (orgTypeSelect.options.length > 1) {
     orgTypeSelect.remove(1);
   }
-  const groups = orgFilters.length
-    ? Array.from(new Set(orgFilters.map((o) => o.group).filter(Boolean)))
-    : Array.from(new Set(projects.map((p) => p.orgGroup).filter(Boolean)));
+  const groups = Array.from(new Set(projects.map((p) => p.orgGroup).filter(Boolean)));
   groups.sort((a, b) => b.localeCompare(a, "th"));
   groups.forEach((g) => {
     const opt = document.createElement("option");
@@ -79,22 +77,14 @@ function initOrgOptions() {
     orgSelect.remove(1);
   }
   const selectedGroup = orgTypeSelect.value;
-  const sourceList = orgFilters.length
-    ? orgFilters.filter((o) => (selectedGroup === "all" ? true : o.group === selectedGroup))
-    : projects.filter((p) => (selectedGroup === "all" ? true : p.orgGroup === selectedGroup));
-  const orgNames = orgFilters.length
-    ? sourceList
-      .slice()
-      .sort(compareOrgFilterByCodeThenName)
-      .map((item) => getProjectOrgFilterNameForYear(item))
-      .filter((name, index, list) => name && list.indexOf(name) === index)
-    : Array.from(
-      new Set(
-        sourceList
-          .map((item) => item.orgName)
-          .filter(Boolean)
-      )
-    ).sort((a, b) => a.localeCompare(b, "th"));
+  const sourceList = projects.filter((p) => (selectedGroup === "all" ? true : p.orgGroup === selectedGroup));
+  const orgNames = Array.from(
+    new Set(
+      sourceList
+        .map((item) => item.orgName)
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, "th"));
   orgNames.forEach((name) => {
     const opt = document.createElement("option");
     opt.value = name;

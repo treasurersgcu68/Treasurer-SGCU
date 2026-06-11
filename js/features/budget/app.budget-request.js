@@ -393,12 +393,21 @@ function initBudgetApprovalRequestPage() {
     return options[0];
   };
 
-  const hasApprovedRepresentativeApplication = () => {
-    return Array.isArray(currentRepresentativeApplications) &&
-      currentRepresentativeApplications.some((item) =>
-        (item.status || "").toString().trim().toLowerCase() === "approved" &&
-        isCurrentRepresentativeAcademicYear(item)
-      );
+  const findActiveRepresentativeApplication = () => {
+    if (!Array.isArray(currentRepresentativeApplications)) return null;
+    return currentRepresentativeApplications.find((item) => {
+      const status = (item.status || "pending").toString().trim().toLowerCase();
+      return (status === "pending" || status === "approved") &&
+        isRepresentativeApplicationAcademicYear(item);
+    }) || null;
+  };
+
+  const getActiveRepresentativeApplicationMessage = (item) => {
+    const status = (item?.status || "pending").toString().trim().toLowerCase();
+    if (status === "approved") {
+      return "บัญชีนี้ได้รับอนุมัติเป็นตัวแทนองค์กรแล้ว ไม่สามารถสมัครเพิ่มได้";
+    }
+    return "บัญชีนี้มีคำขอตัวแทนองค์กรที่รออนุมัติอยู่แล้ว กรุณารอผลก่อนสมัครใหม่";
   };
 
   const setDisplayText = (el, value) => {
@@ -712,6 +721,9 @@ function initBudgetApprovalRequestPage() {
   const isCurrentRepresentativeAcademicYear = (item = {}) =>
     getRepresentativeAcademicYear(item) === String(getCurrentAcademicYearBE());
 
+  const isRepresentativeApplicationAcademicYear = (item = {}) =>
+    getRepresentativeAcademicYear(item) === getRepresentativeApplicationAcademicYear();
+
   const formatCurrency = (value) => {
     const num = Number(value || 0);
     if (!Number.isFinite(num)) return "-";
@@ -849,16 +861,17 @@ function initBudgetApprovalRequestPage() {
       (item.status || "").toString().trim().toLowerCase() === "approved" &&
       isCurrentRepresentativeAcademicYear(item)
     ).length;
+    const activeApplication = findActiveRepresentativeApplication();
     if (representativeStatusCaptionEl) {
       representativeStatusCaptionEl.textContent = approvedCount
         ? `มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว ${approvedCount} รายการ`
         : `มีคำขอรอพิจารณา ${items.filter((item) => (item.status || "pending").toString().trim().toLowerCase() === "pending").length} รายการ`;
     }
     setRepresentativeMessage(
-      approvedCount
-        ? "บัญชีนี้ได้รับอนุมัติเป็นตัวแทนองค์กรแล้ว จึงไม่สามารถสมัครเพิ่มได้"
+      activeApplication
+        ? getActiveRepresentativeApplicationMessage(activeApplication)
         : "คำขอที่ยังไม่อนุมัติจะยังไม่ถูกใช้เป็นสิทธิ์หลักในแบบฟอร์มของบ",
-      approvedCount ? "#047857" : "#6b7280"
+      activeApplication ? "#047857" : "#6b7280"
     );
   };
 
@@ -921,10 +934,11 @@ function initBudgetApprovalRequestPage() {
     if (!representativeModalEl) return;
     populateRepresentativeOrgTypeOptions();
     populateRepresentativeOrgDeptOptions();
+    const activeApplication = findActiveRepresentativeApplication();
     if (!representativeApplicationsLoaded) {
       setRepresentativeApplicationMessage("กำลังตรวจสอบสิทธิ์ตัวแทนองค์กร กรุณารอสักครู่", "#b45309");
-    } else if (hasApprovedRepresentativeApplication()) {
-      setRepresentativeApplicationMessage("บัญชีนี้ได้รับอนุมัติเป็นตัวแทนองค์กรแล้ว หากส่งคำขอเพิ่มระบบจะไม่รับคำขอซ้ำ", "#b45309");
+    } else if (activeApplication) {
+      setRepresentativeApplicationMessage(getActiveRepresentativeApplicationMessage(activeApplication), "#b91c1c");
     } else {
       setRepresentativeApplicationMessage("");
     }
@@ -1547,8 +1561,9 @@ function initBudgetApprovalRequestPage() {
         );
         representativeApplicationsLoaded = true;
         renderRepresentativeRows(sortedRows);
-        if (hasApprovedRepresentativeApplication() && representativeModalEl?.getAttribute("aria-hidden") === "false") {
-          setRepresentativeApplicationMessage("บัญชีนี้ได้รับอนุมัติเป็นตัวแทนองค์กรแล้ว หากส่งคำขอเพิ่มระบบจะไม่รับคำขอซ้ำ", "#b45309");
+        const activeApplication = findActiveRepresentativeApplication();
+        if (activeApplication && representativeModalEl?.getAttribute("aria-hidden") === "false") {
+          setRepresentativeApplicationMessage(getActiveRepresentativeApplicationMessage(activeApplication), "#b91c1c");
         }
         populateBudgetOrgTypeOptions();
         populateBudgetOrgDeptOptions();
@@ -1851,8 +1866,9 @@ function initBudgetApprovalRequestPage() {
       return false;
     }
 
-    if (hasApprovedRepresentativeApplication()) {
-      setRepresentativeApplicationMessage("บัญชีนี้ได้รับอนุมัติเป็นตัวแทนองค์กรแล้ว ไม่สามารถสมัครเพิ่มได้", "#b91c1c");
+    const activeApplication = findActiveRepresentativeApplication();
+    if (activeApplication) {
+      setRepresentativeApplicationMessage(getActiveRepresentativeApplicationMessage(activeApplication), "#b91c1c");
       return false;
     }
 
@@ -1865,18 +1881,6 @@ function initBudgetApprovalRequestPage() {
       populateRepresentativeOrgDeptOptions();
       return false;
     }
-    const existingActive = currentRepresentativeApplications.find((item) => {
-      const status = (item.status || "pending").toString().trim().toLowerCase();
-      if (status === "rejected" || status === "cancelled") return false;
-      if (!isCurrentRepresentativeAcademicYear(item)) return false;
-      return normalizeOrgText(item.organizationType) === organizationType &&
-        normalizeOrgText(item.organizationName) === organizationName;
-    });
-    if (existingActive) {
-      setRepresentativeApplicationMessage("บัญชีนี้มีคำขอหรือสิทธิ์ตัวแทนขององค์กรนี้อยู่แล้ว", "#b91c1c");
-      return false;
-    }
-
     return true;
   };
 
@@ -2204,7 +2208,7 @@ function initBudgetApprovalRequestPage() {
     setRepresentativeApplicationMessage("กำลังส่งคำขอตัวแทนองค์กร...", "#1d4ed8");
     try {
       const payload = buildRepresentativePayload();
-      await firestore.addDoc(
+      const docRef = await firestore.addDoc(
         firestore.collection(firestore.db, REPRESENTATIVE_APPLICATION_COLLECTION),
         {
           ...payload,
@@ -2212,6 +2216,17 @@ function initBudgetApprovalRequestPage() {
           updatedAt: firestore.serverTimestamp()
         }
       );
+      const optimisticApplication = {
+        id: (docRef?.id || "").toString(),
+        ...payload,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      currentRepresentativeApplications = [
+        optimisticApplication,
+        ...currentRepresentativeApplications.filter((item) => item.id !== optimisticApplication.id)
+      ];
+      renderRepresentativeRows(currentRepresentativeApplications);
       representativeFormEl.reset();
       if (representativeRoleOtherEl) {
         representativeRoleOtherEl.disabled = true;

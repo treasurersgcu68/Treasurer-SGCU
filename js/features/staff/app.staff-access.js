@@ -4235,6 +4235,12 @@ function initStaffAccessPages() {
 
     orgRepresentativeOverviewBodyEl.innerHTML = currentOrgRepresentativeFilteredOrganizations.map((entry) => {
       const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
+      const approvedCountClass = entry.approved.length >= 4
+        ? "is-complete"
+        : entry.approved.length > 0
+          ? "is-partial"
+          : "is-empty";
+      const pendingCountClass = entry.pending.length > 0 ? "has-pending" : "is-empty";
       return `
         <tr class="org-representative-org-row" data-org-key="${toSafeText(entry.key)}">
           <td data-label="องค์กร">
@@ -4242,10 +4248,10 @@ function initStaffAccessPages() {
             <div class="section-text-sm">${toSafeText(entry.orgType || "-")}</div>
           </td>
           <td data-label="ตัวแทนอนุมัติแล้ว">
-            <div class="org-representative-count">${toSafeText(String(entry.approved.length))}/4</div>
+            <div class="org-representative-count ${approvedCountClass}">${toSafeText(String(entry.approved.length))}/4</div>
           </td>
           <td data-label="คำขอรออนุมัติ">
-            <div class="org-representative-count">${toSafeText(String(entry.pending.length))}</div>
+            <div class="org-representative-count ${pendingCountClass}">${toSafeText(String(entry.pending.length))}</div>
           </td>
           <td data-label="ตำแหน่งที่ยังขาด">${toSafeText(missingRoles.join(", ") || "-")}</td>
         </tr>

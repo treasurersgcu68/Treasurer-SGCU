@@ -35,10 +35,16 @@ html, body {
 }
 
 body {
-  font-family: "Kanit", sans-serif;
+  font-family: "Kanit", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif;
   background: var(--theme-bg);
   color: #111827;
   scroll-behavior: smooth;
+}
+
+:lang(th) {
+  font-family: "Kanit", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 img {

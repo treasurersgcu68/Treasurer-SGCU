@@ -880,7 +880,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const now = new Date();
     const yearCE = now.getFullYear();
     const month = now.getMonth() + 1;
-    const academicYearCE = month >= 8 ? yearCE : yearCE - 1;
+    const academicYearCE = month >= 6 ? yearCE : yearCE - 1;
     return String(academicYearCE + 543);
   };
   const aboutTeamLabel = (() => {

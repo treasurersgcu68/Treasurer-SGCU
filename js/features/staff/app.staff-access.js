@@ -1317,7 +1317,7 @@ function initStaffAccessPages() {
     const now = new Date();
     const yearCE = now.getFullYear();
     const month = now.getMonth() + 1;
-    const academicYearCE = month >= 8 ? yearCE : yearCE - 1;
+    const academicYearCE = month >= 6 ? yearCE : yearCE - 1;
     const academicYearBE = academicYearCE + 543;
     return String(academicYearBE).slice(-2).padStart(2, "0");
   };
@@ -1451,7 +1451,7 @@ function initStaffAccessPages() {
     const now = new Date();
     const yearCE = now.getFullYear();
     const month = now.getMonth() + 1;
-    const academicYearCE = month >= 8 ? yearCE : yearCE - 1;
+    const academicYearCE = month >= 6 ? yearCE : yearCE - 1;
     return academicYearCE + 543;
   };
 
@@ -1463,7 +1463,7 @@ function initStaffAccessPages() {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
     const yearCE = date.getFullYear();
     const month = date.getMonth() + 1;
-    return String((month >= 8 ? yearCE : yearCE - 1) + 543);
+    return String((month >= 6 ? yearCE : yearCE - 1) + 543);
   };
 
   const getOrgRepresentativeAcademicYear = (item = {}) => {

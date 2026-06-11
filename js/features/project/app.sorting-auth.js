@@ -988,7 +988,7 @@ function getCurrentAcademicYearBE() {
   const now = new Date();
   const yearCE = now.getFullYear();
   const month = now.getMonth() + 1;
-  return (month >= 8 ? yearCE : yearCE - 1) + 543;
+  return (month >= 6 ? yearCE : yearCE - 1) + 543;
 }
 
 function getAcademicYearFromTimestamp(value) {
@@ -997,7 +997,7 @@ function getAcademicYearFromTimestamp(value) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
   const yearCE = date.getFullYear();
   const month = date.getMonth() + 1;
-  return String((month >= 8 ? yearCE : yearCE - 1) + 543);
+  return String((month >= 6 ? yearCE : yearCE - 1) + 543);
 }
 
 function getRepresentativeAcademicYear(item = {}) {

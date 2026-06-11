@@ -367,27 +367,24 @@ function updateClosureXAxisMax(chart = budgetByMonthChart) {
 }
 
 function getChartOrgGroups() {
-  const sortThaiDescending = (list) => list.sort((a, b) => b.localeCompare(a, "th"));
-  const groups = Array.from(
-    new Set(
-      (projects || [])
-        .map((project) => (project.orgGroup || "").toString().trim())
-        .filter(Boolean)
-    )
-  );
-  return sortThaiDescending(groups.length ? groups : [...DEFAULT_BASE_GROUPS]);
+  if (typeof getProjectYearOrgGroups === "function") {
+    const groups = getProjectYearOrgGroups(projects);
+    if (groups.length) return groups;
+  }
+  return [...DEFAULT_BASE_GROUPS];
 }
 
 function getOrgsByGroup(group) {
   if (!group) return [];
-  return Array.from(
-    new Set(
-      (projects || [])
-        .filter((project) => group === "all" || project.orgGroup === group)
-        .map((project) => (project.orgName || "").toString().trim())
-        .filter(Boolean)
-    )
-  ).sort((a, b) => a.localeCompare(b, "th"));
+  if (typeof getProjectYearOrgNames === "function") {
+    return getProjectYearOrgNames(group, projects);
+  }
+  return Array.from(new Set(
+    (projects || [])
+      .filter((project) => group === "all" || project.orgGroup === group)
+      .map((project) => (project.orgName || "").toString().trim())
+      .filter(Boolean)
+  ));
 }
 
 function updateClosureStatusChart(filtered) {

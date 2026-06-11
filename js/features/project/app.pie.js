@@ -217,11 +217,8 @@ function updateApprovedBudgetPie(filtered) {
       }
     });
 
-    const selectedOrgGroupFromFilters = orgFilters.find((o) => o.name === orgFilter);
     const selectedOrgProject = projects.find((p) => p.orgName === orgFilter);
-    const selectedOrgGroup = selectedOrgGroupFromFilters
-      ? selectedOrgGroupFromFilters.group
-      : selectedOrgProject
+    const selectedOrgGroup = selectedOrgProject
       ? selectedOrgProject.orgGroup
       : null;
     highlightLabel = selectedOrgGroup || null;

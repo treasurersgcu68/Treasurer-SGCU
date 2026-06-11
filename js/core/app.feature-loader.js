@@ -14,9 +14,9 @@
         "js/features/news/app.news.js?v=20260417-1"
       ],
       scoreboard: [
-        "js/features/project/app.project-ui.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.project-ui.js?v=20260611-project-status-chart-order-1",
         "js/features/project/app.calendar.js",
-        "js/features/project/app.data.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.data.js?v=20260611-project-status-chart-order-1",
         "js/features/news/app.scoreboard.js?v=20260501-1"
       ],
       "org-structure": "js/features/org/app.org.js?v=20260503-1",
@@ -29,28 +29,28 @@
         "js/features/docs/app.downloads.js?v=20260501-1"
       ],
       "project-status": [
-        "js/features/project/app.project-ui.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.project-ui.js?v=20260611-project-status-chart-order-1",
         "js/features/project/app.project-modal.js",
         "js/features/project/app.charts.js",
         "js/features/project/app.pie.js",
         "js/features/project/app.calendar.js",
-        "js/features/project/app.data.js?v=20260611-project-status-chart-year-options-1"
+        "js/features/project/app.data.js?v=20260611-project-status-chart-order-1"
       ],
       "treasurer-handover-staff": [],
       "dashboard-staff": [
-        "js/features/project/app.project-ui.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.project-ui.js?v=20260611-project-status-chart-order-1",
         "js/features/project/app.project-modal.js",
         "js/features/project/app.charts.js",
         "js/features/project/app.pie.js",
         "js/features/project/app.calendar.js",
-        "js/features/project/app.data.js?v=20260611-project-status-chart-year-options-1"
+        "js/features/project/app.data.js?v=20260611-project-status-chart-order-1"
       ],
       "borrow-assets": [
-        "js/features/project/app.data.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.data.js?v=20260611-project-status-chart-order-1",
         "js/features/borrow/app.borrow-assets.js?v=20260513-borrow-notifications-2"
       ],
       "borrow-assets-staff": [
-        "js/features/project/app.data.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.data.js?v=20260611-project-status-chart-order-1",
         "js/features/borrow/app.borrow-assets.js?v=20260513-borrow-notifications-2"
       ],
       "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
@@ -59,11 +59,11 @@
         "js/features/booking/app.meeting-room-staff.js?v=20260504-6"
       ],
       "budget-approval-request": [
-        "js/features/project/app.data.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.data.js?v=20260611-project-status-chart-order-1",
         "js/features/budget/app.budget-request.js?v=20260510-closed-round-view-1"
       ],
       login: [
-        "js/features/project/app.data.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.data.js?v=20260611-project-status-chart-order-1",
         "js/features/staff/app.staff-access.js?v=20260504-1",
         "js/features/budget/app.budget-request.js?v=20260510-closed-round-view-1"
       ],
@@ -87,7 +87,7 @@
       ],
       "system-data-staff": "js/features/staff/app.health-check.js?v=20260520-1",
       "budget-approval-staff": [
-        "js/features/project/app.data.js?v=20260611-project-status-chart-year-options-1",
+        "js/features/project/app.data.js?v=20260611-project-status-chart-order-1",
         "js/features/budget/app.budget-staff.js?v=20260609-round-actions-flex-2"
       ]
     },

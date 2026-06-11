@@ -54,14 +54,40 @@ function compareOrgFilterByCodeThenName(a, b) {
   return getProjectOrgFilterNameForYear(a, academicYear).localeCompare(getProjectOrgFilterNameForYear(b, academicYear), "th");
 }
 
+function getProjectYearOrgGroups(sourceProjects = projects) {
+  const groupsInData = new Set(
+    (sourceProjects || [])
+      .map((project) => (project.orgGroup || "").toString().trim())
+      .filter(Boolean)
+  );
+  const preferredGroups = (DEFAULT_BASE_GROUPS || []).filter((group) => groupsInData.has(group));
+  const extraGroups = [];
+  groupsInData.forEach((group) => {
+    if (!preferredGroups.includes(group)) extraGroups.push(group);
+  });
+  return [...preferredGroups, ...extraGroups];
+}
+
+function getProjectYearOrgNames(group = "all", sourceProjects = projects) {
+  const names = [];
+  const seen = new Set();
+  (sourceProjects || []).forEach((project) => {
+    if (group && group !== "all" && project.orgGroup !== group) return;
+    const name = (project.orgName || "").toString().trim();
+    if (!name || seen.has(name)) return;
+    seen.add(name);
+    names.push(name);
+  });
+  return names;
+}
+
 function initOrgTypeOptions() {
   if (!orgTypeSelect) return;  // ✅ กัน null
 
   while (orgTypeSelect.options.length > 1) {
     orgTypeSelect.remove(1);
   }
-  const groups = Array.from(new Set(projects.map((p) => p.orgGroup).filter(Boolean)));
-  groups.sort((a, b) => b.localeCompare(a, "th"));
+  const groups = getProjectYearOrgGroups(projects);
   groups.forEach((g) => {
     const opt = document.createElement("option");
     opt.value = g;
@@ -77,14 +103,7 @@ function initOrgOptions() {
     orgSelect.remove(1);
   }
   const selectedGroup = orgTypeSelect.value;
-  const sourceList = projects.filter((p) => (selectedGroup === "all" ? true : p.orgGroup === selectedGroup));
-  const orgNames = Array.from(
-    new Set(
-      sourceList
-        .map((item) => item.orgName)
-        .filter(Boolean)
-    )
-  ).sort((a, b) => a.localeCompare(b, "th"));
+  const orgNames = getProjectYearOrgNames(selectedGroup, projects);
   orgNames.forEach((name) => {
     const opt = document.createElement("option");
     opt.value = name;
@@ -233,21 +252,8 @@ function isClubDebtProject(project) {
 function getClubDebtSummaryScope(sourceProjects) {
   const orgGroupFilter = orgTypeSelect ? orgTypeSelect.value : "all";
   const orgFilter = orgSelect ? orgSelect.value : "all";
-  const getFallbackGroups = () => Array.from(
-    new Set(
-      (sourceProjects || [])
-        .map((project) => (project.orgGroup || "").toString().trim())
-        .filter(Boolean)
-    )
-  ).sort((a, b) => b.localeCompare(a, "th"));
-  const getFallbackOrgs = (group) => Array.from(
-    new Set(
-      (sourceProjects || [])
-        .filter((project) => !group || group === "all" || project.orgGroup === group)
-        .map((project) => (project.orgName || "").toString().trim())
-        .filter(Boolean)
-    )
-  );
+  const getFallbackGroups = () => getProjectYearOrgGroups(sourceProjects);
+  const getFallbackOrgs = (group) => getProjectYearOrgNames(group, sourceProjects);
 
   if (orgGroupFilter === "all" && orgFilter === "all") {
     const labels = typeof getChartOrgGroups === "function"

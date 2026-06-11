@@ -9,20 +9,27 @@ function runHeroSubtitleTyping() {
   const fullText = subtitle.textContent.replace(/\s+/g, " ").trim();
   if (!fullText) return;
 
+  const graphemes =
+    typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
+      ? Array.from(new Intl.Segmenter("th", { granularity: "grapheme" }).segment(fullText), (part) => part.segment)
+      : fullText.match(/[\s\S][\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]*/gu) || Array.from(fullText);
+
   subtitle.dataset.typingReady = "true";
   subtitle.textContent = "";
 
+  const textNode = document.createTextNode("");
   const cursor = document.createElement("span");
   cursor.className = "typing-cursor";
   cursor.setAttribute("aria-hidden", "true");
+  subtitle.appendChild(textNode);
   subtitle.appendChild(cursor);
 
   let index = 0;
   const speedMs = 28;
   const typingTimer = window.setInterval(() => {
-    subtitle.insertBefore(document.createTextNode(fullText[index]), cursor);
+    textNode.nodeValue += graphemes[index];
     index += 1;
-    if (index >= fullText.length) {
+    if (index >= graphemes.length) {
       window.clearInterval(typingTimer);
       window.setTimeout(() => cursor.remove(), 600);
     }

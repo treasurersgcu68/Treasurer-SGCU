@@ -4657,6 +4657,57 @@
   width: 16%;
 }
 
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(2) .org-representative-count,
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(3) .org-representative-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 26px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(2) .org-representative-count {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: #f8fafc;
+  color: #475569;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(2) .org-representative-count.is-complete {
+  border-color: rgba(5, 150, 105, 0.22);
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(2) .org-representative-count.is-partial {
+  border-color: rgba(217, 119, 6, 0.24);
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(2) .org-representative-count.is-empty {
+  border-color: rgba(220, 38, 38, 0.18);
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(3) .org-representative-count {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(3) .org-representative-count.has-pending {
+  border-color: rgba(37, 99, 235, 0.22);
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable th:nth-child(4),
 .page-view[data-page="org-representative-approval-staff"] #orgRepresentativeOverviewTable td:nth-child(4) {
   width: 24%;
@@ -9088,6 +9139,10 @@
 }
 
 @media (max-width: 768px) {
+  .page-view[data-page="budget-approval-staff"] .budget-staff-deadline-grid {
+    grid-template-columns: 1fr;
+  }
+
   .page-view[data-page="budget-approval-staff"] .budget-round-actions-row {
     flex-direction: column !important;
   }

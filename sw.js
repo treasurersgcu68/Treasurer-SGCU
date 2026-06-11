@@ -1,10 +1,10 @@
-const CACHE_VERSION = "20260606-mobile-glass-compact-2";
+const CACHE_VERSION = "20260611-thai-text-rendering-1";
 const CACHE_PREFIX = "treasurer-sgcu-shell";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL_URLS = [
   "./",
   "./index.html",
-  "./css/style.css?v=20260606-mobile-glass-compact-2",
+  "./css/style.css?v=20260611-thai-text-rendering-1",
   "./js/integrations/app.firebase-bootstrap.js?v=20260423-1",
   "./js/core/app.config.js?v=20260518-csv-refresh-2",
   "./js/integrations/app.runtime-config.js?v=20260504-1",
@@ -16,7 +16,7 @@ const APP_SHELL_URLS = [
   "./js/features/project/app.sorting-auth.js?v=20260606-mobile-glass-compact-2",
   "./js/motion/app.motion.js",
   "./js/core/app.feature-loader.js?v=20260513-borrow-notifications-2",
-  "./js/core/app.init.js?v=20260606-mobile-glass-compact-2",
+  "./js/core/app.init.js?v=20260611-thai-text-rendering-1",
   "./manifest.webmanifest",
   "./img/icons/treasurer-icon-192.png",
   "./img/icons/treasurer-icon-512.png"

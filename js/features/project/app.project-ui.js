@@ -55,17 +55,13 @@ function compareOrgFilterByCodeThenName(a, b) {
 }
 
 function getProjectYearOrgGroups(sourceProjects = projects) {
-  const groupsInData = new Set(
-    (sourceProjects || [])
-      .map((project) => (project.orgGroup || "").toString().trim())
-      .filter(Boolean)
-  );
-  const preferredGroups = (DEFAULT_BASE_GROUPS || []).filter((group) => groupsInData.has(group));
-  const extraGroups = [];
-  groupsInData.forEach((group) => {
-    if (!preferredGroups.includes(group)) extraGroups.push(group);
-  });
-  return [...preferredGroups, ...extraGroups];
+  return Array.from(
+    new Set(
+      (sourceProjects || [])
+        .map((project) => (project.orgGroup || "").toString().trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => b.localeCompare(a, "th"));
 }
 
 function getProjectYearOrgNames(group = "all", sourceProjects = projects) {

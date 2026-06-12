@@ -2916,9 +2916,6 @@
 .budget-staff-group-ceiling-list {
   display: grid;
   gap: 8px;
-  max-height: 260px;
-  overflow: auto;
-  padding-right: 2px;
 }
 
 .budget-staff-group-ceiling-list[hidden] {
@@ -7932,6 +7929,20 @@
 .borrow-detail-section-caption {
   font-size: 11px;
   color: #6b7280;
+}
+
+.borrow-academic-year-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#borrowAcademicYearDisplay {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  color: #7f1d1d;
+  font-weight: 700;
+  background: #fff7fa;
+  border-color: #f1d7e2;
 }
 
 .borrow-detail-section-dates {

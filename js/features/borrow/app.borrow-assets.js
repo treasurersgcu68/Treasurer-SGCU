@@ -14,6 +14,7 @@ function initBorrowAssetsApp() {
   const borrowProjectDept = document.getElementById("borrowProjectDept");
   const borrowProjectDeptOther = document.getElementById("borrowProjectDeptOther");
   const borrowProjectDetail = document.getElementById("borrowProjectDetail");
+  const borrowAcademicYearDisplayEl = document.getElementById("borrowAcademicYearDisplay");
   const borrowPickupDate = document.getElementById("borrowPickupDate");
   const borrowPickupDateRule = document.getElementById("borrowPickupDateRule");
   const borrowReturnDate = document.getElementById("borrowReturnDate");
@@ -322,6 +323,61 @@ function initBorrowAssetsApp() {
   };
 
   const OTHER_ORG_VALUE = "__other__";
+  const getBorrowAcademicYearBE = () => {
+    if (typeof getCurrentAcademicYearBE === "function") {
+      const year = Number(getCurrentAcademicYearBE());
+      if (Number.isFinite(year)) return String(year);
+    }
+    const now = new Date();
+    const yearCE = now.getFullYear();
+    const month = now.getMonth() + 1;
+    return String((month >= 6 ? yearCE : yearCE - 1) + 543);
+  };
+
+  const updateBorrowAcademicYearDisplay = () => {
+    if (borrowAcademicYearDisplayEl) {
+      borrowAcademicYearDisplayEl.textContent = `ปีการศึกษา ${getBorrowAcademicYearBE()}`;
+    }
+  };
+
+  const normalizeBorrowYearValueMap = (value = {}) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.entries(value).reduce((acc, [year, itemValue]) => {
+      const normalizedYear = (year || "").toString().trim();
+      const normalizedValue = (itemValue || "").toString().trim();
+      if (/^\d{4}$/.test(normalizedYear) && normalizedValue) {
+        acc[normalizedYear] = normalizedValue;
+      }
+      return acc;
+    }, {});
+  };
+
+  const resolveBorrowYearValue = (map = {}, academicYear = getBorrowAcademicYearBE()) => {
+    const normalizedMap = normalizeBorrowYearValueMap(map);
+    const year = Number((academicYear || "").toString().trim());
+    if (!Number.isFinite(year)) return "";
+    if (normalizedMap[String(year)]) return normalizedMap[String(year)];
+    const previousYear = Object.keys(normalizedMap)
+      .map((key) => Number(key))
+      .filter((itemYear) => Number.isFinite(itemYear) && itemYear < year)
+      .sort((a, b) => b - a)[0];
+    return previousYear ? normalizedMap[String(previousYear)] || "" : "";
+  };
+
+  const resolveBorrowOrgDisplayName = (item = {}, academicYear = getBorrowAcademicYearBE()) =>
+    resolveBorrowYearValue(
+      item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear,
+      academicYear
+    ) || (item?.name || item?.orgName || "").toString().trim();
+
+  const resolveBorrowOrgCodeForYear = (item = {}, academicYear = getBorrowAcademicYearBE()) =>
+    normalizeOrgCode(
+      resolveBorrowYearValue(
+        item?.codeByAcademicYear || item?.orgCodeByAcademicYear,
+        academicYear
+      ) || item?.code || item?.orgCode || ""
+    );
+
   const collectBorrowOrgTypeOptions = () => {
     const fromFilters =
       typeof orgFilters !== "undefined" && Array.isArray(orgFilters)
@@ -352,13 +408,14 @@ function initBorrowAssetsApp() {
     if (!selectedType || selectedType === OTHER_ORG_VALUE) return [];
     const codeByName = new Map();
     const fromFilters = [];
+    const academicYear = getBorrowAcademicYearBE();
     if (typeof orgFilters !== "undefined" && Array.isArray(orgFilters)) {
       orgFilters
         .filter((item) => (item?.group || "").toString().trim() === selectedType)
         .forEach((item) => {
-          const name = (item?.name || "").toString().trim();
+          const name = resolveBorrowOrgDisplayName(item, academicYear);
           if (!name) return;
-          const code = (item?.code || "").toString().trim();
+          const code = resolveBorrowOrgCodeForYear(item, academicYear);
           if (code && !codeByName.has(name)) codeByName.set(name, code);
           fromFilters.push(name);
         });
@@ -528,21 +585,22 @@ function initBorrowAssetsApp() {
     const selectedType = (borrowProjectName?.value || "").toString().trim();
     if (!selectedType || selectedType === OTHER_ORG_VALUE) return "CU.00";
     const selectedDept = getBorrowProjectDeptValueForSubmit();
+    const academicYear = getBorrowAcademicYearBE();
     const rows =
       typeof orgFilters !== "undefined" && Array.isArray(orgFilters) ? orgFilters : [];
     if (!rows.length) return "";
     const exact = rows.find((item) => {
       const group = (item?.group || "").toString().trim();
-      const name = (item?.name || "").toString().trim();
+      const name = resolveBorrowOrgDisplayName(item, academicYear);
       return group === selectedType && name === selectedDept;
     });
-    const exactCode = normalizeOrgCode(exact?.code || "");
+    const exactCode = resolveBorrowOrgCodeForYear(exact, academicYear);
     if (exactCode) return exactCode;
     const firstByGroup = rows.find((item) => {
       const group = (item?.group || "").toString().trim();
-      return group === selectedType && normalizeOrgCode(item?.code || "");
+      return group === selectedType && resolveBorrowOrgCodeForYear(item, academicYear);
     });
-    const groupCode = normalizeOrgCode(firstByGroup?.code || "");
+    const groupCode = resolveBorrowOrgCodeForYear(firstByGroup, academicYear);
     return groupCode || "";
   };
 
@@ -1481,6 +1539,7 @@ function initBorrowAssetsApp() {
   const toBorrowCsvRow = (item) => ({
     "เลขคำขอ": item.requestNo || item.id || "",
     "วันที่ยื่น": item.createdDate || "",
+    "ปีการศึกษา": item.academicYear || "",
     "ชื่อผู้ขอ": [item.firstName, item.lastName].filter(Boolean).join(" ").trim(),
     "ชื่อเล่น": item.nickname || "",
     "อีเมล": item.requesterEmail || "",
@@ -1505,6 +1564,7 @@ function initBorrowAssetsApp() {
       headers: [
         "เลขคำขอ",
         "วันที่ยื่น",
+        "ปีการศึกษา",
         "ชื่อผู้ขอ",
         "ชื่อเล่น",
         "อีเมล",
@@ -2124,7 +2184,8 @@ function initBorrowAssetsApp() {
 
   const renderRequesterCell = (item) => {
     const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ").trim() || "-";
-    const projectMeta = [item.projectName, item.projectDept].filter(Boolean).join(" • ");
+    const academicYearMeta = item.academicYear ? `ปีการศึกษา ${item.academicYear}` : "";
+    const projectMeta = [academicYearMeta, item.projectName, item.projectDept].filter(Boolean).join(" • ");
     const contactMeta = [item.phone, item.lineId ? `Line: ${item.lineId}` : ""]
       .filter(Boolean)
       .join(" • ");
@@ -2208,7 +2269,8 @@ function initBorrowAssetsApp() {
   const renderStaffRequestCard = (item, actionHtml, staffNote = "") => {
     const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ").trim() || "-";
     const requestNo = (item.requestNo || item.id || "-").toString().trim();
-    const projectMeta = [item.projectName, item.projectDept].filter(Boolean).join(" • ");
+    const academicYearMeta = item.academicYear ? `ปีการศึกษา ${item.academicYear}` : "";
+    const projectMeta = [academicYearMeta, item.projectName, item.projectDept].filter(Boolean).join(" • ");
     const contactMeta = [item.phone, item.lineId ? `Line: ${item.lineId}` : ""]
       .filter(Boolean)
       .join(" • ");
@@ -2759,7 +2821,8 @@ function initBorrowAssetsApp() {
     const studentMeta = [item.faculty, item.year ? `ชั้นปี ${item.year}` : "",item.studentId].filter(Boolean).join(" • ");
     const requesterEmailMeta = (item.requesterEmail || "").toString().trim();
     const contactMeta = [item.phone, item.lineId ? `Line: ${item.lineId}` : ""].filter(Boolean).join(" • ");
-    const projectMeta = [item.projectName, item.projectDept].filter(Boolean).join(" • ");
+    const academicYearMeta = item.academicYear ? `ปีการศึกษา ${item.academicYear}` : "";
+    const projectMeta = [academicYearMeta, item.projectName, item.projectDept].filter(Boolean).join(" • ");
     const activityMeta = (item.projectDetail || "").toString().trim();
     const originalPickupDate = (item.originalPickupDate || "").toString().trim();
     const hasChangedPickupDate = !!originalPickupDate && originalPickupDate !== item.pickupDate;
@@ -3049,6 +3112,7 @@ function initBorrowAssetsApp() {
       year: (safeData.year || "").toString().trim(),
       phone: (safeData.phone || "").toString().trim(),
       lineId: (safeData.lineId || "").toString().trim(),
+      academicYear: (safeData.academicYear || safeData.schoolYear || "").toString().trim(),
       projectName: (safeData.projectName || "").toString().trim(),
       projectDept: (safeData.projectDept || "").toString().trim(),
       projectDetail: (safeData.projectDetail || "").toString().trim(),
@@ -3307,6 +3371,7 @@ function initBorrowAssetsApp() {
 
     const payload = {
       requestNo: nextRequestNo,
+      academicYear: getBorrowAcademicYearBE(),
       firstName: requesterProfile.firstName,
       lastName: requesterProfile.lastName,
       nickname: requesterProfile.nickname,
@@ -3528,7 +3593,9 @@ function initBorrowAssetsApp() {
   };
 
   if (hasBorrowFormSection) {
+    updateBorrowAcademicYearDisplay();
     void ensureBorrowOrgCodeData().then(() => {
+      updateBorrowAcademicYearDisplay();
       populateBorrowProjectTypeOptions();
       populateBorrowProjectDeptOptions();
     });

@@ -1043,6 +1043,10 @@
     min-height: 44px;
   }
 
+  .mobile-meeting-filter-sheet .mobile-filter-footer {
+    display: none;
+  }
+
   @keyframes mobile-filter-backdrop-in {
     from {
       opacity: 0;

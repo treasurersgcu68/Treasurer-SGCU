@@ -4016,6 +4016,31 @@ function initStaffAccessPages() {
     return "";
   };
 
+  const ORG_REPRESENTATIVE_ROLE_ORDER = new Map(
+    REQUIRED_ORG_REPRESENTATIVE_ROLES.map((role, index) => [role.key, index])
+  );
+
+  const getOrgRepresentativeRoleSortIndex = (item = {}) => {
+    const roleKey = getOrgRepresentativeRoleKey(item.representativeRole);
+    return ORG_REPRESENTATIVE_ROLE_ORDER.has(roleKey) ? ORG_REPRESENTATIVE_ROLE_ORDER.get(roleKey) : 99;
+  };
+
+  const compareOrgRepresentativeApplications = (a = {}, b = {}) => {
+    const roleCompare = getOrgRepresentativeRoleSortIndex(a) - getOrgRepresentativeRoleSortIndex(b);
+    if (roleCompare) return roleCompare;
+    const orgTypeCompare = (a.organizationType || "").toString().localeCompare((b.organizationType || "").toString(), "th");
+    if (orgTypeCompare) return orgTypeCompare;
+    const orgNameCompare = (a.organizationName || "").toString().localeCompare((b.organizationName || "").toString(), "th");
+    if (orgNameCompare) return orgNameCompare;
+    const applicantA = getOrgRepresentativeApplicant(a);
+    const applicantB = getOrgRepresentativeApplicant(b);
+    const nameCompare = (applicantA.displayName || applicantA.email || "").localeCompare(applicantB.displayName || applicantB.email || "", "th");
+    if (nameCompare) return nameCompare;
+    return (a.id || "").toString().localeCompare((b.id || "").toString(), "th");
+  };
+
+  const sortOrgRepresentativeApplications = (items = []) => [...items].sort(compareOrgRepresentativeApplications);
+
   const getMissingOrgRepresentativeRoles = (approvedItems = []) => {
     const approvedKeys = new Set(
       approvedItems
@@ -4121,6 +4146,13 @@ function initStaffAccessPages() {
       if (status === "approved") entry.approved.push(item);
       else if (status === "pending") entry.pending.push(item);
       else if (status === "rejected") entry.rejected.push(item);
+    });
+
+    orgMap.forEach((entry) => {
+      entry.applications = sortOrgRepresentativeApplications(entry.applications);
+      entry.approved = sortOrgRepresentativeApplications(entry.approved);
+      entry.pending = sortOrgRepresentativeApplications(entry.pending);
+      entry.rejected = sortOrgRepresentativeApplications(entry.rejected);
     });
 
     currentOrgRepresentativeOrganizations = Array.from(orgMap.values())
@@ -4262,8 +4294,10 @@ function initStaffAccessPages() {
 
   const renderOrgRepresentativePending = () => {
     if (!orgRepresentativePendingBodyEl) return;
-    currentOrgRepresentativePending = currentOrgRepresentativeApplications
-      .filter((item) => normalizeApplicationStatus(item.status) === "pending");
+    currentOrgRepresentativePending = sortOrgRepresentativeApplications(
+      currentOrgRepresentativeApplications
+        .filter((item) => normalizeApplicationStatus(item.status) === "pending")
+    );
 
     if (!currentOrgRepresentativePending.length) {
       orgRepresentativePendingBodyEl.innerHTML = '<tr><td colspan="5">ไม่มีคำขอตัวแทนองค์กรที่รออนุมัติ</td></tr>';
@@ -4313,8 +4347,10 @@ function initStaffAccessPages() {
 
   const renderOrgRepresentativeHistory = () => {
     if (!orgRepresentativeHistoryBodyEl || !orgRepresentativeHistoryCaptionEl) return;
-    currentOrgRepresentativeApproved = currentOrgRepresentativeApplications
-      .filter((item) => normalizeApplicationStatus(item.status) === "approved");
+    currentOrgRepresentativeApproved = sortOrgRepresentativeApplications(
+      currentOrgRepresentativeApplications
+        .filter((item) => normalizeApplicationStatus(item.status) === "approved")
+    );
     orgRepresentativeHistoryCaptionEl.textContent = `แสดงผล ${currentOrgRepresentativeApproved.length} รายการ`;
 
     if (!currentOrgRepresentativeApproved.length) {
@@ -4378,15 +4414,15 @@ function initStaffAccessPages() {
     const rows = currentOrgRepresentativeFilteredOrganizations.map((entry) => {
       const complete = getOrgRepresentativeCompleteness(entry.approved, entry.pending.length);
       const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
-      const approvedPeople = entry.approved.map((item) => {
+      const approvedPeople = sortOrgRepresentativeApplications(entry.approved).map((item) => {
         const applicant = getOrgRepresentativeApplicant(item);
         return `${applicant.displayName || "-"} (${item.representativeRole || "-"})`;
       });
-      const pendingPeople = entry.pending.map((item) => {
+      const pendingPeople = sortOrgRepresentativeApplications(entry.pending).map((item) => {
         const applicant = getOrgRepresentativeApplicant(item);
         return `${applicant.displayName || "-"} (${item.representativeRole || "-"})`;
       });
-      const rejectedPeople = entry.rejected.map((item) => {
+      const rejectedPeople = sortOrgRepresentativeApplications(entry.rejected).map((item) => {
         const applicant = getOrgRepresentativeApplicant(item);
         return `${applicant.displayName || "-"} (${item.representativeRole || "-"})`;
       });
@@ -4629,7 +4665,7 @@ function initStaffAccessPages() {
     ].map((value) => (value || "").toString().trim()).filter(Boolean).join(" · ");
     if (detailSubtitleEl) detailSubtitleEl.textContent = organizationContext || "ข้อมูลตัวแทนรายองค์กร";
     const missingRoles = getMissingOrgRepresentativeRoles(entry.approved).map((role) => role.label);
-    const sortedApplications = [...entry.pending, ...entry.approved, ...entry.rejected];
+    const sortedApplications = sortOrgRepresentativeApplications(entry.applications);
     const rowHtml = sortedApplications.length
       ? sortedApplications.map((item) => {
         const applicant = getOrgRepresentativeApplicant(item);

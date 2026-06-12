@@ -220,6 +220,15 @@
     return y && r ? `ปี ${y} รอบ ${r}` : "";
   };
 
+  const formatBudgetRoundEditingLabel = (round = {}) => {
+    const year = normalizeAcademicYearText(round.year || round.budgetRoundYear);
+    const roundNo = normalizeRoundName(round.roundNo || round.budgetRoundNo)
+      .replace(/\s*\([^)]*\)\s*/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return roundNo && year ? `${roundNo} ${year}` : round.label || formatBudgetRoundLabel(year, roundNo);
+  };
+
   const normalizeBudgetActiveRounds = (value, fallback = {}) => {
     const rows = (Array.isArray(value) ? value : [])
       .map((item) => {
@@ -1773,7 +1782,7 @@
     renderBudgetGroupCeilingInputs();
     syncRoundStatus();
     updateSummary();
-    setMessage(actionMessageEl, `กำลังแก้ไข ${round.label}`, "#1d4ed8");
+    setMessage(actionMessageEl, `กำลังแก้ไข: ${formatBudgetRoundEditingLabel(round)}`, "#1d4ed8");
   };
 
   const getOrgCodeMap = async () => {

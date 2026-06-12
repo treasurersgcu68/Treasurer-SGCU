@@ -520,8 +520,8 @@
   .page-view[data-page="meeting-room-staff"] .tabs.panel-header-tabs .tab-btn {
     min-width: 0;
     width: 100%;
-    white-space: normal;
-    line-height: 1.35;
+    white-space: nowrap;
+    line-height: 1.25;
   }
 
   #meetingRoomExportCsvBtn {
@@ -539,7 +539,7 @@
   }
 
   .meeting-history-filter-bar {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .meeting-history-filter-bar input,
@@ -547,6 +547,42 @@
   .meeting-history-filter-bar .search-box input {
     width: 100%;
     min-width: 0;
+  }
+
+  .meeting-history-filter-bar .filter-group:nth-child(1) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .meeting-history-filter-bar .filter-group:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .meeting-history-filter-bar .filter-group:nth-child(3) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .meeting-history-filter-bar .filter-search {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .meeting-history-filter-bar .meeting-history-filter-actions {
+    grid-column: 2;
+    grid-row: 4;
+    width: auto;
+    min-width: 96px;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-self: end;
+  }
+
+  .meeting-history-filter-bar .meeting-history-icon-btn {
+    width: 44px;
+    min-width: 44px;
   }
 
   #meetingRoomStaffCalendarPanel .meeting-calendar-toolbar {

@@ -616,6 +616,25 @@ function normalizeOrganizationCatalogDoc(docSnap) {
   const name = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
   const code = (data.code || data.orgCode || row[2] || "").toString().trim().toUpperCase();
   const documentRunCode = (data.documentRunCode || data.runCode || row[3] || "").toString().trim();
+  const normalizeYearTextMap = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.entries(value).reduce((acc, [year, text]) => {
+      const normalizedYear = (year || "").toString().trim();
+      const normalizedText = (text || "").toString().trim();
+      if (/^\d{4}$/.test(normalizedYear) && normalizedText) {
+        acc[normalizedYear] = normalizedText;
+      }
+      return acc;
+    }, {});
+  };
+  const nameByAcademicYear = {
+    ...normalizeYearTextMap(data.orgNameByAcademicYear),
+    ...normalizeYearTextMap(data.organizationNameByAcademicYear),
+    ...normalizeYearTextMap(data.nameByAcademicYear)
+  };
+  if (name && !Object.keys(nameByAcademicYear).length) {
+    nameByAcademicYear["2568"] = name;
+  }
   const normalizeRunMap = (value) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
     return Object.entries(value).reduce((acc, [year, runCode]) => {
@@ -665,6 +684,7 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     id: docSnap.id,
     group,
     name,
+    nameByAcademicYear,
     code,
     codeByAcademicYear,
     documentRunCode,

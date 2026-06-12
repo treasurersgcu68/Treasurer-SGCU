@@ -17,38 +17,6 @@
                 <div id="meetingRoomStaffPanelTitle" class="panel-title">รายการคำขอ</div>
                 <div id="meetingRoomStaffPanelCaption" class="panel-caption">แสดงคำขอที่ยังไม่เลยวันขอ</div>
                 <div id="meetingRoomStaffActionMessage" class="section-text-sm" aria-live="polite"></div>
-                <div id="meetingRoomHistorySearchWrap" class="meeting-history-filter-bar" style="display:none;">
-                  <div class="filter-group">
-                    <label for="meetingRoomHistoryDateInput">กรองตามวัน</label>
-                    <input id="meetingRoomHistoryDateInput" type="date" />
-                  </div>
-                  <div class="filter-group">
-                    <label for="meetingRoomHistoryRoomSelect">กรองตามห้อง</label>
-                    <select id="meetingRoomHistoryRoomSelect">
-                      <option value="all">ทุกห้องประชุม</option>
-                    </select>
-                  </div>
-                  <div class="filter-group filter-search">
-                    <label for="meetingRoomHistorySearchInput">ค้นหาคำขอ</label>
-                    <div class="search-box">
-                      <input
-                        id="meetingRoomHistorySearchInput"
-                        type="search"
-                        placeholder="พิมพ์คำค้น เช่น ห้องประชุม 1 ชื่อผู้ขอ หรือวัตถุประสงค์"
-                        autocomplete="off"
-                      />
-                      <button
-                        id="meetingRoomHistorySearchClear"
-                        class="search-clear"
-                        type="button"
-                        aria-label="ล้างคำค้นหา"
-                        style="display:none;"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
               <button id="meetingRoomExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
               <div class="tabs panel-header-tabs">
@@ -66,6 +34,49 @@
                 >
                   ประวัติการขอ
                 </button>
+              </div>
+              <div id="meetingRoomHistorySearchWrap" class="meeting-history-filter-bar" style="display:none;">
+                <div class="filter-group">
+                  <label for="meetingRoomHistoryStartDateInput">ตั้งแต่วันที่</label>
+                  <input id="meetingRoomHistoryStartDateInput" type="date" />
+                </div>
+                <div class="filter-group">
+                  <label for="meetingRoomHistoryEndDateInput">ถึงวันที่</label>
+                  <input id="meetingRoomHistoryEndDateInput" type="date" />
+                </div>
+                <div class="filter-group">
+                  <label for="meetingRoomHistoryRoomSelect">กรองตามห้อง</label>
+                  <select id="meetingRoomHistoryRoomSelect">
+                    <option value="all">ทุกห้องประชุม</option>
+                  </select>
+                </div>
+                <div class="filter-group filter-search">
+                  <label for="meetingRoomHistorySearchInput">ค้นหาคำขอ</label>
+                  <div class="search-box">
+                    <input
+                      id="meetingRoomHistorySearchInput"
+                      type="search"
+                      placeholder="พิมพ์คำค้น เช่น ห้องประชุม 1 ชื่อผู้ขอ หรือวัตถุประสงค์"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+                <div class="meeting-history-filter-actions">
+                  <button
+                    id="meetingRoomHistoryLoadBtn"
+                    class="btn-primary meeting-history-icon-btn"
+                    type="button"
+                    aria-label="แสดงผล"
+                    title="แสดงผล"
+                  >✓</button>
+                  <button
+                    id="meetingRoomHistoryResetBtn"
+                    class="btn-ghost meeting-history-icon-btn"
+                    type="button"
+                    aria-label="ล้างตัวกรอง"
+                    title="ล้างตัวกรอง"
+                  >✕</button>
+                </div>
               </div>
             </div>
             <div class="table-wrapper">

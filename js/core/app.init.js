@@ -483,10 +483,11 @@ function initMeetingRoomMobileActionBar() {
   const listPanel = document.getElementById("staffMeetingAll");
   const calendarPanel = document.getElementById("meetingRoomStaffCalendarPanel");
   const filterTarget = document.getElementById("meetingRoomHistorySearchWrap");
-  const dateFilter = document.getElementById("meetingRoomHistoryDateInput");
+  const startDateFilter = document.getElementById("meetingRoomHistoryStartDateInput");
+  const endDateFilter = document.getElementById("meetingRoomHistoryEndDateInput");
   const roomFilter = document.getElementById("meetingRoomHistoryRoomSelect");
   const searchFilter = document.getElementById("meetingRoomHistorySearchInput");
-  const searchClear = document.getElementById("meetingRoomHistorySearchClear");
+  const resetFilter = document.getElementById("meetingRoomHistoryResetBtn");
 
   const sheet = document.createElement("div");
   sheet.className = "mobile-filter-sheet mobile-meeting-filter-sheet";
@@ -527,10 +528,11 @@ function initMeetingRoomMobileActionBar() {
   };
 
   const getFilterCount = () => {
-    const dateValue = (dateFilter?.value || "").trim();
+    const startDateValue = (startDateFilter?.value || "").trim();
+    const endDateValue = (endDateFilter?.value || "").trim();
     const roomValue = (roomFilter?.value || "all").trim();
     const searchValue = (searchFilter?.value || "").trim();
-    return [Boolean(dateValue), roomValue !== "all", Boolean(searchValue)].filter(Boolean).length;
+    return [Boolean(startDateValue || endDateValue), roomValue !== "all", Boolean(searchValue)].filter(Boolean).length;
   };
 
   const sync = () => {
@@ -613,19 +615,7 @@ function initMeetingRoomMobileActionBar() {
   };
 
   const resetFilters = () => {
-    if (dateFilter) {
-      dateFilter.value = "";
-      dateFilter.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    if (roomFilter) {
-      roomFilter.value = "all";
-      roomFilter.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    if (searchFilter) {
-      searchFilter.value = "";
-      searchFilter.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-    searchClear?.click();
+    resetFilter?.click();
     window.setTimeout(sync, 0);
   };
 
@@ -667,7 +657,7 @@ function initMeetingRoomMobileActionBar() {
     pageObserver.observe(pageEl, { attributes: true, attributeFilter: ["class"] });
   });
 
-  [requestsTab, historyTab, dateFilter, roomFilter, searchFilter].forEach((el) => {
+  [requestsTab, historyTab, startDateFilter, endDateFilter, roomFilter, searchFilter].forEach((el) => {
     if (!el) return;
     el.addEventListener("click", () => window.setTimeout(sync, 0));
     el.addEventListener("input", () => window.setTimeout(sync, 0));

@@ -13,10 +13,12 @@ function initMeetingRoomStaffApproval() {
   const staffActionMessageEl = document.getElementById("meetingRoomStaffActionMessage");
   const staffRequestReminderEl = document.getElementById("meetingStaffRequestReminder");
   const historySearchWrapEl = document.getElementById("meetingRoomHistorySearchWrap");
-  const historyDateInputEl = document.getElementById("meetingRoomHistoryDateInput");
+  const historyStartDateInputEl = document.getElementById("meetingRoomHistoryStartDateInput");
+  const historyEndDateInputEl = document.getElementById("meetingRoomHistoryEndDateInput");
+  const historyLoadBtnEl = document.getElementById("meetingRoomHistoryLoadBtn");
+  const historyResetBtnEl = document.getElementById("meetingRoomHistoryResetBtn");
   const historyRoomSelectEl = document.getElementById("meetingRoomHistoryRoomSelect");
   const historySearchInputEl = document.getElementById("meetingRoomHistorySearchInput");
-  const historySearchClearEl = document.getElementById("meetingRoomHistorySearchClear");
   const exportCsvBtnEl = document.getElementById("meetingRoomExportCsvBtn");
   const roomManageForm = document.getElementById("meetingRoomManageForm");
   const roomManageInput = document.getElementById("meetingRoomManageInput");
@@ -80,6 +82,7 @@ function initMeetingRoomStaffApproval() {
       firestore.addDoc &&
       firestore.onSnapshot &&
       firestore.query &&
+      firestore.where &&
       firestore.orderBy &&
       firestore.doc &&
       firestore.deleteDoc &&
@@ -420,9 +423,12 @@ function initMeetingRoomStaffApproval() {
   };
 
   let bookings = [];
+  let requestBookings = [];
+  let historyBookings = [];
   let rooms = [...DEFAULT_ROOMS];
   let customHolidays = [];
   let unsubscribe = null;
+  let unsubscribeHistory = null;
   let unsubscribeRooms = null;
   let unsubscribeHolidays = null;
   let hasRenderedOnce = false;
@@ -436,7 +442,10 @@ function initMeetingRoomStaffApproval() {
   let editingRoomId = "";
   let calendarCursor = new Date();
   let activeStaffDayModalDate = "";
-  let historyDateFilter = "";
+  let historyStartDateFilter = "";
+  let historyEndDateFilter = "";
+  let historyHasLoaded = false;
+  let historyLoadErrorText = "";
   let historyRoomFilter = "all";
   let historySearchQuery = "";
   let roomsLoadFailed = false;
@@ -487,6 +496,17 @@ function initMeetingRoomStaffApproval() {
       status: derivedStatus
     };
   };
+
+  const syncLoadedBookings = () => {
+    const byId = new Map();
+    [...requestBookings, ...historyBookings].forEach((booking) => {
+      if (!booking?.id) return;
+      byId.set(booking.id, booking);
+    });
+    bookings = Array.from(byId.values());
+  };
+
+  const getTodayKey = () => toDateKey(new Date());
 
   const pickBookingAuditFields = (item = {}) => ({
     id: item.id || "",
@@ -965,14 +985,17 @@ function initMeetingRoomStaffApproval() {
       staffAutoRetryTimer = null;
     }
     if (typeof unsubscribe === "function") unsubscribe();
+    if (typeof unsubscribeHistory === "function") unsubscribeHistory();
     if (typeof unsubscribeRooms === "function") unsubscribeRooms();
     if (typeof unsubscribeHolidays === "function") unsubscribeHolidays();
     unsubscribe = null;
+    unsubscribeHistory = null;
     unsubscribeRooms = null;
     unsubscribeHolidays = null;
     subscribeRooms();
     subscribeHolidays();
     subscribeBookings();
+    if (historyHasLoaded) subscribeHistoryBookings();
   };
 
   const scheduleStaffAutoRetry = () => {
@@ -1586,13 +1609,16 @@ function initMeetingRoomStaffApproval() {
     }
     if (panelCaptionEl) {
       panelCaptionEl.textContent = activeTab === "history"
-        ? "แสดงรายการที่อนุมัติแล้วหรือเลยวันแล้ว ใช้ตัวกรองเพื่อค้นหารายการย้อนหลัง"
+        ? "เลือกช่วงวันที่แล้วกดแสดงผล ระบบจึงจะโหลดประวัติย้อนหลัง"
         : "แสดงรายการที่ยังไม่อนุมัติและยังไม่เลยวัน ใช้ตัวกรองเพื่อหาเฉพาะวัน ห้อง หรือผู้ขอ";
     }
     if (historySearchWrapEl) {
       historySearchWrapEl.style.display = "grid";
     }
-    syncHistorySearchUI();
+    [historyStartDateInputEl, historyEndDateInputEl, historyLoadBtnEl, historyResetBtnEl].forEach((el) => {
+      const group = el?.closest?.(".filter-group, .meeting-history-filter-actions");
+      if (group) group.style.display = activeTab === "history" ? "" : "none";
+    });
   };
 
   const sortBookingRows = (source = []) =>
@@ -1631,10 +1657,9 @@ function initMeetingRoomStaffApproval() {
       .join(" ");
 
   const hasActiveBookingFilters = () =>
-    !!historySearchQuery || !!historyDateFilter || historyRoomFilter !== "all";
+    !!historySearchQuery || historyRoomFilter !== "all";
 
   const bookingMatchesFilters = (booking) => {
-    if (historyDateFilter && booking.date !== historyDateFilter) return false;
     if (historyRoomFilter !== "all") {
       const roomName = normalizeRoomDisplay(booking.roomId, booking.roomName).trim();
       if (roomName !== historyRoomFilter) return false;
@@ -1649,7 +1674,8 @@ function initMeetingRoomStaffApproval() {
   };
 
   const exportMeetingRoomCsv = () => {
-    const rows = getDisplayRowsForActiveTab(sortBookingRows(bookings)).map((booking) => ({
+    const exportSource = activeTab === "history" ? historyBookings : requestBookings;
+    const rows = getDisplayRowsForActiveTab(sortBookingRows(exportSource)).map((booking) => ({
       "ห้อง": normalizeRoomDisplay(booking.roomId, booking.roomName),
       "วันที่": booking.date || "",
       "เวลาเริ่ม": booking.startTime || "",
@@ -1717,11 +1743,6 @@ function initMeetingRoomStaffApproval() {
     const nextValue = roomNames.includes(currentValue) ? currentValue : "all";
     historyRoomSelectEl.value = nextValue;
     historyRoomFilter = nextValue;
-  };
-
-  const syncHistorySearchUI = () => {
-    if (!historySearchClearEl) return;
-    historySearchClearEl.style.display = historySearchQuery ? "inline-flex" : "none";
   };
 
   const meetingPagerEl = (() => {
@@ -1872,6 +1893,12 @@ function initMeetingRoomStaffApproval() {
       const bDate = `${b.date}T${b.startTime || "00:00"}`;
       return aDate.localeCompare(bDate);
     });
+    const tableSource = activeTab === "history" ? historyBookings : requestBookings;
+    const tableSorted = [...tableSource].sort((a, b) => {
+      const aDate = `${a.date}T${a.startTime || "00:00"}`;
+      const bDate = `${b.date}T${b.startTime || "00:00"}`;
+      return aDate.localeCompare(bDate);
+    });
 
     const pending = sorted.filter(
       (booking) => booking.status === "pending" || booking.status === "cancel_requested" || booking.status === "reschedule_requested"
@@ -1927,12 +1954,17 @@ function initMeetingRoomStaffApproval() {
     if (rejectedCountEl) rejectedCountEl.textContent = rejectedCount;
 
     syncHistoryRoomFilterOptions();
-    const rowsForTab = getVisibleRowsForActiveTab(sorted);
+    const rowsForTab = getVisibleRowsForActiveTab(tableSorted);
     const hasFilters = hasActiveBookingFilters();
-    const displayRows = hasFilters ? rowsForTab.filter(bookingMatchesFilters) : rowsForTab;
+    const shouldShowHistoryPrompt = activeTab === "history" && !historyHasLoaded && !historyLoadErrorText;
+    const displayRows = shouldShowHistoryPrompt
+      ? []
+      : (hasFilters ? rowsForTab.filter(bookingMatchesFilters) : rowsForTab);
     const calendarRows = getCalendarRows(sorted);
     const emptyText = activeTab === "history"
-      ? (hasFilters ? "ไม่พบประวัติการขอตามตัวกรองที่เลือก" : "ยังไม่มีประวัติการขอ")
+      ? (shouldShowHistoryPrompt
+        ? "เลือกช่วงวันที่แล้วกดแสดงผลเพื่อโหลดประวัติการขอ"
+        : (historyLoadErrorText || (hasFilters ? "ไม่พบประวัติการขอตามตัวกรองที่เลือก" : "ยังไม่มีประวัติการขอในช่วงวันที่เลือก")))
       : (hasFilters ? "ไม่พบรายการคำขอตามตัวกรองที่เลือก" : "ยังไม่มีรายการคำขอที่ยังไม่เลยวัน");
     const pageMeta = getPagedRows(displayRows, pageByTab[activeTab]);
     pageByTab[activeTab] = pageMeta.currentPage;
@@ -2159,7 +2191,8 @@ function initMeetingRoomStaffApproval() {
       const colRef = firestore.collection(firestore.db, COLLECTION_NAME);
       const bookingsQuery = firestore.query(
         colRef,
-        firestore.orderBy("date", "desc"),
+        firestore.where("date", ">=", getTodayKey()),
+        firestore.orderBy("date", "asc"),
         ...(firestore.limit ? [firestore.limit(STAFF_BOOKING_LIST_LIMIT)] : [])
       );
       if (subscribeGuardTimer) {
@@ -2176,8 +2209,9 @@ function initMeetingRoomStaffApproval() {
       unsubscribe = firestore.onSnapshot(
         bookingsQuery,
         (snapshot) => {
-          bookings = snapshot.docs.map(mapSnapshotDoc);
-          syncStaffRequestNotifications(bookings);
+          requestBookings = snapshot.docs.map(mapSnapshotDoc);
+          syncLoadedBookings();
+          syncStaffRequestNotifications(requestBookings);
           bookingsLoadFailed = false;
           clearStaffAutoRetry();
           render();
@@ -2242,6 +2276,113 @@ function initMeetingRoomStaffApproval() {
     }
   };
 
+  const validateHistoryDateRange = () => {
+    if (!historyStartDateFilter || !historyEndDateFilter) {
+      return "กรุณาเลือกวันที่เริ่มและวันที่สิ้นสุดก่อนแสดงผล";
+    }
+    if (historyStartDateFilter > historyEndDateFilter) {
+      return "วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด";
+    }
+    return "";
+  };
+
+  const resetHistorySubscription = () => {
+    if (typeof unsubscribeHistory === "function") {
+      unsubscribeHistory();
+      unsubscribeHistory = null;
+    }
+    historyHasLoaded = false;
+    historyLoadErrorText = "";
+    historyBookings = [];
+    syncLoadedBookings();
+  };
+
+  const resetMeetingHistoryFilters = () => {
+    historyStartDateFilter = "";
+    historyEndDateFilter = "";
+    historyRoomFilter = "all";
+    historySearchQuery = "";
+    if (historyStartDateInputEl) historyStartDateInputEl.value = "";
+    if (historyEndDateInputEl) historyEndDateInputEl.value = "";
+    if (historyRoomSelectEl) historyRoomSelectEl.value = "all";
+    if (historySearchInputEl) historySearchInputEl.value = "";
+    resetHistorySubscription();
+    pageByTab.requests = 1;
+    pageByTab.history = 1;
+    setStaffActionMessage(
+      activeTab === "history" ? "ล้างตัวกรองแล้ว เลือกช่วงวันที่เพื่อโหลดประวัติอีกครั้ง" : "ล้างตัวกรองแล้ว",
+      "#6b7280"
+    );
+    render();
+  };
+
+  const subscribeHistoryBookings = () => {
+    if (!hasFirestore) return;
+    const validationMessage = validateHistoryDateRange();
+    if (validationMessage) {
+      historyHasLoaded = false;
+      historyLoadErrorText = validationMessage;
+      render();
+      setStaffActionMessage(validationMessage, "#b91c1c");
+      return;
+    }
+    if (typeof unsubscribeHistory === "function") {
+      unsubscribeHistory();
+      unsubscribeHistory = null;
+    }
+    historyHasLoaded = true;
+    historyLoadErrorText = "";
+    pageByTab.history = 1;
+    allTableBody.innerHTML = `
+      <tr>
+        <td colspan="6">กำลังโหลดประวัติการขอ...</td>
+      </tr>
+    `;
+    setStaffActionMessage("กำลังโหลดประวัติการขอ...", "#6b7280");
+
+    try {
+      const colRef = firestore.collection(firestore.db, COLLECTION_NAME);
+      const historyQuery = firestore.query(
+        colRef,
+        firestore.where("date", ">=", historyStartDateFilter),
+        firestore.where("date", "<=", historyEndDateFilter),
+        firestore.orderBy("date", "desc"),
+        ...(firestore.limit ? [firestore.limit(STAFF_BOOKING_LIST_LIMIT)] : [])
+      );
+      unsubscribeHistory = firestore.onSnapshot(
+        historyQuery,
+        (snapshot) => {
+          historyBookings = snapshot.docs.map(mapSnapshotDoc);
+          syncLoadedBookings();
+          historyLoadErrorText = "";
+          clearStaffAutoRetry();
+          setStaffActionMessage(
+            `โหลดประวัติ ${historyBookings.length} รายการ ในช่วง ${formatDate(historyStartDateFilter)} - ${formatDate(historyEndDateFilter)}`,
+            "#047857"
+          );
+          render();
+        },
+        (err) => {
+          const detail = err?.code ? ` (${err.code})` : "";
+          historyBookings = [];
+          syncLoadedBookings();
+          historyLoadErrorText = `ไม่สามารถโหลดประวัติการขอได้${detail}`;
+          setStaffActionMessage(historyLoadErrorText, "#b91c1c");
+          render();
+          scheduleStaffAutoRetry();
+        }
+      );
+    } catch (err) {
+      const detail = err?.code ? ` (${err.code})` : "";
+      historyBookings = [];
+      syncLoadedBookings();
+      historyLoadErrorText = `ไม่สามารถเชื่อมต่อ Firestore เพื่อโหลดประวัติได้${detail}`;
+      setStaffActionMessage(historyLoadErrorText, "#b91c1c");
+      render();
+      scheduleStaffAutoRetry();
+    }
+  };
+
   const root = (queueBody || allTableBody).closest(".page");
   if (root) {
     if (tabButtons.length) {
@@ -2249,6 +2390,9 @@ function initMeetingRoomStaffApproval() {
         btn.addEventListener("click", () => {
           updateTabUI(btn.dataset.meetingStaffTab || "requests");
           pageByTab[activeTab] = 1;
+          if (activeTab === "history" && !historyHasLoaded) {
+            setStaffActionMessage("เลือกช่วงวันที่แล้วกดแสดงผลเพื่อโหลดประวัติ", "#6b7280");
+          }
           render();
         });
       });
@@ -2463,7 +2607,6 @@ function initMeetingRoomStaffApproval() {
     historySearchInputEl.addEventListener("input", () => {
       historySearchQuery = (historySearchInputEl.value || "").toString().trim().toLowerCase();
       pageByTab[activeTab] = 1;
-      syncHistorySearchUI();
       render();
     });
     historySearchInputEl.addEventListener("keydown", (event) => {
@@ -2472,30 +2615,41 @@ function initMeetingRoomStaffApproval() {
       historySearchInputEl.value = "";
       historySearchQuery = "";
       pageByTab[activeTab] = 1;
-      syncHistorySearchUI();
-      render();
-    });
-  }
-
-  if (historySearchClearEl && historySearchInputEl) {
-    historySearchClearEl.addEventListener("click", () => {
-      historySearchInputEl.value = "";
-      historySearchQuery = "";
-      pageByTab[activeTab] = 1;
-      syncHistorySearchUI();
-      historySearchInputEl.focus();
       render();
     });
   }
 
   exportCsvBtnEl?.addEventListener("click", exportMeetingRoomCsv);
 
-  if (historyDateInputEl) {
-    historyDateInputEl.addEventListener("change", () => {
-      historyDateFilter = (historyDateInputEl.value || "").toString().trim();
-      pageByTab[activeTab] = 1;
-      render();
+  if (historyStartDateInputEl) {
+    historyStartDateInputEl.addEventListener("change", () => {
+      historyStartDateFilter = (historyStartDateInputEl.value || "").toString().trim();
+      resetHistorySubscription();
+      pageByTab.history = 1;
+      if (activeTab === "history") render();
     });
+  }
+
+  if (historyEndDateInputEl) {
+    historyEndDateInputEl.addEventListener("change", () => {
+      historyEndDateFilter = (historyEndDateInputEl.value || "").toString().trim();
+      resetHistorySubscription();
+      pageByTab.history = 1;
+      if (activeTab === "history") render();
+    });
+  }
+
+  if (historyLoadBtnEl) {
+    historyLoadBtnEl.addEventListener("click", () => {
+      historyStartDateFilter = (historyStartDateInputEl?.value || "").toString().trim();
+      historyEndDateFilter = (historyEndDateInputEl?.value || "").toString().trim();
+      updateTabUI("history");
+      subscribeHistoryBookings();
+    });
+  }
+
+  if (historyResetBtnEl) {
+    historyResetBtnEl.addEventListener("click", resetMeetingHistoryFilters);
   }
 
   if (historyRoomSelectEl) {
@@ -2539,6 +2693,9 @@ function initMeetingRoomStaffApproval() {
   window.addEventListener("beforeunload", () => {
     if (typeof unsubscribe === "function") {
       unsubscribe();
+    }
+    if (typeof unsubscribeHistory === "function") {
+      unsubscribeHistory();
     }
     if (typeof unsubscribeRooms === "function") {
       unsubscribeRooms();

@@ -297,6 +297,7 @@
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
+  line-height: 1.35;
   padding: 10px 12px;
   border-radius: 12px;
   color: #374151;
@@ -325,8 +326,9 @@
   justify-content: space-between;
   gap: 8px;
   padding: 11px 12px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
+  line-height: 1.35;
   letter-spacing: 0;
   color: #4b5563;
   background: rgba(255, 247, 251, 0.9);
@@ -391,6 +393,7 @@
   margin-top: 6px;
   padding: 10px 12px;
   font-size: 13px;
+  line-height: 1.35;
   border-radius: 12px;
   border: 1px solid rgba(236, 72, 153, 0.22);
   background: linear-gradient(135deg, #fff7fa 0%, #ffe4f1 100%);
@@ -1121,7 +1124,7 @@
   }
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 840px) {
   html.sgcu-standalone {
     --mobile-bottom-nav-height: calc(58px + env(safe-area-inset-bottom, 0px));
     --mobile-context-action-height: 52px;

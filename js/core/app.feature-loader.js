@@ -45,8 +45,8 @@
         "js/features/project/app.calendar.js",
         "js/features/project/app.data.js?v=20260518-csv-refresh-1"
       ],
-      "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260513-borrow-notifications-2",
-      "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260513-borrow-notifications-2",
+      "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260613-borrow-year-filter-2",
+      "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260613-borrow-year-filter-2",
       "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
       "meeting-room-staff": [
         "js/features/booking/app.meeting-room-booking.js?v=20260504-1",

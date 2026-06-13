@@ -364,28 +364,64 @@ function initBorrowAssetsApp() {
     return previousYear ? normalizedMap[String(previousYear)] || "" : "";
   };
 
+  const resolveBorrowYearValueExact = (map = {}, academicYear = getBorrowAcademicYearBE()) => {
+    const normalizedMap = normalizeBorrowYearValueMap(map);
+    const year = (academicYear || "").toString().trim();
+    if (!/^\d{4}$/.test(year)) return "";
+    return normalizedMap[year] || "";
+  };
+
+  const getBorrowOrgNameYearMap = (item = {}) => ({
+    ...normalizeBorrowYearValueMap(item?.orgNameByAcademicYear),
+    ...normalizeBorrowYearValueMap(item?.organizationNameByAcademicYear),
+    ...normalizeBorrowYearValueMap(item?.nameByAcademicYear)
+  });
+
+  const getBorrowOrgCodeYearMap = (item = {}) => ({
+    ...normalizeBorrowYearValueMap(item?.orgCodeByAcademicYear),
+    ...normalizeBorrowYearValueMap(item?.codeByAcademicYear)
+  });
+
   const resolveBorrowOrgDisplayName = (item = {}, academicYear = getBorrowAcademicYearBE()) =>
-    resolveBorrowYearValue(
-      item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear,
-      academicYear
-    ) || (item?.name || item?.orgName || "").toString().trim();
+    resolveBorrowYearValue(getBorrowOrgNameYearMap(item), academicYear) ||
+    (item?.name || item?.organizationName || item?.orgName || "").toString().trim();
+
+  const resolveBorrowOrgDisplayNameExact = (item = {}, academicYear = getBorrowAcademicYearBE()) => {
+    const yearMap = getBorrowOrgNameYearMap(item);
+    const exactName = resolveBorrowYearValueExact(yearMap, academicYear);
+    if (exactName) return exactName;
+    return Object.keys(yearMap).length
+      ? ""
+      : (item?.name || item?.organizationName || item?.orgName || "").toString().trim();
+  };
 
   const resolveBorrowOrgCodeForYear = (item = {}, academicYear = getBorrowAcademicYearBE()) =>
     normalizeOrgCode(
-      resolveBorrowYearValue(
-        item?.codeByAcademicYear || item?.orgCodeByAcademicYear,
-        academicYear
-      ) || item?.code || item?.orgCode || ""
+      resolveBorrowYearValue(getBorrowOrgCodeYearMap(item), academicYear) ||
+      item?.code ||
+      item?.orgCode ||
+      ""
     );
 
+  const projectMatchesBorrowAcademicYear = (project = {}, academicYear = getBorrowAcademicYearBE()) => {
+    const projectYear = (project?.year || project?.academicYear || project?.schoolYear || "").toString().trim();
+    if (!projectYear) return false;
+    return projectYear === (academicYear || "").toString().trim();
+  };
+
   const collectBorrowOrgTypeOptions = () => {
+    const academicYear = getBorrowAcademicYearBE();
     const fromFilters =
       typeof orgFilters !== "undefined" && Array.isArray(orgFilters)
-        ? orgFilters.map((item) => (item?.group || "").toString().trim())
+        ? orgFilters
+          .filter((item) => resolveBorrowOrgDisplayName(item, academicYear))
+          .map((item) => (item?.group || "").toString().trim())
         : [];
     const fromProjects =
       typeof projects !== "undefined" && Array.isArray(projects)
-        ? projects.map((item) => (item?.orgGroup || "").toString().trim())
+        ? projects
+          .filter((item) => projectMatchesBorrowAcademicYear(item, academicYear))
+          .map((item) => (item?.orgGroup || "").toString().trim())
         : [];
     return Array.from(new Set([...fromFilters, ...fromProjects].filter(Boolean)))
       .sort((a, b) => b.localeCompare(a, "th"));
@@ -423,6 +459,7 @@ function initBorrowAssetsApp() {
     const fromProjects =
       typeof projects !== "undefined" && Array.isArray(projects)
         ? projects
+          .filter((item) => projectMatchesBorrowAcademicYear(item, academicYear))
           .filter((item) => (item?.orgGroup || "").toString().trim() === selectedType)
           .map((item) => (item?.orgName || "").toString().trim())
         : [];

@@ -1736,20 +1736,37 @@
 #budgetRequestOrgTotalsView {
   margin-top: 0 !important;
   padding-top: 0 !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 #budgetRequestNormalView > #budgetApprovalForm,
+#budgetRequestNormalView > .panel,
 #budgetRequestOrgTotalsView > .panel {
   margin-top: 0 !important;
   transform: none !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 #budgetApprovalForm > .panel:first-child {
   margin-top: 0 !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .budget-request-form {
   margin: 0 !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#budgetRequestNormalView > .budget-request-list-panel {
+  margin-top: 28px !important;
 }
 
 .budget-request-form .panel-body {
@@ -3389,6 +3406,9 @@
   .budget-request-form .borrow-form-row.is-3 {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+  #budgetRequestNormalView > .budget-request-list-panel {
+    margin-top: 18px !important;
   }
   .budget-request-form .meeting-form-actions {
     justify-content: stretch;
@@ -8018,6 +8038,25 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.page-view[data-page="borrow-assets"] .borrow-request-form,
+.page-view[data-page="borrow-assets"] .borrow-request-form > .panel,
+.page-view[data-page="borrow-assets"] .borrow-detail-layout,
+.page-view[data-page="borrow-assets"] .borrow-detail-section,
+.page-view[data-page="borrow-assets"] .borrow-form-row,
+.page-view[data-page="borrow-assets"] .borrow-form-field,
+.page-view[data-page="borrow-assets"] .login-input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.page-view[data-page="borrow-assets"] select.login-input {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .borrow-form-field .section-text-sm {

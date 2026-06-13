@@ -47,11 +47,11 @@
       ],
       "borrow-assets": [
         "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
-        "js/features/borrow/app.borrow-assets.js?v=20260513-borrow-notifications-2"
+        "js/features/borrow/app.borrow-assets.js?v=20260613-borrow-year-filter-2"
       ],
       "borrow-assets-staff": [
         "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
-        "js/features/borrow/app.borrow-assets.js?v=20260513-borrow-notifications-2"
+        "js/features/borrow/app.borrow-assets.js?v=20260613-borrow-year-filter-2"
       ],
       "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
       "meeting-room-staff": [

@@ -9150,6 +9150,22 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.page-view[data-page="budget-approval-staff"] #budgetRoundYearInput[readonly] {
+  background: #f8fafc;
+  color: #475569;
+  cursor: default;
+}
+
+.page-view[data-page="budget-approval-staff"] .budget-active-round-item.is-previous-year {
+  border-color: rgba(180, 83, 9, 0.35);
+  background: #fffbeb;
+}
+
+.page-view[data-page="budget-approval-staff"] .budget-active-round-state.is-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .page-view[data-page="budget-approval-staff"] .budget-round-actions-row {
   display: flex !important;
   flex-direction: row !important;
@@ -9186,6 +9202,17 @@
   flex: 1 1 0 !important;
   min-width: 0 !important;
   width: 100% !important;
+}
+
+@media (max-width: 840px) {
+  .page-view[data-page="budget-approval-staff"] .budget-staff-tabs {
+    display: none;
+  }
+
+  .page-view[data-page="budget-approval-staff"] .budget-staff-overview-filters:not([data-mobile-filter-mounted]),
+  .page-view[data-page="budget-approval-staff"] .budget-staff-review-filters:not([data-mobile-filter-mounted]) {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {

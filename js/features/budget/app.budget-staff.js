@@ -21,6 +21,11 @@
   const chartCanvasEl = document.getElementById("budgetStaffOrgChart");
   const tabBtnEls = Array.from(document.querySelectorAll("[data-budget-staff-tab]"));
   const tabPanelEls = Array.from(document.querySelectorAll("[data-budget-staff-panel]"));
+  const pageRootEl = document.querySelector('.page-view[data-page="budget-approval-staff"]');
+  const mobileActionBarEl = document.querySelector(".mobile-budget-action-bar");
+  const mobileActionBtnEls = Array.from(document.querySelectorAll("[data-budget-mobile-action]"));
+  const overviewFiltersEl = document.querySelector(".budget-staff-overview-filters");
+  const reviewFiltersEl = document.querySelector(".budget-staff-review-filters");
 
   const roundYearInputEl = document.getElementById("budgetRoundYearInput");
   const roundNoInputEl = document.getElementById("budgetRoundNoInput");
@@ -185,6 +190,7 @@
   let roundDeleteContext = null;
   let clearCodeResolve = null;
   let clearCodeContext = null;
+  let currentBudgetStaffTab = "overview";
 
   const formatMoney = (value) => {
     const num = Number(value || 0);
@@ -204,6 +210,22 @@
     if (!normalized) return "";
     const num = Number(normalized);
     return num < 100 ? String(2500 + num) : normalized;
+  };
+
+  const getCurrentBudgetAcademicYear = () => {
+    if (typeof getCurrentAcademicYearBE === "function") {
+      const year = Number(getCurrentAcademicYearBE());
+      if (Number.isFinite(year)) return String(year);
+    }
+    const now = new Date();
+    const yearCE = now.getFullYear();
+    const month = now.getMonth() + 1;
+    return String((month >= 6 ? yearCE : yearCE - 1) + 543);
+  };
+
+  const getNonCurrentBudgetRounds = () => {
+    const currentYear = getCurrentBudgetAcademicYear();
+    return budgetActiveRounds.filter((round) => normalizeAcademicYearText(round.year) !== currentYear);
   };
 
   const normalizeRoundName = (value) => normalizeText(value).replace(/\s+/g, " ");
@@ -386,12 +408,13 @@
       .replaceAll("'", "&#39;");
 
   const renderActiveRoundList = () => {
+    const currentYear = getCurrentBudgetAcademicYear();
     if (!budgetActiveRounds.length) {
       activeRoundListEl.innerHTML = `
         <div class="budget-active-round-item is-empty">
           <div>
             <div class="budget-active-round-title">ยังไม่มีรอบที่เปิดรับ</div>
-            <div class="budget-active-round-meta">กรอกข้อมูลทางซ้ายแล้วกดบันทึกรอบนี้</div>
+            <div class="budget-active-round-meta">ระบบจะสร้างรอบสำหรับปีการศึกษา ${escapeHtml(currentYear)} เท่านั้น</div>
           </div>
         </div>
       `;
@@ -401,9 +424,10 @@
       const endTime = getRoundDeadlineTimestamp(round);
       const isPast = Number.isFinite(endTime) && Date.now() > endTime;
       const isActive = editingBudgetRoundId && round.id === editingBudgetRoundId;
+      const isCurrentYear = normalizeAcademicYearText(round.year) === currentYear;
       return `
         <div
-          class="budget-active-round-item${isActive ? " is-active" : ""}"
+          class="budget-active-round-item${isActive ? " is-active" : ""}${isCurrentYear ? "" : " is-previous-year"}"
           role="button"
           tabindex="0"
           data-budget-round-select="${escapeHtml(round.id)}"
@@ -413,8 +437,9 @@
             <div class="budget-active-round-title-row">
               <div class="budget-active-round-title">${escapeHtml(round.label)}</div>
               ${isActive ? '<span class="budget-active-round-state">กำลังแก้ไข</span>' : ""}
+              ${isCurrentYear ? "" : '<span class="budget-active-round-state is-warning">รอบปีก่อน</span>'}
             </div>
-            <div class="budget-active-round-meta">${isPast ? "หมดเขตแล้ว" : "เปิดรับอยู่"} • ถึง ${escapeHtml(formatRoundDeadline(round))} • เพดาน ${round.budgetCeiling > 0 ? formatMoney(round.budgetCeiling) : "ยังไม่กำหนด"}</div>
+            <div class="budget-active-round-meta">${isPast ? "หมดเขตแล้ว" : "เปิดรับอยู่"} • ถึง ${escapeHtml(formatRoundDeadline(round))} • เพดาน ${round.budgetCeiling > 0 ? formatMoney(round.budgetCeiling) : "ยังไม่กำหนด"}${isCurrentYear ? "" : " • สำรอง CSV แล้วลบรอบนี้ก่อนเปิดปีใหม่"}</div>
           </div>
         </div>
       `;
@@ -441,6 +466,7 @@
 
   const syncRoundStatus = () => {
     renderActiveRoundList();
+    if (!roundYearInputEl.value) roundYearInputEl.value = getCurrentBudgetAcademicYear();
     const hasEditingRound = !!editingBudgetRoundId && budgetActiveRounds.some((round) => round.id === editingBudgetRoundId);
     roundCancelEditBtnEl.hidden = !hasEditingRound;
     roundDeleteSelectedBtnEl.hidden = !hasEditingRound;
@@ -451,8 +477,11 @@
       const endTime = getRoundDeadlineTimestamp(round);
       return Number.isFinite(endTime) && Date.now() <= endTime;
     });
-    if (!budgetActiveRounds.length) {
-      setMessage(deadlineStatusEl, "ยังไม่มีรอบที่เปิดรับ", "#6b7280");
+    const previousYearRounds = getNonCurrentBudgetRounds();
+    if (previousYearRounds.length) {
+      setMessage(deadlineStatusEl, `พบข้อมูลปีก่อน ${previousYearRounds.length} รอบ ควร Export CSV และลบรอบก่อนเปิดปีใหม่`, "#b45309");
+    } else if (!budgetActiveRounds.length) {
+      setMessage(deadlineStatusEl, `ยังไม่มีรอบปีการศึกษา ${getCurrentBudgetAcademicYear()}`, "#6b7280");
     } else if (!openRounds.length) {
       setMessage(
         deadlineStatusEl,
@@ -686,17 +715,23 @@
 
   const getBudgetRoundOptionLabel = (round) => {
     const state = isBudgetRoundPast(round) ? "หมดเขตแล้ว" : "เปิดรับอยู่";
-    return `${round?.label || round?.id || "ไม่ระบุรอบ"} (${state}${round?.deadline ? ` ถึง ${formatRoundDeadline(round)}` : ""})`;
+    const yearNote = normalizeAcademicYearText(round?.year) === getCurrentBudgetAcademicYear() ? "" : " • ปีก่อน";
+    return `${round?.label || round?.id || "ไม่ระบุรอบ"} (${state}${round?.deadline ? ` ถึง ${formatRoundDeadline(round)}` : ""}${yearNote})`;
   };
 
   const populateStaffRoundOptions = (preferredValue = staffRoundInputEl.value) => {
     const selected = normalizeText(preferredValue) || getCurrentSettingsRoundId();
+    const currentYear = getCurrentBudgetAcademicYear();
+    const currentYearRounds = budgetActiveRounds.filter((round) => normalizeAcademicYearText(round.year) === currentYear);
     staffRoundInputEl.innerHTML = "";
-    appendSelectOption(staffRoundInputEl, "", budgetActiveRounds.length ? "เลือกรอบรับคำขอ" : "ยังไม่มีรอบรับคำขอ");
+    appendSelectOption(staffRoundInputEl, "", currentYearRounds.length ? "เลือกรอบรับคำขอ" : `ยังไม่มีรอบปีการศึกษา ${currentYear}`);
     staffRoundInputEl.options[0].disabled = true;
-    budgetActiveRounds.forEach((round) => appendSelectOption(staffRoundInputEl, round.id, getBudgetRoundOptionLabel(round)));
+    currentYearRounds.forEach((round) => appendSelectOption(staffRoundInputEl, round.id, getBudgetRoundOptionLabel(round)));
     if (selected && !Array.from(staffRoundInputEl.options).some((opt) => opt.value === selected)) {
-      appendSelectOption(staffRoundInputEl, selected, getRoundLabelById(selected));
+      const selectedRound = budgetActiveRounds.find((round) => round.id === selected);
+      if (!selectedRound || normalizeAcademicYearText(selectedRound.year) === currentYear) {
+        appendSelectOption(staffRoundInputEl, selected, getRoundLabelById(selected));
+      }
     }
     staffRoundInputEl.value = selected && Array.from(staffRoundInputEl.options).some((opt) => opt.value === selected) ? selected : "";
   };
@@ -831,11 +866,11 @@
 
   const clearRoundSettingsForm = () => {
     editingBudgetRoundId = "";
-    budgetRoundYear = "";
+    budgetRoundYear = getCurrentBudgetAcademicYear();
     budgetRoundNo = "";
     budgetCeiling = 0;
     budgetGroupCeilings = {};
-    roundYearInputEl.value = "";
+    roundYearInputEl.value = budgetRoundYear;
     roundNoInputEl.value = "";
     deadlineInputEl.value = "";
     deadlineTimeInputEl.value = "";
@@ -922,8 +957,16 @@
     clearCodeBtnEl.disabled = isBusy;
   };
 
+  const getActivePageName = () => document.querySelector(".page-view.active")?.dataset.page || "";
+
+  const isBudgetMobileViewport = () =>
+    !window.matchMedia || window.matchMedia("(max-width: 840px)").matches;
+
   const setActiveTab = (tab = "overview") => {
     const nextTab = tab === "review" ? "review" : "overview";
+    currentBudgetStaffTab = nextTab;
+    pageRootEl?.classList.toggle("is-budget-review-mode", nextTab === "review");
+    pageRootEl?.classList.toggle("is-budget-overview-mode", nextTab === "overview");
     tabBtnEls.forEach((btn) => {
       const isActive = btn.getAttribute("data-budget-staff-tab") === nextTab;
       btn.classList.toggle("is-active", isActive);
@@ -940,6 +983,228 @@
   };
 
   const getFirestore = () => window.sgcuFirestore || {};
+
+  const initBudgetMobileActionBar = () => {
+    if (!pageRootEl || !mobileActionBarEl || !mobileActionBtnEls.length) return;
+
+    const sheet = document.createElement("div");
+    sheet.className = "mobile-filter-sheet mobile-budget-filter-sheet";
+    sheet.setAttribute("aria-hidden", "true");
+    sheet.innerHTML = `
+      <div class="mobile-filter-backdrop" data-budget-filter-close></div>
+      <section class="mobile-filter-dialog" role="dialog" aria-modal="true" aria-labelledby="budgetMobileFilterTitle">
+        <header class="mobile-filter-header">
+          <div>
+            <h2 id="budgetMobileFilterTitle" class="mobile-filter-title">ตัวกรองรายการคำขอ</h2>
+            <p class="mobile-filter-caption">กรองตามรอบรับคำขอ ประเภทองค์กร หรือฝ่าย/ชมรม</p>
+          </div>
+          <button class="mobile-filter-close" type="button" aria-label="ปิดตัวกรอง" data-budget-filter-close>×</button>
+        </header>
+        <div class="mobile-filter-body"></div>
+        <footer class="mobile-filter-footer">
+          <button class="btn-ghost mobile-filter-reset" type="button">ล้างตัวกรอง</button>
+          <button class="btn-primary mobile-filter-done" type="button">เสร็จ</button>
+        </footer>
+      </section>
+    `;
+    document.body.appendChild(sheet);
+
+    const sheetBody = sheet.querySelector(".mobile-filter-body");
+    const sheetTitle = sheet.querySelector(".mobile-filter-title");
+    const sheetCaption = sheet.querySelector(".mobile-filter-caption");
+    const resetBtn = sheet.querySelector(".mobile-filter-reset");
+    const doneBtn = sheet.querySelector(".mobile-filter-done");
+    let activeFilterPlaceholder = null;
+    let activeFilterTarget = null;
+    let activeAction = "overview";
+    let syncQueued = false;
+
+    const scrollToBudgetTarget = (target) => {
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    const getFilterCount = () => {
+      const useReviewFilters = currentBudgetStaffTab === "review";
+      const roundValue = normalizeText((useReviewFilters ? reviewRoundEl : orgSummaryRoundEl).value || "all");
+      const groupValue = normalizeText((useReviewFilters ? reviewGroupEl : orgSummaryGroupEl).value || "all");
+      const orgValue = normalizeText((useReviewFilters ? reviewOrgEl : orgSummaryOrgEl).value || "all");
+      return [roundValue !== "all", groupValue !== "all", orgValue !== "all"].filter(Boolean).length;
+    };
+
+    const sync = () => {
+      const activePage = getActivePageName();
+      const isBudgetPage = activePage === "budget-approval-staff";
+      mobileActionBarEl.classList.toggle("is-visible", isBudgetPage);
+
+      if (!isBudgetPage && sheet.classList.contains("is-open")) {
+        closeBudgetFilterSheet();
+        return;
+      }
+      if (!isBudgetMobileViewport() && sheet.classList.contains("is-open")) {
+        closeBudgetFilterSheet();
+        return;
+      }
+
+      mobileActionBtnEls.forEach((btn) => {
+        const action = btn.dataset.budgetMobileAction;
+        const isActive =
+          (action === "overview" && currentBudgetStaffTab === "overview") ||
+          (action === "review" && currentBudgetStaffTab === "review");
+        btn.classList.toggle("is-active", isActive);
+        btn.classList.remove("has-active-filters");
+        btn.dataset.filterCount = "";
+      });
+
+      const filterBtn = mobileActionBtnEls.find((btn) => btn.dataset.budgetMobileAction === "filters");
+      if (filterBtn) {
+        const count = getFilterCount();
+        filterBtn.classList.toggle("has-active-filters", count > 0);
+        filterBtn.dataset.filterCount = count ? String(count) : "";
+        filterBtn.setAttribute(
+          "aria-label",
+          count ? `เปิดตัวกรองรายการคำขอ (${count} รายการใช้งานอยู่)` : "เปิดตัวกรองรายการคำขอ"
+        );
+      }
+    };
+
+    const queueSync = () => {
+      if (syncQueued) return;
+      syncQueued = true;
+      window.requestAnimationFrame(() => {
+        syncQueued = false;
+        sync();
+      });
+    };
+
+    const getCurrentFilterTarget = () =>
+      currentBudgetStaffTab === "review" ? reviewFiltersEl : overviewFiltersEl;
+
+    const setBudgetFilterSheetCopy = () => {
+      if (currentBudgetStaffTab === "review") {
+        if (sheetTitle) sheetTitle.textContent = "ตัวกรองรายการคำขอ";
+        if (sheetCaption) sheetCaption.textContent = "กรองตามรอบรับคำขอ ประเภทองค์กร หรือฝ่าย/ชมรม";
+      } else {
+        if (sheetTitle) sheetTitle.textContent = "ตัวกรองภาพรวม";
+        if (sheetCaption) sheetCaption.textContent = "กรองภาพรวมตามรอบรับคำขอ ประเภทองค์กร หรือฝ่าย/ชมรม";
+      }
+    };
+
+    function closeBudgetFilterSheet() {
+      if (activeFilterPlaceholder && activeFilterTarget) {
+        activeFilterPlaceholder.parentNode?.insertBefore(activeFilterTarget, activeFilterPlaceholder);
+        activeFilterPlaceholder.remove();
+        activeFilterPlaceholder = null;
+        activeFilterTarget.removeAttribute("data-mobile-filter-mounted");
+        activeFilterTarget.style.removeProperty("display");
+        activeFilterTarget = null;
+      }
+      sheet.classList.remove("is-open");
+      sheet.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("mobile-filter-open");
+      queueSync();
+    }
+
+    const openBudgetFilterSheet = () => {
+      const filterTarget = getCurrentFilterTarget();
+      activeAction = currentBudgetStaffTab;
+      setBudgetFilterSheetCopy();
+      scrollToBudgetTarget(
+        currentBudgetStaffTab === "review"
+          ? pageRootEl.querySelector(".budget-staff-list-panel")
+          : pageRootEl.querySelector(".budget-staff-summary-panel")
+      );
+
+      if (!filterTarget || !sheetBody) return;
+      if (!isBudgetMobileViewport()) {
+        scrollToBudgetTarget(filterTarget);
+        return;
+      }
+
+      closeBudgetFilterSheet();
+      activeFilterTarget = filterTarget;
+      activeFilterPlaceholder = document.createComment("budget-mobile-filter-placeholder");
+      filterTarget.parentNode?.insertBefore(activeFilterPlaceholder, filterTarget);
+      filterTarget.setAttribute("data-mobile-filter-mounted", "true");
+      sheetBody.appendChild(filterTarget);
+      filterTarget.style.display = "grid";
+      sheet.classList.add("is-open");
+      sheet.setAttribute("aria-hidden", "false");
+      document.body.classList.add("mobile-filter-open");
+      window.setTimeout(() => {
+        filterTarget.querySelector("select, input, textarea, button")?.focus?.({ preventScroll: true });
+      }, 260);
+      queueSync();
+    };
+
+    const resetBudgetFilters = () => {
+      if (currentBudgetStaffTab === "review") {
+        reviewRoundEl.value = "all";
+        reviewGroupEl.value = "all";
+        populateReviewOrgOptions();
+        reviewOrgEl.value = "all";
+        renderRows();
+      } else {
+        orgSummaryRoundEl.value = "all";
+        orgSummaryGroupEl.value = "all";
+        populateOrgSummaryOrgOptions();
+        orgSummaryOrgEl.value = "all";
+        updateSummary();
+        void renderOrgSummaryChart();
+      }
+      queueSync();
+    };
+
+    mobileActionBtnEls.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const action = btn.dataset.budgetMobileAction || "overview";
+        if (action === "filters") {
+          openBudgetFilterSheet();
+          return;
+        }
+        if (action === "export") {
+          setActiveTab("review");
+          closeBudgetFilterSheet();
+          exportCsvBtnEl?.click();
+          window.setTimeout(queueSync, 0);
+          return;
+        }
+        closeBudgetFilterSheet();
+        activeAction = action;
+        if (action === "review") {
+          setActiveTab("review");
+        } else {
+          setActiveTab("overview");
+        }
+        scrollToBudgetTarget(pageRootEl.querySelector(".page-header-flex"));
+        window.setTimeout(queueSync, 0);
+      });
+    });
+
+    sheet.querySelectorAll("[data-budget-filter-close]").forEach((btn) => {
+      btn.addEventListener("click", closeBudgetFilterSheet);
+    });
+    doneBtn?.addEventListener("click", closeBudgetFilterSheet);
+    resetBtn?.addEventListener("click", resetBudgetFilters);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && sheet.classList.contains("is-open")) {
+        closeBudgetFilterSheet();
+      }
+    });
+
+    [orgSummaryRoundEl, orgSummaryGroupEl, orgSummaryOrgEl, reviewRoundEl, reviewGroupEl, reviewOrgEl].forEach((el) => {
+      el.addEventListener("input", queueSync);
+      el.addEventListener("change", () => window.setTimeout(queueSync, 0));
+    });
+
+    document.querySelectorAll(".page-view").forEach((pageEl) => {
+      const pageObserver = new MutationObserver(queueSync);
+      pageObserver.observe(pageEl, { attributes: true, attributeFilter: ["class"] });
+    });
+    window.addEventListener("resize", queueSync);
+    window.syncBudgetMobileActionBar = sync;
+    sync();
+  };
 
   const setFormMode = (id = "") => {
     editingId = normalizeText(id);
@@ -1053,6 +1318,10 @@
     const selectedRound = getSelectedStaffRound();
     if (!selectedRound.id || !selectedRound.year || !selectedRound.roundNo) {
       setMessage(formMessageEl, "กรุณาเลือกรอบรับคำขอก่อนบันทึกรายการ", "#b91c1c");
+      return false;
+    }
+    if (normalizeAcademicYearText(selectedRound.year) !== getCurrentBudgetAcademicYear()) {
+      setMessage(formMessageEl, `บันทึกคำขอได้เฉพาะรอบปีการศึกษา ${getCurrentBudgetAcademicYear()}`, "#b91c1c");
       return false;
     }
 
@@ -1468,6 +1737,16 @@
     const roundId = buildBudgetRoundId(year, roundNo);
     if (!roundId) {
       setMessage(actionMessageEl, "กรุณาระบุปีการศึกษาและชื่อรอบ", "#b91c1c");
+      return;
+    }
+    const currentYear = getCurrentBudgetAcademicYear();
+    if (year !== currentYear) {
+      setMessage(actionMessageEl, `ระบบเปิดรอบรับคำขอได้เฉพาะปีการศึกษา ${currentYear} กรุณา Export CSV และลบรอบปีก่อนแทนการแก้ไข`, "#b45309");
+      return;
+    }
+    const previousYearRounds = getNonCurrentBudgetRounds();
+    if (previousYearRounds.length) {
+      setMessage(actionMessageEl, `ยังมีรอบปีก่อนค้างอยู่ ${previousYearRounds.length} รอบ กรุณา Export CSV และลบรอบเดิมก่อนบันทึกรอบปี ${currentYear}`, "#b45309");
       return;
     }
     const deadline = toDateOnlyText(deadlineInputEl.value);
@@ -1894,12 +2173,14 @@
     try {
       const orgCodeMap = await getOrgCodeMap();
       const byOrgYear = new Map();
+      const currentYear = getCurrentBudgetAcademicYear();
       requestRows.forEach((row) => {
         const status = normalizeText(row.status || "pending").toLowerCase();
         if (status === "cancelled" || status === "rejected") return;
         const orgName = normalizeText(row.organizationName);
         if (!orgName) return;
         const academicYear = normalizeAcademicYearText(row.budgetRoundYear);
+        if (academicYear !== currentYear) return;
         const key = `${orgName}||${academicYear}`;
         const list = byOrgYear.get(key) || [];
         list.push(row);
@@ -1972,7 +2253,11 @@
       return;
     }
 
-    const rowsToClear = requestRows.filter((row) => normalizeText(row.projectCodeGenerated));
+    const currentYear = getCurrentBudgetAcademicYear();
+    const rowsToClear = requestRows.filter((row) =>
+      normalizeAcademicYearText(row.budgetRoundYear) === currentYear &&
+      normalizeText(row.projectCodeGenerated)
+    );
     if (!rowsToClear.length) {
       setMessage(actionMessageEl, "ยังไม่มีรหัสโครงการที่ต้องยกเลิก", "#6b7280");
       return;
@@ -2285,6 +2570,7 @@
   isGroupCeilingOpen = readLocalGroupCeilingOpen();
   syncGroupCeilingVisibility();
   setActiveTab("overview");
+  initBudgetMobileActionBar();
   void refreshOrgSummaryFilters();
   subscribeRequests();
   void loadDeadline();

@@ -12,6 +12,72 @@
 }
 
 @media (max-width: 840px) {
+  html.sgcu-standalone,
+  html.sgcu-standalone body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  html.sgcu-standalone .site-header,
+  html.sgcu-standalone .header-inner,
+  html.sgcu-standalone main.main {
+    width: 100dvw !important;
+    max-width: 100dvw !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box;
+  }
+
+  html.sgcu-standalone main.main {
+    padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+  }
+
+  html.sgcu-standalone body:has(.page-view[data-page="budget-approval-request"].active) .site-header,
+  html.sgcu-standalone body:has(.page-view[data-page="budget-approval-request"].active) .header-inner,
+  html.sgcu-standalone body:has(.page-view[data-page="budget-approval-request"].active) main.main {
+    width: 100dvw !important;
+    max-width: 100dvw !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box;
+  }
+
+  html.sgcu-standalone body:has(.page-view[data-page="budget-approval-request"].active) main.main {
+    padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+  }
+
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .page,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .page-header-flex,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .budget-org-overview-panel,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .budget-org-overview,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active #budgetRequestNormalView,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active #budgetRequestOrgTotalsView,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active #budgetApprovalForm,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .panel,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .budget-request-form-main,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .budget-request-form-section,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .borrow-form-row,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .borrow-form-field,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .login-input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .budget-request-form .borrow-form-row,
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .budget-request-form .borrow-form-row.is-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 840px) {
   .desktop-nav {
     display: none;
   }

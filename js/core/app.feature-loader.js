@@ -70,7 +70,7 @@
       "staff-application": "js/features/staff/app.staff-access.js?v=20260611-academic-year-june-test-1",
       "staff-approval": [
         "js/features/staff/app.staff-access.js?v=20260611-academic-year-june-test-1",
-        "js/features/budget/app.budget-staff.js?v=20260609-round-actions-flex-2"
+        "js/features/budget/app.budget-staff.js?v=20260613-budget-request-standalone-width-2"
       ],
       "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260611-academic-year-june-test-1",
       "content-management-staff": [
@@ -88,7 +88,7 @@
       "system-data-staff": "js/features/staff/app.health-check.js?v=20260520-1",
       "budget-approval-staff": [
         "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
-        "js/features/budget/app.budget-staff.js?v=20260609-round-actions-flex-2"
+        "js/features/budget/app.budget-staff.js?v=20260613-budget-request-standalone-width-2"
       ]
     },
     idlePrefetchPages: []

@@ -262,7 +262,7 @@ function initProjectMobileActionBar() {
     const activePage = document.querySelector(".page-view.active")?.dataset.page || "";
     document.body.classList.toggle(
       "has-mobile-context-actions",
-      activePage === "project-status" || activePage === "meeting-room-staff"
+      activePage === "project-status" || activePage === "meeting-room-staff" || activePage === "budget-approval-staff"
     );
     if (activePage !== "project-status" && sheet.classList.contains("is-open")) {
       closeFilterSheet();
@@ -539,7 +539,7 @@ function initMeetingRoomMobileActionBar() {
     const activePage = document.querySelector(".page-view.active")?.dataset.page || "";
     document.body.classList.toggle(
       "has-mobile-context-actions",
-      activePage === "project-status" || activePage === "meeting-room-staff"
+      activePage === "project-status" || activePage === "meeting-room-staff" || activePage === "budget-approval-staff"
     );
     if (activePage !== "meeting-room-staff" && sheet.classList.contains("is-open")) {
       closeFilterSheet();

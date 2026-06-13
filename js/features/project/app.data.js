@@ -616,6 +616,13 @@ function normalizeOrganizationCatalogDoc(docSnap) {
   const name = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
   const code = (data.code || data.orgCode || row[2] || "").toString().trim().toUpperCase();
   const documentRunCode = (data.documentRunCode || data.runCode || row[3] || "").toString().trim();
+  const normalizeAcademicYearText = (value) => {
+    const text = (value || "").toString().trim();
+    const num = Number(text);
+    if (!Number.isInteger(num) || num <= 0) return "";
+    return num < 100 ? String(2500 + num) : String(num);
+  };
+  const academicYear = normalizeAcademicYearText(data.academicYear || data.year || data.catalogAcademicYear);
   const normalizeYearTextMap = (value) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
     return Object.entries(value).reduce((acc, [year, text]) => {
@@ -632,6 +639,9 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     ...normalizeYearTextMap(data.organizationNameByAcademicYear),
     ...normalizeYearTextMap(data.nameByAcademicYear)
   };
+  if (academicYear && name) {
+    nameByAcademicYear[academicYear] = name;
+  }
   if (name && !Object.keys(nameByAcademicYear).length) {
     nameByAcademicYear["2568"] = name;
   }
@@ -650,6 +660,9 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     ...normalizeRunMap(data.runCodeByAcademicYear),
     ...normalizeRunMap(data.documentRunCodeByAcademicYear)
   };
+  if (academicYear && documentRunCode) {
+    documentRunCodeByAcademicYear[academicYear] = documentRunCode;
+  }
   if (documentRunCode && !Object.keys(documentRunCodeByAcademicYear).length) {
     documentRunCodeByAcademicYear["2568"] = documentRunCode;
   }
@@ -669,6 +682,9 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     ...normalizeCodeMap(data.orgCodeByAcademicYear),
     ...normalizeCodeMap(data.codeByAcademicYear)
   };
+  if (academicYear && code) {
+    codeByAcademicYear[academicYear] = code;
+  }
   if (isManualDocumentRunGroup) {
     Object.entries(documentRunCodeByAcademicYear).forEach(([year, runCode]) => {
       const normalizedRunCode = (runCode || "").toString().trim();
@@ -682,6 +698,8 @@ function normalizeOrganizationCatalogDoc(docSnap) {
   if (!group || !name) return null;
   return {
     id: docSnap.id,
+    academicYear,
+    baseOrganizationId: (data.baseOrganizationId || data.baseOrgId || data.rootOrganizationId || "").toString().trim(),
     group,
     name,
     nameByAcademicYear,

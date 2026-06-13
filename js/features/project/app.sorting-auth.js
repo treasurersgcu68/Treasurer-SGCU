@@ -102,6 +102,8 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   if (!Array.isArray(projects)) return;
 
   setActiveProjectStatusContext(ctxKey);
+  if (typeof initOrgTypeOptions === "function") initOrgTypeOptions();
+  if (typeof initOrgOptions === "function") initOrgOptions();
   const signature = buildProjectStatusRefreshSignature(ctxKey);
   if (
     lastProjectStatusRefreshSignatureByContext[ctxKey] === signature &&
@@ -604,10 +606,13 @@ function formatCsvTextCell(value) {
 function getOrgFilterEntryForProject(project) {
   const orgName = (project?.orgName || "").toString().trim();
   const orgGroup = (project?.orgGroup || "").toString().trim();
-  return (orgFilters || []).find((entry) =>
+  const rows = typeof getProjectOrgFiltersForYear === "function"
+    ? getProjectOrgFiltersForYear(project?.year)
+    : (orgFilters || []);
+  return rows.find((entry) =>
     (entry.name || "").toString().trim() === orgName &&
     (!orgGroup || (entry.group || "").toString().trim() === orgGroup)
-  ) || (orgFilters || []).find((entry) => (entry.name || "").toString().trim() === orgName) || null;
+  ) || rows.find((entry) => (entry.name || "").toString().trim() === orgName) || null;
 }
 
 function resolveClosureAccountName(project) {

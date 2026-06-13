@@ -124,7 +124,12 @@ function initBudgetApprovalRequestPage() {
   const collectBudgetOrgTypeOptions = () => {
     const fromFilters =
       typeof orgFilters !== "undefined" && Array.isArray(orgFilters)
-        ? orgFilters.map((item) => (item?.group || "").toString().trim())
+        ? orgFilters
+          .filter((item) => {
+            const itemYear = normalizeAcademicYearText(item?.academicYear || item?.year || item?.catalogAcademicYear);
+            return !itemYear || itemYear === getRepresentativeApplicationAcademicYear();
+          })
+          .map((item) => (item?.group || "").toString().trim())
         : [];
     const fromProjects =
       typeof projects !== "undefined" && Array.isArray(projects)
@@ -149,8 +154,6 @@ function initBudgetApprovalRequestPage() {
   };
 
   const getRepresentativeApplicationAcademicYear = () =>
-    normalizeAcademicYearText(representativeApplicationYear) ||
-    normalizeAcademicYearText(budgetRoundYear) ||
     String(getCurrentAcademicYearBE());
 
   const updateRepresentativeAcademicYearDisplay = () => {
@@ -181,6 +184,14 @@ function initBudgetApprovalRequestPage() {
     return previousYear ? normalized[String(previousYear)] || "" : "";
   };
 
+  const getBudgetOrgItemAcademicYear = (item = {}) =>
+    normalizeAcademicYearText(item?.academicYear || item?.year || item?.catalogAcademicYear);
+
+  const shouldUseBudgetOrgItemForRepresentativeYear = (item = {}) => {
+    const itemYear = getBudgetOrgItemAcademicYear(item);
+    return !itemYear || itemYear === getRepresentativeApplicationAcademicYear();
+  };
+
   const compareBudgetOrgNameByCode = (a, b, codeByName = new Map()) => {
     const codeA = (codeByName.get(a) || "").toString().trim();
     const codeB = (codeByName.get(b) || "").toString().trim();
@@ -194,6 +205,10 @@ function initBudgetApprovalRequestPage() {
   };
 
   const getBudgetOrgCodeForYear = (item = {}) => {
+    if (!shouldUseBudgetOrgItemForRepresentativeYear(item)) return "";
+    if (getBudgetOrgItemAcademicYear(item)) {
+      return (item?.code || item?.orgCode || "").toString().trim();
+    }
     const year = getRepresentativeApplicationAcademicYear();
     const codeByAcademicYear = item?.codeByAcademicYear && typeof item.codeByAcademicYear === "object"
       ? item.codeByAcademicYear
@@ -203,6 +218,10 @@ function initBudgetApprovalRequestPage() {
   };
 
   const getBudgetOrgNameForRepresentativeYear = (item = {}) => {
+    if (!shouldUseBudgetOrgItemForRepresentativeYear(item)) return "";
+    if (getBudgetOrgItemAcademicYear(item)) {
+      return (item?.name || item?.organizationName || item?.orgName || "").toString().trim();
+    }
     const rawName = (item?.name || item?.organizationName || item?.orgName || "").toString().trim();
     const nameByAcademicYear = normalizeBudgetYearMap(item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear);
     if (Object.keys(nameByAcademicYear).length) {
@@ -417,8 +436,15 @@ function initBudgetApprovalRequestPage() {
     el.classList.toggle("is-empty", !text);
   };
 
+  const parseMoneyInputValue = (value) => {
+    const normalized = (value || "").toString().trim().replaceAll(",", "");
+    if (!normalized) return 0;
+    const num = Number(normalized);
+    return Number.isFinite(num) ? num : Number.NaN;
+  };
+
   const toBudgetAmount = (value) => {
-    const num = Number(value || 0);
+    const num = parseMoneyInputValue(value);
     return Number.isFinite(num) ? num : 0;
   };
 
@@ -484,7 +510,7 @@ function initBudgetApprovalRequestPage() {
     if (!isBudgetRequestClosed && representativeApplicationsLoaded) {
       setFormEnabled(!!representative);
       if (!representative) {
-        setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลดรายการ หรือเพิ่มคำของบขององค์กรได้", "#b91c1c");
+        setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลบรายการ หรือเพิ่มคำของบขององค์กรได้", "#b91c1c");
       }
     }
   };
@@ -730,6 +756,129 @@ function initBudgetApprovalRequestPage() {
     return num.toLocaleString("th-TH", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
+    });
+  };
+
+  const ensureBudgetRequestDeleteModal = () => {
+    let modalEl = document.getElementById("budgetRequestDeleteConfirmModal");
+    if (modalEl) return modalEl;
+    if (!document.body) return null;
+    document.body.insertAdjacentHTML("beforeend", `
+      <div
+        id="budgetRequestDeleteConfirmModal"
+        class="modal budget-request-delete-modal"
+        aria-hidden="true"
+        aria-modal="true"
+        role="dialog"
+        aria-labelledby="budgetRequestDeleteConfirmTitle"
+      >
+        <div class="modal-dialog budget-round-delete-dialog budget-request-delete-dialog">
+          <div class="modal-header">
+            <div>
+              <div id="budgetRequestDeleteConfirmTitle" class="modal-title">ยืนยันการลบรายการคำของบ</div>
+              <div class="modal-subtitle">รายการนี้จะถูกลบออกจากระบบ ไม่ใช่แค่เปลี่ยนสถานะ</div>
+            </div>
+            <button id="budgetRequestDeleteConfirmClose" class="modal-close" type="button" aria-label="ปิด">×</button>
+          </div>
+          <div class="modal-body budget-round-delete-body">
+            <div class="budget-round-delete-warning">
+              <div>
+                <div id="budgetRequestDeleteConfirmName" class="budget-round-delete-name">-</div>
+                <div id="budgetRequestDeleteConfirmSummary" class="budget-round-delete-summary">-</div>
+              </div>
+            </div>
+            <div class="budget-round-delete-step-text">
+              หลังยืนยันแล้ว ข้อมูลรายการคำของบนี้จะถูกลบจาก Firebase และจะไม่แสดงในตารางคำขอขององค์กร
+            </div>
+          </div>
+          <div class="modal-actions budget-round-delete-actions">
+            <button id="budgetRequestDeleteConfirmCancel" class="btn-ghost" type="button">ยกเลิก</button>
+            <button id="budgetRequestDeleteConfirmSubmit" class="btn-primary budget-round-delete-confirm" type="button">ลบรายการ</button>
+          </div>
+        </div>
+      </div>
+    `);
+    return document.getElementById("budgetRequestDeleteConfirmModal");
+  };
+
+  const askBudgetRequestDeleteConfirm = (item = {}) => {
+    const modalEl = ensureBudgetRequestDeleteModal();
+    if (!modalEl) {
+      return Promise.resolve(window.confirm(`ยืนยันลบรายการงบ "${item.projectName || "-"}" ?\nรายการนี้จะถูกลบออกจากระบบ`));
+    }
+    const nameEl = document.getElementById("budgetRequestDeleteConfirmName");
+    const summaryEl = document.getElementById("budgetRequestDeleteConfirmSummary");
+    const closeBtnEl = document.getElementById("budgetRequestDeleteConfirmClose");
+    const cancelBtnEl = document.getElementById("budgetRequestDeleteConfirmCancel");
+    const submitBtnEl = document.getElementById("budgetRequestDeleteConfirmSubmit");
+    if (nameEl) nameEl.textContent = item.projectName || "-";
+    if (summaryEl) {
+      summaryEl.textContent = [
+        getRequestRoundLabel(item),
+        item.organizationName || "-",
+        `ยอดขอ ${formatCurrency(item.estimatedExpense || 0)} บาท`
+      ].filter(Boolean).join(" • ");
+    }
+
+    return new Promise((resolve) => {
+      const cleanup = () => {
+        closeBtnEl?.removeEventListener("click", onCancel);
+        cancelBtnEl?.removeEventListener("click", onCancel);
+        submitBtnEl?.removeEventListener("click", onSubmit);
+        modalEl.removeEventListener("click", onBackdrop);
+        modalEl.removeEventListener("keydown", onKeydown);
+      };
+      const close = (value) => {
+        cleanup();
+        if (typeof closeDialog === "function") {
+          closeDialog(modalEl);
+        } else {
+          modalEl.classList.remove("show");
+          modalEl.setAttribute("aria-hidden", "true");
+        }
+        resolve(value);
+      };
+      const onCancel = () => close(false);
+      const onSubmit = () => close(true);
+      const onBackdrop = (event) => {
+        if (event.target === modalEl) close(false);
+      };
+      const onKeydown = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          close(false);
+        }
+      };
+      closeBtnEl?.addEventListener("click", onCancel);
+      cancelBtnEl?.addEventListener("click", onCancel);
+      submitBtnEl?.addEventListener("click", onSubmit);
+      modalEl.addEventListener("click", onBackdrop);
+      modalEl.addEventListener("keydown", onKeydown);
+      if (typeof openDialog === "function") {
+        openDialog(modalEl, { focusSelector: "#budgetRequestDeleteConfirmCancel" });
+      } else {
+        modalEl.classList.add("show");
+        modalEl.setAttribute("aria-hidden", "false");
+        cancelBtnEl?.focus?.();
+      }
+    });
+  };
+
+  const formatMoneyInputValue = (value) => {
+    const normalized = (value || "").toString().trim().replaceAll(",", "");
+    if (!normalized) return "";
+    const num = Number(normalized);
+    if (!Number.isFinite(num)) return normalized;
+    return formatCurrency(num);
+  };
+
+  const setupMoneyInputFormatting = (inputEl) => {
+    if (!inputEl) return;
+    inputEl.addEventListener("focus", () => {
+      inputEl.value = (inputEl.value || "").toString().replaceAll(",", "");
+    });
+    inputEl.addEventListener("blur", () => {
+      inputEl.value = formatMoneyInputValue(inputEl.value);
     });
   };
 
@@ -1470,7 +1619,7 @@ function initBudgetApprovalRequestPage() {
         const hasRepresentative = !!getPrimaryApprovedRepresentative();
         setFormEnabled(hasRepresentative);
         if (!hasRepresentative && representativeApplicationsLoaded) {
-          setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลดรายการ หรือเพิ่มคำของบขององค์กรได้", "#b91c1c");
+          setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลบรายการ หรือเพิ่มคำของบขององค์กรได้", "#b91c1c");
         }
       }
       renderMyRequestsRows(latestBudgetRequestRows);
@@ -1712,7 +1861,7 @@ function initBudgetApprovalRequestPage() {
       operationEndDate: operationEndDateEl.value,
       studentOperators: Number(studentOperatorsEl.value || 0),
       studentParticipants: Number(studentParticipantsEl.value || 0),
-      estimatedExpense: Number(estimatedExpenseEl.value || 0),
+      estimatedExpense: parseMoneyInputValue(estimatedExpenseEl.value),
       budgetRoundYear: selectedRound?.year || budgetRoundYear,
       budgetRoundNo: selectedRound?.roundNo || budgetRoundNo,
       budgetRoundId: selectedRound?.id || currentBudgetRoundId,
@@ -1817,7 +1966,8 @@ function initBudgetApprovalRequestPage() {
       return false;
     }
 
-    if (Number(estimatedExpenseEl.value || 0) < 0) {
+    const estimatedExpense = parseMoneyInputValue(estimatedExpenseEl.value);
+    if (!Number.isFinite(estimatedExpense) || estimatedExpense < 0) {
       setFormMessage("ประมาณการรายจ่ายต้องไม่ติดลบ", "#b91c1c");
       estimatedExpenseEl.focus();
       return false;
@@ -1956,7 +2106,7 @@ function initBudgetApprovalRequestPage() {
     operationEndDateEl.value = (item.operationEndDate || "").toString();
     studentOperatorsEl.value = Number(item.studentOperators || 0).toString();
     studentParticipantsEl.value = Number(item.studentParticipants || 0).toString();
-    estimatedExpenseEl.value = Number(item.estimatedExpense || 0).toString();
+    estimatedExpenseEl.value = formatMoneyInputValue(item.estimatedExpense || 0);
     setFormMessage("กำลังแก้ไขคำขอที่ส่งไปแล้ว เมื่อเสร็จให้กดบันทึกการแก้ไข", "#1d4ed8");
     updateBudgetDescriptionCounter();
   };
@@ -1967,6 +2117,7 @@ function initBudgetApprovalRequestPage() {
     populateBudgetOrgDeptOptions();
     setEditMode("");
     setFormMessage("");
+    estimatedExpenseEl.value = "";
     updateBudgetDescriptionCounter();
   };
 
@@ -2001,6 +2152,7 @@ function initBudgetApprovalRequestPage() {
       updateBudgetDescriptionCounter();
     });
   });
+  setupMoneyInputFormatting(estimatedExpenseEl);
   prepStartDateEl.addEventListener("change", () => {
     setFormMessage("");
   });
@@ -2037,7 +2189,7 @@ function initBudgetApprovalRequestPage() {
     const id = (requestId || "").toString().trim();
     if (!id) return;
     if (isBudgetRequestClosed) {
-      setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) ไม่สามารถแก้ไขหรือลดรายการได้`, "#b91c1c");
+      setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) ไม่สามารถแก้ไขหรือลบรายการได้`, "#b91c1c");
       return;
     }
     const item = latestMyBudgetRequests.find((row) => row.id === id);
@@ -2073,60 +2225,58 @@ function initBudgetApprovalRequestPage() {
     const id = (requestId || "").toString().trim();
     if (!id) return;
     if (isBudgetRequestClosed) {
-      setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) ไม่สามารถแก้ไขหรือลดรายการได้`, "#b91c1c");
+      setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) ไม่สามารถแก้ไขหรือลบรายการได้`, "#b91c1c");
       return;
     }
     const item = latestMyBudgetRequests.find((row) => row.id === id);
     if (!item) {
-      setFormMessage("ไม่พบรายการที่ต้องการลดรายการ", "#b91c1c");
+      setFormMessage("ไม่พบรายการที่ต้องการลบ", "#b91c1c");
       return;
     }
     if (!hasApprovedRepresentativeForRequest(item)) {
-      setFormMessage("บัญชีนี้ไม่มีสิทธิ์ตัวแทนองค์กรของรายการนี้แล้ว จึงไม่สามารถลดรายการได้", "#b91c1c");
+      setFormMessage("บัญชีนี้ไม่มีสิทธิ์ตัวแทนองค์กรของรายการนี้แล้ว จึงไม่สามารถลบรายการได้", "#b91c1c");
       clearFormForCreate();
       renderMyRequestsRows(latestBudgetRequestRows);
       return;
     }
     if (!isRequestRoundOpen(item)) {
-      setFormMessage(`รายการนี้อยู่${getRequestRoundLabel(item)} ซึ่งปิดรับแล้ว จึงลดรายการไม่ได้`, "#b91c1c");
+      setFormMessage(`รายการนี้อยู่${getRequestRoundLabel(item)} ซึ่งปิดรับแล้ว จึงลบรายการไม่ได้`, "#b91c1c");
       return;
     }
     const status = (item.status || "pending").toString().trim().toLowerCase();
     if (status !== "pending") {
-      setFormMessage("ลดรายการได้เฉพาะรายการที่ยังรออนุมัติ", "#b91c1c");
+      setFormMessage("ลบรายการได้เฉพาะรายการที่ยังรออนุมัติ", "#b91c1c");
       return;
     }
-    const ok = window.confirm(`ยืนยันลดรายการงบ "${item.projectName || "-"}" ?`);
+    const ok = await askBudgetRequestDeleteConfirm(item);
     if (!ok) return;
 
     const firestore = window.sgcuFirestore || {};
-    const canUpdate = !!(
+    const canDelete = !!(
       firestore.db &&
       firestore.doc &&
-      firestore.updateDoc &&
-      firestore.serverTimestamp
+      firestore.deleteDoc
     );
-    if (!canUpdate) {
+    if (!canDelete) {
       setFormMessage("ระบบฐานข้อมูลยังไม่พร้อมใช้งาน กรุณาลองใหม่อีกครั้ง", "#b45309");
       return;
     }
-    setFormMessage("กำลังลดรายการ...", "#1d4ed8");
+    setFormMessage("กำลังลบรายการ...", "#1d4ed8");
     try {
-      await firestore.updateDoc(
-        firestore.doc(firestore.db, REQUEST_COLLECTION, id),
-        {
-          status: "cancelled",
-          updatedAt: firestore.serverTimestamp(),
-          cancelledAt: firestore.serverTimestamp()
-        }
-      );
+      await firestore.deleteDoc(firestore.doc(firestore.db, REQUEST_COLLECTION, id));
       if (editingRequestId === id) {
         clearFormForCreate();
       }
-      setFormMessage("ลดรายการเรียบร้อยแล้ว", "#047857");
+      latestMyBudgetRequests = latestMyBudgetRequests.filter((row) => row.id !== id);
+      latestBudgetRequestRows = latestBudgetRequestRows.filter((row) => row.id !== id);
+      latestOrgBudgetRows = latestOrgBudgetRows.filter((row) => row.id !== id);
+      renderMyRequestsRows(latestBudgetRequestRows);
+      updateOrgBudgetSummaryCards();
+      renderOrgBudgetTotals(latestOrgBudgetRows, latestOrgBudgetTotalsSource);
+      setFormMessage("ลบรายการเรียบร้อยแล้ว", "#047857");
     } catch (error) {
-      console.error("cancel budget approval request failed - app.budget-request.js", error);
-      setFormMessage("ลดรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
+      console.error("delete budget approval request failed - app.budget-request.js", error);
+      setFormMessage("ลบรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
     }
   };
 

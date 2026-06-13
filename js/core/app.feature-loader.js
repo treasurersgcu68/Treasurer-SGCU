@@ -52,15 +52,15 @@
         "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
         "js/features/booking/app.meeting-room-staff.js?v=20260504-6"
       ],
-      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260510-closed-round-view-1",
+      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260613-budget-current-year-org-options-2",
       login: [
         "js/features/staff/app.staff-access.js?v=20260504-1",
-        "js/features/budget/app.budget-request.js?v=20260510-closed-round-view-1"
+        "js/features/budget/app.budget-request.js?v=20260613-budget-current-year-org-options-2"
       ],
       "staff-application": "js/features/staff/app.staff-access.js?v=20260504-1",
       "staff-approval": [
         "js/features/staff/app.staff-access.js?v=20260504-1",
-        "js/features/budget/app.budget-staff.js?v=20260613-budget-request-standalone-width-2"
+        "js/features/budget/app.budget-staff.js?v=20260613-budget-staff-round-org-filter-15"
       ],
       "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260504-1",
       "content-management-staff": [
@@ -78,7 +78,8 @@
       "system-data-staff": "js/features/staff/app.health-check.js?v=20260520-1",
       "budget-approval-staff": [
         "js/features/project/app.data.js?v=20260518-csv-refresh-1",
-        "js/features/budget/app.budget-staff.js?v=20260613-budget-request-standalone-width-2"
+        "js/features/budget/app.budget-org-options.js?v=20260613-budget-org-options-5",
+        "js/features/budget/app.budget-staff.js?v=20260613-budget-staff-round-org-filter-15"
       ]
     },
     idlePrefetchPages: []

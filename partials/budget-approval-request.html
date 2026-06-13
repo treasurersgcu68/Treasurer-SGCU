@@ -40,33 +40,30 @@
             <div class="budget-org-overview-panel">
               <div class="budget-org-overview">
                 <div class="cards budget-org-floating-cards" aria-label="สรุปการขออนุมัติงบประมาณขององค์กร">
-                  <article class="card card-hover budget-org-floating-card">
+                  <article class="card card-hover budget-org-floating-card budget-org-identity-card">
                     <div class="card-title">ฝ่าย / ชมรม</div>
                     <div id="budgetOrgDeptDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</div>
+                    <div id="budgetOrgTypeDisplay" class="section-text-sm budget-org-floating-subvalue is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</div>
                   </article>
-                  <article class="card card-hover budget-org-floating-card">
-                    <div class="card-title">ประเภทองค์กร</div>
-                    <div id="budgetOrgTypeDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</div>
-                  </article>
-                  <article class="card card-hover budget-org-floating-card">
+                  <article class="card card-hover budget-org-floating-card budget-org-round-card">
                     <div class="card-title">รอบรับคำขอ</div>
                     <div id="budgetRequestRoundDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่กำหนด</div>
                     <div id="budgetRequestRoundCaption" class="section-text-sm budget-request-deadline-caption">กำลังโหลดรอบ...</div>
                   </article>
-                  <article class="card card-hover budget-org-floating-card">
+                  <article class="card card-hover budget-org-floating-card budget-org-deadline-card">
                     <div class="card-title">กำหนดส่งคำของบ</div>
                     <div id="budgetRequestDeadlineDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่กำหนด</div>
                     <div id="budgetRequestDeadlineCaption" class="section-text-sm budget-request-deadline-caption">กำลังโหลดกำหนดการ...</div>
                   </article>
-                  <article class="card card-hover budget-org-floating-card">
+                  <article class="card card-hover budget-org-floating-card budget-org-summary-metric-card">
                     <div class="card-title">โครงการที่ขอไป</div>
                     <div id="budgetOrgSummaryProjectCount" class="card-value">0</div>
                   </article>
-                  <article class="card card-hover budget-org-floating-card">
+                  <article class="card card-hover budget-org-floating-card budget-org-summary-metric-card">
                     <div class="card-title">งบรวมที่ขอ</div>
                     <div id="budgetOrgSummaryTotalExpense" class="card-value">0.00 บาท</div>
                   </article>
-                  <article class="card card-hover budget-org-floating-card">
+                  <article class="card card-hover budget-org-floating-card budget-org-summary-metric-card">
                     <div class="card-title">งบรวมที่ผ่าน</div>
                     <div id="budgetOrgSummaryApprovedExpense" class="card-value">0.00 บาท</div>
                   </article>
@@ -187,10 +184,8 @@
                           <input
                             id="budgetEstimatedExpense"
                             class="login-input"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="เช่น 35000"
+                            type="text"
+                            placeholder="เช่น 35,000.00"
                             inputmode="decimal"
                             required
                           />
@@ -228,7 +223,7 @@
                     <div class="budget-request-actions-group">
                       <button id="budgetApprovalSubmitBtn" type="submit" class="btn-primary">ยื่นคำขออนุมัติงบประมาณ</button>
                       <button id="budgetApprovalCancelEditBtn" type="button" class="btn-ghost" hidden>ยกเลิกการแก้ไข</button>
-                      <button id="budgetApprovalCancelRequestBtn" type="button" class="btn-ghost budget-request-cancel-request-btn" hidden>ลดรายการนี้</button>
+                      <button id="budgetApprovalCancelRequestBtn" type="button" class="btn-ghost budget-request-cancel-request-btn" hidden>ลบรายการนี้</button>
                     </div>
                   </div>
                 </div>

@@ -367,24 +367,39 @@ function updateClosureXAxisMax(chart = budgetByMonthChart) {
 }
 
 function getChartOrgGroups() {
-  if (typeof getProjectYearOrgGroups === "function") {
-    const groups = getProjectYearOrgGroups(projects);
-    if (groups.length) return groups;
+  const sortThaiDescending = (list) => list.sort((a, b) => b.localeCompare(a, "th"));
+  const yearOrgFilters = typeof getProjectOrgFiltersForYear === "function"
+    ? getProjectOrgFiltersForYear()
+    : (Array.isArray(orgFilters) ? orgFilters : []);
+  if (yearOrgFilters.length) {
+    return sortThaiDescending(Array.from(new Set(yearOrgFilters.map((o) => o.group).filter(Boolean))));
   }
-  return [...DEFAULT_BASE_GROUPS];
+  return sortThaiDescending([...DEFAULT_BASE_GROUPS]);
 }
 
 function getOrgsByGroup(group) {
   if (!group) return [];
-  if (typeof getProjectYearOrgNames === "function") {
-    return getProjectYearOrgNames(group, projects);
+  const yearOrgFilters = typeof getProjectOrgFiltersForYear === "function"
+    ? getProjectOrgFiltersForYear()
+    : (Array.isArray(orgFilters) ? orgFilters : []);
+  if (yearOrgFilters.length) {
+    return Array.from(
+      new Set(
+        yearOrgFilters
+          .filter((o) => o.group === group)
+          .map((o) => o.name)
+          .filter(Boolean)
+      )
+    );
   }
-  return Array.from(new Set(
-    (projects || [])
-      .filter((project) => group === "all" || project.orgGroup === group)
-      .map((project) => (project.orgName || "").toString().trim())
-      .filter(Boolean)
-  ));
+  return Array.from(
+    new Set(
+      projects
+        .filter((p) => p.orgGroup === group)
+        .map((p) => p.orgName)
+        .filter(Boolean)
+    )
+  );
 }
 
 function updateClosureStatusChart(filtered) {

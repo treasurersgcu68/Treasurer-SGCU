@@ -1,8 +1,4 @@
 /* Data loading (Google Sheets + localStorage cache) */
-const ORG_FILTERS_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
-const ORG_FILTERS_CACHE_SCHEMA_VERSION = 3;
-const ORG_FILTERS_LEGACY_ACADEMIC_YEAR = "2568";
-
 function isPublishedHtmlSheetUrl(url) {
   return /\/pubhtml(?:$|[/?#])/i.test((url || "").toString());
 }
@@ -617,7 +613,16 @@ function normalizeOrganizationCatalogDoc(docSnap) {
   const data = docSnap?.data ? docSnap.data() : {};
   const row = Array.isArray(data.row) ? data.row : [];
   const group = (data.group || data.orgGroup || data.type || row[0] || "").toString().trim();
-  const rawName = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
+  const name = (data.name || data.orgName || data.organizationName || row[1] || "").toString().trim();
+  const code = (data.code || data.orgCode || row[2] || "").toString().trim().toUpperCase();
+  const documentRunCode = (data.documentRunCode || data.runCode || row[3] || "").toString().trim();
+  const normalizeAcademicYearText = (value) => {
+    const text = (value || "").toString().trim();
+    const num = Number(text);
+    if (!Number.isInteger(num) || num <= 0) return "";
+    return num < 100 ? String(2500 + num) : String(num);
+  };
+  const academicYear = normalizeAcademicYearText(data.academicYear || data.year || data.catalogAcademicYear);
   const normalizeYearTextMap = (value) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
     return Object.entries(value).reduce((acc, [year, text]) => {
@@ -630,21 +635,16 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     }, {});
   };
   const nameByAcademicYear = {
-    ...normalizeYearTextMap(data.nameByAcademicYear),
+    ...normalizeYearTextMap(data.orgNameByAcademicYear),
     ...normalizeYearTextMap(data.organizationNameByAcademicYear),
-    ...normalizeYearTextMap(data.orgNameByAcademicYear)
+    ...normalizeYearTextMap(data.nameByAcademicYear)
   };
-  if (rawName && !Object.keys(nameByAcademicYear).length) {
-    nameByAcademicYear[ORG_FILTERS_LEGACY_ACADEMIC_YEAR] = rawName;
+  if (academicYear && name) {
+    nameByAcademicYear[academicYear] = name;
   }
-  const fallbackName =
-    rawName ||
-    nameByAcademicYear[(selectedProjectSourceYear || "").toString().trim()] ||
-    nameByAcademicYear[(activeProjectSourceConfig?.year || "").toString().trim()] ||
-    Object.values(nameByAcademicYear)[0] ||
-    "";
-  const code = (data.code || data.orgCode || row[2] || "").toString().trim().toUpperCase();
-  const documentRunCode = (data.documentRunCode || data.runCode || row[3] || "").toString().trim();
+  if (name && !Object.keys(nameByAcademicYear).length) {
+    nameByAcademicYear["2568"] = name;
+  }
   const normalizeRunMap = (value) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
     return Object.entries(value).reduce((acc, [year, runCode]) => {
@@ -660,6 +660,9 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     ...normalizeRunMap(data.runCodeByAcademicYear),
     ...normalizeRunMap(data.documentRunCodeByAcademicYear)
   };
+  if (academicYear && documentRunCode) {
+    documentRunCodeByAcademicYear[academicYear] = documentRunCode;
+  }
   if (documentRunCode && !Object.keys(documentRunCodeByAcademicYear).length) {
     documentRunCodeByAcademicYear["2568"] = documentRunCode;
   }
@@ -679,6 +682,9 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     ...normalizeCodeMap(data.orgCodeByAcademicYear),
     ...normalizeCodeMap(data.codeByAcademicYear)
   };
+  if (academicYear && code) {
+    codeByAcademicYear[academicYear] = code;
+  }
   if (isManualDocumentRunGroup) {
     Object.entries(documentRunCodeByAcademicYear).forEach(([year, runCode]) => {
       const normalizedRunCode = (runCode || "").toString().trim();
@@ -689,11 +695,13 @@ function normalizeOrganizationCatalogDoc(docSnap) {
     codeByAcademicYear["2568"] = code;
   }
   const accountNo = (data.accountNo || data.bankAccount || data.bankAccountNo || row[4] || "").toString().trim();
-  if (!group || (!fallbackName && !Object.keys(nameByAcademicYear).length)) return null;
+  if (!group || !name) return null;
   return {
     id: docSnap.id,
+    academicYear,
+    baseOrganizationId: (data.baseOrganizationId || data.baseOrgId || data.rootOrganizationId || "").toString().trim(),
     group,
-    name: fallbackName,
+    name,
     nameByAcademicYear,
     code,
     codeByAcademicYear,
@@ -731,42 +739,13 @@ async function loadOrgFiltersFromFirestore() {
   return items.map(({ sortOrder, ...item }) => item);
 }
 
-function readOrgFiltersCache() {
-  const cached = getCache(CACHE_KEYS.ORG_FILTERS, ORG_FILTERS_CACHE_TTL_MS);
-  if (cached?.schemaVersion === ORG_FILTERS_CACHE_SCHEMA_VERSION && Array.isArray(cached.items)) {
-    return cached.items;
-  }
-  if (
-    Array.isArray(cached) &&
-    cached.length &&
-    cached.every((item) => item && Object.prototype.hasOwnProperty.call(item, "nameByAcademicYear"))
-  ) {
-    return cached;
-  }
-  return null;
-}
-
-function writeOrgFiltersCache(items) {
-  setCache(CACHE_KEYS.ORG_FILTERS, {
-    schemaVersion: ORG_FILTERS_CACHE_SCHEMA_VERSION,
-    items
-  });
-}
-
 // โหลดตัวเลือก filter จาก Firestore collection `organizationCatalog` เท่านั้น
 async function loadOrgFilters() {
   try {
-    const cached = readOrgFiltersCache();
-    if (Array.isArray(cached) && cached.length) {
-      orgFilters = cached;
-      clearLoadError("orgFilters");
-      return;
-    }
-
     const firestoreItems = await loadOrgFiltersFromFirestore();
     if (firestoreItems && firestoreItems.length) {
       orgFilters = firestoreItems;
-      writeOrgFiltersCache(orgFilters);
+      setCache(CACHE_KEYS.ORG_FILTERS, orgFilters);
       clearLoadError("orgFilters");
       return;
     }

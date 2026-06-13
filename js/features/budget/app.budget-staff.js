@@ -182,8 +182,10 @@
   let budgetCeiling = 0;
   let budgetGroupCeilings = {};
   let isGroupCeilingOpen = true;
+  let budgetSettingsRoundYear = "";
   let budgetRoundYear = "";
   let budgetRoundNo = "";
+  let representativeApplicationYear = "";
   let budgetActiveRounds = [];
   let editingBudgetRoundId = "";
   let roundDeleteResolve = null;
@@ -222,6 +224,9 @@
     const month = now.getMonth() + 1;
     return String((month >= 6 ? yearCE : yearCE - 1) + 543);
   };
+
+  const getRepresentativeCatalogAcademicYear = () =>
+    getCurrentBudgetAcademicYear();
 
   const getNonCurrentBudgetRounds = () => {
     const currentYear = getCurrentBudgetAcademicYear();
@@ -298,6 +303,22 @@
     if (!normalized) return 0;
     const num = Number(normalized);
     return Number.isFinite(num) ? num : Number.NaN;
+  };
+
+  const formatMoneyInputValue = (value) => {
+    const num = readMoneyInput(value);
+    if (!Number.isFinite(num)) return normalizeText(value).replaceAll(",", "");
+    return formatMoney(num);
+  };
+
+  const setupMoneyInputFormatting = (inputEl) => {
+    if (!inputEl) return;
+    inputEl.addEventListener("focus", () => {
+      inputEl.value = normalizeText(inputEl.value).replaceAll(",", "");
+    });
+    inputEl.addEventListener("blur", () => {
+      inputEl.value = formatMoneyInputValue(inputEl.value);
+    });
   };
 
   const toDateOnlyText = (value) => {
@@ -590,6 +611,159 @@
         ? globalThis.orgFilters
         : [];
 
+  const getBudgetRoundYearById = (roundId = "") => {
+    const id = normalizeText(roundId);
+    if (!id || id === "all") return getCurrentBudgetAcademicYear();
+    const activeRound = budgetActiveRounds.find((round) => normalizeText(round.id) === id);
+    if (activeRound) return normalizeAcademicYearText(activeRound.year);
+    const requestRow = requestRows.find((row) => normalizeText(row.budgetRoundId) === id);
+    return normalizeAcademicYearText(requestRow?.budgetRoundYear) || getCurrentBudgetAcademicYear();
+  };
+
+  const normalizeOrgCatalogYearMap = (map = {}) => {
+    if (!map || typeof map !== "object" || Array.isArray(map)) return {};
+    return Object.entries(map).reduce((acc, [key, value]) => {
+      const itemYear = normalizeAcademicYearText(key);
+      const text = normalizeText(value);
+      if (/^\d{4}$/.test(itemYear) && text) acc[itemYear] = text;
+      return acc;
+    }, {});
+  };
+
+  const getOrgCatalogYearValue = (map = {}, academicYear = "") => {
+    const targetYear = Number(normalizeAcademicYearText(academicYear));
+    if (!Number.isFinite(targetYear)) return "";
+    const normalized = normalizeOrgCatalogYearMap(map);
+    if (normalized[String(targetYear)]) return normalized[String(targetYear)];
+    const previousYear = Object.keys(normalized)
+      .map((key) => Number(key))
+      .filter((itemYear) => Number.isFinite(itemYear) && itemYear < targetYear)
+      .sort((a, b) => b - a)[0];
+    return previousYear ? normalized[String(previousYear)] || "" : "";
+  };
+
+  const getOrgCatalogItemAcademicYear = (item = {}) =>
+    normalizeAcademicYearText(item?.academicYear || item?.year || item?.catalogAcademicYear);
+
+  const shouldUseOrgCatalogItemForYear = (item = {}, academicYear = "") => {
+    const itemYear = getOrgCatalogItemAcademicYear(item);
+    const targetYear = normalizeAcademicYearText(academicYear);
+    return !itemYear || !targetYear || itemYear === targetYear;
+  };
+
+  const getOrgCatalogNameForYear = (item, academicYear = "") => {
+    if (!shouldUseOrgCatalogItemForYear(item, academicYear)) return "";
+    if (getOrgCatalogItemAcademicYear(item)) {
+      return normalizeText(item?.name || item?.organizationName || item?.orgName);
+    }
+    const rawName = normalizeText(item?.name || item?.organizationName || item?.orgName);
+    const nameByAcademicYear = normalizeOrgCatalogYearMap(
+      item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear
+    );
+    if (Object.keys(nameByAcademicYear).length) {
+      return getOrgCatalogYearValue(nameByAcademicYear, academicYear);
+    }
+    return rawName;
+  };
+
+  const getOrgCatalogCodeForYear = (item, academicYear = "") => {
+    if (!shouldUseOrgCatalogItemForYear(item, academicYear)) return "";
+    if (getOrgCatalogItemAcademicYear(item)) {
+      return normalizeText(item?.code || item?.orgCode).toUpperCase();
+    }
+    const codeByAcademicYear = normalizeOrgCatalogYearMap(item?.codeByAcademicYear || item?.orgCodeByAcademicYear);
+    if (Object.keys(codeByAcademicYear).length) {
+      return getOrgCatalogYearValue(codeByAcademicYear, academicYear);
+    }
+    return normalizeText(item?.code || item?.orgCode).toUpperCase();
+  };
+
+  const getOrgCatalogRowsForYear = (academicYear = "") => {
+    const year = normalizeAcademicYearText(academicYear) || getCurrentBudgetAcademicYear();
+    return getOrgFilterRows()
+      .map((item) => ({
+        item,
+        group: normalizeText(item?.group),
+        name: getOrgCatalogNameForYear(item, year),
+        code: getOrgCatalogCodeForYear(item, year)
+      }))
+      .filter((row) => row.group && row.name)
+      .sort((a, b) =>
+        a.code && b.code
+          ? a.code.localeCompare(b.code, "th", { numeric: true })
+          : compareOrgFilterRowsByCode(a.item, b.item)
+      );
+  };
+
+  const compareRepresentativeOrgNameByCode = (a, b, codeByName = new Map()) => {
+    const codeA = normalizeText(codeByName.get(a));
+    const codeB = normalizeText(codeByName.get(b));
+    if (codeA && codeB) {
+      const codeCompare = codeA.localeCompare(codeB, "th", { numeric: true });
+      if (codeCompare) return codeCompare;
+    } else if (codeA || codeB) {
+      return codeA ? -1 : 1;
+    }
+    return a.localeCompare(b, "th");
+  };
+
+  const getRepresentativeOrgNameForYear = (item = {}) =>
+    window.sgcuBudgetOrgOptions?.getOrgNameForYear
+      ? window.sgcuBudgetOrgOptions.getOrgNameForYear(item, getRepresentativeCatalogAcademicYear())
+      : getOrgCatalogNameForYear(item, getRepresentativeCatalogAcademicYear());
+
+  const getRepresentativeOrgCodeForYear = (item = {}) =>
+    window.sgcuBudgetOrgOptions?.getOrgCodeForYear
+      ? window.sgcuBudgetOrgOptions.getOrgCodeForYear(item, getRepresentativeCatalogAcademicYear())
+      : getOrgCatalogCodeForYear(item, getRepresentativeCatalogAcademicYear());
+
+  const collectRepresentativeOrgTypeOptions = () => {
+    if (window.sgcuBudgetOrgOptions?.collectTypeOptions) {
+      return window.sgcuBudgetOrgOptions.collectTypeOptions(getRepresentativeCatalogAcademicYear(), getOrgFilterRows());
+    }
+    const filterRows = getOrgFilterRows();
+    return Array.from(new Set(
+      filterRows
+        .filter((item) => getRepresentativeOrgNameForYear(item))
+        .map((item) => normalizeText(item?.group))
+        .filter(Boolean)
+    )).sort((a, b) => b.localeCompare(a, "th"));
+  };
+
+  const collectRepresentativeOrgNameOptions = (orgType = "") => {
+    const selectedType = normalizeText(orgType);
+    if (!selectedType) return [];
+    if (window.sgcuBudgetOrgOptions?.collectNameOptions) {
+      return window.sgcuBudgetOrgOptions.collectNameOptions(selectedType, getRepresentativeCatalogAcademicYear(), getOrgFilterRows());
+    }
+    const codeByName = new Map();
+    const names = [];
+    getOrgFilterRows()
+      .filter((item) => normalizeText(item?.group) === selectedType)
+      .forEach((item) => {
+        const name = getRepresentativeOrgNameForYear(item);
+        if (!name) return;
+        const code = getRepresentativeOrgCodeForYear(item);
+        if (code && !codeByName.has(name)) codeByName.set(name, code);
+        names.push(name);
+      });
+    return Array.from(new Set(names)).sort((a, b) => compareRepresentativeOrgNameByCode(a, b, codeByName));
+  };
+
+  const updateOrgFilterDebugState = () => {
+    const year = getRepresentativeCatalogAcademicYear();
+    const groups = collectRepresentativeOrgTypeOptions();
+    window.__sgcuBudgetStaffOrgFilterDebug = {
+      year,
+      orgFilterCount: getOrgFilterRows().length,
+      groups,
+      namesByGroup: groups.reduce((acc, group) => {
+        acc[group] = collectRepresentativeOrgNameOptions(group);
+        return acc;
+      }, {})
+    };
+  };
+
   const compareOrgFilterRowsByCode = (a, b) => {
     const codeA = normalizeText(a?.code);
     const codeB = normalizeText(b?.code);
@@ -637,9 +811,10 @@
 
   const populateOrgSummaryGroupOptions = () => {
     const selected = resetSelectOptions(orgSummaryGroupEl, "ทุกประเภทองค์กร");
-    const filterRows = getOrgFilterRows();
-    const groups = filterRows.length
-      ? filterRows.map((item) => normalizeText(item?.group)).filter(Boolean)
+    const representativeGroups = collectRepresentativeOrgTypeOptions();
+    updateOrgFilterDebugState();
+    const groups = representativeGroups.length
+      ? representativeGroups
       : requestRows.map((item) => normalizeText(item.organizationType)).filter(Boolean);
     Array.from(new Set(groups)).sort((a, b) => b.localeCompare(a, "th")).forEach((group) => {
       const opt = document.createElement("option");
@@ -653,13 +828,12 @@
   const populateOrgSummaryOrgOptions = () => {
     const selected = resetSelectOptions(orgSummaryOrgEl, "ทุกฝ่าย / ทุกชมรม");
     const group = normalizeText(orgSummaryGroupEl.value) || "all";
-    const filterRows = getOrgFilterRows();
-    const names = filterRows.length
-      ? filterRows
-        .filter((item) => group === "all" || normalizeText(item?.group) === group)
-        .sort(compareOrgFilterRowsByCode)
-        .map((item) => normalizeText(item?.name))
-        .filter(Boolean)
+    const representativeNames = group === "all"
+      ? collectRepresentativeOrgTypeOptions().flatMap((type) => collectRepresentativeOrgNameOptions(type))
+      : collectRepresentativeOrgNameOptions(group);
+    updateOrgFilterDebugState();
+    const names = representativeNames.length
+      ? representativeNames
       : requestRows
         .filter((item) => group === "all" || normalizeText(item.organizationType) === group)
         .map((item) => normalizeText(item.organizationName))
@@ -764,9 +938,10 @@
 
   const populateReviewGroupOptions = () => {
     const selected = resetSelectOptions(reviewGroupEl, "ทุกประเภทองค์กร");
-    const filterRows = getOrgFilterRows();
-    const groups = filterRows.length
-      ? filterRows.map((item) => normalizeText(item?.group)).filter(Boolean)
+    const representativeGroups = collectRepresentativeOrgTypeOptions();
+    updateOrgFilterDebugState();
+    const groups = representativeGroups.length
+      ? representativeGroups
       : requestRows.map((item) => normalizeText(item.organizationType)).filter(Boolean);
     Array.from(new Set(groups)).sort((a, b) => b.localeCompare(a, "th")).forEach((group) => {
       const opt = document.createElement("option");
@@ -780,18 +955,17 @@
   const populateReviewOrgOptions = () => {
     const selected = resetSelectOptions(reviewOrgEl, "ทุกฝ่าย / ทุกชมรม");
     const group = normalizeText(reviewGroupEl.value) || "all";
-    const filterRows = getOrgFilterRows();
-    const names = filterRows.length
-      ? filterRows
-        .filter((item) => group === "all" || normalizeText(item?.group) === group)
-        .sort(compareOrgFilterRowsByCode)
-        .map((item) => normalizeText(item?.name))
-        .filter(Boolean)
+    const representativeNames = group === "all"
+      ? collectRepresentativeOrgTypeOptions().flatMap((type) => collectRepresentativeOrgNameOptions(type))
+      : collectRepresentativeOrgNameOptions(group);
+    updateOrgFilterDebugState();
+    const names = representativeNames.length
+      ? representativeNames
       : requestRows
         .filter((item) => group === "all" || normalizeText(item.organizationType) === group)
         .map((item) => normalizeText(item.organizationName))
         .filter(Boolean);
-    const uniqueNames = filterRows.length
+    const uniqueNames = representativeNames.length
       ? Array.from(new Set(names))
       : Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th"));
     uniqueNames.forEach((name) => {
@@ -812,7 +986,7 @@
   };
 
   const getBudgetGroupRecommendationMap = () => {
-    const orgGroupMap = getOrgGroupMap();
+    const orgGroupMap = getOrgGroupMap(getRepresentativeCatalogAcademicYear());
     const groupTotals = new Map();
     const editingRoundId = buildBudgetRoundId(roundYearInputEl.value, roundNoInputEl.value);
     requestRows.forEach((item) => {
@@ -852,12 +1026,11 @@
           <input
             id="budgetGroupCeiling-${escapeHtml(group)}"
             class="login-input"
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
+            inputmode="decimal"
             placeholder="ไม่กำหนด"
             data-budget-group-ceiling="${escapeHtml(group)}"
-            value="${budgetGroupCeilings[group] > 0 ? escapeHtml(String(budgetGroupCeilings[group])) : ""}"
+            value="${budgetGroupCeilings[group] > 0 ? escapeHtml(formatMoneyInputValue(budgetGroupCeilings[group])) : ""}"
           />
         </div>
       `).join("")
@@ -1220,7 +1393,8 @@
     populateStaffOrgNameOptions("");
     studentOperatorsInputEl.value = "0";
     studentParticipantsInputEl.value = "0";
-    approvedAmountInputEl.value = "0";
+    requestedAmountInputEl.value = "";
+    approvedAmountInputEl.value = "0.00";
     statusInputEl.value = "pending";
     setFormMode("");
     setMessage(formMessageEl, "");
@@ -1270,8 +1444,8 @@
       operationEndDate: toDateOnlyText(operationEndDateInputEl.value),
       studentOperators: Number(studentOperatorsInputEl.value || 0),
       studentParticipants: Number(studentParticipantsInputEl.value || 0),
-      estimatedExpense: Number(requestedAmountInputEl.value || 0),
-      approvedAmount: Number(approvedAmountInputEl.value || 0),
+      estimatedExpense: readMoneyInput(requestedAmountInputEl.value),
+      approvedAmount: readMoneyInput(approvedAmountInputEl.value),
       status: normalizeText(statusInputEl.value).toLowerCase() || "pending",
       budgetRoundYear: selectedRound.year,
       budgetRoundNo: selectedRound.roundNo,
@@ -1310,7 +1484,9 @@
     if (!validateWholeNumber(studentOperatorsInputEl, "จำนวนนิสิตผู้ปฏิบัติงาน")) return false;
     if (!validateWholeNumber(studentParticipantsInputEl, "จำนวนนิสิตผู้เข้าร่วมงาน")) return false;
 
-    if (Number(requestedAmountInputEl.value || 0) < 0 || Number(approvedAmountInputEl.value || 0) < 0) {
+    const requestedAmount = readMoneyInput(requestedAmountInputEl.value);
+    const approvedAmount = readMoneyInput(approvedAmountInputEl.value);
+    if (!Number.isFinite(requestedAmount) || !Number.isFinite(approvedAmount) || requestedAmount < 0 || approvedAmount < 0) {
       setMessage(formMessageEl, "ยอดเงินต้องไม่ติดลบ", "#b91c1c");
       return false;
     }
@@ -1336,9 +1512,9 @@
     return true;
   };
 
-  const getOrgGroupMap = () => {
+  const getOrgGroupMap = (academicYear = getCurrentBudgetAcademicYear()) => {
     const map = new Map();
-    getOrgFilterRows().forEach((item) => {
+    getOrgCatalogRowsForYear(academicYear).forEach((item) => {
       const name = normalizeText(item?.name);
       const group = normalizeText(item?.group);
       if (name && group) map.set(name, group);
@@ -1350,12 +1526,12 @@
     const roundFilter = normalizeText(orgSummaryRoundEl.value) || "all";
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
-    const orgGroupMap = getOrgGroupMap();
+    const orgGroupMap = getOrgGroupMap(getRepresentativeCatalogAcademicYear());
     return requestRows.filter((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
       if (roundFilter !== "all" && normalizeText(item.budgetRoundId) !== roundFilter) return false;
       const orgName = normalizeText(item.organizationName) || "-";
-      const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
+      const group = normalizeText(item.organizationType) || orgGroupMap.get(orgName);
       if (groupFilter !== "all" && group !== groupFilter) return false;
       if (orgFilter !== "all" && orgName !== orgFilter) return false;
       return true;
@@ -1366,12 +1542,12 @@
     const roundFilter = normalizeText(reviewRoundEl.value) || "all";
     const groupFilter = normalizeText(reviewGroupEl.value) || "all";
     const orgFilter = normalizeText(reviewOrgEl.value) || "all";
-    const orgGroupMap = getOrgGroupMap();
+    const orgGroupMap = getOrgGroupMap(getRepresentativeCatalogAcademicYear());
     return requestRows.filter((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return false;
       if (roundFilter !== "all" && normalizeText(item.budgetRoundId) !== roundFilter) return false;
       const orgName = normalizeText(item.organizationName) || "-";
-      const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
+      const group = normalizeText(item.organizationType) || orgGroupMap.get(orgName);
       if (groupFilter !== "all" && group !== groupFilter) return false;
       if (orgFilter !== "all" && orgName !== orgFilter) return false;
       return true;
@@ -1383,11 +1559,10 @@
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
     if (groupFilter !== "all") return groupFilter;
     if (orgFilter === "all") return "";
-    const orgGroupMap = getOrgGroupMap();
+    const orgGroupMap = getOrgGroupMap(getRepresentativeCatalogAcademicYear());
     const mappedGroup = orgGroupMap.get(orgFilter);
-    if (mappedGroup) return mappedGroup;
     const matchedRow = requestRows.find((item) => normalizeText(item.organizationName) === orgFilter);
-    return normalizeText(matchedRow?.organizationType);
+    return normalizeText(matchedRow?.organizationType) || mappedGroup || "";
   };
 
   const getSelectedOverviewCeiling = () => {
@@ -1466,13 +1641,14 @@
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
     const isGlobalView = groupFilter === "all" && orgFilter === "all";
-    const orgGroupMap = getOrgGroupMap();
+    const roundFilter = normalizeText(orgSummaryRoundEl.value) || "all";
+    const orgGroupMap = getOrgGroupMap(getRepresentativeCatalogAcademicYear());
     const grouped = new Map();
     requestRows.forEach((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return;
       const status = normalizeText(item.status || "pending").toLowerCase();
       const orgName = normalizeText(item.organizationName) || "-";
-      const group = orgGroupMap.get(orgName) || normalizeText(item.organizationType);
+      const group = normalizeText(item.organizationType) || orgGroupMap.get(orgName);
       if (groupFilter !== "all" && group !== groupFilter) return;
       if (orgFilter !== "all" && orgName !== orgFilter) return;
       const key = isGlobalView ? (group || "ไม่ระบุประเภทองค์กร") : orgName;
@@ -1681,13 +1857,19 @@
   };
 
   const applyBudgetSettings = (data = {}) => {
+    budgetSettingsRoundYear = normalizeAcademicYearText(data.budgetRoundYear) || getCurrentBudgetAcademicYear();
+    budgetRoundYear = budgetSettingsRoundYear;
+    budgetRoundNo = normalizeRoundName(data.budgetRoundNo) || budgetRoundNo;
+    representativeApplicationYear = normalizeAcademicYearText(
+      data.organizationRepresentativeAcademicYear ||
+      data.orgRepresentativeAcademicYear ||
+      data.representativeAcademicYear ||
+      data.representativeApplicationYear
+    );
     budgetActiveRounds = normalizeBudgetActiveRounds(data.budgetActiveRounds, data);
-    populateRoundOptions(orgSummaryRoundEl, { includeRequestRows: false });
-    populateRoundOptions(reviewRoundEl);
     clearRoundSettingsForm();
-    updateSummary();
+    void refreshOrgSummaryFilters();
     renderRows();
-    void renderOrgSummaryChart();
   };
 
   const loadDeadline = () => {
@@ -1716,7 +1898,7 @@
       () => {
         budgetCeiling = readLocalBudgetCeiling();
         budgetGroupCeilings = readLocalBudgetGroupCeilings();
-        ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
+        ceilingInputEl.value = budgetCeiling > 0 ? formatMoneyInputValue(budgetCeiling) : "";
         renderBudgetGroupCeilingInputs();
         updateSummary();
         syncRoundStatus();
@@ -2056,7 +2238,7 @@
     roundNoInputEl.value = budgetRoundNo;
     deadlineInputEl.value = round.deadline;
     deadlineTimeInputEl.value = getRoundDeadlineTime(round);
-    ceilingInputEl.value = budgetCeiling > 0 ? String(budgetCeiling) : "";
+    ceilingInputEl.value = budgetCeiling > 0 ? formatMoneyInputValue(budgetCeiling) : "";
     populateStaffRoundOptions(round.id);
     renderBudgetGroupCeilingInputs();
     syncRoundStatus();
@@ -2306,8 +2488,8 @@
     operationEndDateInputEl.value = toDateOnlyText(row.operationEndDate);
     studentOperatorsInputEl.value = Number(row.studentOperators || 0).toString();
     studentParticipantsInputEl.value = Number(row.studentParticipants || 0).toString();
-    requestedAmountInputEl.value = Number(row.estimatedExpense || 0).toString();
-    approvedAmountInputEl.value = Number(row.approvedAmount || 0).toString();
+    requestedAmountInputEl.value = formatMoneyInputValue(row.estimatedExpense || 0);
+    approvedAmountInputEl.value = formatMoneyInputValue(row.approvedAmount || 0);
     statusInputEl.value = normalizeText(row.status || "pending").toLowerCase() || "pending";
     descriptionInputEl.value = normalizeText(row.description);
     populateStaffRoundOptions(row.budgetRoundId);
@@ -2520,6 +2702,17 @@
     writeLocalGroupCeilingOpen(isGroupCeilingOpen);
     syncGroupCeilingVisibility();
   });
+  [ceilingInputEl, requestedAmountInputEl, approvedAmountInputEl].forEach(setupMoneyInputFormatting);
+  groupCeilingListEl.addEventListener("focusin", (event) => {
+    const input = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!input?.matches("[data-budget-group-ceiling]")) return;
+    input.value = normalizeText(input.value).replaceAll(",", "");
+  });
+  groupCeilingListEl.addEventListener("focusout", (event) => {
+    const input = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!input?.matches("[data-budget-group-ceiling]")) return;
+    input.value = formatMoneyInputValue(input.value);
+  });
   ceilingInputEl.addEventListener("input", () => {
     const groupCeilingsResult = readBudgetGroupCeilingsFromInputs();
     if (groupCeilingsResult.ok) budgetGroupCeilings = groupCeilingsResult.value;
@@ -2541,6 +2734,8 @@
     applyRoundActionLayout(hasEditingRound);
   });
   orgSummaryRoundEl.addEventListener("change", () => {
+    populateOrgSummaryGroupOptions();
+    populateOrgSummaryOrgOptions();
     updateSummary();
     void renderOrgSummaryChart();
   });
@@ -2557,7 +2752,11 @@
     populateReviewOrgOptions();
     renderRows();
   });
-  reviewRoundEl.addEventListener("change", renderRows);
+  reviewRoundEl.addEventListener("change", () => {
+    populateReviewGroupOptions();
+    populateReviewOrgOptions();
+    renderRows();
+  });
   reviewOrgEl.addEventListener("change", renderRows);
   exportCsvBtnEl?.addEventListener("click", exportBudgetStaffCsv);
   tabBtnEls.forEach((btn) => {

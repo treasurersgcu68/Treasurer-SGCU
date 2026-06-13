@@ -14,9 +14,9 @@
         "js/features/news/app.news.js?v=20260417-1"
       ],
       scoreboard: [
-        "js/features/project/app.project-ui.js?v=20260611-academic-year-june-test-1",
+        "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
         "js/features/project/app.calendar.js",
-        "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1",
         "js/features/news/app.scoreboard.js?v=20260501-1"
       ],
       "org-structure": "js/features/org/app.org.js?v=20260503-1",
@@ -29,50 +29,40 @@
         "js/features/docs/app.downloads.js?v=20260501-1"
       ],
       "project-status": [
-        "js/features/project/app.project-ui.js?v=20260611-academic-year-june-test-1",
+        "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
         "js/features/project/app.project-modal.js",
         "js/features/project/app.charts.js",
         "js/features/project/app.pie.js",
         "js/features/project/app.calendar.js",
-        "js/features/project/app.data.js?v=20260611-academic-year-june-test-1"
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1"
       ],
       "treasurer-handover-staff": [],
       "dashboard-staff": [
-        "js/features/project/app.project-ui.js?v=20260611-academic-year-june-test-1",
+        "js/features/project/app.project-ui.js?v=20260519-club-debt-age-donut-card-1",
         "js/features/project/app.project-modal.js",
         "js/features/project/app.charts.js",
         "js/features/project/app.pie.js",
         "js/features/project/app.calendar.js",
-        "js/features/project/app.data.js?v=20260611-academic-year-june-test-1"
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1"
       ],
-      "borrow-assets": [
-        "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
-        "js/features/borrow/app.borrow-assets.js?v=20260613-borrow-year-filter-2"
-      ],
-      "borrow-assets-staff": [
-        "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
-        "js/features/borrow/app.borrow-assets.js?v=20260613-borrow-year-filter-2"
-      ],
+      "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260613-borrow-year-filter-2",
+      "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260613-borrow-year-filter-2",
       "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
       "meeting-room-staff": [
         "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
         "js/features/booking/app.meeting-room-staff.js?v=20260504-6"
       ],
-      "budget-approval-request": [
-        "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
-        "js/features/budget/app.budget-request.js?v=20260611-academic-year-june-test-1"
-      ],
+      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260613-budget-current-year-org-options-2",
       login: [
-        "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
-        "js/features/staff/app.staff-access.js?v=20260611-academic-year-june-test-1",
-        "js/features/budget/app.budget-request.js?v=20260611-academic-year-june-test-1"
+        "js/features/staff/app.staff-access.js?v=20260504-1",
+        "js/features/budget/app.budget-request.js?v=20260613-budget-current-year-org-options-2"
       ],
-      "staff-application": "js/features/staff/app.staff-access.js?v=20260611-academic-year-june-test-1",
+      "staff-application": "js/features/staff/app.staff-access.js?v=20260504-1",
       "staff-approval": [
-        "js/features/staff/app.staff-access.js?v=20260611-academic-year-june-test-1",
-        "js/features/budget/app.budget-staff.js?v=20260613-budget-request-standalone-width-2"
+        "js/features/staff/app.staff-access.js?v=20260504-1",
+        "js/features/budget/app.budget-staff.js?v=20260613-budget-staff-round-org-filter-15"
       ],
-      "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260611-academic-year-june-test-1",
+      "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260504-1",
       "content-management-staff": [
         "js/features/docs/app.file-links.js?v=20260417-1",
         "js/features/content/app.content-management.js?v=20260506-1"
@@ -87,8 +77,9 @@
       ],
       "system-data-staff": "js/features/staff/app.health-check.js?v=20260520-1",
       "budget-approval-staff": [
-        "js/features/project/app.data.js?v=20260611-academic-year-june-test-1",
-        "js/features/budget/app.budget-staff.js?v=20260613-budget-request-standalone-width-2"
+        "js/features/project/app.data.js?v=20260518-csv-refresh-1",
+        "js/features/budget/app.budget-org-options.js?v=20260613-budget-org-options-5",
+        "js/features/budget/app.budget-staff.js?v=20260613-budget-staff-round-org-filter-15"
       ]
     },
     idlePrefetchPages: []

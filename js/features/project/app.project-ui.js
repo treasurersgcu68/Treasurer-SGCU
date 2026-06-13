@@ -1,21 +1,42 @@
 /* Project Status UI: filters, summary cards, tables, dashboard KPIs */
-function normalizeProjectOrgAcademicYear(value) {
-  const normalized = (value || "").toString().trim();
-  if (!normalized || normalized === "all") return "";
-  const number = Number(normalized);
-  if (!Number.isFinite(number)) return normalized;
-  return number < 100 ? String(2500 + number) : normalized;
+function compareOrgFilterByCodeThenName(a, b) {
+  const codeA = (a?.code || "").toString().trim();
+  const codeB = (b?.code || "").toString().trim();
+  if (codeA && codeB) {
+    const codeCompare = codeA.localeCompare(codeB, "th", { numeric: true });
+    if (codeCompare) return codeCompare;
+  } else if (codeA || codeB) {
+    return codeA ? -1 : 1;
+  }
+  return (a?.name || "").toString().localeCompare((b?.name || "").toString(), "th");
 }
 
-function getProjectOrgYearValue(map = {}, academicYear = "") {
-  const year = Number(normalizeProjectOrgAcademicYear(academicYear));
-  if (!Number.isFinite(year) || !map || typeof map !== "object" || Array.isArray(map)) return "";
-  const normalized = Object.entries(map).reduce((acc, [key, value]) => {
-    const normalizedYear = normalizeProjectOrgAcademicYear(key);
-    const normalizedValue = (value || "").toString().trim();
-    if (/^\d{4}$/.test(normalizedYear) && normalizedValue) acc[normalizedYear] = normalizedValue;
+function normalizeProjectAcademicYearText(value) {
+  const text = (value || "").toString().trim();
+  const num = Number(text);
+  if (!Number.isInteger(num) || num <= 0) return "";
+  return num < 100 ? String(2500 + num) : String(num);
+}
+
+function getProjectSelectedAcademicYear() {
+  const selected = yearSelect ? (yearSelect.value || "").toString().trim() : "";
+  return selected && selected !== "all" ? normalizeProjectAcademicYearText(selected) : "";
+}
+
+function normalizeProjectYearMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.entries(value).reduce((acc, [year, text]) => {
+    const normalizedYear = normalizeProjectAcademicYearText(year);
+    const normalizedText = (text || "").toString().trim();
+    if (/^\d{4}$/.test(normalizedYear) && normalizedText) acc[normalizedYear] = normalizedText;
     return acc;
   }, {});
+}
+
+function getProjectYearValue(map = {}, academicYear = getProjectSelectedAcademicYear()) {
+  const year = Number(normalizeProjectAcademicYearText(academicYear));
+  if (!Number.isFinite(year)) return "";
+  const normalized = normalizeProjectYearMap(map);
   if (normalized[String(year)]) return normalized[String(year)];
   const previousYear = Object.keys(normalized)
     .map((key) => Number(key))
@@ -24,88 +45,116 @@ function getProjectOrgYearValue(map = {}, academicYear = "") {
   return previousYear ? normalized[String(previousYear)] || "" : "";
 }
 
-function getProjectOrgDisplayYear() {
-  const activeContextYear = projectStatusContexts?.[activeProjectStatusContext]?.yearSelect?.value;
-  return normalizeProjectOrgAcademicYear(activeContextYear) ||
-    normalizeProjectOrgAcademicYear(yearSelect?.value) ||
-    normalizeProjectOrgAcademicYear(typeof selectedProjectSourceYear !== "undefined" ? selectedProjectSourceYear : "");
+function getProjectOrgFilterAcademicYear(item = {}) {
+  return normalizeProjectAcademicYearText(item?.academicYear || item?.year || item?.catalogAcademicYear);
 }
 
-function getProjectOrgFilterNameForYear(item = {}, academicYear = getProjectOrgDisplayYear()) {
-  return getProjectOrgYearValue(item.nameByAcademicYear, academicYear) ||
-    (item.name || item.organizationName || item.orgName || "").toString().trim();
+function getProjectOrgFilterBaseId(item = {}) {
+  return (item?.baseOrganizationId || item?.baseOrgId || item?.rootOrganizationId || item?.legacyOrganizationId || item?.id || "").toString().trim();
 }
 
-function getProjectOrgFilterCodeForYear(item = {}, academicYear = getProjectOrgDisplayYear()) {
-  return getProjectOrgYearValue(item.codeByAcademicYear, academicYear) ||
-    (item.code || item.orgCode || "").toString().trim();
+function getProjectOrgFilterDisplayName(item = {}, academicYear = getProjectSelectedAcademicYear()) {
+  const itemYear = getProjectOrgFilterAcademicYear(item);
+  const rawName = (item?.name || item?.organizationName || item?.orgName || "").toString().trim();
+  if (itemYear) return rawName;
+  const nameByAcademicYear = normalizeProjectYearMap(item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear);
+  return Object.keys(nameByAcademicYear).length ? getProjectYearValue(nameByAcademicYear, academicYear) : rawName;
 }
 
-function compareOrgFilterByCodeThenName(a, b) {
-  const academicYear = getProjectOrgDisplayYear();
-  const codeA = getProjectOrgFilterCodeForYear(a, academicYear);
-  const codeB = getProjectOrgFilterCodeForYear(b, academicYear);
-  if (codeA && codeB) {
-    const codeCompare = codeA.localeCompare(codeB, "th", { numeric: true });
-    if (codeCompare) return codeCompare;
-  } else if (codeA || codeB) {
-    return codeA ? -1 : 1;
-  }
-  return getProjectOrgFilterNameForYear(a, academicYear).localeCompare(getProjectOrgFilterNameForYear(b, academicYear), "th");
+function getProjectOrgFilterDisplayCode(item = {}, academicYear = getProjectSelectedAcademicYear()) {
+  const itemYear = getProjectOrgFilterAcademicYear(item);
+  const rawCode = (item?.code || item?.orgCode || "").toString().trim().toUpperCase();
+  if (itemYear) return rawCode;
+  const codeByAcademicYear = normalizeProjectYearMap(item?.codeByAcademicYear || item?.orgCodeByAcademicYear);
+  return Object.keys(codeByAcademicYear).length ? getProjectYearValue(codeByAcademicYear, academicYear).toUpperCase() : rawCode;
 }
 
-function getProjectYearOrgGroups(sourceProjects = projects) {
-  return Array.from(
-    new Set(
-      (sourceProjects || [])
-        .map((project) => (project.orgGroup || "").toString().trim())
-        .filter(Boolean)
-    )
-  ).sort((a, b) => b.localeCompare(a, "th"));
-}
+function getProjectOrgFiltersForYear(academicYear = getProjectSelectedAcademicYear()) {
+  const rows = Array.isArray(orgFilters) ? orgFilters : [];
+  const year = normalizeProjectAcademicYearText(academicYear);
+  const filtered = rows
+    .filter((item) => {
+      const itemYear = getProjectOrgFilterAcademicYear(item);
+      return !year || !itemYear || itemYear === year;
+    })
+    .map((item) => ({
+      ...item,
+      name: getProjectOrgFilterDisplayName(item, year),
+      code: getProjectOrgFilterDisplayCode(item, year)
+    }))
+    .filter((item) => (item.group || "").toString().trim() && (item.name || "").toString().trim());
 
-function getProjectYearOrgNames(group = "all", sourceProjects = projects) {
-  const names = [];
-  const seen = new Set();
-  (sourceProjects || []).forEach((project) => {
-    if (group && group !== "all" && project.orgGroup !== group) return;
-    const name = (project.orgName || "").toString().trim();
-    if (!name || seen.has(name)) return;
-    seen.add(name);
-    names.push(name);
-  });
-  return names;
+  return filtered.reduce((acc, item) => {
+    const key = getProjectOrgFilterBaseId(item) || `${item.group}||${item.name}`.toLowerCase();
+    const existingIndex = acc.findIndex((existing) =>
+      (getProjectOrgFilterBaseId(existing) || `${existing.group}||${existing.name}`.toLowerCase()) === key
+    );
+    if (existingIndex < 0) {
+      acc.push(item);
+    } else if (getProjectOrgFilterAcademicYear(item) && !getProjectOrgFilterAcademicYear(acc[existingIndex])) {
+      acc[existingIndex] = item;
+    }
+    return acc;
+  }, []);
 }
 
 function initOrgTypeOptions() {
   if (!orgTypeSelect) return;  // ✅ กัน null
 
+  const currentValue = orgTypeSelect.value || "all";
   while (orgTypeSelect.options.length > 1) {
     orgTypeSelect.remove(1);
   }
-  const groups = getProjectYearOrgGroups(projects);
+  const yearOrgFilters = getProjectOrgFiltersForYear();
+  const groups = yearOrgFilters.length
+    ? Array.from(new Set(yearOrgFilters.map((o) => o.group).filter(Boolean)))
+    : Array.from(new Set(projects.map((p) => p.orgGroup).filter(Boolean)));
+  groups.sort((a, b) => b.localeCompare(a, "th"));
   groups.forEach((g) => {
     const opt = document.createElement("option");
     opt.value = g;
     opt.textContent = g;
     orgTypeSelect.appendChild(opt);
   });
+  orgTypeSelect.value = Array.from(orgTypeSelect.options).some((option) => option.value === currentValue)
+    ? currentValue
+    : "all";
 }
 
 function initOrgOptions() {
   if (!orgSelect || !orgTypeSelect) return;  // ✅ กัน null
 
+  const currentValue = orgSelect.value || "all";
   while (orgSelect.options.length > 1) {
     orgSelect.remove(1);
   }
   const selectedGroup = orgTypeSelect.value;
-  const orgNames = getProjectYearOrgNames(selectedGroup, projects);
+  const yearOrgFilters = getProjectOrgFiltersForYear();
+  const sourceList = yearOrgFilters.length
+    ? yearOrgFilters.filter((o) => (selectedGroup === "all" ? true : o.group === selectedGroup))
+    : projects.filter((p) => (selectedGroup === "all" ? true : p.orgGroup === selectedGroup));
+  const orgNames = yearOrgFilters.length
+    ? sourceList
+      .slice()
+      .sort(compareOrgFilterByCodeThenName)
+      .map((item) => (item.name || "").toString().trim())
+      .filter((name, index, list) => name && list.indexOf(name) === index)
+    : Array.from(
+      new Set(
+        sourceList
+          .map((item) => item.orgName)
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b, "th"));
   orgNames.forEach((name) => {
     const opt = document.createElement("option");
     opt.value = name;
     opt.textContent = name;
     orgSelect.appendChild(opt);
   });
+  orgSelect.value = Array.from(orgSelect.options).some((option) => option.value === currentValue)
+    ? currentValue
+    : "all";
 }
 
 const ADVANCE_NOT_BORROWED_STATUSES = new Set([
@@ -248,8 +297,21 @@ function isClubDebtProject(project) {
 function getClubDebtSummaryScope(sourceProjects) {
   const orgGroupFilter = orgTypeSelect ? orgTypeSelect.value : "all";
   const orgFilter = orgSelect ? orgSelect.value : "all";
-  const getFallbackGroups = () => getProjectYearOrgGroups(sourceProjects);
-  const getFallbackOrgs = (group) => getProjectYearOrgNames(group, sourceProjects);
+  const getFallbackGroups = () => Array.from(
+    new Set(
+      (sourceProjects || [])
+        .map((project) => (project.orgGroup || "").toString().trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => b.localeCompare(a, "th"));
+  const getFallbackOrgs = (group) => Array.from(
+    new Set(
+      (sourceProjects || [])
+        .filter((project) => !group || group === "all" || project.orgGroup === group)
+        .map((project) => (project.orgName || "").toString().trim())
+        .filter(Boolean)
+    )
+  );
 
   if (orgGroupFilter === "all" && orgFilter === "all") {
     const labels = typeof getChartOrgGroups === "function"
@@ -709,9 +771,10 @@ function updateDashboardInsights(filtered, summary) {
     const activeOrgs = new Set(
       filtered.map((p) => (p.orgName || "").trim()).filter(Boolean)
     );
-    const allOrgCount = new Set(
-      (projects || []).map((p) => (p.orgName || "").trim()).filter(Boolean)
-    ).size || activeOrgs.size;
+    const yearOrgFilters = getProjectOrgFiltersForYear();
+    const allOrgCount = yearOrgFilters.length
+      ? new Set(yearOrgFilters.map((o) => (o.name || "").trim()).filter(Boolean)).size
+      : activeOrgs.size;
 
     if (activeOrgCountEl) {
       activeOrgCountEl.textContent = activeOrgs.size.toLocaleString("th-TH");

@@ -397,7 +397,10 @@ function ensureOrgAccountMap() {
         await loadOrgFilters();
       }
       const map = {};
-      (Array.isArray(orgFilters) ? orgFilters : []).forEach((item) => {
+      const rows = typeof getProjectOrgFiltersForYear === "function"
+        ? getProjectOrgFiltersForYear()
+        : (Array.isArray(orgFilters) ? orgFilters : []);
+      rows.forEach((item) => {
         const name = (item?.name || "").toString().trim();
         const acc = (item?.accountNo || item?.bankAccount || "").toString().trim();
         if (name) map[name] = acc;

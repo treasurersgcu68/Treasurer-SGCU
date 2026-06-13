@@ -429,7 +429,8 @@
 }
 
 .mobile-project-action-bar,
-.mobile-meeting-action-bar {
+.mobile-meeting-action-bar,
+.mobile-budget-action-bar {
   display: none;
 }
 
@@ -664,7 +665,8 @@
   }
 
   .page-view[data-page="project-status"].active,
-  .page-view[data-page="meeting-room-staff"].active {
+  .page-view[data-page="meeting-room-staff"].active,
+  .page-view[data-page="budget-approval-staff"].active {
     min-height: 0;
     padding-bottom: calc(
       var(--mobile-context-action-height) + var(--mobile-fixed-gap) + var(--mobile-fixed-gap)
@@ -804,7 +806,8 @@
   }
 
   .mobile-project-action-bar.is-visible,
-  .mobile-meeting-action-bar.is-visible {
+  .mobile-meeting-action-bar.is-visible,
+  .mobile-budget-action-bar.is-visible {
     position: fixed;
     left: max(8px, env(safe-area-inset-left, 0px));
     right: max(8px, env(safe-area-inset-right, 0px));
@@ -822,8 +825,13 @@
     -webkit-backdrop-filter: blur(18px);
   }
 
+  .mobile-budget-action-bar.is-visible {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   body.mobile-menu-open .mobile-project-action-bar.is-visible,
-  body.mobile-menu-open .mobile-meeting-action-bar.is-visible {
+  body.mobile-menu-open .mobile-meeting-action-bar.is-visible,
+  body.mobile-menu-open .mobile-budget-action-bar.is-visible {
     display: none;
   }
 
@@ -844,7 +852,8 @@
   }
 
   .mobile-project-action,
-  .mobile-meeting-action {
+  .mobile-meeting-action,
+  .mobile-budget-action {
     appearance: none;
     position: relative;
     min-width: 0;
@@ -869,7 +878,8 @@
     transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
   }
 
-  .mobile-project-action[hidden] {
+  .mobile-project-action[hidden],
+  .mobile-budget-action[hidden] {
     display: none;
   }
 
@@ -879,7 +889,8 @@
   }
 
   .mobile-project-action-icon,
-  .mobile-meeting-action-icon {
+  .mobile-meeting-action-icon,
+  .mobile-budget-action-icon {
     font-size: 15px;
     line-height: 1;
   }
@@ -887,28 +898,33 @@
   .mobile-project-action:hover,
   .mobile-project-action:focus-visible,
   .mobile-meeting-action:hover,
-  .mobile-meeting-action:focus-visible {
+  .mobile-meeting-action:focus-visible,
+  .mobile-budget-action:hover,
+  .mobile-budget-action:focus-visible {
     background: rgba(255, 241, 242, 0.72);
     color: #be185d;
     outline: none;
   }
 
   .mobile-project-action.is-active,
-  .mobile-meeting-action.is-active {
+  .mobile-meeting-action.is-active,
+  .mobile-budget-action.is-active {
     background: linear-gradient(135deg, #fff7fb 0%, #ffe4f1 100%);
     color: #9d174d;
     box-shadow: 0 8px 18px rgba(157, 23, 77, 0.12);
   }
 
   .mobile-project-action:disabled,
-  .mobile-meeting-action:disabled {
+  .mobile-meeting-action:disabled,
+  .mobile-budget-action:disabled {
     opacity: 0.42;
     cursor: not-allowed;
     box-shadow: none;
   }
 
   .mobile-project-action.has-active-filters::after,
-  .mobile-meeting-action.has-active-filters::after {
+  .mobile-meeting-action.has-active-filters::after,
+  .mobile-budget-action.has-active-filters::after {
     content: attr(data-filter-count);
     position: absolute;
     top: 4px;
@@ -1014,7 +1030,9 @@
   }
 
   .mobile-filter-body .filter-bar,
-  .mobile-filter-body .calendar-filter-bar {
+  .mobile-filter-body .calendar-filter-bar,
+  .mobile-filter-body .budget-staff-overview-filters,
+  .mobile-filter-body .budget-staff-review-filters {
     display: grid;
     margin: 0;
     grid-template-columns: 1fr;
@@ -1023,7 +1041,9 @@
   .mobile-filter-body .filter-year,
   .mobile-filter-body .filter-orgtype,
   .mobile-filter-body .filter-org,
-  .mobile-filter-body .filter-search {
+  .mobile-filter-body .filter-search,
+  .mobile-filter-body .budget-staff-overview-filters .borrow-form-field,
+  .mobile-filter-body .budget-staff-review-filters .borrow-form-field {
     grid-column: 1 / -1;
   }
 
@@ -1119,7 +1139,8 @@
   }
 
   .mobile-project-action-bar.is-visible,
-  .mobile-meeting-action-bar.is-visible {
+  .mobile-meeting-action-bar.is-visible,
+  .mobile-budget-action-bar.is-visible {
     bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-fixed-gap));
   }
 }
@@ -1258,7 +1279,8 @@
   }
 
   html.sgcu-standalone .mobile-project-action-bar.is-visible,
-  html.sgcu-standalone .mobile-meeting-action-bar.is-visible {
+  html.sgcu-standalone .mobile-meeting-action-bar.is-visible,
+  html.sgcu-standalone .mobile-budget-action-bar.is-visible {
     position: fixed;
     left: max(8px, env(safe-area-inset-left, 0px));
     right: max(8px, env(safe-area-inset-right, 0px));
@@ -1274,6 +1296,10 @@
     box-shadow: 0 16px 38px rgba(15, 23, 42, 0.14);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
+  }
+
+  html.sgcu-standalone .mobile-budget-action-bar.is-visible {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   html.sgcu-standalone .mobile-project-action-bar.is-summary-actions {
@@ -1393,12 +1419,14 @@
   }
 
   html.sgcu-standalone .mobile-project-action-bar.is-visible,
-  html.sgcu-standalone .mobile-meeting-action-bar.is-visible {
+  html.sgcu-standalone .mobile-meeting-action-bar.is-visible,
+  html.sgcu-standalone .mobile-budget-action-bar.is-visible {
     bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-fixed-gap));
   }
 
   html.sgcu-standalone body.mobile-menu-open .mobile-project-action-bar.is-visible,
-  html.sgcu-standalone body.mobile-menu-open .mobile-meeting-action-bar.is-visible {
+  html.sgcu-standalone body.mobile-menu-open .mobile-meeting-action-bar.is-visible,
+  html.sgcu-standalone body.mobile-menu-open .mobile-budget-action-bar.is-visible {
     display: none;
   }
 }

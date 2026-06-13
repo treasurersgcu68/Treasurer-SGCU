@@ -15,7 +15,6 @@
               </button>
             </div>
           </div>
-
           <div class="budget-staff-layout">
             <div class="budget-staff-tab-panel is-active" data-budget-staff-panel="overview">
               <section class="budget-staff-summary-panel">
@@ -107,7 +106,16 @@
                           <div class="budget-staff-deadline-grid">
                             <div class="borrow-form-field">
                               <label class="login-label" for="budgetRoundYearInput">ปีการศึกษา</label>
-                              <input id="budgetRoundYearInput" class="login-input" type="number" min="1" step="1" placeholder="เช่น 2569" />
+                              <input
+                                id="budgetRoundYearInput"
+                                class="login-input"
+                                type="number"
+                                min="1"
+                                step="1"
+                                placeholder="ระบบกำหนดให้อัตโนมัติ"
+                                readonly
+                                aria-readonly="true"
+                              />
                             </div>
                             <div class="borrow-form-field">
                               <label class="login-label" for="budgetRoundNoInput">รอบที่</label>

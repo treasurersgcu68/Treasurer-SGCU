@@ -60,7 +60,7 @@
       "staff-application": "js/features/staff/app.staff-access.js?v=20260504-1",
       "staff-approval": [
         "js/features/staff/app.staff-access.js?v=20260504-1",
-        "js/features/budget/app.budget-staff.js?v=20260613-budget-staff-round-org-filter-15"
+        "js/features/budget/app.budget-staff.js?v=20260614-budget-chart-mobile-1"
       ],
       "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260504-1",
       "content-management-staff": [
@@ -79,7 +79,7 @@
       "budget-approval-staff": [
         "js/features/project/app.data.js?v=20260518-csv-refresh-1",
         "js/features/budget/app.budget-org-options.js?v=20260613-budget-org-options-5",
-        "js/features/budget/app.budget-staff.js?v=20260613-budget-staff-round-org-filter-15"
+        "js/features/budget/app.budget-staff.js?v=20260614-budget-chart-mobile-1"
       ]
     },
     idlePrefetchPages: []

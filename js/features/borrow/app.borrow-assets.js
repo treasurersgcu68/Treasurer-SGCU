@@ -3556,77 +3556,33 @@ function initBorrowAssetsApp() {
         const data = requestSnap.data() || {};
         const deltas = buildReservationDeltas(data.status, STATUS_CANCELLED, data.assets || []);
         await applyStockDeltasInTransaction(transaction, deltas, actorEmail);
-        transaction.update(docRef, {
-          isDeleted: true,
-          status: STATUS_CANCELLED,
-          staffNote: "ลบคำขอโดยเจ้าหน้าที่",
-          deletedBy: actorEmail,
-          deletedAt: firestore.serverTimestamp(),
-          updatedAt: firestore.serverTimestamp()
-        });
+        transaction.delete(docRef);
       });
       if (requestItem) {
         requestItem.isDeleted = true;
-        requestItem.status = STATUS_CANCELLED;
-        requestItem.staffNote = "ลบคำขอโดยเจ้าหน้าที่";
       }
       void window.sgcuAuditLog?.write?.({
         action: "borrow.request.delete",
         entityType: "borrowAssetRequest",
         entityId: requestId,
         before: beforeRequestSnapshot,
-        after: { isDeleted: true, status: STATUS_CANCELLED },
-        metadata: { sourceCollection: targetCollection, mode: "soft_delete" },
+        metadata: { sourceCollection: targetCollection, mode: "hard_delete_transaction" },
         source: "web_app_staff"
       });
       return;
     }
-    try {
-      await firestore.deleteDoc(docRef);
-      if (requestItem) {
-        requestItem.isDeleted = true;
-      }
-      void window.sgcuAuditLog?.write?.({
-        action: "borrow.request.delete",
-        entityType: "borrowAssetRequest",
-        entityId: requestId,
-        before: beforeRequestSnapshot,
-        metadata: { sourceCollection: targetCollection, mode: "hard_delete" },
-        source: "web_app_staff"
-      });
-    } catch (error) {
-      const code = (error?.code || "").toString().trim().toLowerCase();
-      if (
-        code === "permission-denied" &&
-        firestore.updateDoc &&
-        firestore.serverTimestamp
-      ) {
-        await firestore.updateDoc(docRef, {
-          isDeleted: true,
-          status: STATUS_CANCELLED,
-          staffNote: "ลบคำขอโดยเจ้าหน้าที่",
-          deletedBy: readCurrentUserEmail(),
-          deletedAt: firestore.serverTimestamp(),
-          updatedAt: firestore.serverTimestamp()
-        });
-        if (requestItem) {
-          requestItem.isDeleted = true;
-          requestItem.status = STATUS_CANCELLED;
-          requestItem.staffNote = "ลบคำขอโดยเจ้าหน้าที่";
-        }
-        void window.sgcuAuditLog?.write?.({
-          action: "borrow.request.delete",
-          entityType: "borrowAssetRequest",
-          entityId: requestId,
-          before: beforeRequestSnapshot,
-          after: { isDeleted: true, status: STATUS_CANCELLED },
-          metadata: { sourceCollection: targetCollection, mode: "soft_delete_fallback" },
-          source: "web_app_staff"
-        });
-        return;
-      }
-      throw error;
+    await firestore.deleteDoc(docRef);
+    if (requestItem) {
+      requestItem.isDeleted = true;
     }
+    void window.sgcuAuditLog?.write?.({
+      action: "borrow.request.delete",
+      entityType: "borrowAssetRequest",
+      entityId: requestId,
+      before: beforeRequestSnapshot,
+      metadata: { sourceCollection: targetCollection, mode: "hard_delete" },
+      source: "web_app_staff"
+    });
   };
 
   if (hasBorrowFormSection) {

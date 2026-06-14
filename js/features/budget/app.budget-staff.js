@@ -1715,6 +1715,9 @@
       return;
     }
 
+    const isCompactChart = window.matchMedia?.("(max-width: 540px)")?.matches;
+    const yAxisLabelWidth = isCompactChart ? 150 : 190;
+
     chartInstance = new window.Chart(chartCanvasEl.getContext("2d"), {
       type: "bar",
       data: {
@@ -1740,7 +1743,20 @@
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+          padding: {
+            right: isCompactChart ? 18 : 10
+          }
+        },
         plugins: {
+          legend: {
+            labels: {
+              boxWidth: isCompactChart ? 42 : 52,
+              font: {
+                size: isCompactChart ? 11 : 12
+              }
+            }
+          },
           tooltip: {
             callbacks: {
               afterBody: (items) => {
@@ -1752,20 +1768,25 @@
           externalAxisLabels: {
             y: {
               enabled: true,
-              width: 190,
-              gap: 8
+              width: yAxisLabelWidth,
+              gap: isCompactChart ? 6 : 8
             }
           }
         },
         scales: {
           x: {
             ticks: {
+              maxTicksLimit: isCompactChart ? 3 : 5,
+              padding: isCompactChart ? 8 : 3,
+              font: {
+                size: isCompactChart ? 11 : 12
+              },
               callback: (value) => Number(value || 0).toLocaleString("th-TH")
             }
           },
           y: {
             afterFit(scale) {
-              scale.width = Math.max(scale.width || 0, 190);
+              scale.width = Math.max(scale.width || 0, yAxisLabelWidth);
             },
             ticks: {
               display: false,

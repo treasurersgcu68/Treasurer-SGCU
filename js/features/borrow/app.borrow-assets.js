@@ -2680,17 +2680,17 @@ function initBorrowAssetsApp() {
       <div class="modal-dialog" style="max-width: 560px;">
         <div class="modal-header">
           <div>
-            <div id="borrowDeleteConfirmTitle" class="modal-title">ยืนยันการลบคำขอ</div>
-            <div class="modal-subtitle">รายการนี้จะถูกซ่อนออกจากคิวและประวัติการขอ</div>
+            <div id="borrowDeleteConfirmTitle" class="modal-title">ยืนยันการลบคำขอถาวร</div>
+            <div class="modal-subtitle">รายการนี้จะถูกลบออกจากระบบและประวัติการขอ</div>
           </div>
           <button id="borrowDeleteConfirmClose" class="modal-close" type="button" aria-label="ปิด">✕</button>
         </div>
         <div class="modal-body">
           <div id="borrowDeleteConfirmMessage" class="section-text-sm borrow-delete-confirm-message"></div>
-          <div class="borrow-delete-confirm-warning">การลบไม่สามารถกู้คืนผ่านหน้าจอนี้ได้</div>
+          <div class="borrow-delete-confirm-warning">การลบนี้เป็นการลบถาวรและไม่สามารถกู้คืนได้จากระบบ</div>
           <div class="modal-actions">
             <button id="borrowDeleteConfirmCancel" class="btn-ghost" type="button">ยกเลิก</button>
-            <button id="borrowDeleteConfirmSubmit" class="btn-primary borrow-delete-confirm-submit" type="button">ลบคำขอ</button>
+            <button id="borrowDeleteConfirmSubmit" class="btn-primary borrow-delete-confirm-submit" type="button">ลบถาวร</button>
           </div>
         </div>
       </div>
@@ -2708,7 +2708,9 @@ function initBorrowAssetsApp() {
     const requestNo = (requestItem?.requestNo || requestItem?.id || requestId || "-").toString().trim();
     const requesterName = [requestItem?.firstName || "", requestItem?.lastName || ""].filter(Boolean).join(" ").trim() || "-";
     const dateRange = formatDateRange(requestItem?.pickupDate || "", requestItem?.returnDate || "");
-    const fallbackText = `ยืนยันการลบคำขอ ${requestNo} หรือไม่`;
+    const statusLabel = borrowStatusOptionLabel(requestItem?.status || STATUS_PENDING);
+    const affectsStock = requestItem?.status === STATUS_APPROVED || requestItem?.status === STATUS_RECEIVED;
+    const fallbackText = `ยืนยันการลบคำขอ ${requestNo} ถาวรหรือไม่`;
     const fallbackConfirm = () =>
       typeof window.confirm === "function" ? window.confirm(fallbackText) : false;
 
@@ -2757,7 +2759,9 @@ function initBorrowAssetsApp() {
       borrowDeleteConfirmMessageEl.innerHTML = `
         <strong>คำขอ:</strong> ${safeEscape(requestNo)}<br />
         <strong>ผู้ยื่น:</strong> ${safeEscape(requesterName)}<br />
+        <strong>สถานะ:</strong> ${safeEscape(statusLabel)}<br />
         <strong>ช่วงยืม:</strong> ${safeEscape(dateRange)}
+        ${affectsStock ? '<div class="borrow-delete-confirm-note">ระบบจะคืนยอดจองพัสดุให้อัตโนมัติก่อนลบคำขอนี้</div>' : ""}
       `;
       borrowDeleteConfirmSubmitEl.addEventListener("click", onSubmit);
       borrowDeleteConfirmCancelEl.addEventListener("click", onCancel);

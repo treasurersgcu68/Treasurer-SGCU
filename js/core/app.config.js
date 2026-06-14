@@ -25,6 +25,7 @@ const SGCU_APP_CONFIG = {
       meetingRoomHolidays: "meetingRoomHolidays",
       meetingRooms: "meetingRooms",
       newsItems: "newsItems",
+      publicCache: "publicCache",
       organizationCatalog: "organizationCatalog",
       orgStructureMembers: "orgStructureMembers",
       organizationRepresentativeApplications: "organizationRepresentativeApplications",

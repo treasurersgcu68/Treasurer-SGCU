@@ -739,10 +739,36 @@ async function loadOrgFiltersFromFirestore() {
   return items.map(({ sortOrder, ...item }) => item);
 }
 
+async function loadOrgFiltersFromPublicCache() {
+  const store = window.sgcuFirestore || {};
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const collectionName = appConfig.firestore?.collections?.publicCache || "publicCache";
+  if (!store.db || !store.doc || !store.getDoc) return null;
+
+  const snap = await store.getDoc(store.doc(store.db, collectionName, "organizationCatalog"));
+  const data = snap?.exists?.() ? snap.data() || {} : {};
+  if (!Array.isArray(data.items) || !data.items.length) return null;
+
+  const items = data.items
+    .map((item, index) => normalizeOrganizationCatalogDoc({
+      id: item.id || `cache-org-${index + 1}`,
+      data: () => item
+    }))
+    .filter(Boolean);
+  if (!items.length) return null;
+  items.sort((a, b) =>
+    a.sortOrder - b.sortOrder ||
+    (a.code || "").localeCompare(b.code || "", "th", { numeric: true }) ||
+    a.group.localeCompare(b.group, "th") ||
+    a.name.localeCompare(b.name, "th")
+  );
+  return items.map(({ sortOrder, ...item }) => item);
+}
+
 // โหลดตัวเลือก filter จาก Firestore collection `organizationCatalog` เท่านั้น
 async function loadOrgFilters() {
   try {
-    const firestoreItems = await loadOrgFiltersFromFirestore();
+    const firestoreItems = (await loadOrgFiltersFromPublicCache()) || (await loadOrgFiltersFromFirestore());
     if (firestoreItems && firestoreItems.length) {
       orgFilters = firestoreItems;
       setCache(CACHE_KEYS.ORG_FILTERS, orgFilters);

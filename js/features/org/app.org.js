@@ -13,9 +13,14 @@ async function loadOrgStructure() {
   toggleOrgStructureLoading(true);
   const el = document.getElementById("org-structure-content");
   try {
-    const staffProfiles = await loadOrgStaffProfilesFromFirestore();
-    const firestoreRows = await loadOrgStructureFromFirestore();
-    renderOrgStructure(firestoreRows, staffProfiles);
+    const publicCacheRows = await loadOrgStructureFromPublicCache();
+    if (publicCacheRows) {
+      renderOrgStructure(publicCacheRows, null);
+    } else {
+      const staffProfiles = await loadOrgStaffProfilesFromFirestore();
+      const firestoreRows = await loadOrgStructureFromFirestore();
+      renderOrgStructure(firestoreRows, staffProfiles);
+    }
   } catch (err) {
     console.error("ERROR: โหลดข้อมูลโครงสร้างองค์กรไม่ได้  app.js:3688 - app.org.js:32", err);
     recordLoadError("orgStructure", "โหลดโครงสร้างองค์กรไม่สำเร็จ", { showRetry: true });
@@ -104,6 +109,22 @@ async function loadOrgStructureFromFirestore() {
   if (!items.length) return null;
   items.sort((a, b) => a.sortOrder - b.sortOrder || a.positionCode.localeCompare(b.positionCode, "th"));
   return [ORG_STRUCTURE_HEADER_ROW, ...items.map((item) => item.row)];
+}
+
+async function loadOrgStructureFromPublicCache() {
+  const store = window.sgcuFirestore || {};
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const collectionName = appConfig.firestore?.collections?.publicCache || "publicCache";
+  if (!store.db || !store.doc || !store.getDoc) return null;
+
+  const snap = await store.getDoc(store.doc(store.db, collectionName, "orgStructure"));
+  const data = snap?.exists?.() ? snap.data() || {} : {};
+  if (!Array.isArray(data.rows) || data.rows.length < 2) return null;
+
+  const rows = data.rows
+    .map((row) => Array.isArray(row) ? row.map((value) => (value ?? "").toString()) : null)
+    .filter(Boolean);
+  return rows.length >= 2 ? rows : null;
 }
 
 async function loadOrgStaffProfilesFromFirestore() {

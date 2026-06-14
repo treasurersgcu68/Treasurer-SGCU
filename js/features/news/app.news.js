@@ -14,6 +14,7 @@ const newsFilterState = {
 };
 let newsFilterInitialized = false;
 const NEWS_CACHE_SOURCE_FIRESTORE = "firestore";
+const NEWS_CACHE_SOURCE_PUBLIC_CACHE = "publicCache";
 const NEWS_CACHE_SOURCE_SHEETS = "sheets";
 let newsScheduleRefreshTimer = null;
 let homeNewsPreviewViewportHandlerInitialized = false;
@@ -153,6 +154,25 @@ function normalizeNewsFirestoreItem(docSnap) {
   };
 }
 
+function normalizeNewsPublicCacheItem(data, index) {
+  const title = (data?.title || "").toString().trim();
+  if (!title) return null;
+  return {
+    id: data.id || `CACHE-NEWS-${index + 1}-${title}`,
+    title,
+    date: normalizeNewsFirestoreDate(data.date || data.publishedAt || data.createdAt),
+    year: (data.academicYear || data.year || "").toString().trim(),
+    category: (data.category || "").toString().trim(),
+    audience: (data.audience || "").toString().trim(),
+    summary: (data.summary || data.body || "").toString().trim(),
+    previewUrl: (data.previewUrl || data.url || "").toString().trim(),
+    expireDate: normalizeNewsFirestoreDate(data.expireDate),
+    publishAt: normalizeNewsPublishAt(data.publishAt),
+    pinned: data.pinned === true,
+    status: (data.status || "published").toString()
+  };
+}
+
 function sortNewsItems(list) {
   return list.sort((a, b) => {
     const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
@@ -166,6 +186,23 @@ function sortNewsItems(list) {
     if (tA === tB) return 0;
     return tB - tA;
   });
+}
+
+async function loadNewsFromPublicCache() {
+  const store = window.sgcuFirestore || {};
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const collectionName = appConfig.firestore?.collections?.publicCache || "publicCache";
+  if (!store.db || !store.doc || !store.getDoc) return null;
+
+  const snap = await store.getDoc(store.doc(store.db, collectionName, "news"));
+  const data = snap?.exists?.() ? snap.data() || {} : {};
+  if (!Array.isArray(data.items) || !data.items.length) return null;
+
+  const items = data.items
+    .map((item, index) => normalizeNewsPublicCacheItem(item, index))
+    .filter(Boolean)
+    .filter((item) => item.status === "published");
+  return items.length ? sortNewsItems(items) : null;
 }
 
 async function loadNewsFromFirestore() {
@@ -194,7 +231,7 @@ async function loadNewsFromSheet() {
 
     const cached = getCache(CACHE_KEYS.NEWS, CACHE_TTL_MS);
     if (
-      cached?.source === NEWS_CACHE_SOURCE_FIRESTORE &&
+      (cached?.source === NEWS_CACHE_SOURCE_FIRESTORE || cached?.source === NEWS_CACHE_SOURCE_PUBLIC_CACHE) &&
       Array.isArray(cached.items) &&
       cached.items.length
     ) {
@@ -205,11 +242,11 @@ async function loadNewsFromSheet() {
     }
 
     try {
-      const firestoreItems = await loadNewsFromFirestore();
+      const firestoreItems = (await loadNewsFromPublicCache()) || (await loadNewsFromFirestore());
       if (Array.isArray(firestoreItems) && firestoreItems.length) {
         newsItems = firestoreItems;
         setCache(CACHE_KEYS.NEWS, {
-          source: NEWS_CACHE_SOURCE_FIRESTORE,
+          source: NEWS_CACHE_SOURCE_PUBLIC_CACHE,
           items: newsItems
         });
         clearLoadError("news");

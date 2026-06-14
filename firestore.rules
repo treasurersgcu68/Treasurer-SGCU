@@ -182,7 +182,7 @@ service cloud.firestore {
       allow get: if canReadBorrowRequest();
       allow list: if canReadBorrowRequest();
       allow update: if canStaffUpdateBorrowRequest() || canUserCancelBorrowRequest();
-      allow delete: if false;
+      allow delete: if isStaff();
     }
 
     match /borrowAssetStockReservations/{assetCode} {

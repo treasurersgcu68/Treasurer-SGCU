@@ -75,6 +75,15 @@
   html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .budget-request-form .borrow-form-row.is-3 {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  html.sgcu-standalone .page-view[data-page="budget-approval-request"].active .budget-request-form input.login-input[type="date"] {
+    display: block !important;
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
 }
 
 @media (max-width: 840px) {

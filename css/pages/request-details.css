@@ -219,6 +219,12 @@
   font-weight: 600;
 }
 
+.borrow-delete-confirm-note {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
 .borrow-delete-confirm-submit {
   background: linear-gradient(135deg, #ef4444, #dc2626);
   box-shadow: 0 10px 22px rgba(220, 38, 38, 0.25);

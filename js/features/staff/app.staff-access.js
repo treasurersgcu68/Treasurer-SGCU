@@ -174,6 +174,7 @@ function initStaffAccessPages() {
   const COLLECTION_POSITIONS = firestoreCollections.staffPositionCatalog || "staffPositionCatalog";
   const COLLECTION_ORG_STRUCTURE = firestoreCollections.orgStructureMembers || "orgStructureMembers";
   const COLLECTION_ORGANIZATION_CATALOG = firestoreCollections.organizationCatalog || "organizationCatalog";
+  const COLLECTION_PUBLIC_CACHE = firestoreCollections.publicCache || "publicCache";
   const COLLECTION_POSITION_CODE_COUNTERS =
     firestoreCollections.staffPositionCodeCounters || "staffPositionCodeCounters";
   const STAFF_APPLICATION_LIST_LIMIT = 500;
@@ -1934,6 +1935,41 @@ function initStaffAccessPages() {
     return payload;
   };
 
+  const syncPublicOrgStructureCache = async (rows = currentOrgStructureMembers) => {
+    if (!resolveStore() || !firestore.doc || !firestore.setDoc) return;
+    const publishedRows = (rows || [])
+      .filter((item) => (item.status || "published") === "published")
+      .sort((a, b) => a.sortOrder - b.sortOrder || (a.positionCode || "").localeCompare(b.positionCode || "", "th"))
+      .map((item) => Array.isArray(item.row) ? item.row : buildOrgStructureRow(item));
+
+    await firestore.setDoc(
+      firestore.doc(firestore.db, COLLECTION_PUBLIC_CACHE, "orgStructure"),
+      {
+        rows: [
+          [
+            "รหัสตำแหน่ง",
+            "ตำแหน่ง",
+            "คำนำ",
+            "ชื่อ",
+            "สกุล",
+            "ชื่อเล่น",
+            "รหัสนิสิต",
+            "ชั้นปี",
+            "คณะ",
+            "อีเมลที่ใช้ประจำ",
+            "Line ID",
+            "เบอร์โทรศัพท์",
+            "PIC"
+          ],
+          ...publishedRows
+        ],
+        updatedAt: firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString(),
+        updatedBy: window.sgcuAuth?.auth?.currentUser?.email || ""
+      },
+      { merge: true }
+    );
+  };
+
   const saveOrgStructureMember = async (event) => {
     event.preventDefault();
     if (!resolveStore()) {
@@ -1962,8 +1998,15 @@ function initStaffAccessPages() {
         },
         { merge: true }
       );
+      const nextMembers = currentOrgStructureMembers.filter((item) => item.id !== docId);
+      nextMembers.push({
+        id: docId,
+        ...payload,
+        sortOrder: nextSortOrder
+      });
+      await syncPublicOrgStructureCache(nextMembers);
       resetOrgStructureForm();
-      setMessage(orgStructureFormMessageEl, "บันทึกรายชื่อทำเนียบรุ่นแล้ว", "#047857");
+      setMessage(orgStructureFormMessageEl, "บันทึกรายชื่อทำเนียบรุ่นแล้ว และอัปเดต public cache แล้ว", "#047857");
     } catch (error) {
       console.error("save org structure member failed - app.staff-access.js:1850", error);
       setMessage(orgStructureFormMessageEl, error.message || "บันทึกทำเนียบรุ่นไม่สำเร็จ", "#b91c1c");
@@ -4464,6 +4507,37 @@ function initStaffAccessPages() {
     };
   };
 
+  const syncPublicOrganizationCatalogCache = async (rows = getRawOrganizationCatalogRows()) => {
+    if (!resolveStore() || !firestore.doc || !firestore.setDoc) return;
+    const items = (rows || [])
+      .filter((item) => (item.status || "active") === "active")
+      .map((item) => ({
+        id: item.id,
+        academicYear: item.academicYear,
+        baseOrganizationId: item.baseOrganizationId || item.baseOrgId || item.rootOrganizationId || "",
+        group: item.group || item.type || "",
+        name: item.name || item.organizationName || item.orgName || "",
+        nameByAcademicYear: item.nameByAcademicYear || item.organizationNameByAcademicYear || item.orgNameByAcademicYear || {},
+        code: item.code || item.orgCode || "",
+        codeByAcademicYear: item.codeByAcademicYear || item.orgCodeByAcademicYear || {},
+        documentRunCode: item.documentRunCode || item.runCode || "",
+        documentRunCodeByAcademicYear: item.documentRunCodeByAcademicYear || item.runCodeByAcademicYear || {},
+        accountNo: item.accountNo || item.bankAccount || item.bankAccountNo || "",
+        sortOrder: Number(item.sortOrder ?? item.order ?? 0),
+        status: "active"
+      }));
+
+    await firestore.setDoc(
+      firestore.doc(firestore.db, COLLECTION_PUBLIC_CACHE, "organizationCatalog"),
+      {
+        items,
+        updatedAt: firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString(),
+        updatedBy: (readCurrentUser()?.email || getCurrentAuthEmail() || "").toString().trim().toLowerCase()
+      },
+      { merge: true }
+    );
+  };
+
   const saveOrganizationCatalogForm = async (event) => {
     event?.preventDefault?.();
     syncOrganizationCatalogManualRunFromDomState({ force: true });
@@ -4536,8 +4610,9 @@ function initStaffAccessPages() {
         ...fields
       });
       setLocalOrganizationCatalogRows(nextRows);
+      await syncPublicOrganizationCatalogCache(nextRows);
       fillOrganizationCatalogForm(getOrganizationCatalogRows().find((item) => item.id === id));
-      setMessage(organizationCatalogFormMessageEl, "บันทึกทะเบียนองค์กรแล้ว", "#047857");
+      setMessage(organizationCatalogFormMessageEl, "บันทึกทะเบียนองค์กรแล้ว และอัปเดต public cache แล้ว", "#047857");
       renderOrgRepresentativeApplications();
     } catch (error) {
       console.error("save organization catalog failed - app.staff-access.js:3789", error);
@@ -4574,8 +4649,9 @@ function initStaffAccessPages() {
         }
       );
       setLocalOrganizationCatalogRows(getRawOrganizationCatalogRows().filter((item) => item.id !== id));
+      await syncPublicOrganizationCatalogCache();
       resetOrganizationCatalogForm();
-      setMessage(organizationCatalogFormMessageEl, "ลบออกจากทะเบียนแล้ว", "#047857");
+      setMessage(organizationCatalogFormMessageEl, "ลบออกจากทะเบียนแล้ว และอัปเดต public cache แล้ว", "#047857");
       renderOrgRepresentativeApplications();
     } catch (error) {
       console.error("archive organization catalog failed - app.staff-access.js:3827", error);
@@ -4629,7 +4705,8 @@ function initStaffAccessPages() {
       setMessage(organizationCatalogImportMessageEl, `กำลังอัปโหลด ${items.length.toLocaleString("th-TH")} องค์กรเข้า Firebase...`, "#1d4ed8");
       const written = await writeOrganizationCatalogItems(items, importedBy);
       refreshOrganizationCatalogAfterImport(items);
-      setMessage(organizationCatalogImportMessageEl, `อัปโหลดทะเบียนองค์กร ${written.toLocaleString("th-TH")} รายการเข้า Firebase แล้ว`, "#047857");
+      await syncPublicOrganizationCatalogCache();
+      setMessage(organizationCatalogImportMessageEl, `อัปโหลดทะเบียนองค์กร ${written.toLocaleString("th-TH")} รายการเข้า Firebase แล้ว และอัปเดต public cache แล้ว`, "#047857");
     } catch (error) {
       console.error("import organization catalog csv failed - app.staff-access.js:3880", error);
       const code = (error?.code || "").toString();

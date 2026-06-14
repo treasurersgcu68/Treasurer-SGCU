@@ -1,5 +1,6 @@
 /* ดาวน์โหลดเอกสารการเงิน */
 const DOWNLOADS_CACHE_SOURCE_FIRESTORE = "firestore";
+const DOWNLOADS_CACHE_SOURCE_PUBLIC_CACHE = "publicCache";
 const DOWNLOADS_CACHE_SOURCE_SHEETS = "sheets";
 const DOWNLOADS_PUBLIC_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 const DOWNLOADS_PUBLIC_FIRESTORE_LIMIT = 80;
@@ -105,6 +106,25 @@ function normalizeDownloadFirestoreItem(docSnap) {
   };
 }
 
+function normalizeDownloadPublicCacheItem(data, index) {
+  const links = data?.links || {};
+  const name = (data?.name || data?.title || "").toString().trim();
+  if (!name) return null;
+  return {
+    id: data.id || `CACHE-DOC-${index + 1}-${name}`,
+    name,
+    desc: (data.desc || data.description || "").toString().trim(),
+    org: (data.org || data.organization || "").toString().trim(),
+    exUrl: (data.exUrl || data.exampleUrl || links.ex || "").toString().trim(),
+    pdfUrl: (data.pdfUrl || links.pdf || "").toString().trim(),
+    docxUrl: (data.docxUrl || links.docx || "").toString().trim(),
+    xlsxUrl: (data.xlsxUrl || links.xlsx || "").toString().trim(),
+    category: (data.category || "").toString().trim() || "อื่น ๆ",
+    categoryOrder: data.categoryOrder,
+    sortOrder: data.sortOrder
+  };
+}
+
 function normalizeDownloadSheetRow(row, index) {
   const name = (row?.[0] || "").toString().trim();
   if (!name) return null;
@@ -153,6 +173,20 @@ function renderDownloadDocuments(listEl, documents) {
   });
 
   return categoryNames;
+}
+
+async function loadDownloadDocumentsFromPublicCache() {
+  const store = window.sgcuFirestore || {};
+  const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
+  const collectionName = appConfig.firestore?.collections?.publicCache || "publicCache";
+  if (!store.db || !store.doc || !store.getDoc) return null;
+
+  const snap = await store.getDoc(store.doc(store.db, collectionName, "downloads"));
+  const data = snap?.exists?.() ? snap.data() || {} : {};
+  if (!Array.isArray(data.items) || !data.items.length) return null;
+
+  const items = data.items.map((item, index) => normalizeDownloadPublicCacheItem(item, index)).filter(Boolean);
+  return items.length ? items.sort(compareDownloadDocuments) : null;
 }
 
 async function loadDownloadDocumentsFromFirestore() {
@@ -371,7 +405,11 @@ async function loadDownloadDocuments() {
     if (categorySelectEl) categorySelectEl.disabled = true;
 
     const cached = getCache(CACHE_KEYS.DOWNLOADS, DOWNLOADS_PUBLIC_CACHE_TTL_MS);
-    if (cached?.source === DOWNLOADS_CACHE_SOURCE_FIRESTORE && Array.isArray(cached.items) && cached.items.length) {
+    if (
+      (cached?.source === DOWNLOADS_CACHE_SOURCE_FIRESTORE || cached?.source === DOWNLOADS_CACHE_SOURCE_PUBLIC_CACHE) &&
+      Array.isArray(cached.items) &&
+      cached.items.length
+    ) {
       renderDownloadDocuments(listEl, cached.items);
       clearLoadError("downloads");
       initDownloadCategoryFilter(listEl);
@@ -380,12 +418,12 @@ async function loadDownloadDocuments() {
     }
 
     try {
-      const firestoreItems = await loadDownloadDocumentsFromFirestore();
+      const firestoreItems = (await loadDownloadDocumentsFromPublicCache()) || (await loadDownloadDocumentsFromFirestore());
       if (Array.isArray(firestoreItems) && firestoreItems.length) {
         renderDownloadDocuments(listEl, firestoreItems);
         initDownloadCategoryFilter(listEl);
         setCache(CACHE_KEYS.DOWNLOADS, {
-          source: DOWNLOADS_CACHE_SOURCE_FIRESTORE,
+          source: DOWNLOADS_CACHE_SOURCE_PUBLIC_CACHE,
           items: firestoreItems
         });
         clearLoadError("downloads");

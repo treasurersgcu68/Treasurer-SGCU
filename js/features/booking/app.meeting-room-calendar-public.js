@@ -24,6 +24,7 @@
   const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
   const PUBLIC_BOOKING_LOOKBACK_MONTHS = 1;
   const PUBLIC_BOOKING_LOOKAHEAD_MONTHS = 2;
+  const PUBLIC_CALENDAR_REFRESH_MS = 5 * 60 * 1000;
   const DEFAULT_MEETING_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2" },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2" },
@@ -69,13 +70,14 @@
   let activeDayDate = "";
   let calendarCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   let unsubscribeBookings = null;
+  let publicCalendarRefreshTimer = 0;
 
   const resolveFirestoreBridge = () => {
     firestore = window.sgcuFirestore || {};
     hasFirestore = !!(
       firestore.db &&
       firestore.collection &&
-      firestore.onSnapshot &&
+      firestore.getDocs &&
       firestore.query &&
       firestore.orderBy
     );
@@ -397,63 +399,55 @@
     );
   };
 
-  const subscribeRooms = () => {
+  const subscribeRooms = async () => {
     const colRef = firestore.collection(firestore.db, ROOM_COLLECTION_NAME);
-    firestore.onSnapshot(
-      colRef,
-      (snapshot) => {
-        const loadedRooms = snapshot.docs
-          .map((docItem) => {
-            const data = docItem.data() || {};
-            const name = (data.name || "").toString().trim();
-            if (!name) return null;
-            return {
-              id: docItem.id,
-              name
-            };
-          })
-          .filter(Boolean)
-          .sort((a, b) => a.name.localeCompare(b.name, "th"));
+    try {
+      const snapshot = await firestore.getDocs(colRef);
+      const loadedRooms = snapshot.docs
+        .map((docItem) => {
+          const data = docItem.data() || {};
+          const name = (data.name || "").toString().trim();
+          if (!name) return null;
+          return {
+            id: docItem.id,
+            name
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.name.localeCompare(b.name, "th"));
 
-        meetingRooms = loadedRooms.length ? loadedRooms : [...DEFAULT_MEETING_ROOMS];
-        renderCalendar();
-        if (activeDayDate) setDayModalBody(activeDayDate);
-      },
-      () => {
-        meetingRooms = [...DEFAULT_MEETING_ROOMS];
-        renderCalendar();
-      }
-    );
+      meetingRooms = loadedRooms.length ? loadedRooms : [...DEFAULT_MEETING_ROOMS];
+    } catch (_) {
+      meetingRooms = [...DEFAULT_MEETING_ROOMS];
+    }
+    renderCalendar();
+    if (activeDayDate) setDayModalBody(activeDayDate);
   };
 
-  const subscribeHolidays = () => {
+  const subscribeHolidays = async () => {
     const colRef = firestore.collection(firestore.db, HOLIDAY_COLLECTION_NAME);
     const q = firestore.query(colRef, firestore.orderBy("date", "asc"));
-    firestore.onSnapshot(
-      q,
-      (snapshot) => {
-        const custom = snapshot.docs
-          .map((docItem) => {
-            const data = docItem.data() || {};
-            const date = (data.date || "").toString().trim();
-            if (!date) return null;
-            return {
-              date,
-              name: (data.name || "วันหยุด").toString().trim() || "วันหยุด"
-            };
-          })
-          .filter(Boolean);
-        refreshHolidayLookup(custom);
-        renderCalendar();
-      },
-      () => {
-        refreshHolidayLookup([]);
-        renderCalendar();
-      }
-    );
+    try {
+      const snapshot = await firestore.getDocs(q);
+      const custom = snapshot.docs
+        .map((docItem) => {
+          const data = docItem.data() || {};
+          const date = (data.date || "").toString().trim();
+          if (!date) return null;
+          return {
+            date,
+            name: (data.name || "วันหยุด").toString().trim() || "วันหยุด"
+          };
+        })
+        .filter(Boolean);
+      refreshHolidayLookup(custom);
+    } catch (_) {
+      refreshHolidayLookup([]);
+    }
+    renderCalendar();
   };
 
-  const subscribeBookings = () => {
+  const subscribeBookings = async () => {
     if (typeof unsubscribeBookings === "function") {
       try {
         unsubscribeBookings();
@@ -482,17 +476,16 @@
       renderCalendar();
       if (activeDayDate) setDayModalBody(activeDayDate);
     };
-    const subscribeFallback = () => {
-      unsubscribeBookings = firestore.onSnapshot(
-        colRef,
-        handleSnapshot,
-        () => {
-          setState("โหลดข้อมูลการจองไม่สำเร็จในขณะนี้", "#b91c1c");
-        }
-      );
+    const loadFallback = async () => {
+      const snapshot = await firestore.getDocs(colRef);
+      handleSnapshot(snapshot);
     };
     if (!firestore.where) {
-      subscribeFallback();
+      try {
+        await loadFallback();
+      } catch (_) {
+        setState("โหลดข้อมูลการจองไม่สำเร็จในขณะนี้", "#b91c1c");
+      }
       return;
     }
     const windowRange = getPublicBookingWindow();
@@ -502,26 +495,32 @@
       firestore.where("date", "<=", windowRange.end),
       firestore.orderBy("date", "asc")
     );
-    unsubscribeBookings = firestore.onSnapshot(
-      q,
-      handleSnapshot,
-      (err) => {
-        const code = (err?.code || "").toString().trim();
-        if (code === "permission-denied") {
-          setState("ไม่สามารถอ่านข้อมูลได้: โปรดเปิดสิทธิ์อ่านปฏิทินใน Firestore Rules", "#b91c1c");
-          return;
-        }
-        if (typeof unsubscribeBookings === "function") {
-          try {
-            unsubscribeBookings();
-          } catch (_) {
-            // ignore unsubscribe errors
-          }
-          unsubscribeBookings = null;
-        }
-        subscribeFallback();
+    try {
+      const snapshot = await firestore.getDocs(q);
+      handleSnapshot(snapshot);
+    } catch (err) {
+      const code = (err?.code || "").toString().trim();
+      if (code === "permission-denied") {
+        setState("ไม่สามารถอ่านข้อมูลได้: โปรดเปิดสิทธิ์อ่านปฏิทินใน Firestore Rules", "#b91c1c");
+        return;
       }
-    );
+      try {
+        await loadFallback();
+      } catch (_) {
+        setState("โหลดข้อมูลการจองไม่สำเร็จในขณะนี้", "#b91c1c");
+      }
+    }
+  };
+
+  const refreshPublicCalendarData = () => {
+    void subscribeRooms();
+    void subscribeBookings();
+    void subscribeHolidays();
+  };
+
+  const schedulePublicCalendarRefresh = () => {
+    if (publicCalendarRefreshTimer) window.clearInterval(publicCalendarRefreshTimer);
+    publicCalendarRefreshTimer = window.setInterval(refreshPublicCalendarData, PUBLIC_CALENDAR_REFRESH_MS);
   };
 
   if (prevBtn) {
@@ -582,9 +581,8 @@
     const timer = window.setInterval(() => {
       if (resolveFirestoreBridge()) {
         window.clearInterval(timer);
-        subscribeRooms();
-        subscribeBookings();
-        subscribeHolidays();
+        refreshPublicCalendarData();
+        schedulePublicCalendarRefresh();
         return;
       }
       if (Date.now() - start > 15000) {
@@ -595,7 +593,6 @@
     return;
   }
 
-  subscribeRooms();
-  subscribeBookings();
-  subscribeHolidays();
+  refreshPublicCalendarData();
+  schedulePublicCalendarRefresh();
 })();

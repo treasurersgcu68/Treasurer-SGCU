@@ -35,7 +35,9 @@ function initContentManagementStaffPage() {
 
   const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
   const NEWS_COLLECTION = appConfig.firestore?.collections?.newsItems || "newsItems";
+  const PUBLIC_CACHE_COLLECTION = appConfig.firestore?.collections?.publicCache || "publicCache";
   const NEWS_CACHE_KEY = appConfig.cache?.keys?.NEWS || "sgcu_cache_news";
+  const PUBLIC_NEWS_CACHE_LIMIT = 30;
   const store = () => window.sgcuFirestore || {};
   const auth = () => window.sgcuAuth?.auth || null;
 
@@ -218,6 +220,41 @@ function initContentManagementStaffPage() {
     } catch (_) {
       // ignore storage failures
     }
+  };
+
+  const syncPublicNewsCache = async () => {
+    const firestore = store();
+    const currentUser = auth()?.currentUser;
+    if (!firestore.db || !firestore.doc || !firestore.setDoc || !firestore.serverTimestamp) return;
+
+    const items = sortItems(state.items)
+      .filter((item) => getEffectiveNewsStatus(item) === "published")
+      .slice(0, PUBLIC_NEWS_CACHE_LIMIT)
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        date: item.date,
+        academicYear: item.academicYear,
+        year: item.academicYear,
+        category: item.category,
+        audience: item.audience,
+        summary: item.summary,
+        previewUrl: item.previewUrl,
+        expireDate: item.expireDate,
+        publishAt: item.publishAtInput || item.publishAt || "",
+        pinned: item.pinned === true,
+        status: "published"
+      }));
+
+    await firestore.setDoc(
+      firestore.doc(firestore.db, PUBLIC_CACHE_COLLECTION, "news"),
+      {
+        items,
+        updatedAt: firestore.serverTimestamp(),
+        updatedBy: currentUser?.email || ""
+      },
+      { merge: true }
+    );
   };
 
   const normalizeFilterText = (value) =>
@@ -436,7 +473,8 @@ function initContentManagementStaffPage() {
 
       clearNewsCache();
       await loadNewsItems();
-      setMessage(`Import ข่าว ${importedCount.toLocaleString("th-TH")} รายการแล้ว`, "success");
+      await syncPublicNewsCache();
+      setMessage(`Import ข่าว ${importedCount.toLocaleString("th-TH")} รายการแล้ว และอัปเดต public cache แล้ว`, "success");
     } catch (error) {
       console.error("Import ข่าว CSV ไม่สำเร็จ - app.content-management.js", error);
       setMessage(error.message || "Import CSV ไม่สำเร็จ", "error");
@@ -556,7 +594,8 @@ function initContentManagementStaffPage() {
       clearNewsCache();
       resetForm();
       await loadNewsItems();
-      setMessage("บันทึกข่าวแล้ว และล้าง cache ข่าวในเครื่องนี้แล้ว", "success");
+      await syncPublicNewsCache();
+      setMessage("บันทึกข่าวแล้ว ล้าง cache ในเครื่องนี้ และอัปเดต public cache แล้ว", "success");
     } catch (error) {
       console.error("บันทึกข่าว Firestore ไม่สำเร็จ - app.content-management.js", error);
       setMessage(error.message || "บันทึกข่าวไม่สำเร็จ", "error");
@@ -655,6 +694,8 @@ function initContentDocumentsStaffPage() {
   const appConfig = typeof SGCU_APP_CONFIG === "object" && SGCU_APP_CONFIG ? SGCU_APP_CONFIG : {};
   const downloadsSheetUrl = appConfig.sheets?.downloads || window.DOWNLOAD_SHEET || "";
   const DOCUMENTS_COLLECTION = appConfig.firestore?.collections?.downloadDocuments || "downloadDocuments";
+  const PUBLIC_CACHE_COLLECTION = appConfig.firestore?.collections?.publicCache || "publicCache";
+  const PUBLIC_DOWNLOADS_CACHE_LIMIT = 80;
   const store = () => window.sgcuFirestore || {};
   const auth = () => window.sgcuAuth?.auth || null;
   const filters = {
@@ -1007,6 +1048,40 @@ function initContentDocumentsStaffPage() {
     }
   };
 
+  const syncPublicDownloadsCache = async () => {
+    const firestore = store();
+    const currentUser = auth()?.currentUser;
+    if (!firestore.db || !firestore.doc || !firestore.setDoc || !firestore.serverTimestamp) return;
+
+    const items = sortDocuments(state.items)
+      .filter((item) => (item.status || "published") === "published")
+      .slice(0, PUBLIC_DOWNLOADS_CACHE_LIMIT)
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        desc: item.desc,
+        org: item.org,
+        exUrl: item.exUrl,
+        pdfUrl: item.pdfUrl,
+        docxUrl: item.docxUrl,
+        xlsxUrl: item.xlsxUrl,
+        category: item.category,
+        categoryOrder: item.categoryOrder,
+        sortOrder: item.sortOrder,
+        status: "published"
+      }));
+
+    await firestore.setDoc(
+      firestore.doc(firestore.db, PUBLIC_CACHE_COLLECTION, "downloads"),
+      {
+        items,
+        updatedAt: firestore.serverTimestamp(),
+        updatedBy: currentUser?.email || ""
+      },
+      { merge: true }
+    );
+  };
+
   const loadDocumentsFromSheet = async () => {
     if (!downloadsSheetUrl) throw new Error("ยังไม่ได้ตั้งค่าลิงก์ Sheet เอกสารการเงิน");
     await window.sgcuVendorLoader?.ensurePapa?.();
@@ -1107,7 +1182,8 @@ function initContentDocumentsStaffPage() {
       }
       clearDownloadsCache();
       await loadDocuments();
-      setMessage(`Import เอกสาร ${importedCount.toLocaleString("th-TH")} รายการเข้า Firestore แล้ว`, "success");
+      await syncPublicDownloadsCache();
+      setMessage(`Import เอกสาร ${importedCount.toLocaleString("th-TH")} รายการเข้า Firestore แล้ว และอัปเดต public cache แล้ว`, "success");
     } catch (error) {
       console.error("Import เอกสารการเงินเข้า Firestore ไม่สำเร็จ - app.content-management.js", error);
       setMessage(error.message || "Import Sheet เข้า Firestore ไม่สำเร็จ", "error");
@@ -1197,7 +1273,8 @@ function initContentDocumentsStaffPage() {
       clearDownloadsCache();
       resetForm();
       await loadDocuments();
-      setMessage("บันทึกเอกสารแล้ว และล้าง cache เอกสารในเครื่องนี้แล้ว", "success");
+      await syncPublicDownloadsCache();
+      setMessage("บันทึกเอกสารแล้ว ล้าง cache ในเครื่องนี้ และอัปเดต public cache แล้ว", "success");
     } catch (error) {
       console.error("บันทึกเอกสารการเงิน Firestore ไม่สำเร็จ - app.content-management.js", error);
       setMessage(error.message || "บันทึกเอกสารไม่สำเร็จ", "error");
@@ -1235,7 +1312,8 @@ function initContentDocumentsStaffPage() {
       }
       clearDownloadsCache();
       await loadDocuments();
-      setMessage(successMessage || "บันทึกลำดับแล้ว", "success");
+      await syncPublicDownloadsCache();
+      setMessage(successMessage || "บันทึกลำดับแล้ว และอัปเดต public cache แล้ว", "success");
     } catch (error) {
       console.error("บันทึกลำดับเอกสารการเงินไม่สำเร็จ - app.content-management.js", error);
       setMessage(error.message || "บันทึกลำดับไม่สำเร็จ", "error");

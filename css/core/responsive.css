@@ -232,6 +232,17 @@
   }
 }
 
+@media (min-width: 761px) {
+  .page-view[data-page="system-data-staff"] .dashboard-audit-filter-bar {
+    grid-template-columns: minmax(220px, 1fr) minmax(360px, 2fr);
+    width: 100%;
+  }
+
+  .page-view[data-page="system-data-staff"] .dashboard-audit-filter-bar .filter-search {
+    grid-column: auto;
+  }
+}
+
 @media (max-width: 640px) {
   .filter-bar, .cards, .calendar-filter-bar {
     grid-template-columns: 1fr;

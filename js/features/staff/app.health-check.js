@@ -3,10 +3,16 @@
 
   const CHECK_TIMEOUT_MS = 6000;
   const SHEET_TIMEOUT_MS = 8000;
+  const AUTH_READY_TIMEOUT_MS = 4500;
+  const STAFF_HEAD_EMAIL_OVERRIDES = new Set([
+    "tuwanon.kimchiang@gmail.com",
+    "treasurer.sgcu68@gmail.com"
+  ]);
   const state = {
     rows: [],
     running: false,
-    initialized: false
+    initialized: false,
+    activeTab: "health"
   };
 
   const $ = (id) => document.getElementById(id);
@@ -26,6 +32,12 @@
   const getCollections = () => getConfig().firestore?.collections || {};
   const getFirestore = () => window.sgcuFirestore || {};
   const getCurrentUser = () => window.sgcuAuth?.auth?.currentUser || null;
+  const getFirebaseProjectId = () =>
+    normalizeText(window.sgcuAuth?.auth?.app?.options?.projectId || window.sgcuFirestore?.db?.app?.options?.projectId);
+  const getActivePageName = () =>
+    normalizeText(document.querySelector(".page-view.active")?.dataset?.page) ||
+    normalizeText(window.location?.hash).replace(/^#/, "") ||
+    "-";
 
   const statusLabel = {
     ok: "ผ่าน",
@@ -56,6 +68,42 @@
     detail,
     action
   });
+
+  const makeSkippedStaffRow = (name) =>
+    makeRow(name, "warn", "ข้ามการตรวจเพราะยังไม่มี session staff", "เข้าสู่ระบบด้วยบัญชี staff แล้วตรวจอีกครั้ง");
+
+  const formatList = (items, maxItems = 6) => {
+    const list = (Array.isArray(items) ? items : [])
+      .map(normalizeText)
+      .filter(Boolean);
+    if (!list.length) return "-";
+    const visible = list.slice(0, maxItems);
+    const remaining = list.length - visible.length;
+    return `${visible.join(", ")}${remaining > 0 ? ` +${remaining}` : ""}`;
+  };
+
+  const waitForAuthReady = async () => {
+    const authBridge = window.sgcuAuth || {};
+    if (!authBridge.auth || typeof authBridge.onAuthStateChanged !== "function") return getCurrentUser();
+    if (authBridge.auth.currentUser) return authBridge.auth.currentUser;
+    return withTimeout(
+      new Promise((resolve) => {
+        let unsubscribe = null;
+        unsubscribe = authBridge.onAuthStateChanged(
+          authBridge.auth,
+          (user) => {
+            if (typeof unsubscribe === "function") unsubscribe();
+            resolve(user || null);
+          },
+          () => {
+            if (typeof unsubscribe === "function") unsubscribe();
+            resolve(null);
+          }
+        );
+      }),
+      AUTH_READY_TIMEOUT_MS
+    ).catch(() => getCurrentUser());
+  };
 
   const render = () => {
     const body = $("systemHealthTableBody");
@@ -106,6 +154,26 @@
     el.hidden = !text;
   };
 
+  const syncSystemDataTabs = () => {
+    document.querySelectorAll("[data-system-data-tab]").forEach((btn) => {
+      const tab = normalizeText(btn.dataset.systemDataTab || "health") || "health";
+      const isActive = tab === state.activeTab;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+      if (btn.dataset.systemDataTabBound === "true") return;
+      btn.dataset.systemDataTabBound = "true";
+      btn.addEventListener("click", () => {
+        state.activeTab = tab;
+        syncSystemDataTabs();
+      });
+    });
+
+    document.querySelectorAll("[data-system-data-panel]").forEach((panel) => {
+      const tab = normalizeText(panel.dataset.systemDataPanel || "health") || "health";
+      panel.hidden = tab !== state.activeTab;
+    });
+  };
+
   const checkFirebaseBootstrap = async () => {
     const store = getFirestore();
     const auth = window.sgcuAuth || {};
@@ -126,6 +194,20 @@
     }
     const email = normalizeText(user.email).toLowerCase();
     return makeRow("บัญชีผู้ดูแล", "ok", `เข้าสู่ระบบเป็น ${email || user.uid || "บัญชี Firebase"}`, "");
+  };
+
+  const checkEnvironment = async () => {
+    const parts = [
+      `asset=${normalizeText(window.sgcuAssetVersion || getConfig().assetVersion || "-")}`,
+      `project=${getFirebaseProjectId() || "-"}`,
+      `host=${normalizeText(window.location?.host || "-")}`,
+      `page=${getActivePageName()}`,
+      `sw=${navigator.serviceWorker?.controller ? "controlled" : "not-controlled"}`
+    ];
+    const browser = normalizeText(navigator.userAgent)
+      .replace(/\s+/g, " ")
+      .slice(0, 120);
+    return makeRow("Environment", "ok", `${parts.join(" | ")} | browser=${browser || "-"}`, "");
   };
 
   const checkRuntimeConfig = async () => {
@@ -165,6 +247,92 @@
       return makeRow(label, "ok", `อ่าน ${collection}/${docId} ได้`, "");
     } catch (error) {
       return makeRow(label, "error", toErrorMessage(error), action || "ตรวจสิทธิ์ Firestore rules และบัญชี staff");
+    }
+  };
+
+  const normalizeRoleLabel = (role) => {
+    const value = normalizeText(role);
+    if (!value) return "-";
+    if (value.split(",").map((item) => normalizeText(item)).includes("0")) return `${value} (Head Staff)`;
+    return value;
+  };
+
+  const isHeadStaffProfile = (profile = {}, email = "") => {
+    const profileEmail = normalizeText(profile.email || email).toLowerCase();
+    const roleTokens = normalizeText(profile.role)
+      .split(",")
+      .map((item) => normalizeText(item))
+      .filter(Boolean);
+    const yyCodes = [
+      profile.divisionCodeYY,
+      profile.positionCodeYY,
+      ...(Array.isArray(profile.divisionCodesYY) ? profile.divisionCodesYY : []),
+      ...(Array.isArray(profile.positions)
+        ? profile.positions.map((item) => item?.yy || item?.positionCodeYY || item?.divisionCodeYY)
+        : [])
+    ].map((item) => normalizeText(item).padStart(2, "0"));
+    const position = normalizeText(profile.position);
+    return (
+      STAFF_HEAD_EMAIL_OVERRIDES.has(profileEmail) ||
+      roleTokens.includes("0") ||
+      yyCodes.includes("00") ||
+      position.includes("เหรัญญิก")
+    );
+  };
+
+  const checkStaffProfile = async ({ collection, email }) => {
+    const store = getFirestore();
+    const staffEmail = normalizeText(email).toLowerCase();
+    if (!store.db || !store.doc || !store.getDoc) {
+      return makeRow("สิทธิ์ staff profile", "error", "Firestore helper ไม่พร้อม", "ตรวจ Firebase SDK");
+    }
+    if (!staffEmail) {
+      return makeRow("สิทธิ์ staff profile", "error", "ไม่มีอีเมลผู้ใช้ปัจจุบัน", "เข้าสู่ระบบใหม่");
+    }
+    try {
+      const ref = store.doc(store.db, collection, staffEmail);
+      const snap = await withTimeout(store.getDoc(ref));
+      if (!snap.exists()) {
+        if (STAFF_HEAD_EMAIL_OVERRIDES.has(staffEmail)) {
+          return makeRow("สิทธิ์ staff profile", "ok", `อีเมล ${staffEmail} อยู่ใน bootstrap Head Staff overrides`, "ควรสร้าง staffProfiles ไว้ภายหลังถ้าต้องการ metadata/allowedPages");
+        }
+        return makeRow("สิทธิ์ staff profile", "warn", `อ่าน ${collection}/${staffEmail} ได้ แต่ยังไม่มี document`, "ให้ Head Staff ตรวจ staffProfiles ของอีเมลนี้");
+      }
+      const data = snap.data() || {};
+      const isHead = isHeadStaffProfile(data, staffEmail);
+      const role = normalizeRoleLabel(data.role);
+      const status = normalizeText(data.status || "active").toLowerCase();
+      const position = normalizeText(data.position || data.positionCode || data.positionCodeYY || data.divisionCodeYY || "-");
+      const allowedPages = Array.isArray(data.allowedPages)
+        ? data.allowedPages
+        : Array.isArray(data.positions)
+          ? data.positions.flatMap((item) => Array.isArray(item?.allowedPages) ? item.allowedPages : [])
+          : [];
+      const normalizedPages = Array.from(new Set(allowedPages.map(normalizeText).filter(Boolean)));
+      const hasStaffSignal = Boolean(
+        normalizeText(data.role) ||
+        normalizeText(data.positionCodeYY) ||
+        normalizeText(data.divisionCodeYY) ||
+        (Array.isArray(data.positions) && data.positions.length)
+      );
+      const details = [
+        `role=${role}`,
+        `status=${status || "-"}`,
+        `position=${position}`,
+        `allowedPages=${formatList(normalizedPages)}`
+      ].join(" | ");
+      if (status && status !== "active" && status !== "approved") {
+        return makeRow("สิทธิ์ staff profile", "warn", details, "ตรวจสถานะ profile ว่ายังใช้งานได้หรือไม่");
+      }
+      if (!hasStaffSignal) {
+        return makeRow("สิทธิ์ staff profile", "warn", details, "เติม role, positionCodeYY, divisionCodeYY หรือ positions ให้ profile");
+      }
+      if (!normalizedPages.length && !isHead) {
+        return makeRow("สิทธิ์ staff profile", "warn", details, "ตรวจ allowedPages ถ้าบัญชีนี้เข้าเมนู staff บางหน้าไม่ได้");
+      }
+      return makeRow("สิทธิ์ staff profile", "ok", details, "");
+    } catch (error) {
+      return makeRow("สิทธิ์ staff profile", "error", toErrorMessage(error), "ให้ Head Staff ตรวจ staffProfiles และ Firestore rules");
     }
   };
 
@@ -273,11 +441,46 @@
     setStatus("กำลังตรวจระบบ...", "");
     render();
 
+    await waitForAuthReady();
     const config = getConfig();
     const collections = getCollections();
     const user = getCurrentUser();
     const staffEmail = normalizeText(user?.email).toLowerCase();
+    const staffOnlyTasks = staffEmail
+      ? [
+          checkStaffProfile({
+            collection: collections.staffProfiles || "staffProfiles",
+            email: staffEmail
+          }),
+          checkCollectionRead({ label: "ข่าวสาร", collection: collections.newsItems || "newsItems" }),
+          checkCollectionRead({ label: "เอกสารการเงิน", collection: collections.downloadDocuments || "downloadDocuments" }),
+          checkCollectionRead({ label: "ทะเบียนองค์กร", collection: collections.organizationCatalog || "organizationCatalog" }),
+          checkCollectionRead({ label: "คำของบประมาณ", collection: collections.budgetApprovalRequests || "budgetApprovalRequests" }),
+          checkDocumentRead({
+            label: "ตั้งค่างบประมาณ",
+            collection: collections.budgetApprovalSettings || "budgetApprovalSettings",
+            docId: config.firestore?.docs?.budgetApprovalSettings || "global",
+            action: "ตรวจ budgetApprovalSettings/global ถ้าหน้ายื่นงบทำงานผิดปกติ"
+          }),
+          checkCollectionRead({ label: "คำขอยืมพัสดุ", collection: collections.borrowAssetRequests || "borrowAssetRequests" }),
+          checkCollectionRead({ label: "ห้องประชุม", collection: collections.meetingRooms || "meetingRooms" }),
+          checkCollectionRead({ label: "คำขอจองห้อง", collection: collections.meetingRoomBookings || "meetingRoomBookings" }),
+          checkCollectionRead({ label: "Activity Log", collection: collections.auditLogs || "auditLogs", orderBy: "timestamp" })
+        ]
+      : [
+          "สิทธิ์ staff profile",
+          "ข่าวสาร",
+          "เอกสารการเงิน",
+          "ทะเบียนองค์กร",
+          "คำของบประมาณ",
+          "ตั้งค่างบประมาณ",
+          "คำขอยืมพัสดุ",
+          "ห้องประชุม",
+          "คำขอจองห้อง",
+          "Activity Log"
+        ].map((label) => Promise.resolve(makeSkippedStaffRow(label)));
     const tasks = [
+      checkEnvironment(),
       checkFirebaseBootstrap(),
       checkAuthSession(),
       checkRuntimeConfig(),
@@ -287,29 +490,7 @@
         docId: "global",
         action: "สร้าง document ถ้าต้องตั้ง runtime config"
       }),
-      staffEmail
-        ? checkDocumentRead({
-            label: "สิทธิ์ staff profile",
-            collection: collections.staffProfiles || "staffProfiles",
-            docId: staffEmail,
-            requireExists: true,
-            action: "ให้ Head Staff ตรวจ staffProfiles ของอีเมลนี้"
-          })
-        : Promise.resolve(makeRow("สิทธิ์ staff profile", "error", "ไม่มีอีเมลผู้ใช้ปัจจุบัน", "เข้าสู่ระบบใหม่")),
-      checkCollectionRead({ label: "ข่าวสาร", collection: collections.newsItems || "newsItems" }),
-      checkCollectionRead({ label: "เอกสารการเงิน", collection: collections.downloadDocuments || "downloadDocuments" }),
-      checkCollectionRead({ label: "ทะเบียนองค์กร", collection: collections.organizationCatalog || "organizationCatalog" }),
-      checkCollectionRead({ label: "คำของบประมาณ", collection: collections.budgetApprovalRequests || "budgetApprovalRequests" }),
-      checkDocumentRead({
-        label: "ตั้งค่างบประมาณ",
-        collection: collections.budgetApprovalSettings || "budgetApprovalSettings",
-        docId: config.firestore?.docs?.budgetApprovalSettings || "global",
-        action: "ตรวจ budgetApprovalSettings/global ถ้าหน้ายื่นงบทำงานผิดปกติ"
-      }),
-      checkCollectionRead({ label: "คำขอยืมพัสดุ", collection: collections.borrowAssetRequests || "borrowAssetRequests" }),
-      checkCollectionRead({ label: "ห้องประชุม", collection: collections.meetingRooms || "meetingRooms" }),
-      checkCollectionRead({ label: "คำขอจองห้อง", collection: collections.meetingRoomBookings || "meetingRoomBookings" }),
-      checkCollectionRead({ label: "Activity Log", collection: collections.auditLogs || "auditLogs", orderBy: "timestamp" }),
+      ...staffOnlyTasks,
       checkSheet({
         label: "Google Sheets: Project Status",
         url: config.sheets?.projectSources,
@@ -367,6 +548,7 @@
       $("systemHealthRunBtn")?.addEventListener("click", runChecks);
       $("systemHealthCopyBtn")?.addEventListener("click", copySummary);
     }
+    syncSystemDataTabs();
     render();
     if (!state.rows.length && !state.running) {
       void runChecks();

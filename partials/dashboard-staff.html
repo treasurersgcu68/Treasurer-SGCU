@@ -387,9 +387,17 @@
               <h1 class="page-title">ตรวจระบบ</h1>
               <p class="page-meta">ตรวจสถานะ Firebase, สิทธิ์ staff, แหล่งข้อมูล และ cache ก่อนแก้ปัญหาเว็บ</p>
             </div>
+            <div class="tabs system-data-main-tabs" role="tablist" aria-label="เลือกมุมมองตรวจระบบ">
+              <button type="button" class="tab-btn view-toggle-btn is-active" data-system-data-tab="health" aria-selected="true">
+                Health Check
+              </button>
+              <button type="button" class="tab-btn view-toggle-btn" data-system-data-tab="activity" aria-selected="false">
+                Activity Log
+              </button>
+            </div>
           </div>
 
-          <section class="panel section-appear section-delay-1 system-health-panel">
+          <section class="panel section-appear section-delay-1 system-health-panel system-data-main-panel" data-system-data-panel="health">
             <header class="panel-header">
               <div>
                 <h3 class="panel-title">Health Check</h3>
@@ -432,7 +440,7 @@
             </div>
           </section>
 
-          <div id="dashboardStaffAuditPanel" class="dashboard-staff-main-panel">
+          <div id="dashboardStaffAuditPanel" class="dashboard-staff-main-panel system-data-main-panel" data-system-data-panel="activity" hidden>
             <section class="panel section-appear section-delay-2">
               <header class="panel-header">
                 <div>

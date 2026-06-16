@@ -1924,6 +1924,11 @@
   align-items: flex-start;
 }
 
+.budget-org-totals-note {
+  margin-top: 2px;
+  color: #64748b;
+}
+
 .budget-org-totals-actions {
   display: flex;
   align-items: flex-end;
@@ -1947,6 +1952,10 @@
 .budget-org-totals-table td,
 .budget-org-totals-table th {
   vertical-align: middle;
+}
+
+.budget-org-totals-table {
+  min-width: 820px;
 }
 
 .budget-org-totals-chart-card {
@@ -1992,7 +2001,7 @@
 
   .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td {
     display: grid;
-    grid-template-columns: 92px minmax(0, 1fr);
+    grid-template-columns: 104px minmax(0, 1fr);
     gap: 6px 10px;
     width: 100%;
     padding: 7px 0;
@@ -2017,8 +2026,7 @@
   }
 
   .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td[data-label="องค์กร"]::before {
-    display: block;
-    margin-bottom: 4px;
+    content: none;
   }
 
   .page-view[data-page="budget-approval-request"] #budgetOrgTotalsTable td[data-label="องค์กร"] > * {
@@ -3437,6 +3445,10 @@
   .budget-org-totals-round-field {
     width: 100%;
   }
+  .budget-org-totals-actions .csv-export-btn {
+    width: 100%;
+    justify-content: center;
+  }
   .budget-org-floating-card,
   .budget-org-floating-card:nth-child(n + 5) {
     grid-column: auto;
@@ -4293,6 +4305,7 @@
 }
 
 .dashboard-staff-main-tabs,
+.system-data-main-tabs,
 .staff-approval-main-tabs,
 .org-representative-main-tabs {
   width: fit-content;
@@ -4301,13 +4314,30 @@
 }
 
 .dashboard-staff-main-panel[hidden],
+.system-data-main-panel[hidden],
 .staff-approval-main-panel[hidden],
 .org-representative-main-panel[hidden] {
   display: none !important;
 }
 
 .dashboard-audit-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(360px, 2fr);
+  align-items: end;
+  gap: 12px;
   margin: 12px 0;
+  width: 100%;
+}
+
+.dashboard-audit-filter-bar .filter-group,
+.dashboard-audit-filter-bar .filter-search,
+.dashboard-audit-filter-bar .search-box {
+  min-width: 0;
+  width: 100%;
+}
+
+.dashboard-audit-filter-bar .filter-search {
+  grid-column: auto;
 }
 
 .table-wrapper.dashboard-audit-table-wrapper {
@@ -7186,6 +7216,7 @@
 
 @media (max-width: 760px) {
   .dashboard-staff-main-tabs,
+  .system-data-main-tabs,
   .project-staff-workflow-tabs,
   .staff-approval-main-tabs,
   .org-representative-main-tabs {
@@ -7194,6 +7225,7 @@
   }
 
   .dashboard-staff-main-tabs .tab-btn,
+  .system-data-main-tabs .tab-btn,
   .project-staff-workflow-tabs .tab-btn,
   .staff-approval-main-tabs .tab-btn,
   .org-representative-main-tabs .tab-btn {

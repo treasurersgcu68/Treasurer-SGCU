@@ -66,6 +66,8 @@ function initMeetingRoomStaffApproval() {
   const STAFF_REQUEST_STATUSES = new Set(["pending", "cancel_requested", "reschedule_requested"]);
   const STAFF_MEETING_PAGE_SIZE = 50;
   const STAFF_BOOKING_LIST_LIMIT = 1000;
+  const STAFF_BOOKING_LOOKBACK_MONTHS = 1;
+  const STAFF_BOOKING_LOOKAHEAD_MONTHS = 3;
   const DEFAULT_ROOMS = [
     { id: "room-1", name: "ห้องประชุม 1 ชั้น 2", bookingAccess: "public", isDefault: true },
     { id: "room-2", name: "ห้องประชุม 2 ชั้น 2", bookingAccess: "public", isDefault: true },
@@ -506,7 +508,17 @@ function initMeetingRoomStaffApproval() {
     bookings = Array.from(byId.values());
   };
 
-  const getTodayKey = () => toDateKey(new Date());
+  const getStaffBookingQueryWindow = () => {
+    const base = calendarCursor instanceof Date && !Number.isNaN(calendarCursor.getTime())
+      ? calendarCursor
+      : new Date();
+    const start = new Date(base.getFullYear(), base.getMonth() - STAFF_BOOKING_LOOKBACK_MONTHS, 1);
+    const end = new Date(base.getFullYear(), base.getMonth() + STAFF_BOOKING_LOOKAHEAD_MONTHS + 1, 0);
+    return {
+      start: toDateKey(start),
+      end: toDateKey(end)
+    };
+  };
 
   const pickBookingAuditFields = (item = {}) => ({
     id: item.id || "",
@@ -734,7 +746,7 @@ function initMeetingRoomStaffApproval() {
 
   const syncStaffRequestNotifications = (list = []) => {
     const queueRows = list
-      .filter((booking) => STAFF_REQUEST_STATUSES.has(normalizeStatus(booking.status)))
+      .filter((booking) => STAFF_REQUEST_STATUSES.has(normalizeStatus(booking.status)) && !isPastBooking(booking))
       .sort((a, b) => {
         const aDate = `${a.date || ""}T${a.startTime || "00:00"}`;
         const bDate = `${b.date || ""}T${b.startTime || "00:00"}`;
@@ -1610,7 +1622,7 @@ function initMeetingRoomStaffApproval() {
     if (panelCaptionEl) {
       panelCaptionEl.textContent = activeTab === "history"
         ? "เลือกช่วงวันที่แล้วกดแสดงผล ระบบจึงจะโหลดประวัติย้อนหลัง"
-        : "แสดงรายการที่ยังไม่อนุมัติและยังไม่เลยวัน ใช้ตัวกรองเพื่อหาเฉพาะวัน ห้อง หรือผู้ขอ";
+        : "แสดงรายการที่ยังไม่อนุมัติและยังไม่เลยเวลา ใช้ตัวกรองเพื่อหาเฉพาะวัน ห้อง หรือผู้ขอ";
     }
     if (historySearchWrapEl) {
       historySearchWrapEl.style.display = "grid";
@@ -1901,7 +1913,9 @@ function initMeetingRoomStaffApproval() {
     });
 
     const pending = sorted.filter(
-      (booking) => booking.status === "pending" || booking.status === "cancel_requested" || booking.status === "reschedule_requested"
+      (booking) =>
+        !isPastBooking(booking) &&
+        (booking.status === "pending" || booking.status === "cancel_requested" || booking.status === "reschedule_requested")
     );
     const pendingCount = pending.length;
     const approvedCount = sorted.filter((booking) => booking.status === "approved").length;
@@ -1965,7 +1979,7 @@ function initMeetingRoomStaffApproval() {
       ? (shouldShowHistoryPrompt
         ? "เลือกช่วงวันที่แล้วกดแสดงผลเพื่อโหลดประวัติการขอ"
         : (historyLoadErrorText || (hasFilters ? "ไม่พบประวัติการขอตามตัวกรองที่เลือก" : "ยังไม่มีประวัติการขอในช่วงวันที่เลือก")))
-      : (hasFilters ? "ไม่พบรายการคำขอตามตัวกรองที่เลือก" : "ยังไม่มีรายการคำขอที่ยังไม่เลยวัน");
+      : (hasFilters ? "ไม่พบรายการคำขอตามตัวกรองที่เลือก" : "ยังไม่มีรายการคำขอที่ยังไม่เลยเวลา");
     const pageMeta = getPagedRows(displayRows, pageByTab[activeTab]);
     pageByTab[activeTab] = pageMeta.currentPage;
 
@@ -2187,11 +2201,21 @@ function initMeetingRoomStaffApproval() {
 
   const subscribeBookings = () => {
     if (!hasFirestore) return;
+    if (typeof unsubscribe === "function") {
+      try {
+        unsubscribe();
+      } catch (_) {
+        // ignore unsubscribe errors
+      }
+      unsubscribe = null;
+    }
     try {
       const colRef = firestore.collection(firestore.db, COLLECTION_NAME);
+      const windowRange = getStaffBookingQueryWindow();
       const bookingsQuery = firestore.query(
         colRef,
-        firestore.where("date", ">=", getTodayKey()),
+        firestore.where("date", ">=", windowRange.start),
+        firestore.where("date", "<=", windowRange.end),
         firestore.orderBy("date", "asc"),
         ...(firestore.limit ? [firestore.limit(STAFF_BOOKING_LIST_LIMIT)] : [])
       );
@@ -2592,6 +2616,7 @@ function initMeetingRoomStaffApproval() {
   if (staffCalendarPrevBtn) {
     staffCalendarPrevBtn.addEventListener("click", () => {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+      subscribeBookings();
       renderStaffCalendar(getCalendarRows(bookings));
     });
   }
@@ -2599,6 +2624,7 @@ function initMeetingRoomStaffApproval() {
   if (staffCalendarNextBtn) {
     staffCalendarNextBtn.addEventListener("click", () => {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+      subscribeBookings();
       renderStaffCalendar(getCalendarRows(bookings));
     });
   }

@@ -1223,7 +1223,7 @@ function initBudgetApprovalRequestPage() {
     if (orgTotalsTableBodyEl) {
       orgTotalsTableBodyEl.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align:center; color:#6b7280;">${escapeHtml(message)}</td>
+          <td colspan="6" style="text-align:center; color:#6b7280;">${escapeHtml(message)}</td>
         </tr>
       `;
     }
@@ -1293,6 +1293,14 @@ function initBudgetApprovalRequestPage() {
       });
     }
 
+    const isCompactChart = window.matchMedia?.("(max-width: 540px)")?.matches;
+    const yAxisLabelWidth = isCompactChart ? 150 : 190;
+    const chartInnerEl = orgTotalsChartCanvasEl.parentElement;
+    if (chartInnerEl) {
+      const chartHeight = Math.max(isCompactChart ? 280 : 360, Math.min(720, chartRows.length * (isCompactChart ? 46 : 42) + 96));
+      chartInnerEl.style.minHeight = `${chartHeight}px`;
+    }
+
     orgTotalsChartInstance = new window.Chart(orgTotalsChartCanvasEl.getContext("2d"), {
       type: "bar",
       data: {
@@ -1330,8 +1338,8 @@ function initBudgetApprovalRequestPage() {
           externalAxisLabels: {
             y: {
               enabled: true,
-              width: 190,
-              gap: 8
+              width: yAxisLabelWidth,
+              gap: isCompactChart ? 6 : 8
             }
           }
         },
@@ -1343,7 +1351,7 @@ function initBudgetApprovalRequestPage() {
           },
           y: {
             afterFit(scale) {
-              scale.width = Math.max(scale.width || 0, 190);
+              scale.width = Math.max(scale.width || 0, yAxisLabelWidth);
             },
             ticks: {
               display: false,
@@ -1398,8 +1406,8 @@ function initBudgetApprovalRequestPage() {
       <tr>
         <td style="text-align:left;" data-label="องค์กร">
           <div class="budget-request-history-project-name">${escapeHtml(item.organizationName)}</div>
-          <div class="section-text-sm budget-request-history-project-meta">${escapeHtml(orgType)}</div>
         </td>
+        <td style="text-align:left;" data-label="ประเภทองค์กร">${escapeHtml(orgType)}</td>
         <td style="text-align:right;" data-label="จำนวนโครงการ">${item.projectCount}</td>
         <td style="text-align:right;" data-label="ยอดขอ">${formatCurrency(item.requestedAmount)}</td>
         <td style="text-align:right;" data-label="ยอดอนุมัติ">${formatCurrency(item.approvedAmount)}</td>

@@ -264,6 +264,7 @@
                 <div class="panel-header budget-org-totals-header">
                   <div>
                     <div class="panel-title">ยอดของบแยกตามองค์กร</div>
+                    <div class="panel-caption budget-org-totals-note">แสดงยอดรวมขององค์กรในประเภทเดียวกับสิทธิ์ตัวแทน และเลือกดูได้เฉพาะรอบที่ปิดรับคำขอแล้ว</div>
                     <div class="panel-caption" id="budgetOrgTotalsCaption">กำลังโหลดข้อมูล...</div>
                   </div>
                   <div class="budget-org-totals-actions">
@@ -273,12 +274,12 @@
                         <option value="" selected disabled>กำลังโหลดรอบ...</option>
                       </select>
                     </div>
-                    <button id="budgetOrgTotalsExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
+                    <button id="budgetOrgTotalsExportCsvBtn" class="btn-ghost csv-export-btn" type="button">ส่งออก CSV</button>
                   </div>
                 </div>
-                <div class="budget-org-totals-summary" aria-label="สรุปยอดรวมในฝ่าย">
+                <div class="budget-org-totals-summary" aria-label="สรุปยอดรวมตามประเภทองค์กร">
                   <article class="budget-org-summary-card">
-                    <span class="budget-org-summary-label">องค์กรในฝ่าย</span>
+                    <span class="budget-org-summary-label">องค์กรในประเภท</span>
                     <strong id="budgetOrgTotalsOrgCount" class="budget-org-summary-value">0</strong>
                   </article>
                   <article class="budget-org-summary-card">
@@ -304,6 +305,7 @@
                     <thead>
                       <tr>
                         <th style="text-align:left;">องค์กร</th>
+                        <th style="text-align:left;">ประเภทองค์กร</th>
                         <th style="text-align:right;">จำนวนโครงการ</th>
                         <th style="text-align:right;">ยอดขอ</th>
                         <th style="text-align:right;">ยอดอนุมัติ</th>
@@ -312,7 +314,7 @@
                     </thead>
                     <tbody id="budgetOrgTotalsTableBody">
                       <tr>
-                        <td colspan="5" style="text-align:center; color:#6b7280;">กำลังโหลดข้อมูล...</td>
+                        <td colspan="6" style="text-align:center; color:#6b7280;">กำลังโหลดข้อมูล...</td>
                       </tr>
                     </tbody>
                   </table>

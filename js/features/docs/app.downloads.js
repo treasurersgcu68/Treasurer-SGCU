@@ -2,6 +2,8 @@
 const DOWNLOADS_CACHE_SOURCE_FIRESTORE = "firestore";
 const DOWNLOADS_CACHE_SOURCE_PUBLIC_CACHE = "publicCache";
 const DOWNLOADS_CACHE_SOURCE_SHEETS = "sheets";
+const DOWNLOADS_PUBLIC_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const DOWNLOADS_PUBLIC_FIRESTORE_LIMIT = 80;
 let downloadPreviewModalInitialized = false;
 
 function toggleDownloadSkeleton(isLoading) {
@@ -194,10 +196,10 @@ async function loadDownloadDocumentsFromFirestore() {
   if (!store.db || !store.collection || !store.getDocs) return null;
 
   const collectionRef = store.collection(store.db, collectionName);
-  const listQuery =
-    store.query && store.where
-      ? store.query(collectionRef, store.where("status", "==", "published"))
-      : collectionRef;
+  const constraints = [];
+  if (store.where) constraints.push(store.where("status", "==", "published"));
+  if (store.limit) constraints.push(store.limit(DOWNLOADS_PUBLIC_FIRESTORE_LIMIT));
+  const listQuery = store.query && constraints.length ? store.query(collectionRef, ...constraints) : collectionRef;
   const snapshot = await store.getDocs(listQuery);
   const items = [];
   snapshot.forEach((docSnap) => {
@@ -402,7 +404,7 @@ async function loadDownloadDocuments() {
     listEl.setAttribute("aria-busy", "true");
     if (categorySelectEl) categorySelectEl.disabled = true;
 
-    const cached = getCache(CACHE_KEYS.DOWNLOADS, CACHE_TTL_MS);
+    const cached = getCache(CACHE_KEYS.DOWNLOADS, DOWNLOADS_PUBLIC_CACHE_TTL_MS);
     if (
       (cached?.source === DOWNLOADS_CACHE_SOURCE_FIRESTORE || cached?.source === DOWNLOADS_CACHE_SOURCE_PUBLIC_CACHE) &&
       Array.isArray(cached.items) &&

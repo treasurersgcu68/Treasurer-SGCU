@@ -68,6 +68,7 @@ function initStaffAccessPages() {
   const orgRepresentativeStatusFilterEl = document.getElementById("orgRepresentativeStatusFilter");
   const orgRepresentativeAcademicYearFilterEl = document.getElementById("orgRepresentativeAcademicYearFilter");
   const orgRepresentativeGroupFilterEl = document.getElementById("orgRepresentativeGroupFilter");
+  const orgRepresentativeFilterResetBtnEl = document.getElementById("orgRepresentativeFilterResetBtn");
   const orgRepresentativeTotalOrgCountEl = document.getElementById("orgRepresentativeTotalOrgCount");
   const orgRepresentativeCompleteOrgCountEl = document.getElementById("orgRepresentativeCompleteOrgCount");
   const orgRepresentativeIncompleteOrgCountEl = document.getElementById("orgRepresentativeIncompleteOrgCount");
@@ -274,6 +275,18 @@ function initStaffAccessPages() {
   let currentOrgRepresentativeOrganizations = [];
   let currentOrgRepresentativeFilteredOrganizations = [];
   let currentOrgRepresentativeAcademicYear = "";
+  let orgRepresentativeOrganizationsDirty = true;
+  let orgRepresentativeCatalogIndexCache = {
+    signature: "",
+    rows: [],
+    byId: new Map(),
+    byBaseId: new Map(),
+    byGroup: new Map(),
+    byCodeGroup: new Map(),
+    byRunGroup: new Map(),
+    byNameGroup: new Map()
+  };
+  let orgRepresentativeResolveCache = new WeakMap();
   let orgRepresentativeOrgFiltersLoadPromise = null;
   let orgRepresentativeOrgFiltersLoadedForPage = false;
   let currentPositionCatalog = [];
@@ -1610,6 +1623,25 @@ function initStaffAccessPages() {
     el.style.color = color;
   };
 
+  const markOrgRepresentativeOrganizationsDirty = () => {
+    orgRepresentativeOrganizationsDirty = true;
+    orgRepresentativeResolveCache = new WeakMap();
+  };
+
+  const invalidateOrgRepresentativeCatalogIndex = () => {
+    orgRepresentativeCatalogIndexCache = {
+      signature: "",
+      rows: [],
+      byId: new Map(),
+      byBaseId: new Map(),
+      byGroup: new Map(),
+      byCodeGroup: new Map(),
+      byRunGroup: new Map(),
+      byNameGroup: new Map()
+    };
+    markOrgRepresentativeOrganizationsDirty();
+  };
+
   const refreshAccessProfileForCurrentUser = async ({ force = false } = {}) => {
     const email = getCurrentAuthEmail();
     if (!email) {
@@ -2757,9 +2789,65 @@ function initStaffAccessPages() {
     return { group, name, code, runCode, names };
   };
 
-  const findOrgRepresentativeCatalogItemForApplication = (item = {}) => {
+  const getOrgRepresentativeCatalogIndex = () => {
+    if (orgRepresentativeCatalogIndexCache.signature) {
+      return orgRepresentativeCatalogIndexCache;
+    }
     const rows = getOrganizationCatalogRows();
-    if (!rows.length) return null;
+    const signature = rows
+      .map((item) => [
+        item.id,
+        getOrganizationCatalogBaseId(item),
+        item.group,
+        item.name,
+        item.code,
+        item.documentRunCode,
+        Object.entries(item.nameByAcademicYear || {}).map(([year, name]) => `${year}:${name}`).join(",")
+      ].map((value) => normalizeOrganizationCatalogText(value)).join("|"))
+      .join("::");
+    if (orgRepresentativeCatalogIndexCache.signature === signature) {
+      return orgRepresentativeCatalogIndexCache;
+    }
+
+    const index = {
+      signature,
+      rows,
+      byId: new Map(),
+      byBaseId: new Map(),
+      byGroup: new Map(),
+      byCodeGroup: new Map(),
+      byRunGroup: new Map(),
+      byNameGroup: new Map()
+    };
+    const pushKey = (map, key, item) => {
+      const normalizedKey = normalizeOrgRepresentativeMatchValue(key);
+      if (normalizedKey && !map.has(normalizedKey)) map.set(normalizedKey, item);
+    };
+
+    rows.forEach((row) => {
+      const values = getOrgRepresentativeCatalogMatchValues(row);
+      const groupKey = normalizeOrgRepresentativeMatchValue(values.group);
+      const rowId = normalizeOrganizationCatalogText(row.id);
+      const rowBaseId = getOrganizationCatalogBaseId(row);
+      if (rowId) index.byId.set(rowId, row);
+      if (rowBaseId && !index.byBaseId.has(rowBaseId)) index.byBaseId.set(rowBaseId, row);
+      if (!index.byGroup.has(groupKey)) index.byGroup.set(groupKey, []);
+      index.byGroup.get(groupKey).push(row);
+      pushKey(index.byCodeGroup, `${groupKey}||${values.code}`, row);
+      pushKey(index.byRunGroup, `${groupKey}||${values.runCode}`, row);
+      values.names.forEach((name) => {
+        pushKey(index.byNameGroup, `${groupKey}||${name}`, row);
+      });
+    });
+
+    orgRepresentativeCatalogIndexCache = index;
+    orgRepresentativeResolveCache = new WeakMap();
+    return index;
+  };
+
+  const findOrgRepresentativeCatalogItemForApplication = (item = {}) => {
+    const index = getOrgRepresentativeCatalogIndex();
+    if (!index.rows.length) return null;
     const orgType = normalizeOrganizationCatalogText(item.organizationType || item.orgGroup);
     const orgName = normalizeOrganizationCatalogText(item.organizationName || item.orgName);
     const orgId = normalizeOrganizationCatalogText(item.organizationId || item.organizationCatalogId);
@@ -2771,44 +2859,32 @@ function initStaffAccessPages() {
     const runCodeKey = normalizeOrgRepresentativeMatchValue(runCode);
     const orgTypeKey = normalizeOrgRepresentativeMatchValue(orgType);
 
-    const sameGroupRows = rows.filter((row) => {
-      const rowGroupKey = normalizeOrgRepresentativeMatchValue(row.group);
-      return !orgTypeKey || !rowGroupKey || rowGroupKey === orgTypeKey;
-    });
-    const candidateRows = sameGroupRows.length ? sameGroupRows : rows;
-    const byIdentity = candidateRows.find((row) => {
-      const rowId = normalizeOrganizationCatalogText(row.id);
-      const rowBaseId = getOrganizationCatalogBaseId(row);
-      return (orgId && rowId === orgId) || (baseId && rowBaseId && rowBaseId === baseId);
-    });
+    const byIdentity = (orgId && index.byId.get(orgId)) || (baseId && index.byBaseId.get(baseId)) || null;
     if (byIdentity) return byIdentity;
 
-    const byCode = candidateRows.find((row) => {
-      const values = getOrgRepresentativeCatalogMatchValues(row);
-      return (orgCodeKey && normalizeOrgRepresentativeMatchValue(values.code) === orgCodeKey) ||
-        (runCodeKey && normalizeOrgRepresentativeMatchValue(values.runCode) === runCodeKey);
-    });
+    const byCode = (orgCodeKey && index.byCodeGroup.get(normalizeOrgRepresentativeMatchValue(`${orgTypeKey}||${orgCode}`))) ||
+      (runCodeKey && index.byRunGroup.get(normalizeOrgRepresentativeMatchValue(`${orgTypeKey}||${runCode}`))) ||
+      null;
     if (byCode) return byCode;
 
-    return candidateRows.find((row) => {
-      const values = getOrgRepresentativeCatalogMatchValues(row);
-      return values.names.some((name) => normalizeOrgRepresentativeMatchValue(name) === orgNameKey);
-    }) || null;
+    return (orgNameKey && index.byNameGroup.get(normalizeOrgRepresentativeMatchValue(`${orgTypeKey}||${orgName}`))) || null;
   };
 
   const getResolvedOrgRepresentativeOrganization = (item = {}) => {
+    if (item && typeof item === "object" && orgRepresentativeResolveCache.has(item)) {
+      return orgRepresentativeResolveCache.get(item);
+    }
     const catalogItem = findOrgRepresentativeCatalogItemForApplication(item);
-    if (!catalogItem) {
-      return {
+    const resolved = !catalogItem
+      ? {
         organizationType: normalizeOrganizationCatalogText(item.organizationType || item.orgGroup),
         organizationName: normalizeOrganizationCatalogText(item.organizationName || item.orgName),
         organizationCode: normalizeOrganizationCatalogText(item.organizationCode || item.orgCode || item.code).toUpperCase(),
         organizationId: normalizeOrganizationCatalogText(item.organizationId || item.organizationCatalogId),
         baseOrganizationId: normalizeOrganizationCatalogText(item.baseOrganizationId || item.baseOrgId || item.rootOrganizationId),
         documentRunCode: stripOrganizationCatalogDocumentRunYear(item.organizationDocumentRunCode || item.documentRunCode || item.runCode)
-      };
-    }
-    return {
+      }
+      : {
       organizationType: catalogItem.group || normalizeOrganizationCatalogText(item.organizationType || item.orgGroup),
       organizationName: catalogItem.name || normalizeOrganizationCatalogText(item.organizationName || item.orgName),
       organizationCode: catalogItem.code || normalizeOrganizationCatalogText(item.organizationCode || item.orgCode || item.code).toUpperCase(),
@@ -2816,6 +2892,8 @@ function initStaffAccessPages() {
       baseOrganizationId: getOrganizationCatalogBaseId(catalogItem),
       documentRunCode: catalogItem.documentRunCode || stripOrganizationCatalogDocumentRunYear(item.organizationDocumentRunCode || item.documentRunCode || item.runCode)
     };
+    if (item && typeof item === "object") orgRepresentativeResolveCache.set(item, resolved);
+    return resolved;
   };
 
   const getKnownOrganizationFilters = () => {
@@ -3520,6 +3598,7 @@ function initStaffAccessPages() {
     } catch (_) {
       globalThis.orgFilters = nextFilters;
     }
+    invalidateOrgRepresentativeCatalogIndex();
     try {
       if (typeof setCache === "function" && typeof CACHE_KEYS !== "undefined") {
         setCache(CACHE_KEYS.ORG_FILTERS, nextFilters);
@@ -4999,7 +5078,9 @@ function initStaffAccessPages() {
 
   const setOrgRepresentativeAcademicYear = (value) => {
     const nextYear = normalizeOrganizationCatalogText(value) || String(getCurrentAcademicYearBE());
+    const didChange = currentOrgRepresentativeAcademicYear !== nextYear;
     currentOrgRepresentativeAcademicYear = nextYear;
+    if (didChange) invalidateOrgRepresentativeCatalogIndex();
     const years = getOrgRepresentativeAcademicYearOptions();
     syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, years, nextYear);
     syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, years, nextYear);
@@ -5083,6 +5164,7 @@ function initStaffAccessPages() {
         }
         return (a.orgName || "").localeCompare(b.orgName || "", "th");
       });
+    orgRepresentativeOrganizationsDirty = false;
   };
 
   const populateOrgRepresentativeGroupFilter = () => {
@@ -5096,6 +5178,13 @@ function initStaffAccessPages() {
       ...groups.map((group) => `<option value="${toSafeText(group)}">${toSafeText(group)}</option>`)
     ].join("");
     orgRepresentativeGroupFilterEl.value = groups.includes(currentValue) ? currentValue : "all";
+  };
+
+  const resetOrgRepresentativeOverviewFilters = () => {
+    if (orgRepresentativeStatusFilterEl) orgRepresentativeStatusFilterEl.value = "all";
+    if (orgRepresentativeGroupFilterEl) orgRepresentativeGroupFilterEl.value = "all";
+    if (orgRepresentativeSearchInputEl) orgRepresentativeSearchInputEl.value = "";
+    renderOrgRepresentativeOverview();
   };
 
   const renderOrgRepresentativeOverview = () => {
@@ -5118,7 +5207,9 @@ function initStaffAccessPages() {
     }
 
     populateOrgRepresentativeAcademicYearFilter();
-    buildOrgRepresentativeOrganizations();
+    if (orgRepresentativeOrganizationsDirty) {
+      buildOrgRepresentativeOrganizations();
+    }
     populateOrgRepresentativeGroupFilter();
 
     const query = (orgRepresentativeSearchInputEl?.value || "").toString().trim().toLowerCase();
@@ -5306,6 +5397,7 @@ function initStaffAccessPages() {
   };
 
   const renderOrgRepresentativeApplications = () => {
+    markOrgRepresentativeOrganizationsDirty();
     renderOrganizationCatalogTable();
     renderOrgRepresentativeOverview();
     renderOrgRepresentativePending();
@@ -7396,6 +7488,7 @@ function initStaffAccessPages() {
       renderOrgRepresentativeOverview();
     });
   });
+  orgRepresentativeFilterResetBtnEl?.addEventListener("click", resetOrgRepresentativeOverviewFilters);
   if (orgRepresentativeOverviewBodyEl) {
     orgRepresentativeOverviewBodyEl.addEventListener("click", (event) => {
       const target = event.target;

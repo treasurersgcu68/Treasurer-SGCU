@@ -621,6 +621,15 @@
   grid-column: 1 / -1;
 }
 
+.org-representative-search-field .search-box,
+.org-representative-search-field .search-box input {
+  width: 100%;
+}
+
+.org-representative-search-field .search-box input {
+  padding-right: 42px;
+}
+
 .org-representative-org-row {
   cursor: pointer;
 }

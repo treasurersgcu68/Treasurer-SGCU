@@ -2724,6 +2724,19 @@
   white-space: nowrap;
 }
 
+.budget-staff-delete-request-btn {
+  border-color: rgba(220, 38, 38, 0.22);
+  color: #b91c1c;
+  background: #fff7f7;
+}
+
+.budget-staff-delete-request-btn:hover,
+.budget-staff-delete-request-btn:focus-visible {
+  border-color: rgba(220, 38, 38, 0.34);
+  color: #991b1b;
+  background: #fee2e2;
+}
+
 .budget-staff-controls {
   border: 1px solid rgba(244, 114, 182, 0.16);
   border-radius: 16px;

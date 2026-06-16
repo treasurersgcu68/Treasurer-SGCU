@@ -293,11 +293,12 @@
                     </div>
                   </div>
                 </div>
-                <div class="staff-access-actions budget-staff-form-actions">
+	                <div class="staff-access-actions budget-staff-form-actions">
                   <button id="budgetStaffManageSaveBtn" class="btn-primary" type="submit">เพิ่มรายการ</button>
                   <button id="budgetStaffManageCancelEditBtn" class="btn-ghost" type="button" hidden>ยกเลิกแก้ไข</button>
-                  <div id="budgetStaffManageMessage" class="section-text-sm" aria-live="polite"></div>
-                </div>
+                  <button id="budgetStaffManageDeleteBtn" class="btn-ghost budget-staff-delete-request-btn" type="button" hidden>ลบรายการนี้</button>
+	                  <div id="budgetStaffManageMessage" class="section-text-sm" aria-live="polite"></div>
+	                </div>
               </form>
             </section>
 
@@ -338,14 +339,50 @@
                       <th class="col-money">ยอดขอ</th>
                       <th class="col-money">ยอดอนุมัติ</th>
                       <th class="col-status">สถานะ</th>
-                    </tr>
-                  </thead>
-                  <tbody id="budgetStaffRequestsBody">
+	                    </tr>
+	                  </thead>
+	                  <tbody id="budgetStaffRequestsBody">
                     <tr><td colspan="5">กำลังโหลดข้อมูล...</td></tr>
-                  </tbody>
+	                  </tbody>
                 </table>
               </div>
             </section>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="budgetRequestDeleteModal"
+          class="modal budget-request-delete-modal"
+          aria-hidden="true"
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="budgetRequestDeleteTitle"
+        >
+          <div class="modal-dialog budget-round-delete-dialog">
+            <div class="modal-header">
+              <div>
+                <div id="budgetRequestDeleteTitle" class="modal-title">ยืนยันการลบรายการคำของบ</div>
+                <div class="modal-subtitle">ลบแล้วจะไม่สามารถกู้คืนรายการนี้จากระบบได้</div>
+              </div>
+              <button id="budgetRequestDeleteCloseBtn" class="modal-close" type="button" aria-label="ปิด">×</button>
+            </div>
+            <div class="modal-body budget-round-delete-body">
+              <div class="budget-round-delete-warning">
+                <div>
+                  <div id="budgetRequestDeleteName" class="budget-round-delete-name">-</div>
+                  <div id="budgetRequestDeleteSummary" class="budget-round-delete-summary">กำลังตรวจสอบรายการคำขอ...</div>
+                </div>
+              </div>
+              <label class="budget-round-delete-check">
+                <input id="budgetRequestDeleteConfirmCheck" type="checkbox" />
+                <span>ฉันเข้าใจว่ารายการคำของบนี้จะถูกลบถาวร และตรวจสอบข้อมูลก่อนลบแล้ว</span>
+              </label>
+              <div id="budgetRequestDeleteMessage" class="section-text-sm budget-round-delete-message" aria-live="polite"></div>
+            </div>
+            <div class="modal-actions budget-round-delete-actions">
+              <button id="budgetRequestDeleteCancelBtn" class="btn-ghost" type="button">ยกเลิก</button>
+              <button id="budgetRequestDeleteConfirmBtn" class="btn-primary budget-round-delete-confirm" type="button" disabled>ลบรายการนี้</button>
             </div>
           </div>
         </div>

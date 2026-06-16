@@ -283,6 +283,134 @@ function initBudgetApprovalRequestPage() {
     return Array.from(new Set(names)).sort((a, b) => compareBudgetOrgNameByCode(a, b, codeByName));
   };
 
+  const normalizeBudgetOrgMatchValue = (value = "") =>
+    normalizeOrgText(value).toLowerCase().replace(/\s+/g, " ");
+
+  const getBudgetOrgBaseId = (item = {}) =>
+    normalizeOrgText(item?.baseOrganizationId || item?.baseOrgId || item?.rootOrganizationId || item?.legacyOrganizationId || item?.id);
+
+  const stripBudgetOrgRunCodeYear = (value = "") =>
+    normalizeOrgText(value)
+      .replace(/^(?:อบจ(?:\.(?:กฬ|พฒ|วชก|ศป))?\.?)\s*/u, "")
+      .replace(/\s*\/\s*\d{4}\s*$/u, "");
+
+  const getBudgetOrgCatalogMatchValues = (item = {}) => {
+    const group = normalizeOrgText(item?.group || item?.organizationType || item?.orgGroup);
+    const name = normalizeOrgText(item?.name || item?.organizationName || item?.orgName);
+    const code = normalizeOrgText(item?.code || item?.orgCode || item?.organizationCode).toUpperCase();
+    const runCode = stripBudgetOrgRunCodeYear(item?.documentRunCode || item?.runCode || item?.organizationDocumentRunCode);
+    const names = Array.from(new Set([
+      name,
+      ...Object.values(item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear || {})
+        .map((value) => normalizeOrgText(value))
+    ].filter(Boolean)));
+    return { group, name, code, runCode, names };
+  };
+
+  const getBudgetOrgCatalogRows = () =>
+    typeof orgFilters !== "undefined" && Array.isArray(orgFilters) ? orgFilters : [];
+
+  const findBudgetOrgCatalogItemForRepresentative = (item = {}) => {
+    const rows = getBudgetOrgCatalogRows().filter(shouldUseBudgetOrgItemForRepresentativeYear);
+    if (!rows.length) return null;
+    const orgType = normalizeOrgText(item.organizationType || item.orgGroup || item.group);
+    const orgName = normalizeOrgText(item.organizationName || item.orgName || item.name);
+    const orgId = normalizeOrgText(item.organizationId || item.organizationCatalogId || item.id);
+    const baseId = normalizeOrgText(item.baseOrganizationId || item.baseOrgId || item.rootOrganizationId || getBudgetOrgBaseId(item));
+    const orgCode = normalizeOrgText(item.organizationCode || item.orgCode || item.code).toUpperCase();
+    const runCode = stripBudgetOrgRunCodeYear(item.organizationDocumentRunCode || item.documentRunCode || item.runCode);
+    const typeKey = normalizeBudgetOrgMatchValue(orgType);
+    const nameKey = normalizeBudgetOrgMatchValue(orgName);
+    const codeKey = normalizeBudgetOrgMatchValue(orgCode);
+    const runCodeKey = normalizeBudgetOrgMatchValue(runCode);
+    const sameGroupRows = rows.filter((row) => normalizeBudgetOrgMatchValue(row.group || row.organizationType || row.orgGroup) === typeKey);
+    const candidates = sameGroupRows.length ? sameGroupRows : rows;
+
+    const byIdentity = candidates.find((row) => {
+      const rowId = normalizeOrgText(row.id);
+      const rowBaseId = getBudgetOrgBaseId(row);
+      return (orgId && rowId === orgId) || (baseId && rowBaseId && rowBaseId === baseId);
+    });
+    if (byIdentity) return byIdentity;
+
+    const byCode = candidates.find((row) => {
+      const values = getBudgetOrgCatalogMatchValues(row);
+      return (codeKey && normalizeBudgetOrgMatchValue(values.code) === codeKey) ||
+        (runCodeKey && normalizeBudgetOrgMatchValue(values.runCode) === runCodeKey);
+    });
+    if (byCode) return byCode;
+
+    return candidates.find((row) => {
+      const values = getBudgetOrgCatalogMatchValues(row);
+      return values.names.some((name) => normalizeBudgetOrgMatchValue(name) === nameKey);
+    }) || null;
+  };
+
+  const getResolvedRepresentativeOrganization = (item = {}) => {
+    const catalogItem = findBudgetOrgCatalogItemForRepresentative(item);
+    if (!catalogItem) {
+      return {
+        organizationType: normalizeOrgText(item.organizationType || item.orgGroup || item.group),
+        organizationName: normalizeOrgText(item.organizationName || item.orgName || item.name),
+        organizationId: normalizeOrgText(item.organizationId || item.organizationCatalogId || item.id),
+        baseOrganizationId: normalizeOrgText(item.baseOrganizationId || item.baseOrgId || item.rootOrganizationId || getBudgetOrgBaseId(item)),
+        organizationCode: normalizeOrgText(item.organizationCode || item.orgCode || item.code).toUpperCase(),
+        organizationDocumentRunCode: stripBudgetOrgRunCodeYear(item.organizationDocumentRunCode || item.documentRunCode || item.runCode)
+      };
+    }
+    return {
+      organizationType: normalizeOrgText(catalogItem.group || catalogItem.organizationType || catalogItem.orgGroup),
+      organizationName: getBudgetOrgNameForRepresentativeYear(catalogItem),
+      organizationId: normalizeOrgText(catalogItem.id),
+      baseOrganizationId: getBudgetOrgBaseId(catalogItem),
+      organizationCode: getBudgetOrgCodeForYear(catalogItem),
+      organizationDocumentRunCode: stripBudgetOrgRunCodeYear(catalogItem.documentRunCode || catalogItem.runCode)
+    };
+  };
+
+  const findBudgetOrgCatalogItemBySelection = (orgType = "", orgName = "") => {
+    const typeKey = normalizeBudgetOrgMatchValue(orgType);
+    const nameKey = normalizeBudgetOrgMatchValue(orgName);
+    return getBudgetOrgCatalogRows()
+      .filter(shouldUseBudgetOrgItemForRepresentativeYear)
+      .find((item) =>
+        normalizeBudgetOrgMatchValue(item?.group || item?.organizationType || item?.orgGroup) === typeKey &&
+        normalizeBudgetOrgMatchValue(getBudgetOrgNameForRepresentativeYear(item)) === nameKey
+      ) || null;
+  };
+
+  const findBudgetOrgCatalogItemByAnyName = (orgType = "", orgName = "") => {
+    const typeKey = normalizeBudgetOrgMatchValue(orgType);
+    const nameKey = normalizeBudgetOrgMatchValue(orgName);
+    return getBudgetOrgCatalogRows()
+      .filter(shouldUseBudgetOrgItemForRepresentativeYear)
+      .find((item) => {
+        if (normalizeBudgetOrgMatchValue(item?.group || item?.organizationType || item?.orgGroup) !== typeKey) return false;
+        const values = getBudgetOrgCatalogMatchValues(item);
+        return values.names.some((name) => normalizeBudgetOrgMatchValue(name) === nameKey);
+      }) || null;
+  };
+
+  const isSameBudgetOrg = (left = {}, right = {}) => {
+    const leftType = normalizeBudgetOrgMatchValue(left.organizationType);
+    const rightType = normalizeBudgetOrgMatchValue(right.organizationType);
+    if (!leftType || !rightType || leftType !== rightType) return false;
+
+    const leftId = normalizeOrgText(left.organizationId);
+    const rightId = normalizeOrgText(right.organizationId);
+    if (leftId && rightId && leftId === rightId) return true;
+
+    const leftBaseId = normalizeOrgText(left.baseOrganizationId);
+    const rightBaseId = normalizeOrgText(right.baseOrganizationId);
+    if (leftBaseId && rightBaseId && leftBaseId === rightBaseId) return true;
+
+    const leftCode = normalizeBudgetOrgMatchValue(left.organizationCode);
+    const rightCode = normalizeBudgetOrgMatchValue(right.organizationCode);
+    if (leftCode && rightCode && leftCode === rightCode) return true;
+
+    return normalizeBudgetOrgMatchValue(left.organizationName) === normalizeBudgetOrgMatchValue(right.organizationName);
+  };
+
   const normalizeRoundName = (value) => (value || "").toString().trim().replace(/\s+/g, " ");
 
   const normalizeDeadlineTime = (value) => {
@@ -381,13 +509,20 @@ function initBudgetApprovalRequestPage() {
     return Array.isArray(currentApprovedRepresentatives)
       ? currentApprovedRepresentatives
         .filter((item) => isCurrentRepresentativeAcademicYear(item))
-        .map((item) => ({
-          id: (item.id || "").toString(),
-          organizationType: normalizeOrgText(item.organizationType),
-          organizationName: normalizeOrgText(item.organizationName),
-          representativeRole: normalizeOrgText(item.representativeRole),
-          academicYear: getRepresentativeAcademicYear(item)
-        }))
+        .map((item) => {
+          const org = getResolvedRepresentativeOrganization(item);
+          return {
+            id: (item.id || "").toString(),
+            organizationType: normalizeOrgText(org.organizationType),
+            organizationName: normalizeOrgText(org.organizationName),
+            organizationId: normalizeOrgText(org.organizationId),
+            baseOrganizationId: normalizeOrgText(org.baseOrganizationId),
+            organizationCode: normalizeOrgText(org.organizationCode).toUpperCase(),
+            organizationDocumentRunCode: normalizeOrgText(org.organizationDocumentRunCode),
+            representativeRole: normalizeOrgText(item.representativeRole),
+            academicYear: getRepresentativeAcademicYear(item)
+          };
+        })
         .filter((item) => item.organizationType && item.organizationName)
       : [];
   };
@@ -396,8 +531,12 @@ function initBudgetApprovalRequestPage() {
     const type = normalizeOrgText(orgType);
     const name = normalizeOrgText(orgName);
     if (!type || !name) return null;
+    const targetCatalogItem = findBudgetOrgCatalogItemBySelection(type, name) || findBudgetOrgCatalogItemByAnyName(type, name);
+    const targetOrg = targetCatalogItem
+      ? getResolvedRepresentativeOrganization(targetCatalogItem)
+      : { organizationType: type, organizationName: name };
     return getApprovedRepresentativeOptions().find((item) =>
-      item.organizationType === type && item.organizationName === name
+      isSameBudgetOrg(item, targetOrg)
     ) || null;
   };
 
@@ -486,8 +625,7 @@ function initBudgetApprovalRequestPage() {
     const rows = Array.isArray(latestMyBudgetRequests) ? latestMyBudgetRequests : [];
     const matchedRows = orgType && orgName
       ? rows.filter((item) =>
-        normalizeOrgText(item.organizationType) === orgType &&
-        normalizeOrgText(item.organizationName) === orgName
+        findApprovedRepresentativeForOrg(item.organizationType, item.organizationName)?.id === representative.id
       )
       : [];
     const totalExpense = matchedRows.reduce((sum, item) => sum + toBudgetAmount(item.estimatedExpense), 0);
@@ -992,8 +1130,9 @@ function initBudgetApprovalRequestPage() {
     }
 
     representativeApplicationsBodyEl.innerHTML = items.map((item) => {
-      const orgType = escapeHtml(item.organizationType || "-");
-      const orgName = escapeHtml(item.organizationName || "-");
+      const org = getResolvedRepresentativeOrganization(item);
+      const orgType = escapeHtml(org.organizationType || "-");
+      const orgName = escapeHtml(org.organizationName || "-");
       const role = escapeHtml(item.representativeRole || "-");
       const academicYear = escapeHtml(getRepresentativeAcademicYear(item));
       return `
@@ -2046,17 +2185,35 @@ function initBudgetApprovalRequestPage() {
     const user = readCurrentUser();
     const email = (user?.email || "").toString().trim().toLowerCase();
     const profile = readLocalLoginProfileByEmail(email);
+    const selectedOrgType = normalizeOrgText(representativeOrgTypeEl?.value);
+    const selectedOrgName = normalizeOrgText(representativeOrgDeptEl?.value);
+    const selectedCatalogItem = findBudgetOrgCatalogItemBySelection(selectedOrgType, selectedOrgName);
+    const selectedOrg = selectedCatalogItem
+      ? getResolvedRepresentativeOrganization(selectedCatalogItem)
+      : {
+        organizationType: selectedOrgType,
+        organizationName: selectedOrgName,
+        organizationId: "",
+        baseOrganizationId: "",
+        organizationCode: "",
+        organizationDocumentRunCode: ""
+      };
     return {
       requestType: "organization_representative",
       status: "pending",
       academicYear: getRepresentativeApplicationAcademicYear(),
-      organizationType: normalizeOrgText(representativeOrgTypeEl?.value),
-      organizationName: normalizeOrgText(representativeOrgDeptEl?.value),
+      organizationType: selectedOrg.organizationType,
+      organizationName: selectedOrg.organizationName,
+      organizationId: selectedOrg.organizationId,
+      organizationCatalogId: selectedOrg.organizationId,
+      baseOrganizationId: selectedOrg.baseOrganizationId,
+      organizationCode: selectedOrg.organizationCode,
+      organizationDocumentRunCode: selectedOrg.organizationDocumentRunCode,
       representativeRole: getRepresentativeRoleValue(),
       evidenceNote: normalizeOrgText(representativeEvidenceEl?.value),
       applicantUid: (user?.uid || "").toString(),
       applicantEmail: email,
-      requestedPosition: `ตัวแทนองค์กร: ${normalizeOrgText(representativeOrgDeptEl?.value)}`,
+      requestedPosition: `ตัวแทนองค์กร: ${selectedOrg.organizationName}`,
       requestedDivisionCodeYY: "ORG",
       requestedLevelCodeZZ: "REP",
       requester: {

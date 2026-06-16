@@ -666,8 +666,9 @@ function initStaffAccessPages() {
     const closeEl = document.getElementById("orgRepresentativeDeleteConfirmClose");
     const applicant = getOrgRepresentativeApplicant(item);
     const displayName = applicant.displayName || applicant.email || "-";
-    const orgName = (item?.organizationName || "-").toString();
-    const orgType = (item?.organizationType || "-").toString();
+    const org = getResolvedOrgRepresentativeOrganization(item);
+    const orgName = (org.organizationName || "-").toString();
+    const orgType = (org.organizationType || "-").toString();
     const academicYear = getOrgRepresentativeAcademicYear(item);
 
     if (
@@ -2740,6 +2741,83 @@ function initStaffAccessPages() {
     return `${type || "-"}||${name || "-"}`.toLowerCase();
   };
 
+  const normalizeOrgRepresentativeMatchValue = (value = "") =>
+    normalizeOrganizationCatalogText(value).toLowerCase().replace(/\s+/g, " ");
+
+  const getOrgRepresentativeCatalogMatchValues = (item = {}) => {
+    const group = normalizeOrganizationCatalogText(item?.group || item?.organizationType || item?.orgGroup);
+    const name = normalizeOrganizationCatalogText(item?.name || item?.organizationName || item?.orgName);
+    const code = normalizeOrganizationCatalogText(item?.code || item?.orgCode || item?.organizationCode).toUpperCase();
+    const runCode = stripOrganizationCatalogDocumentRunYear(item?.documentRunCode || item?.runCode || item?.organizationDocumentRunCode);
+    const names = Array.from(new Set([
+      name,
+      ...Object.values(item?.nameByAcademicYear || item?.organizationNameByAcademicYear || item?.orgNameByAcademicYear || {})
+        .map((value) => normalizeOrganizationCatalogText(value))
+    ].filter(Boolean)));
+    return { group, name, code, runCode, names };
+  };
+
+  const findOrgRepresentativeCatalogItemForApplication = (item = {}) => {
+    const rows = getOrganizationCatalogRows();
+    if (!rows.length) return null;
+    const orgType = normalizeOrganizationCatalogText(item.organizationType || item.orgGroup);
+    const orgName = normalizeOrganizationCatalogText(item.organizationName || item.orgName);
+    const orgId = normalizeOrganizationCatalogText(item.organizationId || item.organizationCatalogId);
+    const baseId = normalizeOrganizationCatalogText(item.baseOrganizationId || item.baseOrgId || item.rootOrganizationId);
+    const orgCode = normalizeOrganizationCatalogText(item.organizationCode || item.orgCode || item.code).toUpperCase();
+    const runCode = stripOrganizationCatalogDocumentRunYear(item.organizationDocumentRunCode || item.documentRunCode || item.runCode);
+    const orgNameKey = normalizeOrgRepresentativeMatchValue(orgName);
+    const orgCodeKey = normalizeOrgRepresentativeMatchValue(orgCode);
+    const runCodeKey = normalizeOrgRepresentativeMatchValue(runCode);
+    const orgTypeKey = normalizeOrgRepresentativeMatchValue(orgType);
+
+    const sameGroupRows = rows.filter((row) => {
+      const rowGroupKey = normalizeOrgRepresentativeMatchValue(row.group);
+      return !orgTypeKey || !rowGroupKey || rowGroupKey === orgTypeKey;
+    });
+    const candidateRows = sameGroupRows.length ? sameGroupRows : rows;
+    const byIdentity = candidateRows.find((row) => {
+      const rowId = normalizeOrganizationCatalogText(row.id);
+      const rowBaseId = getOrganizationCatalogBaseId(row);
+      return (orgId && rowId === orgId) || (baseId && rowBaseId && rowBaseId === baseId);
+    });
+    if (byIdentity) return byIdentity;
+
+    const byCode = candidateRows.find((row) => {
+      const values = getOrgRepresentativeCatalogMatchValues(row);
+      return (orgCodeKey && normalizeOrgRepresentativeMatchValue(values.code) === orgCodeKey) ||
+        (runCodeKey && normalizeOrgRepresentativeMatchValue(values.runCode) === runCodeKey);
+    });
+    if (byCode) return byCode;
+
+    return candidateRows.find((row) => {
+      const values = getOrgRepresentativeCatalogMatchValues(row);
+      return values.names.some((name) => normalizeOrgRepresentativeMatchValue(name) === orgNameKey);
+    }) || null;
+  };
+
+  const getResolvedOrgRepresentativeOrganization = (item = {}) => {
+    const catalogItem = findOrgRepresentativeCatalogItemForApplication(item);
+    if (!catalogItem) {
+      return {
+        organizationType: normalizeOrganizationCatalogText(item.organizationType || item.orgGroup),
+        organizationName: normalizeOrganizationCatalogText(item.organizationName || item.orgName),
+        organizationCode: normalizeOrganizationCatalogText(item.organizationCode || item.orgCode || item.code).toUpperCase(),
+        organizationId: normalizeOrganizationCatalogText(item.organizationId || item.organizationCatalogId),
+        baseOrganizationId: normalizeOrganizationCatalogText(item.baseOrganizationId || item.baseOrgId || item.rootOrganizationId),
+        documentRunCode: stripOrganizationCatalogDocumentRunYear(item.organizationDocumentRunCode || item.documentRunCode || item.runCode)
+      };
+    }
+    return {
+      organizationType: catalogItem.group || normalizeOrganizationCatalogText(item.organizationType || item.orgGroup),
+      organizationName: catalogItem.name || normalizeOrganizationCatalogText(item.organizationName || item.orgName),
+      organizationCode: catalogItem.code || normalizeOrganizationCatalogText(item.organizationCode || item.orgCode || item.code).toUpperCase(),
+      organizationId: normalizeOrganizationCatalogText(catalogItem.id),
+      baseOrganizationId: getOrganizationCatalogBaseId(catalogItem),
+      documentRunCode: catalogItem.documentRunCode || stripOrganizationCatalogDocumentRunYear(item.organizationDocumentRunCode || item.documentRunCode || item.runCode)
+    };
+  };
+
   const getKnownOrganizationFilters = () => {
     try {
       if (typeof orgFilters !== "undefined" && Array.isArray(orgFilters)) return orgFilters;
@@ -3969,6 +4047,90 @@ function initStaffAccessPages() {
       }));
   };
 
+  const doesOrgRepresentativeApplicationMatchCatalogChange = (item = {}, payload = {}, previousItem = {}) => {
+    const appYear = getOrgRepresentativeAcademicYear(item);
+    const payloadYear = normalizeOrganizationCatalogAcademicYearText(payload.academicYear);
+    if (payloadYear && appYear && appYear !== payloadYear) return false;
+
+    const appType = normalizeOrgRepresentativeMatchValue(item.organizationType || item.orgGroup);
+    const nextType = normalizeOrgRepresentativeMatchValue(payload.group);
+    if (appType && nextType && appType !== nextType) return false;
+
+    const appId = normalizeOrganizationCatalogText(item.organizationId || item.organizationCatalogId);
+    const appBaseId = normalizeOrganizationCatalogText(item.baseOrganizationId || item.baseOrgId || item.rootOrganizationId);
+    const payloadId = normalizeOrganizationCatalogText(payload.id);
+    const payloadBaseId = getOrganizationCatalogBaseId(payload);
+    const previousId = normalizeOrganizationCatalogText(previousItem?.id);
+    const previousBaseId = getOrganizationCatalogBaseId(previousItem);
+    if (
+      (appId && [payloadId, previousId].filter(Boolean).includes(appId)) ||
+      (appBaseId && [payloadBaseId, previousBaseId].filter(Boolean).includes(appBaseId))
+    ) {
+      return true;
+    }
+
+    const appCode = normalizeOrgRepresentativeMatchValue(item.organizationCode || item.orgCode || item.code);
+    const appRunCode = normalizeOrgRepresentativeMatchValue(stripOrganizationCatalogDocumentRunYear(item.organizationDocumentRunCode || item.documentRunCode || item.runCode));
+    const previousValues = getOrgRepresentativeCatalogMatchValues(previousItem || {});
+    const nextValues = getOrgRepresentativeCatalogMatchValues(payload || {});
+    if (
+      (appCode && [previousValues.code, nextValues.code].some((code) => normalizeOrgRepresentativeMatchValue(code) === appCode)) ||
+      (appRunCode && [previousValues.runCode, nextValues.runCode].some((runCode) => normalizeOrgRepresentativeMatchValue(runCode) === appRunCode))
+    ) {
+      return true;
+    }
+
+    const appName = normalizeOrgRepresentativeMatchValue(item.organizationName || item.orgName);
+    if (!appName) return false;
+    return [...previousValues.names, ...nextValues.names]
+      .some((name) => normalizeOrgRepresentativeMatchValue(name) === appName);
+  };
+
+  const syncOrgRepresentativeApplicationsForCatalogChange = async ({ payload = {}, previousItem = {}, updatedBy = "", timestampValue = null } = {}) => {
+    if (!resolveStore() || !firestore.doc || !firestore.updateDoc) return 0;
+    const matchedItems = currentOrgRepresentativeApplications.filter((item) =>
+      doesOrgRepresentativeApplicationMatchCatalogChange(item, payload, previousItem)
+    );
+    if (!matchedItems.length) return 0;
+
+    const stamp = timestampValue || (firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString());
+    const fields = {
+      organizationType: payload.group || "",
+      organizationName: payload.name || payload.formName || "",
+      organizationId: payload.id || "",
+      organizationCatalogId: payload.id || "",
+      baseOrganizationId: payload.baseOrganizationId || "",
+      organizationCode: payload.code || "",
+      organizationDocumentRunCode: payload.documentRunCode || "",
+      requestedPosition: payload.name || payload.formName ? `ตัวแทนองค์กร: ${payload.name || payload.formName}` : undefined,
+      updatedAt: stamp,
+      organizationSyncedAt: stamp,
+      organizationSyncedBy: updatedBy
+    };
+    Object.keys(fields).forEach((key) => {
+      if (typeof fields[key] === "undefined") delete fields[key];
+    });
+
+    if (firestore.writeBatch && matchedItems.length > 1) {
+      for (let start = 0; start < matchedItems.length; start += 450) {
+        const batch = firestore.writeBatch(firestore.db);
+        matchedItems.slice(start, start + 450).forEach((item) => {
+          batch.update(firestore.doc(firestore.db, COLLECTION_ORG_REPRESENTATIVES, item.id), fields);
+        });
+        await batch.commit();
+      }
+    } else {
+      for (const item of matchedItems) {
+        await firestore.updateDoc(firestore.doc(firestore.db, COLLECTION_ORG_REPRESENTATIVES, item.id), fields);
+      }
+    }
+
+    currentOrgRepresentativeApplications = currentOrgRepresentativeApplications.map((item) =>
+      matchedItems.some((matched) => matched.id === item.id) ? { ...item, ...fields } : item
+    );
+    return matchedItems.length;
+  };
+
   const buildOrganizationCatalogYearLinkUpdates = ({ academicYear = getOrganizationCatalogDisplayAcademicYear() } = {}) => {
     const year = normalizeOrganizationCatalogAcademicYearText(academicYear);
     if (!/^\d{4}$/.test(year)) return [];
@@ -4558,6 +4720,12 @@ function initStaffAccessPages() {
     const currentUser = readCurrentUser();
     const updatedBy = (currentUser?.email || getCurrentAuthEmail() || "").toString().trim().toLowerCase();
     const timestampValue = firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString();
+    const previousCatalogItem = getRawOrganizationCatalogItemById(payload.legacyOrganizationId || payload.id) ||
+      getRawOrganizationCatalogRows().find((item) => {
+        const baseId = getOrganizationCatalogBaseId(item);
+        return baseId && baseId === payload.baseOrganizationId;
+      }) ||
+      null;
     try {
       if (organizationCatalogSaveBtnEl) organizationCatalogSaveBtnEl.disabled = true;
       setMessage(organizationCatalogFormMessageEl, "กำลังบันทึก...", "#1d4ed8");
@@ -4611,8 +4779,20 @@ function initStaffAccessPages() {
       });
       setLocalOrganizationCatalogRows(nextRows);
       await syncPublicOrganizationCatalogCache(nextRows);
+      const syncedRepresentativeCount = await syncOrgRepresentativeApplicationsForCatalogChange({
+        payload,
+        previousItem: previousCatalogItem,
+        updatedBy,
+        timestampValue
+      });
       fillOrganizationCatalogForm(getOrganizationCatalogRows().find((item) => item.id === id));
-      setMessage(organizationCatalogFormMessageEl, "บันทึกทะเบียนองค์กรแล้ว และอัปเดต public cache แล้ว", "#047857");
+      setMessage(
+        organizationCatalogFormMessageEl,
+        syncedRepresentativeCount
+          ? `บันทึกทะเบียนองค์กรแล้ว อัปเดต public cache และ sync ตัวแทน ${syncedRepresentativeCount.toLocaleString("th-TH")} รายการแล้ว`
+          : "บันทึกทะเบียนองค์กรแล้ว และอัปเดต public cache แล้ว",
+        "#047857"
+      );
       renderOrgRepresentativeApplications();
     } catch (error) {
       console.error("save organization catalog failed - app.staff-access.js:3789", error);
@@ -4742,9 +4922,11 @@ function initStaffAccessPages() {
   const compareOrgRepresentativeApplications = (a = {}, b = {}) => {
     const roleCompare = getOrgRepresentativeRoleSortIndex(a) - getOrgRepresentativeRoleSortIndex(b);
     if (roleCompare) return roleCompare;
-    const orgTypeCompare = (a.organizationType || "").toString().localeCompare((b.organizationType || "").toString(), "th");
+    const orgA = getResolvedOrgRepresentativeOrganization(a);
+    const orgB = getResolvedOrgRepresentativeOrganization(b);
+    const orgTypeCompare = (orgA.organizationType || "").toString().localeCompare((orgB.organizationType || "").toString(), "th");
     if (orgTypeCompare) return orgTypeCompare;
-    const orgNameCompare = (a.organizationName || "").toString().localeCompare((b.organizationName || "").toString(), "th");
+    const orgNameCompare = (orgA.organizationName || "").toString().localeCompare((orgB.organizationName || "").toString(), "th");
     if (orgNameCompare) return orgNameCompare;
     const applicantA = getOrgRepresentativeApplicant(a);
     const applicantB = getOrgRepresentativeApplicant(b);
@@ -4848,14 +5030,17 @@ function initStaffAccessPages() {
     currentOrgRepresentativeApplications
       .filter((item) => getOrgRepresentativeAcademicYear(item) === selectedAcademicYear)
       .forEach((item) => {
-      const orgType = (item.organizationType || "").toString().trim();
-      const orgName = (item.organizationName || "").toString().trim();
+      const org = getResolvedOrgRepresentativeOrganization(item);
+      const orgType = (org.organizationType || "").toString().trim();
+      const orgName = (org.organizationName || "").toString().trim();
       if (!orgName) return;
       const key = getOrgRepresentativeOrgKey(orgType, orgName);
       if (!orgMap.has(key)) {
-        orgMap.set(key, { key, orgType, orgName, orgCode: "", documentRunCode: "", applications: [], approved: [], pending: [], rejected: [] });
+        orgMap.set(key, { key, orgType, orgName, orgCode: org.organizationCode || "", documentRunCode: org.documentRunCode || "", applications: [], approved: [], pending: [], rejected: [] });
       }
       const entry = orgMap.get(key);
+      if (!entry.orgCode) entry.orgCode = org.organizationCode || "";
+      if (!entry.documentRunCode) entry.documentRunCode = org.documentRunCode || "";
       entry.applications.push(item);
       const status = normalizeApplicationStatus(item.status);
       if (status === "approved") entry.approved.push(item);
@@ -4880,7 +5065,8 @@ function initStaffAccessPages() {
           entry.documentRunCode,
           ...entry.applications.flatMap((item) => {
             const applicant = getOrgRepresentativeApplicant(item);
-            return [applicant.displayName, applicant.email, applicant.phone, applicant.lineId, item.representativeRole, getOrgRepresentativeAcademicYear(item)];
+            const org = getResolvedOrgRepresentativeOrganization(item);
+            return [applicant.displayName, applicant.email, applicant.phone, applicant.lineId, org.organizationName, org.organizationCode, item.representativeRole, getOrgRepresentativeAcademicYear(item)];
           })
         ].join(" ").toLowerCase()
       }))
@@ -5024,8 +5210,9 @@ function initStaffAccessPages() {
     orgRepresentativePendingBodyEl.innerHTML = currentOrgRepresentativePending.map((item) => {
       const id = (item.id || "").toString();
       const applicant = getOrgRepresentativeApplicant(item);
-      const orgType = (item.organizationType || "-").toString();
-      const orgName = (item.organizationName || "-").toString();
+      const org = getResolvedOrgRepresentativeOrganization(item);
+      const orgType = (org.organizationType || "-").toString();
+      const orgName = (org.organizationName || "-").toString();
       const role = (item.representativeRole || "-").toString();
       const evidence = (item.evidenceNote || "-").toString();
       return `
@@ -5076,12 +5263,13 @@ function initStaffAccessPages() {
 
     orgRepresentativeHistoryBodyEl.innerHTML = currentOrgRepresentativeApproved.map((item) => {
       const applicant = getOrgRepresentativeApplicant(item);
-      const orgType = (item.organizationType || "-").toString();
-      const orgName = (item.organizationName || "-").toString();
+      const org = getResolvedOrgRepresentativeOrganization(item);
+      const orgType = (org.organizationType || "-").toString();
+      const orgName = (org.organizationName || "-").toString();
       const academicYear = getOrgRepresentativeAcademicYear(item);
       const representativeContext = [
-        item.organizationName,
-        item.organizationType,
+        orgName,
+        orgType,
         academicYear ? `ปีการศึกษา ${academicYear}` : ""
       ].map((value) => (value || "").toString().trim()).filter(Boolean).join(" · ");
       const role = (item.representativeRole || "-").toString();
@@ -5197,7 +5385,10 @@ function initStaffAccessPages() {
       const id = (item.id || "").toString();
       return id && getOrgRepresentativeAcademicYear(item) === selectedAcademicYear;
     });
-    const orgCount = new Set(targetItems.map((item) => getOrgRepresentativeOrgKey(item.organizationType || "", item.organizationName || ""))).size;
+    const orgCount = new Set(targetItems.map((item) => {
+      const org = getResolvedOrgRepresentativeOrganization(item);
+      return getOrgRepresentativeOrgKey(org.organizationType || "", org.organizationName || "");
+    })).size;
     return { selectedAcademicYear, targetItems, orgCount };
   };
 
@@ -5464,6 +5655,7 @@ function initStaffAccessPages() {
     const status = normalizeApplicationStatus(item.status);
     const statusText = status === "approved" ? "อนุมัติแล้ว" : status === "rejected" ? "ไม่อนุมัติ" : "รออนุมัติ";
     const statusClass = status === "approved" ? "badge-approved" : status === "rejected" ? "badge-rejected" : "badge-pending";
+    const org = getResolvedOrgRepresentativeOrganization(item);
     approvalDetailBodyEl.setAttribute("data-application-id", applicationId);
     approvalDetailBodyEl.setAttribute("data-request-key", requestKey);
     approvalDetailBodyEl.innerHTML = `
@@ -5506,11 +5698,11 @@ function initStaffAccessPages() {
           <div class="modal-section-grid">
             <div>
               <div class="modal-item-label">ฝ่าย / ชมรม</div>
-              <div class="modal-item-value">${toSafeText(item.organizationName || "-")}</div>
+              <div class="modal-item-value">${toSafeText(org.organizationName || "-")}</div>
             </div>
             <div>
               <div class="modal-item-label">ประเภทองค์กร</div>
-              <div class="modal-item-value">${toSafeText(item.organizationType || "-")}</div>
+              <div class="modal-item-value">${toSafeText(org.organizationType || "-")}</div>
             </div>
             <div>
               <div class="modal-item-label">ตำแหน่งในองค์กร</div>
@@ -6609,7 +6801,8 @@ function initStaffAccessPages() {
 
     try {
       await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_ORG_REPRESENTATIVES, id));
-      const orgKey = getOrgRepresentativeOrgKey(target.organizationType || "", target.organizationName || "");
+      const targetOrg = getResolvedOrgRepresentativeOrganization(target);
+      const orgKey = getOrgRepresentativeOrgKey(targetOrg.organizationType || "", targetOrg.organizationName || "");
       const shouldRefreshOrgModal = !!approvalDetailBodyEl?.querySelector(".org-representative-org-detail");
       currentOrgRepresentativeApplications = currentOrgRepresentativeApplications
         .filter((item) => (item.id || "").toString() !== id);

@@ -55,6 +55,7 @@
   const formEl = document.getElementById("budgetStaffManageForm");
   const saveBtnEl = document.getElementById("budgetStaffManageSaveBtn");
   const cancelEditBtnEl = document.getElementById("budgetStaffManageCancelEditBtn");
+  const deleteEditBtnEl = document.getElementById("budgetStaffManageDeleteBtn");
   const formMessageEl = document.getElementById("budgetStaffManageMessage");
   const staffRoundInputEl = document.getElementById("budgetStaffRoundInput");
   const orgTypeInputEl = document.getElementById("budgetStaffOrgTypeInput");
@@ -72,6 +73,14 @@
 
   const tableBodyEl = document.getElementById("budgetStaffRequestsBody");
   const exportCsvBtnEl = document.getElementById("budgetStaffExportCsvBtn");
+  const requestDeleteModalEl = document.getElementById("budgetRequestDeleteModal");
+  const requestDeleteCloseBtnEl = document.getElementById("budgetRequestDeleteCloseBtn");
+  const requestDeleteCancelBtnEl = document.getElementById("budgetRequestDeleteCancelBtn");
+  const requestDeleteConfirmBtnEl = document.getElementById("budgetRequestDeleteConfirmBtn");
+  const requestDeleteConfirmCheckEl = document.getElementById("budgetRequestDeleteConfirmCheck");
+  const requestDeleteNameEl = document.getElementById("budgetRequestDeleteName");
+  const requestDeleteSummaryEl = document.getElementById("budgetRequestDeleteSummary");
+  const requestDeleteMessageEl = document.getElementById("budgetRequestDeleteMessage");
   const roundDeleteModalEl = document.getElementById("budgetRoundDeleteModal");
   const roundDeleteCloseBtnEl = document.getElementById("budgetRoundDeleteCloseBtn");
   const roundDeleteCancelBtnEl = document.getElementById("budgetRoundDeleteCancelBtn");
@@ -128,6 +137,7 @@
     !formEl ||
     !saveBtnEl ||
     !cancelEditBtnEl ||
+    !deleteEditBtnEl ||
     !formMessageEl ||
     !staffRoundInputEl ||
     !orgTypeInputEl ||
@@ -143,6 +153,14 @@
     !statusInputEl ||
     !descriptionInputEl ||
     !tableBodyEl ||
+    !requestDeleteModalEl ||
+    !requestDeleteCloseBtnEl ||
+    !requestDeleteCancelBtnEl ||
+    !requestDeleteConfirmBtnEl ||
+    !requestDeleteConfirmCheckEl ||
+    !requestDeleteNameEl ||
+    !requestDeleteSummaryEl ||
+    !requestDeleteMessageEl ||
     !roundDeleteModalEl ||
     !roundDeleteCloseBtnEl ||
     !roundDeleteCancelBtnEl ||
@@ -158,6 +176,9 @@
 
   if (roundDeleteModalEl.parentElement !== document.body) {
     document.body.appendChild(roundDeleteModalEl);
+  }
+  if (requestDeleteModalEl.parentElement !== document.body) {
+    document.body.appendChild(requestDeleteModalEl);
   }
   if (clearCodeModalEl.parentElement !== document.body) {
     document.body.appendChild(clearCodeModalEl);
@@ -188,6 +209,7 @@
   let representativeApplicationYear = "";
   let budgetActiveRounds = [];
   let editingBudgetRoundId = "";
+  let requestDeleteContext = null;
   let roundDeleteResolve = null;
   let roundDeleteContext = null;
   let clearCodeResolve = null;
@@ -1384,6 +1406,7 @@
     const isEdit = !!editingId;
     saveBtnEl.textContent = isEdit ? "บันทึกการแก้ไข" : "เพิ่มรายการ";
     cancelEditBtnEl.hidden = !isEdit;
+    deleteEditBtnEl.hidden = !isEdit;
   };
 
   const resetForm = () => {
@@ -1646,6 +1669,7 @@
     const grouped = new Map();
     requestRows.forEach((item) => {
       if (normalizeText(item.requestType || "budget_approval") !== "budget_approval") return;
+      if (roundFilter !== "all" && normalizeText(item.budgetRoundId) !== roundFilter) return;
       const status = normalizeText(item.status || "pending").toLowerCase();
       const orgName = normalizeText(item.organizationName) || "-";
       const group = normalizeText(item.organizationType) || orgGroupMap.get(orgName);
@@ -1937,7 +1961,9 @@
     }
     const year = normalizeAcademicYearText(roundYearInputEl.value);
     const roundNo = normalizeRoundName(roundNoInputEl.value);
-    const roundId = buildBudgetRoundId(year, roundNo);
+    const generatedRoundId = buildBudgetRoundId(year, roundNo);
+    const existingEditingRound = budgetActiveRounds.find((round) => round.id === editingBudgetRoundId);
+    const roundId = existingEditingRound ? existingEditingRound.id : generatedRoundId;
     if (!roundId) {
       setMessage(actionMessageEl, "กรุณาระบุปีการศึกษาและชื่อรอบ", "#b91c1c");
       return;
@@ -1975,10 +2001,56 @@
       setMessage(actionMessageEl, groupTotalValidation.message, "#b91c1c");
       return;
     }
+    const duplicateRound = budgetActiveRounds.find((round) =>
+      round.id !== editingBudgetRoundId &&
+      normalizeAcademicYearText(round.year) === year &&
+      normalizeRoundName(round.roundNo) === roundNo
+    );
+    if (duplicateRound) {
+      setMessage(actionMessageEl, "มีรอบชื่อนี้ในปีการศึกษานี้แล้ว กรุณาใช้ชื่อรอบอื่น", "#b91c1c");
+      return;
+    }
     const nextActiveRounds = [
       ...budgetActiveRounds.filter((round) => round.id !== roundId && round.id !== editingBudgetRoundId),
       { id: roundId, year, roundNo, deadline, deadlineTime, label: formatBudgetRoundLabel(year, roundNo), budgetCeiling: ceiling, budgetGroupCeilings: groupCeilings }
     ].sort((a, b) => a.year.localeCompare(b.year, "th", { numeric: true }) || a.roundNo.localeCompare(b.roundNo, "th", { numeric: true }));
+    const shouldSyncRequestRoundMetadata = !!existingEditingRound && (
+      normalizeAcademicYearText(existingEditingRound.year) !== year ||
+      normalizeRoundName(existingEditingRound.roundNo) !== roundNo
+    );
+    const requestRoundPatch = { budgetRoundYear: year, budgetRoundNo: roundNo };
+    const applySavedDeadlineState = () => {
+      budgetCeiling = ceiling;
+      budgetGroupCeilings = groupCeilings;
+      budgetRoundYear = year;
+      budgetRoundNo = roundNo;
+      editingBudgetRoundId = roundId;
+      budgetActiveRounds = nextActiveRounds;
+      writeLocalBudgetCeiling(ceiling);
+      writeLocalBudgetGroupCeilings(groupCeilings);
+    };
+    const syncRequestMetadataAfterSettingsSave = async () => {
+      if (!shouldSyncRequestRoundMetadata) {
+        return { syncedRequestCount: 0, syncWarning: "" };
+      }
+      try {
+        const syncedRequestCount = await syncBudgetRoundRequestMetadata(firestore, roundId, requestRoundPatch);
+        return { syncedRequestCount, syncWarning: "" };
+      } catch (syncError) {
+        console.error("sync budget round request metadata failed - app.budget-staff.js", syncError);
+        const code = normalizeText(syncError?.code || syncError?.message);
+        const detail = code ? ` (${code})` : "";
+        return {
+          syncedRequestCount: 0,
+          syncWarning: ` แต่ยังอัปเดตชื่อรอบในรายการเดิมไม่ครบ${detail}`
+        };
+      }
+    };
+    const getSavedMessage = (baseMessage, syncedRequestCount = 0, syncWarning = "") => {
+      if (syncWarning) return `${baseMessage}${syncWarning}`;
+      if (!syncedRequestCount) return baseMessage;
+      return `${baseMessage} และอัปเดตรายการเดิม ${syncedRequestCount.toLocaleString("th-TH")} รายการ`;
+    };
     setMessage(actionMessageEl, "กำลังบันทึกการตั้งค่า...", "#1d4ed8");
     try {
       await firestore.setDoc(
@@ -1996,17 +2068,15 @@
         },
         { merge: true }
       );
-      budgetCeiling = ceiling;
-      budgetGroupCeilings = groupCeilings;
-      budgetRoundYear = year;
-      budgetRoundNo = roundNo;
-      editingBudgetRoundId = roundId;
-      budgetActiveRounds = nextActiveRounds;
-      writeLocalBudgetCeiling(ceiling);
-      writeLocalBudgetGroupCeilings(groupCeilings);
+      applySavedDeadlineState();
+      const { syncedRequestCount, syncWarning } = await syncRequestMetadataAfterSettingsSave();
       updateSummary();
       syncRoundStatus();
-      setMessage(actionMessageEl, "บันทึกการตั้งค่าเรียบร้อย", "#047857");
+      if (syncedRequestCount) {
+        renderRows();
+        void refreshOrgSummaryFilters();
+      }
+      setMessage(actionMessageEl, getSavedMessage("บันทึกการตั้งค่าเรียบร้อย", syncedRequestCount, syncWarning), syncWarning ? "#b45309" : "#047857");
       void window.sgcuAuditLog?.write?.({
         action: "budget.settings.update",
         entityType: "budgetApprovalSettings",
@@ -2020,7 +2090,7 @@
           budgetCeiling: ceiling,
           budgetGroupCeilings: groupCeilings
         },
-        metadata: { activeRoundCount: nextActiveRounds.length },
+        metadata: { activeRoundCount: nextActiveRounds.length, syncedRequestCount },
         source: "web_app_staff"
       });
     } catch (error) {
@@ -2038,28 +2108,19 @@
           },
           { merge: true }
         );
-        budgetCeiling = ceiling;
-        budgetGroupCeilings = groupCeilings;
-        budgetRoundYear = year;
-        budgetRoundNo = roundNo;
-        editingBudgetRoundId = roundId;
-        budgetActiveRounds = nextActiveRounds;
-        writeLocalBudgetCeiling(ceiling);
-        writeLocalBudgetGroupCeilings(groupCeilings);
+        applySavedDeadlineState();
+        const { syncedRequestCount, syncWarning } = await syncRequestMetadataAfterSettingsSave();
         updateSummary();
         syncRoundStatus();
+        if (syncedRequestCount) {
+          renderRows();
+          void refreshOrgSummaryFilters();
+        }
         const code = normalizeText(error?.code);
         const detail = code ? ` (${code})` : "";
-        setMessage(actionMessageEl, `บันทึกเส้นตายแล้ว แต่เพดานงบบันทึกเฉพาะเครื่องนี้${detail}`, "#b45309");
+        setMessage(actionMessageEl, getSavedMessage(`บันทึกเส้นตายแล้ว แต่เพดานงบบันทึกเฉพาะเครื่องนี้${detail}`, syncedRequestCount, syncWarning), "#b45309");
       } catch (fallbackError) {
-        budgetCeiling = ceiling;
-        budgetGroupCeilings = groupCeilings;
-        budgetRoundYear = year;
-        budgetRoundNo = roundNo;
-        editingBudgetRoundId = roundId;
-        budgetActiveRounds = nextActiveRounds;
-        writeLocalBudgetCeiling(ceiling);
-        writeLocalBudgetGroupCeilings(groupCeilings);
+        applySavedDeadlineState();
         updateSummary();
         syncRoundStatus();
         const code = normalizeText(fallbackError?.code || error?.code);
@@ -2073,6 +2134,37 @@
     const id = normalizeText(roundId);
     if (!id) return [];
     return requestRows.filter((item) => normalizeText(item.budgetRoundId) === id);
+  };
+
+  const syncBudgetRoundRequestMetadata = async (firestore, roundId = "", patch = {}) => {
+    const id = normalizeText(roundId);
+    const rowsForRound = getRowsForBudgetRound(id).filter((row) => normalizeText(row.id));
+    if (!id || !rowsForRound.length) return 0;
+    if (!firestore.doc || !firestore.updateDoc) {
+      throw new Error("updateDoc unavailable");
+    }
+    const payload = {
+      ...patch,
+      updatedAt: firestore.serverTimestamp()
+    };
+    if (firestore.writeBatch) {
+      for (let index = 0; index < rowsForRound.length; index += 450) {
+        const batch = firestore.writeBatch(firestore.db);
+        rowsForRound.slice(index, index + 450).forEach((row) => {
+          batch.update(firestore.doc(firestore.db, COLLECTION_REQUESTS, row.id), payload);
+        });
+        await batch.commit();
+      }
+    } else {
+      for (const row of rowsForRound) {
+        await firestore.updateDoc(firestore.doc(firestore.db, COLLECTION_REQUESTS, row.id), payload);
+      }
+    }
+    requestRows = requestRows.map((row) => normalizeText(row.budgetRoundId) === id
+      ? { ...row, ...patch }
+      : row
+    );
+    return rowsForRound.length;
   };
 
   const setRoundDeleteModalBusy = (isBusy) => {
@@ -2105,6 +2197,31 @@
     return new Promise((resolve) => {
       roundDeleteResolve = resolve;
     });
+  };
+
+  const setRequestDeleteModalBusy = (isBusy) => {
+    requestDeleteConfirmBtnEl.disabled = isBusy || !requestDeleteConfirmCheckEl.checked;
+    requestDeleteCancelBtnEl.disabled = isBusy;
+    requestDeleteCloseBtnEl.disabled = isBusy;
+    requestDeleteConfirmCheckEl.disabled = isBusy;
+  };
+
+  const closeRequestDeleteModal = () => {
+    requestDeleteContext = null;
+    closeDialog(requestDeleteModalEl);
+  };
+
+  const openRequestDeleteModal = (row) => {
+    requestDeleteContext = row || null;
+    requestDeleteNameEl.textContent = row?.projectName || "รายการคำของบ";
+    const roundLabel = formatBudgetRoundLabel(row?.budgetRoundYear, row?.budgetRoundNo) || normalizeText(row?.budgetRoundId) || "ไม่ระบุรอบ";
+    const orgName = normalizeText(row?.organizationName) || "-";
+    const requested = formatMoney(row?.estimatedExpense || 0);
+    requestDeleteSummaryEl.textContent = `${orgName} • ${roundLabel} • ยอดขอ ${requested} บาท`;
+    requestDeleteMessageEl.textContent = "";
+    requestDeleteConfirmCheckEl.checked = false;
+    setRequestDeleteModalBusy(false);
+    openDialog(requestDeleteModalEl, { focusSelector: "#budgetRequestDeleteCancelBtn" });
   };
 
   const closeClearCodeModal = (result = false) => {
@@ -2623,6 +2740,41 @@
     }
   };
 
+  const deleteBudgetRequestRow = async () => {
+    const row = requestDeleteContext;
+    const id = normalizeText(row?.id);
+    if (!id) return;
+
+    const firestore = getFirestore();
+    const canDelete = !!(firestore.db && firestore.doc && firestore.deleteDoc);
+    if (!canDelete) {
+      setMessage(requestDeleteMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมลบรายการ", "#b91c1c");
+      return;
+    }
+
+    setRequestDeleteModalBusy(true);
+    setMessage(requestDeleteMessageEl, "กำลังลบรายการ...", "#1d4ed8");
+    try {
+      await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_REQUESTS, id));
+      if (editingId === id) resetForm();
+      setMessage(actionMessageEl, "ลบรายการคำของบเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "budget.request.delete",
+        entityType: "budgetApprovalRequest",
+        entityId: id,
+        before: row,
+        source: "web_app_staff"
+      });
+      closeRequestDeleteModal();
+    } catch (error) {
+      console.error("delete budget request failed - app.budget-staff.js", error);
+      const code = normalizeText(error?.code);
+      const detail = code ? ` (${code})` : "";
+      setMessage(requestDeleteMessageEl, `ลบรายการไม่สำเร็จ${detail}`, "#b91c1c");
+      setRequestDeleteModalBusy(false);
+    }
+  };
+
   tableBodyEl.addEventListener("click", (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (!target) return;
@@ -2638,6 +2790,7 @@
   tableBodyEl.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     const target = event.target instanceof HTMLElement ? event.target : null;
+    if (target?.closest("button, a, input, select, textarea")) return;
     const editRow = target?.closest("[data-budget-staff-edit-id]");
     if (!editRow) return;
     event.preventDefault();
@@ -2648,9 +2801,20 @@
   });
 
   cancelEditBtnEl.addEventListener("click", resetForm);
+  deleteEditBtnEl.addEventListener("click", () => {
+    const row = requestRows.find((item) => item.id === editingId);
+    if (row) openRequestDeleteModal(row);
+  });
   formEl.addEventListener("submit", saveForm);
   deadlineSaveBtnEl.addEventListener("click", () => { void saveDeadline(); });
   roundAddBtnEl.addEventListener("click", () => { void saveDeadline(); });
+  requestDeleteCloseBtnEl.addEventListener("click", closeRequestDeleteModal);
+  requestDeleteCancelBtnEl.addEventListener("click", closeRequestDeleteModal);
+  requestDeleteConfirmCheckEl.addEventListener("change", () => setRequestDeleteModalBusy(false));
+  requestDeleteConfirmBtnEl.addEventListener("click", () => { void deleteBudgetRequestRow(); });
+  requestDeleteModalEl.addEventListener("click", (event) => {
+    if (event.target === requestDeleteModalEl) closeRequestDeleteModal();
+  });
   roundDeleteCloseBtnEl.addEventListener("click", () => closeRoundDeleteModal(false));
   roundDeleteCancelBtnEl.addEventListener("click", () => closeRoundDeleteModal(false));
   roundDeleteConfirmBtnEl.addEventListener("click", () => closeRoundDeleteModal(true));

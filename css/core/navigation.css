@@ -1042,8 +1042,8 @@
   .mobile-filter-body .filter-orgtype,
   .mobile-filter-body .filter-org,
   .mobile-filter-body .filter-search,
-  .mobile-filter-body .budget-staff-overview-filters .borrow-form-field,
-  .mobile-filter-body .budget-staff-review-filters .borrow-form-field {
+  .mobile-filter-body .budget-staff-overview-filters .filter-group,
+  .mobile-filter-body .budget-staff-review-filters .filter-group {
     grid-column: 1 / -1;
   }
 

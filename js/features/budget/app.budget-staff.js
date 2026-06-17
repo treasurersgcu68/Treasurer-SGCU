@@ -1697,32 +1697,102 @@
     }));
   };
 
+  const getOrgSummaryChartOrder = (isGroupSummary, groupFilter = "", orgFilter = "") => {
+    if (isGroupSummary) {
+      const groups = collectRepresentativeOrgTypeOptions();
+      if (groups.length) return groups;
+      return Array.from(new Set(
+        requestRows
+          .map((item) => normalizeText(item.organizationType))
+          .filter(Boolean)
+      )).sort((a, b) => b.localeCompare(a, "th"));
+    }
+    if (orgFilter && orgFilter !== "all") return [orgFilter];
+    if (groupFilter && groupFilter !== "all") {
+      const names = collectRepresentativeOrgNameOptions(groupFilter);
+      if (names.length) return names;
+    }
+    const groups = collectRepresentativeOrgTypeOptions();
+    const names = groups.flatMap((group) => collectRepresentativeOrgNameOptions(group));
+    if (names.length) return Array.from(new Set(names));
+    return Array.from(new Set(
+      requestRows
+        .filter((item) => !groupFilter || groupFilter === "all" || normalizeText(item.organizationType) === groupFilter)
+        .map((item) => normalizeText(item.organizationName))
+        .filter(Boolean)
+    )).sort((a, b) => a.localeCompare(b, "th"));
+  };
+
+  const compareOrgSummaryRowsByProjectStatusOrder = (rows, isGroupSummary, groupFilter = "", orgFilter = "") => {
+    const order = getOrgSummaryChartOrder(isGroupSummary, groupFilter, orgFilter);
+    const rankByName = new Map(order.map((name, index) => [name, index]));
+    return rows.sort((a, b) => {
+      const rankA = rankByName.has(a.organizationName) ? rankByName.get(a.organizationName) : Number.MAX_SAFE_INTEGER;
+      const rankB = rankByName.has(b.organizationName) ? rankByName.get(b.organizationName) : Number.MAX_SAFE_INTEGER;
+      if (rankA !== rankB) return rankA - rankB;
+      return a.organizationName.localeCompare(b.organizationName, "th", { numeric: true });
+    });
+  };
+
+  const wrapBudgetOrgChartLabel = (label, maxChars = 28, maxLines = 2) => {
+    const text = normalizeText(label).replace(/\s+/g, " ");
+    if (!text || text.length <= maxChars) return text;
+    const words = typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
+      ? Array.from(new Intl.Segmenter("th", { granularity: "word" }).segment(text))
+        .map((segment) => segment.segment)
+        .filter(Boolean)
+      : text.split(/(\s+)/).filter(Boolean);
+    const lines = [];
+    let current = "";
+    words.forEach((word) => {
+      if (!word) return;
+      const next = current ? `${current}${word}` : word;
+      if (next.length > maxChars && current) {
+        lines.push(current.trim());
+        current = word.trim();
+      } else {
+        current = next;
+      }
+    });
+    if (current) lines.push(current.trim());
+    if (lines.length <= maxLines) return lines;
+    const visible = lines.slice(0, maxLines);
+    visible[visible.length - 1] = `${visible[visible.length - 1]}…`;
+    return visible;
+  };
+
+  const getBudgetOrgChartAxisLabel = (label) => {
+    const isMobile = window.matchMedia?.("(max-width: 720px)")?.matches;
+    return wrapBudgetOrgChartLabel(label, isMobile ? 22 : 30, isMobile ? 3 : 2);
+  };
+
+  const getBudgetOrgChartWrappedLineCount = (label) => {
+    const wrapped = getBudgetOrgChartAxisLabel(label);
+    return Array.isArray(wrapped) ? wrapped.length : 1;
+  };
+
+  const resizeBudgetOrgSummaryChart = (rows = []) => {
+    const container = chartCanvasEl?.parentElement;
+    if (!container) return;
+    const isMobile = window.matchMedia?.("(max-width: 720px)")?.matches;
+    const maxWrappedLines = rows.reduce((max, row) =>
+      Math.max(max, getBudgetOrgChartWrappedLineCount(row.organizationName)), 1);
+    const baseHeight = isMobile ? 340 : 260;
+    const perLabel = isMobile
+      ? Math.max(34, 20 + maxWrappedLines * 14)
+      : Math.max(28, 16 + maxWrappedLines * 13);
+    container.style.height = `${Math.max(baseHeight, rows.length * perLabel)}px`;
+    chartInstance?.resize?.();
+  };
+
   const renderOrgSummaryChart = async () => {
     await window.sgcuVendorLoader?.ensureChart?.();
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
     const isGroupSummary = groupFilter === "all" && orgFilter === "all";
     const summaryUnit = isGroupSummary ? "ประเภทองค์กร" : "องค์กร";
-    const allRows = buildOrgSummaryRows().sort((a, b) => {
-      if (isGroupSummary) {
-        return b.organizationName.localeCompare(a.organizationName, "th");
-      }
-      return b.requested - a.requested || b.approved - a.approved;
-    });
-    const limit = 10;
-    const visibleRows = allRows.slice(0, limit);
-    const hiddenRows = allRows.slice(limit);
-    const rows = visibleRows.slice();
-
-    if (hiddenRows.length) {
-      rows.push({
-        organizationName: "อื่น ๆ",
-        projects: hiddenRows.reduce((sum, row) => sum + row.projects, 0),
-        pending: hiddenRows.reduce((sum, row) => sum + row.pending, 0),
-        requested: hiddenRows.reduce((sum, row) => sum + row.requested, 0),
-        approved: hiddenRows.reduce((sum, row) => sum + row.approved, 0)
-      });
-    }
+    const allRows = compareOrgSummaryRowsByProjectStatusOrder(buildOrgSummaryRows(), isGroupSummary, groupFilter, orgFilter);
+    const rows = allRows.slice();
 
     if (chartInstance) {
       chartInstance.destroy();
@@ -1730,17 +1800,15 @@
     }
 
     orgSummaryCaptionEl.textContent = allRows.length
-      ? isGroupSummary
-        ? `แสดง ${visibleRows.length}${hiddenRows.length ? ` + อื่น ๆ ${hiddenRows.length}` : ""} จาก ${allRows.length} ${summaryUnit}`
-        : `แสดง Top ${visibleRows.length}${hiddenRows.length ? ` + อื่น ๆ ${hiddenRows.length}` : ""} จาก ${allRows.length} ${summaryUnit}`
+      ? `แสดง ${allRows.length.toLocaleString("th-TH")} ${summaryUnit}`
       : "ยังไม่มีข้อมูลคำขอ";
 
     if (!rows.length || typeof window.Chart !== "function") {
       return;
     }
 
-    const isCompactChart = window.matchMedia?.("(max-width: 540px)")?.matches;
-    const yAxisLabelWidth = isCompactChart ? 150 : 190;
+    const isCompactChart = window.matchMedia?.("(max-width: 720px)")?.matches;
+    const yAxisLabelWidth = isCompactChart ? 92 : 170;
 
     chartInstance = new window.Chart(chartCanvasEl.getContext("2d"), {
       type: "bar",
@@ -1767,25 +1835,43 @@
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         layout: {
           padding: {
-            right: isCompactChart ? 18 : 10
+            right: isCompactChart ? 6 : 10
           }
         },
         plugins: {
           legend: {
+            position: "bottom",
             labels: {
-              boxWidth: isCompactChart ? 42 : 52,
-              font: {
-                size: isCompactChart ? 11 : 12
-              }
+              font: { size: 11 },
+              usePointStyle: true,
+              boxWidth: 10,
+              boxHeight: 10
             }
           },
           tooltip: {
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            titleColor: "#111827",
+            bodyColor: "#374151",
+            borderColor: "#e5e7eb",
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 6,
+            bodyFont: { family: "'Kanit', sans-serif", size: 12 },
             callbacks: {
+              label: (item) => {
+                const value = Number(item.raw || 0);
+                return `${item.dataset.label}: ${formatMoney(value)} บาท`;
+              },
               afterBody: (items) => {
                 const row = rows[items?.[0]?.dataIndex || 0];
-                return `โครงการ ${Number(row?.projects || 0).toLocaleString("th-TH")} รายการ`;
+                return [
+                  `ยอดขอรวม: ${formatMoney(row?.requested || 0)} บาท`,
+                  `ยอดอนุมัติรวม: ${formatMoney(row?.approved || 0)} บาท`,
+                  `โครงการ ${Number(row?.projects || 0).toLocaleString("th-TH")} รายการ`
+                ];
               }
             }
           },
@@ -1793,7 +1879,8 @@
             y: {
               enabled: true,
               width: yAxisLabelWidth,
-              gap: isCompactChart ? 6 : 8
+              gap: isCompactChart ? 6 : 8,
+              formatter: (label) => getBudgetOrgChartAxisLabel(label)
             }
           }
         },
@@ -1810,16 +1897,21 @@
           },
           y: {
             afterFit(scale) {
-              scale.width = Math.max(scale.width || 0, yAxisLabelWidth);
+              scale.width = yAxisLabelWidth;
             },
             ticks: {
               display: false,
-              autoSkip: false
+              autoSkip: false,
+              padding: 6,
+              callback(value) {
+                return getBudgetOrgChartAxisLabel(this.getLabelForValue(value));
+              }
             }
           }
         }
       }
     });
+    resizeBudgetOrgSummaryChart(rows);
   };
 
   const renderRows = () => {

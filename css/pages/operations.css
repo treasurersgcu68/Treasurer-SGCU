@@ -1935,11 +1935,31 @@
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
-  min-width: min(100%, 360px);
 }
 
-.budget-org-totals-round-field {
+.budget-org-totals-inline-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  max-width: 100%;
+}
+
+.budget-org-totals-inline-filter label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.budget-org-totals-inline-filter select {
   min-width: 220px;
+  max-width: min(360px, 100%);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
 }
 
 .budget-org-totals-summary {
@@ -1967,6 +1987,19 @@
 }
 
 @media (max-width: 768px) {
+  .budget-org-totals-inline-filter {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .budget-org-totals-inline-filter select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
   .page-view[data-page="budget-approval-request"] .budget-org-totals-table-wrapper {
     max-height: none;
     overflow: visible;
@@ -2315,29 +2348,23 @@
 }
 
 .budget-staff-overview-filters {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
   margin-bottom: 12px;
   width: 100%;
   max-width: none;
 }
 
-.budget-staff-overview-filters .borrow-form-field,
-.budget-staff-overview-filters .login-input {
+.budget-staff-overview-filters .filter-group,
+.budget-staff-overview-filters select {
   width: 100%;
   min-width: 0;
 }
 
 .budget-staff-review-filters {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
   margin-bottom: 12px;
 }
 
-.budget-staff-review-filters .borrow-form-field,
-.budget-staff-review-filters .login-input {
+.budget-staff-review-filters .filter-group,
+.budget-staff-review-filters select {
   width: 100%;
   min-width: 0;
 }
@@ -2396,12 +2423,12 @@
   margin-top: 0;
   flex: 1 1 auto;
   min-height: 420px;
-  border: 1px solid rgba(244, 114, 182, 0.14);
-  border-radius: 18px;
+  border: 0;
+  border-radius: 0;
   box-shadow: none;
-  background: #ffffff;
-  padding: 10px;
-  overflow: hidden;
+  background: transparent;
+  padding: 0;
+  overflow: visible;
 }
 
 .budget-staff-chart-card .chart-inner {
@@ -3454,10 +3481,6 @@
   .budget-org-totals-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .budget-org-totals-actions,
-  .budget-org-totals-round-field {
-    width: 100%;
-  }
   .budget-org-totals-actions .csv-export-btn {
     width: 100%;
     justify-content: center;
@@ -3514,11 +3537,6 @@
 
   .budget-staff-org-summary-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .budget-staff-overview-filters,
-  .budget-staff-review-filters {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .cards.budget-staff-summary-cards {
@@ -5551,11 +5569,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .budget-staff-overview-filters,
-  .budget-staff-review-filters {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .cards.budget-staff-summary-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -6353,11 +6366,6 @@
 
   .budget-staff-org-summary-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .budget-staff-overview-filters,
-  .budget-staff-review-filters {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .cards.budget-staff-summary-cards {
@@ -7913,11 +7921,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .budget-staff-overview-filters,
-  .budget-staff-review-filters {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .cards.budget-staff-summary-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7989,9 +7992,33 @@
     align-items: stretch;
   }
 
-  .budget-staff-overview-filters,
-  .budget-staff-review-filters,
   .budget-staff-org-summary-tools {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cards.budget-staff-summary-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.budget-staff-summary-card.is-ceiling,
+.budget-staff-summary-card.is-reduction {
+  grid-column: span 2;
+}
+
+@media (max-width: 1024px) {
+  .cards.budget-staff-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .budget-staff-summary-card.is-ceiling,
+  .budget-staff-summary-card.is-reduction {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .cards.budget-staff-summary-cards {
     grid-template-columns: 1fr;
   }
 }

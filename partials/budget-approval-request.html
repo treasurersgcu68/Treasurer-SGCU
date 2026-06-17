@@ -18,7 +18,7 @@
                 aria-selected="true"
                 aria-controls="budgetRequestNormalView"
               >
-                หน้าปกติ
+                ยื่นคำขอ
               </button>
               <button
                 id="budgetRequestOrgTotalsViewBtn"
@@ -264,16 +264,16 @@
                 <div class="panel-header budget-org-totals-header">
                   <div>
                     <div class="panel-title">ยอดของบแยกตามองค์กร</div>
-                    <div class="panel-caption budget-org-totals-note">แสดงยอดรวมขององค์กรในประเภทเดียวกับสิทธิ์ตัวแทน และเลือกดูได้เฉพาะรอบที่ปิดรับคำขอแล้ว</div>
-                    <div class="panel-caption" id="budgetOrgTotalsCaption">กำลังโหลดข้อมูล...</div>
-                  </div>
-                  <div class="budget-org-totals-actions">
-                    <div class="borrow-form-field budget-org-totals-round-field">
-                      <label class="login-label" for="budgetOrgTotalsRoundSelect">รอบที่แสดง</label>
-                      <select id="budgetOrgTotalsRoundSelect" class="login-input">
+                    <div class="panel-caption budget-org-totals-note">แสดงยอดรวมขององค์กรในประเภทเดียวกับสิทธิ์ตัวแทน</div>
+                    <div class="budget-org-totals-inline-filter" aria-label="ตัวเลือกรอบยอดของบแยกตามองค์กร">
+                      <label for="budgetOrgTotalsRoundSelect">รอบที่แสดง</label>
+                      <select id="budgetOrgTotalsRoundSelect">
                         <option value="" selected disabled>กำลังโหลดรอบ...</option>
                       </select>
                     </div>
+                    <div class="panel-caption" id="budgetOrgTotalsCaption">กำลังโหลดข้อมูล...</div>
+                  </div>
+                  <div class="budget-org-totals-actions">
                     <button id="budgetOrgTotalsExportCsvBtn" class="btn-ghost csv-export-btn" type="button">ส่งออก CSV</button>
                   </div>
                 </div>

@@ -1348,9 +1348,17 @@ function initBudgetApprovalRequestPage() {
         map.set(orgName, current);
       });
 
+    const orgOrder = collectRepresentativeOrgNameOptions(getCurrentRepresentativeOrgType());
+    const orgRank = new Map(orgOrder.map((name, index) => [normalizeOrgText(name), index]));
     return Array.from(map.values()).sort((a, b) => {
-      if (b.requestedAmount !== a.requestedAmount) return b.requestedAmount - a.requestedAmount;
-      return a.organizationName.localeCompare(b.organizationName, "th");
+      const rankA = orgRank.has(normalizeOrgText(a.organizationName))
+        ? orgRank.get(normalizeOrgText(a.organizationName))
+        : Number.MAX_SAFE_INTEGER;
+      const rankB = orgRank.has(normalizeOrgText(b.organizationName))
+        ? orgRank.get(normalizeOrgText(b.organizationName))
+        : Number.MAX_SAFE_INTEGER;
+      if (rankA !== rankB) return rankA - rankB;
+      return a.organizationName.localeCompare(b.organizationName, "th", { numeric: true });
     });
   };
 
@@ -1416,21 +1424,7 @@ function initBudgetApprovalRequestPage() {
       return;
     }
 
-    const sortedRows = summaryRows
-      .slice()
-      .sort((a, b) => b.requestedAmount - a.requestedAmount || b.approvedAmount - a.approvedAmount);
-    const limit = 10;
-    const visibleRows = sortedRows.slice(0, limit);
-    const hiddenRows = sortedRows.slice(limit);
-    const chartRows = visibleRows.slice();
-    if (hiddenRows.length) {
-      chartRows.push({
-        organizationName: "อื่น ๆ",
-        projectCount: hiddenRows.reduce((sum, row) => sum + row.projectCount, 0),
-        requestedAmount: hiddenRows.reduce((sum, row) => sum + row.requestedAmount, 0),
-        approvedAmount: hiddenRows.reduce((sum, row) => sum + row.approvedAmount, 0)
-      });
-    }
+    const chartRows = summaryRows.slice();
 
     const isCompactChart = window.matchMedia?.("(max-width: 540px)")?.matches;
     const yAxisLabelWidth = isCompactChart ? 150 : 190;
@@ -1555,9 +1549,7 @@ function initBudgetApprovalRequestPage() {
     `).join("");
 
     if (orgTotalsCaptionEl) {
-      const visibleCount = Math.min(summaryRows.length, 10);
-      const hiddenCount = Math.max(summaryRows.length - visibleCount, 0);
-      const chartCaption = `กราฟ Top ${visibleCount}${hiddenCount ? ` + อื่น ๆ ${hiddenCount}` : ""} จาก ${summaryRows.length} องค์กร`;
+      const chartCaption = `กราฟแสดง ${summaryRows.length.toLocaleString("th-TH")} องค์กร`;
       const roundLabel = getBudgetRoundLabelById(selectedOrgTotalsRoundId);
       orgTotalsCaptionEl.textContent = source === "fallback"
         ? `แสดงเฉพาะรายการที่บัญชีนี้อ่านได้ใน${orgType} · ${roundLabel} · ${chartCaption}`

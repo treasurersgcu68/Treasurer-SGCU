@@ -19,22 +19,22 @@
             <div class="budget-staff-tab-panel is-active" data-budget-staff-panel="overview">
               <section class="budget-staff-summary-panel">
                 <p id="budgetStaffSummaryCaption" class="panel-caption budget-staff-summary-caption" hidden>กำลังโหลดข้อมูล...</p>
-                  <div class="budget-staff-overview-filters">
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="budgetStaffOrgSummaryRound">รอบรับคำขอ</label>
-                    <select id="budgetStaffOrgSummaryRound" class="login-input">
+                <div class="filter-bar budget-staff-overview-filters">
+                  <div class="filter-group filter-year">
+                    <label for="budgetStaffOrgSummaryRound">รอบรับคำขอ</label>
+                    <select id="budgetStaffOrgSummaryRound">
                       <option value="all">ทุกรอบ</option>
                     </select>
                   </div>
-                    <div class="borrow-form-field">
-                      <label class="login-label" for="budgetStaffOrgSummaryGroup">ประเภทองค์กร</label>
-                      <select id="budgetStaffOrgSummaryGroup" class="login-input">
+                  <div class="filter-group filter-orgtype">
+                    <label for="budgetStaffOrgSummaryGroup">ประเภทองค์กร</label>
+                    <select id="budgetStaffOrgSummaryGroup">
                       <option value="all">ทุกประเภทองค์กร</option>
                     </select>
                   </div>
-                  <div class="borrow-form-field">
-                    <label class="login-label" for="budgetStaffOrgSummaryOrg">ฝ่าย / ชมรม</label>
-                    <select id="budgetStaffOrgSummaryOrg" class="login-input">
+                  <div class="filter-group filter-org">
+                    <label for="budgetStaffOrgSummaryOrg">ฝ่าย / ชมรม</label>
+                    <select id="budgetStaffOrgSummaryOrg">
                       <option value="all">ทุกฝ่าย / ทุกชมรม</option>
                     </select>
                   </div>
@@ -76,7 +76,7 @@
                       <p id="budgetStaffOrgSummaryCaption" class="panel-caption">กำลังโหลดข้อมูล...</p>
                     </div>
                   </div>
-                  <div class="chart-card budget-staff-chart-card">
+                  <div class="budget-staff-chart-card">
                     <div class="chart-inner">
                       <canvas id="budgetStaffOrgChart"></canvas>
                     </div>
@@ -184,8 +184,10 @@
 
                       <div class="budget-staff-setting-block budget-staff-code-block">
                         <div class="budget-staff-setting-heading">
-                          <div class="card-title">รหัสโครงการ</div>
-                          <div class="card-caption">เติมรหัสให้รายการที่ยังไม่มี โดยต่อเลขจากรหัสเดิมและ Project Status ปีเดียวกัน</div>
+                          <div class="budget-staff-setting-subhead">
+                            <div class="card-title">รหัสโครงการ</div>
+                            <div class="card-caption">เติมรหัสให้รายการที่ยังไม่มี โดยต่อเลขจากรหัสเดิมและ Project Status ปีเดียวกัน</div>
+                          </div>
                         </div>
                         <div class="staff-access-actions budget-staff-control-actions">
                           <button id="budgetRunProjectCodeBtn" class="btn-ghost" type="button">รันรหัสโครงการ</button>
@@ -310,22 +312,22 @@
                 </div>
                 <button id="budgetStaffExportCsvBtn" class="btn-ghost csv-export-btn" type="button">Export CSV</button>
               </div>
-              <div class="budget-staff-review-filters">
-                <div class="borrow-form-field">
-                  <label class="login-label" for="budgetStaffReviewRound">รอบรับคำขอ</label>
-                  <select id="budgetStaffReviewRound" class="login-input">
+              <div class="filter-bar budget-staff-review-filters">
+                <div class="filter-group filter-year">
+                  <label for="budgetStaffReviewRound">รอบรับคำขอ</label>
+                  <select id="budgetStaffReviewRound">
                     <option value="all">ทุกรอบ</option>
                   </select>
                 </div>
-                <div class="borrow-form-field">
-                  <label class="login-label" for="budgetStaffReviewGroup">ประเภทองค์กร</label>
-                  <select id="budgetStaffReviewGroup" class="login-input">
+                <div class="filter-group filter-orgtype">
+                  <label for="budgetStaffReviewGroup">ประเภทองค์กร</label>
+                  <select id="budgetStaffReviewGroup">
                     <option value="all">ทุกประเภทองค์กร</option>
                   </select>
                 </div>
-                <div class="borrow-form-field">
-                  <label class="login-label" for="budgetStaffReviewOrg">ฝ่าย / ชมรม</label>
-                  <select id="budgetStaffReviewOrg" class="login-input">
+                <div class="filter-group filter-org">
+                  <label for="budgetStaffReviewOrg">ฝ่าย / ชมรม</label>
+                  <select id="budgetStaffReviewOrg">
                     <option value="all">ทุกฝ่าย / ทุกชมรม</option>
                   </select>
                 </div>

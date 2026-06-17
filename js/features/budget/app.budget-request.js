@@ -21,7 +21,6 @@ function initBudgetApprovalRequestPage() {
   const orgTotalsChartCanvasEl = document.getElementById("budgetOrgTotalsChart");
   const orgTotalsTableBodyEl = document.getElementById("budgetOrgTotalsTableBody");
   const orgTotalsRoundSelectEl = document.getElementById("budgetOrgTotalsRoundSelect");
-  const orgTotalsExportCsvBtnEl = document.getElementById("budgetOrgTotalsExportCsvBtn");
   const orgTypeEl = document.getElementById("budgetOrgType");
   const orgDeptEl = document.getElementById("budgetOrgDept");
   const orgTypeDisplayEl = document.getElementById("budgetOrgTypeDisplay");
@@ -432,7 +431,13 @@ function initBudgetApprovalRequestPage() {
 
   const formatRoundDeadlineDisplay = (round = {}) => {
     const dateText = formatDateDisplay(round.deadline || round.budgetRequestDeadline || "");
-    return dateText && dateText !== "-" ? `${dateText} ${getRoundDeadlineTime(round)}` : "-";
+    return dateText && dateText !== "-" ? `${dateText} เวลา ${getRoundDeadlineTime(round)} น.` : "-";
+  };
+
+  const formatBudgetDeadlineDisplay = (deadline = "", deadlineTime = "") => {
+    const dateText = formatDateDisplay(deadline);
+    const timeText = normalizeDeadlineTime(deadlineTime) || "23:59";
+    return dateText && dateText !== "-" ? `${dateText} เวลา ${timeText} น.` : "ยังไม่กำหนด";
   };
 
   const buildBudgetRoundId = (year, roundNo) => {
@@ -800,7 +805,7 @@ function initBudgetApprovalRequestPage() {
     }
     if (requestDeadlineDisplayEl) {
       requestDeadlineDisplayEl.textContent = budgetRequestDeadline
-        ? `${formatDateDisplay(budgetRequestDeadline)} ${normalizeDeadlineTime(data.budgetRequestDeadlineTime) || "23:59"}`
+        ? formatBudgetDeadlineDisplay(budgetRequestDeadline, data.budgetRequestDeadlineTime)
         : "ยังไม่กำหนด";
       requestDeadlineDisplayEl.classList.toggle("is-empty", !budgetRequestDeadline);
     }
@@ -1510,8 +1515,8 @@ function initBudgetApprovalRequestPage() {
     const selectedRound = findBudgetRoundById(selectedOrgTotalsRoundId);
     if (!selectedOrgTotalsRoundId || !selectedRound || !isBudgetRoundClosed(selectedRound)) {
       setOrgTotalsEmptyState(
-        "ยอดของบแยกตามองค์กรจะแสดงได้เฉพาะรอบที่ปิดรับคำขอแล้ว",
-        "เลือกดูได้เฉพาะรอบที่ปิดแล้ว"
+        "ยังไม่มีข้อมูลยอดของบแยกตามองค์กรสำหรับรอบที่เลือก",
+        ""
       );
       return;
     }
@@ -1555,25 +1560,6 @@ function initBudgetApprovalRequestPage() {
         ? `แสดงเฉพาะรายการที่บัญชีนี้อ่านได้ใน${orgType} · ${roundLabel} · ${chartCaption}`
         : `${roundLabel} · ${chartCaption}ใน${orgType}`;
     }
-  };
-
-  const exportOrgBudgetTotalsCsv = () => {
-    const orgType = getCurrentRepresentativeOrgType();
-    const roundLabel = getBudgetRoundLabelById(selectedOrgTotalsRoundId);
-    const rows = latestOrgBudgetSummaryRows.map((item) => ({
-      "รอบรับคำขอ": roundLabel,
-      "ประเภทองค์กร": orgType,
-      "องค์กร": item.organizationName,
-      "จำนวนโครงการ": item.projectCount,
-      "ยอดขอ": item.requestedAmount,
-      "ยอดอนุมัติ": item.approvedAmount,
-      "รออนุมัติ": item.pendingAmount
-    }));
-    window.sgcuCsvExport?.download({
-      fileName: "budget-approval-org-totals",
-      headers: ["รอบรับคำขอ", "ประเภทองค์กร", "องค์กร", "จำนวนโครงการ", "ยอดขอ", "ยอดอนุมัติ", "รออนุมัติ"],
-      rows
-    });
   };
 
   const subscribeOrgBudgetTotals = () => {
@@ -2432,7 +2418,7 @@ function initBudgetApprovalRequestPage() {
       renderOrgBudgetTotals(latestOrgBudgetRows, latestOrgBudgetTotalsSource);
       setFormMessage("ลบรายการเรียบร้อยแล้ว", "#047857");
     } catch (error) {
-      console.error("delete budget approval request failed - app.budget-request.js", error);
+      console.error("delete budget approval request failed - app.budget-request.js:2421", error);
       setFormMessage("ลบรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
     }
   };
@@ -2483,7 +2469,6 @@ function initBudgetApprovalRequestPage() {
     setRepresentativeApplicationMessage("");
   });
   exportCsvBtnEl?.addEventListener("click", exportMyBudgetRequestsCsv);
-  orgTotalsExportCsvBtnEl?.addEventListener("click", exportOrgBudgetTotalsCsv);
   orgTotalsRoundSelectEl?.addEventListener("change", () => {
     selectedOrgTotalsRoundId = normalizeOrgText(orgTotalsRoundSelectEl.value);
     renderOrgBudgetTotals(latestOrgBudgetRows, latestOrgBudgetTotalsSource);
@@ -2544,7 +2529,7 @@ function initBudgetApprovalRequestPage() {
       setRepresentativeApplicationMessage("ส่งคำขอสมัครเป็นตัวแทนองค์กรเรียบร้อยแล้ว", "#047857");
       window.setTimeout(closeRepresentativeModal, 650);
     } catch (error) {
-      console.error("submit organization representative application failed - app.budget-request.js", error);
+      console.error("submit organization representative application failed - app.budget-request.js:2532", error);
       const code = (error?.code || "unknown").toString();
       if (code === "permission-denied") {
         setRepresentativeApplicationMessage("ไม่สามารถส่งคำขอได้: บัญชีนี้ไม่มีสิทธิ์เขียนข้อมูล (permission-denied)", "#b91c1c");
@@ -2638,7 +2623,7 @@ function initBudgetApprovalRequestPage() {
         setFormMessage("ส่งคำขออนุมัติงบประมาณเรียบร้อยแล้ว", "#047857");
       }
     } catch (error) {
-      console.error("submit budget approval request failed - app.budget-request.js", error);
+      console.error("submit budget approval request failed - app.budget-request.js:2626", error);
       const code = (error?.code || "unknown").toString();
       if (code === "permission-denied") {
         setFormMessage("ไม่สามารถส่งคำขอได้: บัญชีนี้ไม่มีสิทธิ์เขียนข้อมูล (permission-denied)", "#b91c1c");

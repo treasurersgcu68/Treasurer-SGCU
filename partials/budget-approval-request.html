@@ -41,7 +41,7 @@
               <div class="budget-org-overview">
                 <div class="cards budget-org-floating-cards" aria-label="สรุปการขออนุมัติงบประมาณขององค์กร">
                   <article class="card card-hover budget-org-floating-card budget-org-identity-card">
-                    <div class="card-title">ฝ่าย / ชมรม</div>
+                    <div class="card-title">องค์กรผู้ยื่น</div>
                     <div id="budgetOrgDeptDisplay" class="card-value budget-org-floating-value is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</div>
                     <div id="budgetOrgTypeDisplay" class="section-text-sm budget-org-floating-subvalue is-empty">ยังไม่มีสิทธิ์ตัวแทนที่อนุมัติ</div>
                   </article>
@@ -265,16 +265,15 @@
                   <div>
                     <div class="panel-title">ยอดของบแยกตามองค์กร</div>
                     <div class="panel-caption budget-org-totals-note">แสดงยอดรวมขององค์กรในประเภทเดียวกับสิทธิ์ตัวแทน</div>
+                    <div class="panel-caption" id="budgetOrgTotalsCaption">กำลังโหลดข้อมูล...</div>
+                  </div>
+                  <div class="budget-org-totals-actions">
                     <div class="budget-org-totals-inline-filter" aria-label="ตัวเลือกรอบยอดของบแยกตามองค์กร">
                       <label for="budgetOrgTotalsRoundSelect">รอบที่แสดง</label>
                       <select id="budgetOrgTotalsRoundSelect">
                         <option value="" selected disabled>กำลังโหลดรอบ...</option>
                       </select>
                     </div>
-                    <div class="panel-caption" id="budgetOrgTotalsCaption">กำลังโหลดข้อมูล...</div>
-                  </div>
-                  <div class="budget-org-totals-actions">
-                    <button id="budgetOrgTotalsExportCsvBtn" class="btn-ghost csv-export-btn" type="button">ส่งออก CSV</button>
                   </div>
                 </div>
                 <div class="budget-org-totals-summary" aria-label="สรุปยอดรวมตามประเภทองค์กร">

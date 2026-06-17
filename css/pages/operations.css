@@ -1935,13 +1935,13 @@
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+  min-width: min(100%, 300px);
 }
 
 .budget-org-totals-inline-filter {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
   max-width: 100%;
 }
 
@@ -8984,26 +8984,35 @@
 }
 
 .page-view[data-page="budget-approval-request"] .budget-org-identity-card {
-  grid-column: span 4;
-}
-
-.page-view[data-page="budget-approval-request"] .budget-org-round-card {
   grid-column: span 5;
 }
 
-.page-view[data-page="budget-approval-request"] .budget-org-deadline-card {
+.page-view[data-page="budget-approval-request"] .budget-org-round-card {
   grid-column: span 3;
+}
+
+.page-view[data-page="budget-approval-request"] .budget-org-deadline-card {
+  grid-column: span 4;
 }
 
 .page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card {
   grid-column: span 4;
 }
 
+.page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card:nth-of-type(4) {
+  grid-column: span 2;
+}
+
+.page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card:nth-of-type(5),
+.page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card:nth-of-type(6) {
+  grid-column: span 5;
+}
+
 .page-view[data-page="budget-approval-request"] .budget-org-floating-subvalue {
   margin-top: 6px;
   color: #64748b;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -9017,7 +9026,10 @@
   .page-view[data-page="budget-approval-request"] .budget-org-identity-card,
   .page-view[data-page="budget-approval-request"] .budget-org-round-card,
   .page-view[data-page="budget-approval-request"] .budget-org-deadline-card,
-  .page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card {
+  .page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card,
+  .page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card:nth-of-type(4),
+  .page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card:nth-of-type(5),
+  .page-view[data-page="budget-approval-request"] .budget-org-summary-metric-card:nth-of-type(6) {
     grid-column: auto;
   }
 }

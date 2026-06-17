@@ -21,6 +21,29 @@
     config.unsubscribeEndpoint = bootstrapConfig.unsubscribeEndpoint.trim();
   }
 
+  const isLocalDevHost = () => {
+    const host = (window.location?.hostname || "").toString().toLowerCase();
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  };
+
+  const disableLocalDevServiceWorker = async () => {
+    if (!isLocalDevHost() || !("serviceWorker" in window.navigator)) return;
+    try {
+      const registrations = await window.navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    } catch (_) {
+      // Ignore local cleanup failures; reload or hard refresh can still bypass stale assets.
+    }
+    try {
+      if ("caches" in window) {
+        const keys = await window.caches.keys();
+        await Promise.all(keys.map((key) => window.caches.delete(key)));
+      }
+    } catch (_) {
+      // Cache APIs can be unavailable in some browser modes.
+    }
+  };
+
   const toUint8Array = (base64String) => {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
     const normalized = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -57,6 +80,10 @@
 
   const ensureServiceWorkerRegistration = async () => {
     if (!("serviceWorker" in window.navigator)) return null;
+    if (isLocalDevHost()) {
+      await disableLocalDevServiceWorker();
+      return null;
+    }
     try {
       const swUrl = (window.sgcuServiceWorkerUrl || DEFAULT_SW_URL).toString().trim() || DEFAULT_SW_URL;
       const registration = await window.navigator.serviceWorker.register(swUrl);
@@ -206,7 +233,9 @@
     unsubscribePush
   };
 
-  if ("serviceWorker" in window.navigator) {
+  if (isLocalDevHost()) {
+    void disableLocalDevServiceWorker();
+  } else if ("serviceWorker" in window.navigator) {
     let didRefreshForNewWorker = false;
     let hadServiceWorkerController = !!window.navigator.serviceWorker.controller;
     const serviceWorkerUrl = (window.sgcuServiceWorkerUrl || DEFAULT_SW_URL).toString().trim() || DEFAULT_SW_URL;

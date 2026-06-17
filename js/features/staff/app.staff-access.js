@@ -5054,6 +5054,12 @@ function initStaffAccessPages() {
       ])
     ].filter(Boolean))).sort((a, b) => Number(b) - Number(a));
 
+  const getOrgRepresentativeRosterAcademicYearOptions = () =>
+    Array.from(new Set([
+      String(getCurrentAcademicYearBE()),
+      ...currentOrgRepresentativeApplications.map((item) => getOrgRepresentativeAcademicYear(item))
+    ].filter(Boolean))).sort((a, b) => Number(b) - Number(a));
+
   const syncOrgRepresentativeAcademicYearSelect = (selectEl, years, selected) => {
     if (!selectEl) return "";
     selectEl.innerHTML = years
@@ -5064,16 +5070,17 @@ function initStaffAccessPages() {
   };
 
   const populateOrgRepresentativeAcademicYearFilter = () => {
-    const years = getOrgRepresentativeAcademicYearOptions();
+    const rosterYears = getOrgRepresentativeRosterAcademicYearOptions();
+    const catalogYears = getOrgRepresentativeAcademicYearOptions();
     const selected = currentOrgRepresentativeAcademicYear || String(getCurrentAcademicYearBE());
     currentOrgRepresentativeAcademicYear =
-      syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, years, selected) ||
-      syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, years, selected) ||
-      syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, years, selected) ||
+      syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, rosterYears, selected) ||
+      syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, catalogYears, selected) ||
+      syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, catalogYears, selected) ||
       String(getCurrentAcademicYearBE());
-    syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, years, currentOrgRepresentativeAcademicYear);
-    syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, years, currentOrgRepresentativeAcademicYear);
-    syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, years, currentOrgRepresentativeAcademicYear);
+    syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, rosterYears, currentOrgRepresentativeAcademicYear);
+    syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, catalogYears, currentOrgRepresentativeAcademicYear);
+    syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, catalogYears, currentOrgRepresentativeAcademicYear);
   };
 
   const setOrgRepresentativeAcademicYear = (value) => {
@@ -5081,10 +5088,11 @@ function initStaffAccessPages() {
     const didChange = currentOrgRepresentativeAcademicYear !== nextYear;
     currentOrgRepresentativeAcademicYear = nextYear;
     if (didChange) invalidateOrgRepresentativeCatalogIndex();
-    const years = getOrgRepresentativeAcademicYearOptions();
-    syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, years, nextYear);
-    syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, years, nextYear);
-    syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, years, nextYear);
+    const rosterYears = getOrgRepresentativeRosterAcademicYearOptions();
+    const catalogYears = getOrgRepresentativeAcademicYearOptions();
+    syncOrgRepresentativeAcademicYearSelect(orgRepresentativeAcademicYearFilterEl, rosterYears, nextYear);
+    syncOrgRepresentativeAcademicYearSelect(organizationCatalogAcademicYearEl, catalogYears, nextYear);
+    syncOrgRepresentativeAcademicYearSelect(organizationCatalogTableAcademicYearFilterEl, catalogYears, nextYear);
     refreshSelectedOrganizationCatalogFormForAcademicYear();
     renderOrganizationCatalogTable();
   };

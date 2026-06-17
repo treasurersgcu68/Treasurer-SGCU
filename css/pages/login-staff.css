@@ -575,7 +575,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  margin: 0 0 12px;
+  margin: 18px 0 12px;
 }
 
 .org-representative-summary-card {
@@ -1679,4 +1679,8 @@
   max-width: 1120px;
   margin: 0 auto;
   padding: 18px 16px 32px;
+}
+
+.page-view[data-page="org-representative-approval-staff"] .org-representative-summary-grid {
+  margin-top: 28px;
 }

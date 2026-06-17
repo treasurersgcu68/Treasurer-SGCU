@@ -193,6 +193,38 @@
 
             <div id="orgRepresentativeOverviewPanel" class="org-representative-main-panel" role="tabpanel" aria-labelledby="orgRepresentativeMainOverviewTab">
               <div id="orgRepresentativeOverviewTools" class="org-representative-overview-tools">
+                <div class="org-representative-tools">
+                  <div class="filter-group">
+                    <label for="orgRepresentativeAcademicYearFilter">ปีการศึกษา</label>
+                    <select id="orgRepresentativeAcademicYearFilter" class="login-input">
+                      <option value="">ปีการศึกษาปัจจุบัน</option>
+                    </select>
+                  </div>
+                  <div class="filter-group">
+                    <label for="orgRepresentativeStatusFilter">สถานะข้อมูล</label>
+                    <select id="orgRepresentativeStatusFilter" class="login-input">
+                      <option value="all">ทุกสถานะ</option>
+                      <option value="complete">ข้อมูลครบ</option>
+                      <option value="incomplete">ยังไม่ครบ 4 ตำแหน่ง</option>
+                      <option value="empty">ยังไม่มีตัวแทน</option>
+                      <option value="pending">มีคำขอรออนุมัติ</option>
+                    </select>
+                  </div>
+                  <div class="filter-group">
+                    <label for="orgRepresentativeGroupFilter">ประเภทองค์กร</label>
+                    <select id="orgRepresentativeGroupFilter" class="login-input">
+                      <option value="all">ทุกประเภทองค์กร</option>
+                    </select>
+                  </div>
+                  <div class="filter-group org-representative-search-field">
+                    <label for="orgRepresentativeSearchInput">ค้นหาองค์กร / ตัวแทน</label>
+                    <div class="search-box">
+                      <input id="orgRepresentativeSearchInput" class="login-input" type="search" placeholder="พิมพ์ชื่อองค์กร ชื่อคน หรืออีเมล">
+                      <button id="orgRepresentativeFilterResetBtn" class="search-clear" type="button" aria-label="ล้างตัวกรองทั้งหมด">✕</button>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="org-representative-summary-grid" aria-label="สรุปตัวแทนองค์กร">
                   <div class="org-representative-summary-card">
                     <div class="org-representative-summary-label">องค์กรทั้งหมด</div>
@@ -209,38 +241,6 @@
                   <div class="org-representative-summary-card">
                     <div class="org-representative-summary-label">ตัวแทนอนุมัติแล้ว</div>
                     <div id="orgRepresentativeApprovedTotalCount" class="org-representative-summary-value">0</div>
-                  </div>
-                </div>
-
-                <div class="org-representative-tools">
-                  <div class="filter-group">
-                    <label for="orgRepresentativeStatusFilter">สถานะข้อมูล</label>
-                    <select id="orgRepresentativeStatusFilter" class="login-input">
-                      <option value="all">ทุกสถานะ</option>
-                      <option value="complete">ข้อมูลครบ</option>
-                      <option value="incomplete">ยังไม่ครบ 4 ตำแหน่ง</option>
-                      <option value="empty">ยังไม่มีตัวแทน</option>
-                      <option value="pending">มีคำขอรออนุมัติ</option>
-                    </select>
-                  </div>
-                  <div class="filter-group">
-                    <label for="orgRepresentativeAcademicYearFilter">ปีการศึกษา</label>
-                    <select id="orgRepresentativeAcademicYearFilter" class="login-input">
-                      <option value="">ปีการศึกษาปัจจุบัน</option>
-                    </select>
-                  </div>
-                  <div class="filter-group">
-                    <label for="orgRepresentativeGroupFilter">ประเภทองค์กร</label>
-                    <select id="orgRepresentativeGroupFilter" class="login-input">
-                      <option value="all">ทุกประเภทองค์กร</option>
-                    </select>
-                  </div>
-                  <div class="filter-group org-representative-search-field">
-                    <label for="orgRepresentativeSearchInput">ค้นหาองค์กร / ตัวแทน</label>
-                    <div class="search-box">
-                      <input id="orgRepresentativeSearchInput" class="login-input" type="search" placeholder="พิมพ์ชื่อองค์กร ชื่อคน หรืออีเมล">
-                      <button id="orgRepresentativeFilterResetBtn" class="search-clear" type="button" aria-label="ล้างตัวกรองทั้งหมด">✕</button>
-                    </div>
                   </div>
                 </div>
               </div>

@@ -15,6 +15,8 @@
   const orgSummaryRoundEl = document.getElementById("budgetStaffOrgSummaryRound");
   const orgSummaryGroupEl = document.getElementById("budgetStaffOrgSummaryGroup");
   const orgSummaryOrgEl = document.getElementById("budgetStaffOrgSummaryOrg");
+  const orgSummarySearchEl = document.getElementById("budgetStaffOrgSummarySearch");
+  const orgSummarySearchClearEl = document.getElementById("budgetStaffOrgSummarySearchClear");
   const reviewRoundEl = document.getElementById("budgetStaffReviewRound");
   const reviewGroupEl = document.getElementById("budgetStaffReviewGroup");
   const reviewOrgEl = document.getElementById("budgetStaffReviewOrg");
@@ -104,6 +106,8 @@
     !orgSummaryRoundEl ||
     !orgSummaryGroupEl ||
     !orgSummaryOrgEl ||
+    !orgSummarySearchEl ||
+    !orgSummarySearchClearEl ||
     !reviewRoundEl ||
     !reviewGroupEl ||
     !reviewOrgEl ||
@@ -1223,7 +1227,8 @@
       const roundValue = normalizeText((useReviewFilters ? reviewRoundEl : orgSummaryRoundEl).value || "all");
       const groupValue = normalizeText((useReviewFilters ? reviewGroupEl : orgSummaryGroupEl).value || "all");
       const orgValue = normalizeText((useReviewFilters ? reviewOrgEl : orgSummaryOrgEl).value || "all");
-      return [roundValue !== "all", groupValue !== "all", orgValue !== "all"].filter(Boolean).length;
+      const searchValue = useReviewFilters ? "" : getOrgSummarySearchQuery();
+      return [roundValue !== "all", groupValue !== "all", orgValue !== "all", !!searchValue].filter(Boolean).length;
     };
 
     const sync = () => {
@@ -1341,6 +1346,7 @@
       } else {
         orgSummaryRoundEl.value = "all";
         orgSummaryGroupEl.value = "all";
+        orgSummarySearchEl.value = "";
         populateOrgSummaryOrgOptions();
         orgSummaryOrgEl.value = "all";
         updateSummary();
@@ -1387,7 +1393,7 @@
       }
     });
 
-    [orgSummaryRoundEl, orgSummaryGroupEl, orgSummaryOrgEl, reviewRoundEl, reviewGroupEl, reviewOrgEl].forEach((el) => {
+    [orgSummaryRoundEl, orgSummaryGroupEl, orgSummaryOrgEl, orgSummarySearchEl, reviewRoundEl, reviewGroupEl, reviewOrgEl].forEach((el) => {
       el.addEventListener("input", queueSync);
       el.addEventListener("change", () => window.setTimeout(queueSync, 0));
     });
@@ -1545,6 +1551,15 @@
     return map;
   };
 
+  const getOrgSummarySearchQuery = () =>
+    normalizeText(orgSummarySearchEl.value).toLowerCase();
+
+  const matchesOrgSummarySearch = (orgName = "", group = "") => {
+    const query = getOrgSummarySearchQuery();
+    if (!query) return true;
+    return `${normalizeText(orgName)} ${normalizeText(group)}`.toLowerCase().includes(query);
+  };
+
   const getOverviewFilteredRows = () => {
     const roundFilter = normalizeText(orgSummaryRoundEl.value) || "all";
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
@@ -1557,6 +1572,7 @@
       const group = normalizeText(item.organizationType) || orgGroupMap.get(orgName);
       if (groupFilter !== "all" && group !== groupFilter) return false;
       if (orgFilter !== "all" && orgName !== orgFilter) return false;
+      if (!matchesOrgSummarySearch(orgName, group)) return false;
       return true;
     });
   };
@@ -1657,7 +1673,8 @@
         ? groupFilter
         : "ทุกประเภทองค์กร";
     const roundText = roundFilter !== "all" ? getRoundLabelById(roundFilter) : "ทุกรอบ";
-    summaryCaptionEl.textContent = `แสดง ${activeRows.length} โครงการ • รออนุมัติ ${pendingCount} โครงการ • ${roundText} • ${orgFilterText}`;
+    const searchText = getOrgSummarySearchQuery() ? " • ตามคำค้น" : "";
+    summaryCaptionEl.textContent = `แสดง ${activeRows.length} โครงการ • รออนุมัติ ${pendingCount} โครงการ • ${roundText} • ${orgFilterText}${searchText}`;
   };
 
   const buildOrgSummaryRows = () => {
@@ -1675,6 +1692,7 @@
       const group = normalizeText(item.organizationType) || orgGroupMap.get(orgName);
       if (groupFilter !== "all" && group !== groupFilter) return;
       if (orgFilter !== "all" && orgName !== orgFilter) return;
+      if (!matchesOrgSummarySearch(orgName, group)) return;
       const key = isGlobalView ? (group || "ไม่ระบุประเภทองค์กร") : orgName;
       const row = grouped.get(key) || {
         organizationName: key,
@@ -3024,6 +3042,17 @@
   orgSummaryOrgEl.addEventListener("change", () => {
     updateSummary();
     void renderOrgSummaryChart();
+  });
+  orgSummarySearchEl.addEventListener("input", () => {
+    updateSummary();
+    void renderOrgSummaryChart();
+  });
+  orgSummarySearchClearEl.addEventListener("click", () => {
+    orgSummarySearchEl.value = "";
+    updateSummary();
+    void renderOrgSummaryChart();
+    window.syncBudgetMobileActionBar?.();
+    orgSummarySearchEl.focus();
   });
   reviewGroupEl.addEventListener("change", () => {
     populateReviewOrgOptions();

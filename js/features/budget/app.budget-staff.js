@@ -1003,6 +1003,35 @@
     reviewOrgEl.value = Array.from(reviewOrgEl.options).some((opt) => opt.value === selected) ? selected : "all";
   };
 
+  const emitFilterControlChange = (el, eventName = "change") => {
+    el?.dispatchEvent(new Event(eventName, { bubbles: true }));
+  };
+
+  const resetOrgSummaryFilters = () => {
+    orgSummaryRoundEl.value = "all";
+    populateOrgSummaryGroupOptions();
+    orgSummaryGroupEl.value = "all";
+    orgSummarySearchEl.value = "";
+    populateOrgSummaryOrgOptions();
+    orgSummaryOrgEl.value = "all";
+    [orgSummaryRoundEl, orgSummaryGroupEl, orgSummaryOrgEl].forEach(emitFilterControlChange);
+    emitFilterControlChange(orgSummarySearchEl, "input");
+    updateSummary();
+    void renderOrgSummaryChart();
+    window.setTimeout(() => window.syncBudgetMobileActionBar?.(), 0);
+  };
+
+  const resetReviewFilters = () => {
+    reviewRoundEl.value = "all";
+    populateReviewGroupOptions();
+    reviewGroupEl.value = "all";
+    populateReviewOrgOptions();
+    reviewOrgEl.value = "all";
+    [reviewRoundEl, reviewGroupEl, reviewOrgEl].forEach(emitFilterControlChange);
+    renderRows();
+    window.setTimeout(() => window.syncBudgetMobileActionBar?.(), 0);
+  };
+
   const getBudgetGroupNames = () => {
     const filterRows = getOrgFilterRows();
     const groups = filterRows.length
@@ -1337,22 +1366,17 @@
     };
 
     const resetBudgetFilters = () => {
-      if (currentBudgetStaffTab === "review") {
-        reviewRoundEl.value = "all";
-        reviewGroupEl.value = "all";
-        populateReviewOrgOptions();
-        reviewOrgEl.value = "all";
-        renderRows();
+      const resetTarget = activeFilterTarget === reviewFiltersEl
+        ? "review"
+        : activeFilterTarget === overviewFiltersEl
+          ? "overview"
+          : currentBudgetStaffTab;
+      if (resetTarget === "review") {
+        resetReviewFilters();
       } else {
-        orgSummaryRoundEl.value = "all";
-        orgSummaryGroupEl.value = "all";
-        orgSummarySearchEl.value = "";
-        populateOrgSummaryOrgOptions();
-        orgSummaryOrgEl.value = "all";
-        updateSummary();
-        void renderOrgSummaryChart();
+        resetOrgSummaryFilters();
       }
-      queueSync();
+      window.setTimeout(queueSync, 0);
     };
 
     mobileActionBtnEls.forEach((btn) => {
@@ -3048,10 +3072,7 @@
     void renderOrgSummaryChart();
   });
   orgSummarySearchClearEl.addEventListener("click", () => {
-    orgSummarySearchEl.value = "";
-    updateSummary();
-    void renderOrgSummaryChart();
-    window.syncBudgetMobileActionBar?.();
+    resetOrgSummaryFilters();
     orgSummarySearchEl.focus();
   });
   reviewGroupEl.addEventListener("change", () => {

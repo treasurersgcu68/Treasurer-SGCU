@@ -8,6 +8,7 @@ function initBorrowAssetsApp() {
   const borrowSubmitBtn = borrowRequestForm
     ? borrowRequestForm.querySelector('button.btn-primary[type="button"]')
     : null;
+  const borrowClearBtn = document.getElementById("borrowRequestClearBtn");
 
   const borrowProjectName = document.getElementById("borrowProjectName");
   const borrowProjectNameOther = document.getElementById("borrowProjectNameOther");
@@ -170,7 +171,8 @@ function initBorrowAssetsApp() {
     message.id = "borrowRequestMessage";
     message.className = "section-text-sm";
     message.style.marginTop = "10px";
-    borrowSubmitBtn.insertAdjacentElement("afterend", message);
+    const actions = borrowSubmitBtn.closest(".borrow-submit-actions");
+    (actions || borrowSubmitBtn).insertAdjacentElement("afterend", message);
     return message;
   })();
 
@@ -1961,6 +1963,18 @@ function initBorrowAssetsApp() {
     if (warning) warning.hidden = true;
     const removeBtn = firstRow.querySelector("[data-asset-remove]");
     if (removeBtn) removeBtn.hidden = true;
+    const codeInput = firstRow.querySelector('[data-asset-field="code"]');
+    if (codeInput) codeInput.dispatchEvent(new Event("input"));
+  };
+
+  const clearBorrowRequestForm = () => {
+    if (!borrowRequestForm) return;
+    borrowRequestForm.reset();
+    populateBorrowProjectTypeOptions();
+    toggleBorrowProjectNameOther();
+    populateBorrowProjectDeptOptions();
+    resetAssetRows();
+    setBorrowMessage("ล้างข้อมูลที่กรอกแล้ว", "#374151");
   };
 
   const collectAssetItems = () => {
@@ -3636,6 +3650,9 @@ function initBorrowAssetsApp() {
 
     if (borrowSubmitBtn) {
       borrowSubmitBtn.addEventListener("click", submitBorrowRequest);
+    }
+    if (borrowClearBtn) {
+      borrowClearBtn.addEventListener("click", clearBorrowRequestForm);
     }
   }
 

@@ -106,6 +106,7 @@ function initBudgetApprovalRequestPage() {
   let latestOrgBudgetRows = [];
   let latestOrgBudgetSummaryRows = [];
   let latestOrgBudgetTotalsSource = "loading";
+  let latestMyRequestsQueryScope = "";
   let orgTotalsChartInstance = null;
   let selectedOrgTotalsRoundId = "";
   let budgetRequestDeadline = "";
@@ -1671,10 +1672,16 @@ function initBudgetApprovalRequestPage() {
       return;
     }
 
+    const representative = getPrimaryApprovedRepresentative();
+    const representativeOrgType = normalizeOrgText(representative?.organizationType);
+    const queryScope = representativeOrgType ? `org:${representativeOrgType}` : `email:${email}`;
+    latestMyRequestsQueryScope = queryScope;
     myRequestsCaptionEl.textContent = "กำลังโหลดรายการ...";
     const listQuery = firestore.query(
       firestore.collection(firestore.db, REQUEST_COLLECTION),
-      firestore.where("requester.email", "==", email),
+      representativeOrgType
+        ? firestore.where("organizationType", "==", representativeOrgType)
+        : firestore.where("requester.email", "==", email),
       ...(firestore.limit ? [firestore.limit(BUDGET_REQUEST_LIST_LIMIT)] : [])
     );
     unsubscribeMyRequests = firestore.onSnapshot(
@@ -1841,7 +1848,15 @@ function initBudgetApprovalRequestPage() {
         }
         populateBudgetOrgTypeOptions();
         populateBudgetOrgDeptOptions();
-        renderMyRequestsRows(latestBudgetRequestRows);
+        const representative = getPrimaryApprovedRepresentative();
+        const nextQueryScope = representative?.organizationType
+          ? `org:${normalizeOrgText(representative.organizationType)}`
+          : `email:${email}`;
+        if (nextQueryScope !== latestMyRequestsQueryScope) {
+          subscribeMyRequests();
+        } else {
+          renderMyRequestsRows(latestBudgetRequestRows);
+        }
         subscribeOrgBudgetTotals();
         if (editingRequestId) {
           const editingItem = latestBudgetRequestRows.find((item) => item.id === editingRequestId);
@@ -1952,6 +1967,30 @@ function initBudgetApprovalRequestPage() {
     const editingItem = editingRequestId
       ? latestBudgetRequestRows.find((item) => item.id === editingRequestId)
       : null;
+    const originalRequester = editingItem?.requester && typeof editingItem.requester === "object"
+      ? editingItem.requester
+      : null;
+    const requesterPayload = editingItem
+      ? (originalRequester || {
+        email: (editingItem.requesterEmail || email).toString().trim().toLowerCase(),
+        uid: (editingItem.requesterUid || "").toString(),
+        displayName: (editingItem.requesterDisplayName || "").toString()
+      })
+      : {
+        email,
+        uid: (user?.uid || "").toString(),
+        displayName: resolveRequesterDisplayName(user, profile),
+        profileType: (profile?.profileType || "").toString(),
+        nickname: (profile?.nickname || "").toString(),
+        studentId: (profile?.studentId || "").toString(),
+        faculty: (profile?.faculty || "").toString(),
+        year: (profile?.year || "").toString(),
+        phone: (profile?.phone || "").toString(),
+        lineId: (profile?.lineId || "").toString()
+      };
+    const requesterEmail = editingItem
+      ? (editingItem.requesterEmail || originalRequester?.email || email).toString().trim().toLowerCase()
+      : email;
     const organizationType = editingItem
       ? normalizeOrgText(editingItem.organizationType)
       : getBudgetOrgTypeValueForSubmit();
@@ -1959,14 +1998,9 @@ function initBudgetApprovalRequestPage() {
       ? normalizeOrgText(editingItem.organizationName)
       : getBudgetOrgDeptValueForSubmit();
     const approvedRepresentative = findApprovedRepresentativeForOrg(organizationType, organizationName);
-    const selectedRound = findActiveRoundById(requestRoundSelectEl.value);
-
-    return {
-      requestType: "budget_approval",
-      status: "pending",
-      organizationType,
-      organizationName,
-      representative: approvedRepresentative
+    const representativePayload = editingItem?.representative && typeof editingItem.representative === "object"
+      ? editingItem.representative
+      : approvedRepresentative
         ? {
           status: "approved",
           applicationId: approvedRepresentative.id,
@@ -1978,7 +2012,15 @@ function initBudgetApprovalRequestPage() {
           applicationId: "",
           role: "",
           email
-        },
+        };
+    const selectedRound = findActiveRoundById(requestRoundSelectEl.value);
+
+    return {
+      requestType: "budget_approval",
+      status: "pending",
+      organizationType,
+      organizationName,
+      representative: representativePayload,
       projectName: projectNameEl.value.trim(),
       description: descriptionEl.value.trim(),
       activityLocation: locationEl.value.trim(),
@@ -1990,19 +2032,8 @@ function initBudgetApprovalRequestPage() {
       budgetRoundYear: selectedRound?.year || budgetRoundYear,
       budgetRoundNo: selectedRound?.roundNo || budgetRoundNo,
       budgetRoundId: selectedRound?.id || currentBudgetRoundId,
-      requester: {
-        email,
-        uid: (user?.uid || "").toString(),
-        displayName: resolveRequesterDisplayName(user, profile),
-        profileType: (profile?.profileType || "").toString(),
-        nickname: (profile?.nickname || "").toString(),
-        studentId: (profile?.studentId || "").toString(),
-        faculty: (profile?.faculty || "").toString(),
-        year: (profile?.year || "").toString(),
-        phone: (profile?.phone || "").toString(),
-        lineId: (profile?.lineId || "").toString()
-      },
-      requesterEmail: email
+      requester: requesterPayload,
+      requesterEmail
     };
   };
 

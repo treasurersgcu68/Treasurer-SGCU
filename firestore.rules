@@ -195,6 +195,23 @@ service cloud.firestore {
       return status in ["pending", "approved", "rejected", "cancelled"];
     }
 
+    function canAuthenticatedUserUpdatePendingBudgetRequest() {
+      return signedIn() &&
+        resource.data.status == "pending" &&
+        validBudgetStatus(request.resource.data.status) &&
+        unchanged("requestType") &&
+        unchanged("organizationType") &&
+        unchanged("organizationName") &&
+        unchanged("representative") &&
+        unchanged("requester") &&
+        unchanged("requesterEmail");
+    }
+
+    function canAuthenticatedUserDeletePendingBudgetRequest() {
+      return signedIn() &&
+        resource.data.status == "pending";
+    }
+
     match /budgetApprovalRequests/{requestId} {
       allow create: if signedIn() &&
         (
@@ -208,6 +225,7 @@ service cloud.firestore {
         isOwnerByEmail(resource.data.requester.email) ||
         isOwnerByEmail(resource.data.requesterEmail);
       allow update: if isStaff() ||
+        canAuthenticatedUserUpdatePendingBudgetRequest() ||
         (
           (
             isOwnerByEmail(resource.data.requester.email) ||
@@ -218,7 +236,8 @@ service cloud.firestore {
           unchanged("requester") &&
           unchanged("requesterEmail")
         );
-      allow delete: if isStaff();
+      allow delete: if isStaff() ||
+        canAuthenticatedUserDeletePendingBudgetRequest();
     }
 
     match /budgetApprovalSettings/{settingsId} {

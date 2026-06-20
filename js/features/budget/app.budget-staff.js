@@ -544,6 +544,7 @@
 
   const statusLabel = (status) => {
     const normalized = normalizeText(status).toLowerCase() || "pending";
+    if (normalized === "reviewing") return "กำลังพิจารณา";
     if (normalized === "approved") return "ผ่านที่ประชุมนายกหรืออนุกรรมการ";
     if (normalized === "rejected") return "ไม่อนุมัติ";
     if (normalized === "cancelled") return "ยกเลิกหรือเลื่อนไปผ่านครั้งอื่น";
@@ -552,6 +553,7 @@
 
   const statusBadge = (status) => {
     const normalized = normalizeText(status).toLowerCase() || "pending";
+    if (normalized === "reviewing") return '<span class="badge badge-reviewing">กำลังพิจารณา</span>';
     if (normalized === "approved") return '<span class="badge badge-approved">ผ่านที่ประชุมนายกหรืออนุกรรมการ</span>';
     if (normalized === "rejected") return '<span class="badge badge-rejected">ไม่อนุมัติ</span>';
     if (normalized === "cancelled") return '<span class="badge badge-warning">ยกเลิกหรือเลื่อนไปผ่านครั้งอื่น</span>';
@@ -1158,7 +1160,7 @@
   };
 
   const sortForDisplay = (rows) => {
-    const statusOrder = { pending: 0, approved: 1, rejected: 2, cancelled: 3 };
+    const statusOrder = { pending: 0, reviewing: 1, approved: 2, rejected: 3, cancelled: 4 };
     return rows.slice().sort((a, b) => {
       const statusA = normalizeText(a.status || "pending").toLowerCase();
       const statusB = normalizeText(b.status || "pending").toLowerCase();
@@ -1688,6 +1690,7 @@
     }
 
     const pendingCount = activeRows.filter((item) => normalizeText(item.status || "pending").toLowerCase() === "pending").length;
+    const reviewingCount = activeRows.filter((item) => normalizeText(item.status || "pending").toLowerCase() === "reviewing").length;
     const roundFilter = normalizeText(orgSummaryRoundEl.value) || "all";
     const groupFilter = normalizeText(orgSummaryGroupEl.value) || "all";
     const orgFilter = normalizeText(orgSummaryOrgEl.value) || "all";
@@ -1698,7 +1701,7 @@
         : "ทุกประเภทองค์กร";
     const roundText = roundFilter !== "all" ? getRoundLabelById(roundFilter) : "ทุกรอบ";
     const searchText = getOrgSummarySearchQuery() ? " • ตามคำค้น" : "";
-    summaryCaptionEl.textContent = `แสดง ${activeRows.length} โครงการ • รออนุมัติ ${pendingCount} โครงการ • ${roundText} • ${orgFilterText}${searchText}`;
+    summaryCaptionEl.textContent = `แสดง ${activeRows.length} โครงการ • รออนุมัติ ${pendingCount} โครงการ • กำลังพิจารณา ${reviewingCount} โครงการ • ${roundText} • ${orgFilterText}${searchText}`;
   };
 
   const buildOrgSummaryRows = () => {
@@ -1725,17 +1728,21 @@
         projects: 0,
         pending: 0,
         requested: 0,
-        approved: 0
+        approved: 0,
+        reviewing: 0
       };
+      const requestedAmount = Number(item.estimatedExpense || 0);
+      const approvedAmount = Number(item.approvedAmount || 0);
       row.projects += 1;
       if (status === "pending") row.pending += 1;
-      row.requested += Number(item.estimatedExpense || 0);
-      row.approved += Number(item.approvedAmount || 0);
+      if (status === "reviewing") row.reviewing += Math.max(requestedAmount - approvedAmount, 0);
+      row.requested += requestedAmount;
+      row.approved += approvedAmount;
       grouped.set(key, row);
     });
     return Array.from(grouped.values()).map((row) => ({
       ...row,
-      difference: row.requested - row.approved
+      difference: Math.max(row.requested - row.approved - row.reviewing, 0)
     }));
   };
 
@@ -1868,6 +1875,23 @@
             label: "ยอดอนุมัติ",
             data: rows.map((row) => row.approved),
             backgroundColor: "#34d399",
+            stack: "budget-total",
+            borderRadius: 0,
+            borderSkipped: false
+          },
+          {
+            label: "กำลังพิจารณา",
+            data: rows.map((row) => row.reviewing),
+            backgroundColor: "#facc15",
+            stack: "budget-total",
+            borderRadius: 0,
+            borderSkipped: false
+          },
+          {
+            label: "ส่วนที่ยังไม่อนุมัติ",
+            data: rows.map((row) => row.difference),
+            backgroundColor: "#fbcfe8",
+            stack: "budget-total",
             borderRadius: { topRight: 8, bottomRight: 8 },
             borderSkipped: false
           }
@@ -1912,6 +1936,8 @@
                 return [
                   `ยอดขอรวม: ${formatMoney(row?.requested || 0)} บาท`,
                   `ยอดอนุมัติรวม: ${formatMoney(row?.approved || 0)} บาท`,
+                  `กำลังพิจารณา: ${formatMoney(row?.reviewing || 0)} บาท`,
+                  `ส่วนที่ยังไม่อนุมัติ: ${formatMoney(row?.difference || 0)} บาท`,
                   `โครงการ ${Number(row?.projects || 0).toLocaleString("th-TH")} รายการ`
                 ];
               }
@@ -1928,6 +1954,7 @@
         },
         scales: {
           x: {
+            stacked: true,
             ticks: {
               maxTicksLimit: isCompactChart ? 3 : 5,
               padding: isCompactChart ? 8 : 3,
@@ -1938,6 +1965,7 @@
             }
           },
           y: {
+            stacked: true,
             afterFit(scale) {
               scale.width = yAxisLabelWidth;
             },
@@ -1979,7 +2007,7 @@
       const requested = Number(item.estimatedExpense || 0);
       const approved = Number(item.approvedAmount || 0);
       const status = normalizeText(item.status || "pending").toLowerCase();
-      const approvedText = status === "pending" && !approved ? "-" : formatMoney(approved);
+      const approvedText = (status === "pending" || status === "reviewing") && !approved ? "-" : formatMoney(approved);
       return `
         <tr class="budget-request-history-row budget-staff-request-row is-editable" data-budget-staff-edit-id="${id}" tabindex="0" title="คลิกเพื่อแก้ไขรายการ">
           <td class="col-code" data-label="รหัสโครงการ"><code class="budget-request-project-code">${escapeHtml(item.projectCodeGenerated || "-")}</code></td>

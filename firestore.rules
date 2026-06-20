@@ -192,13 +192,14 @@ service cloud.firestore {
     }
 
     function validBudgetStatus(status) {
-      return status in ["pending", "approved", "rejected", "cancelled"];
+      return status in ["pending", "reviewing", "approved", "rejected", "cancelled"];
     }
 
     function canAuthenticatedUserUpdatePendingBudgetRequest() {
       return signedIn() &&
         resource.data.status == "pending" &&
         validBudgetStatus(request.resource.data.status) &&
+        unchanged("status") &&
         unchanged("requestType") &&
         unchanged("organizationType") &&
         unchanged("organizationName") &&
@@ -215,9 +216,14 @@ service cloud.firestore {
     match /budgetApprovalRequests/{requestId} {
       allow create: if signedIn() &&
         (
-          request.resource.data.requester.email == userEmail() ||
-          request.resource.data.requesterEmail == userEmail() ||
-          isStaff()
+          isStaff() ||
+          (
+            (
+              request.resource.data.requester.email == userEmail() ||
+              request.resource.data.requesterEmail == userEmail()
+            ) &&
+            request.resource.data.status == "pending"
+          )
         ) &&
         validBudgetStatus(request.resource.data.status);
       allow read: if isStaff() ||
@@ -233,6 +239,7 @@ service cloud.firestore {
           ) &&
           resource.data.status == "pending" &&
           validBudgetStatus(request.resource.data.status) &&
+          unchanged("status") &&
           unchanged("requester") &&
           unchanged("requesterEmail")
         );

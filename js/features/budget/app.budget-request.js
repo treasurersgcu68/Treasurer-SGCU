@@ -1034,6 +1034,9 @@ function initBudgetApprovalRequestPage() {
 
   const statusBadgeHtml = (status) => {
     const normalized = (status || "pending").toString().trim().toLowerCase();
+    if (normalized === "reviewing") {
+      return '<span class="badge badge-reviewing">กำลังพิจารณา</span>';
+    }
     if (normalized === "approved") {
       return '<span class="badge badge-approved">ผ่านที่ประชุมนายกหรืออนุกรรมการ</span>';
     }
@@ -1062,6 +1065,7 @@ function initBudgetApprovalRequestPage() {
 
   const statusText = (status) => {
     const normalized = (status || "pending").toString().trim().toLowerCase();
+    if (normalized === "reviewing") return "กำลังพิจารณา";
     if (normalized === "approved") return "ผ่านที่ประชุมนายกหรืออนุกรรมการ";
     if (normalized === "rejected") return "ไม่อนุมัติ";
     if (normalized === "cancelled") return "ยกเลิกหรือเลื่อนไปผ่านครั้งอื่น";
@@ -1304,7 +1308,7 @@ function initBudgetApprovalRequestPage() {
       const status = (item.status || "pending").toString().trim().toLowerCase();
       const requestedAmount = Number(item.estimatedExpense || 0);
       const approvedAmount = Number(item.approvedAmount || 0);
-      const approvedText = status === "pending" && !approvedAmount ? "-" : formatCurrency(approvedAmount);
+      const approvedText = (status === "pending" || status === "reviewing") && !approvedAmount ? "-" : formatCurrency(approvedAmount);
       const roundLabel = getRequestRoundLabel(item);
       const canEdit = status === "pending" && getOpenBudgetRounds().length > 0;
       const rowEditAttrs = canEdit

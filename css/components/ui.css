@@ -183,6 +183,10 @@
   background: #ffedd5;
   color: #c2410c;
 }
+.badge-reviewing {
+  background: #fef3c7;
+  color: #92400e;
+}
 .badge-warning {
   background: #fef9c3;
   color: #a16207;

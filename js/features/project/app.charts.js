@@ -127,7 +127,7 @@ function initCharts(ctxKey = activeProjectStatusContext) {
           makeStackDataset("โครงการที่อนุมัติแล้ว", "#fbbf24", 1),
           makeStackDataset("โครงการที่วันเลยจัดแล้ว", "#f97316", 2),
           makeStackDataset("โครงการที่เลยกำหนดส่งปิดแล้ว", "#ef4444", 3),
-          makeStackDataset("ปิดโครงการแล้ว (ฝั่งนิสิต)", "#86efac", 4),
+          makeStackDataset("ปิดโครงการแล้ว (ส่วน อบจ.)", "#86efac", 4),
           makeStackDataset("ปิดโครงการสมบูรณ์", "#22c55e", 5),
           makeStackDataset("ยกเลิกโครงการ", "#6b7280", 6),
           makeStackDataset("ไม่ส่งปิดโครงการ", "#111827", 7)
@@ -147,6 +147,10 @@ function initCharts(ctxKey = activeProjectStatusContext) {
               legend.chart.update();
             },
             labels: {
+              filter(legendItem, chartData) {
+                const dataset = chartData.datasets?.[legendItem.datasetIndex];
+                return (dataset?.data || []).some((value) => Number(value) > 0);
+              },
               font: { size: 11 },
               usePointStyle: true,
               boxWidth: 10,

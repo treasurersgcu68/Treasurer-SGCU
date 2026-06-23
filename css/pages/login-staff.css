@@ -802,27 +802,51 @@
 
 .staff-approval-manage-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .staff-approval-manage-btn {
-  min-height: 40px;
+  min-height: 34px;
+  padding: 6px 10px;
   border-color: var(--theme-pink-300);
   color: var(--theme-pink-700);
   background: #fff;
+  display: inline-flex;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.staff-approval-manage-btn.is-secondary {
+  border-color: rgba(148, 163, 184, 0.9);
+  color: #475569;
+  background: #ffffff;
 }
 
 .staff-approval-manage-btn.is-danger {
-  background: #be185d;
-  border-color: #be185d;
+  background: #fff1f2;
+  border-color: #fb7185;
+  color: #be123c;
+}
+
+.staff-approval-manage-btn.is-delete {
+  background: #991b1b;
+  border-color: #991b1b;
   color: #fff;
 }
 
 .staff-approval-manage-btn.is-danger:hover {
-  background: #9d174d;
-  border-color: #9d174d;
+  background: #ffe4e6;
+  border-color: #f43f5e;
+}
+
+.staff-approval-manage-btn.is-delete:hover {
+  background: #7f1d1d;
+  border-color: #7f1d1d;
 }
 
 .staff-approval-manage-hint {
@@ -1007,6 +1031,11 @@
   .staff-approval-manage-actions,
   .staff-approval-modal-actions {
     grid-template-columns: 1fr;
+  }
+
+  .staff-approval-manage-btn {
+    min-height: 42px;
+    padding: 9px 12px;
   }
 
   .staff-approval-detail-layout .modal-section-grid {

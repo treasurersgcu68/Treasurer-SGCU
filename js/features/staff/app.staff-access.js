@@ -911,7 +911,7 @@ function initStaffAccessPages() {
           <div class="staff-approval-manage-actions">
             <button
               type="button"
-              class="btn-ghost modal-approval-revert-pending staff-approval-manage-btn"
+              class="btn-ghost modal-approval-revert-pending staff-approval-manage-btn is-secondary"
               data-application-id="${toSafeText((approvedItems[0]?.id || applicationId).toString())}"
             >
               คืนเป็นรออนุมัติ
@@ -922,6 +922,13 @@ function initStaffAccessPages() {
               data-application-id="${toSafeText((approvedItems[0]?.id || applicationId).toString())}"
             >
               เปลี่ยนเป็นไม่อนุมัติ
+            </button>
+            <button
+              type="button"
+              class="btn-ghost modal-approval-delete staff-approval-manage-btn is-delete"
+              data-application-id="${toSafeText((approvedItems[0]?.id || applicationId).toString())}"
+            >
+              ลบคำขอนี้
             </button>
           </div>
           <div class="section-text-sm staff-approval-manage-hint">การจัดการทั้งหมดจะมีผลเฉพาะตำแหน่งที่เลือกอยู่ด้านบน</div>
@@ -2637,6 +2644,7 @@ function initStaffAccessPages() {
                   <option value="pending" selected>รออนุมัติ</option>
                   <option value="approved">อนุมัติแล้ว</option>
                   <option value="rejected">ไม่อนุมัติ</option>
+                  <option value="remove">ลบคำขอ</option>
                 </select>
               </td>
             </tr>
@@ -7413,6 +7421,101 @@ function initStaffAccessPages() {
     }
   };
 
+  const deleteStaffApplication = async (applicationId) => {
+    if (!resolveStore()) {
+      setMessage(approvalMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
+      return false;
+    }
+    if (!isSuperStaff()) {
+      setMessage(approvalMessageEl, "หน้านี้สำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
+      return false;
+    }
+
+    const id = (applicationId || "").toString();
+    if (!id) return false;
+    const target = [
+      ...currentPendingApplications,
+      ...currentApprovedHistory
+    ].find((item) => (item.id || "").toString() === id);
+    const applicantEmail = (target?.applicantEmail || "").toString().trim().toLowerCase();
+    const applicantName = (target?.applicantName || applicantEmail || "-").toString();
+    const ok = window.confirm(`ยืนยันลบคำขอสมาชิกสตาฟของ "${applicantName}" ?`);
+    if (!ok) {
+      setMessage(approvalMessageEl, "ยกเลิกการลบคำขอ", "#6b7280");
+      return false;
+    }
+
+    const rowEl = approvalBodyEl
+      ? Array.from(approvalBodyEl.querySelectorAll("tr")).find((tr) => tr.getAttribute("data-application-id") === id)
+      : null;
+    const rowControls = rowEl ? rowEl.querySelectorAll("button, select, input") : [];
+    rowControls.forEach((control) => {
+      control.disabled = true;
+    });
+
+    try {
+      if (applicantEmail && firestore.getDoc) {
+        const profileRef = firestore.doc(firestore.db, COLLECTION_PROFILES, applicantEmail);
+        const profileSnap = await firestore.getDoc(profileRef);
+        const profileData = profileSnap?.exists?.() ? (profileSnap.data() || {}) : null;
+        if (profileData) {
+          const existingPositions = extractExistingPositionsFromProfile(profileData);
+          const matchedPosition = existingPositions.some(
+            (entry) => (entry.sourceApplicationId || "") === id
+          );
+          const sourceApplicationId = (profileData.sourceApplicationId || "").toString().trim();
+          if (matchedPosition || sourceApplicationId === id) {
+            const nextPositions = existingPositions.filter(
+              (entry) => (entry.sourceApplicationId || "") !== id
+            );
+            const nextProfile = buildProfileFieldsFromPositions(nextPositions);
+            await firestore.setDoc(
+              profileRef,
+              {
+                ...nextProfile,
+                positionCodeXX: nextPositions.length ? (profileData.positionCodeXX || "") : "",
+                positionCodeYY: nextProfile.positionCodeYY || "",
+                positionCodeZZ: nextPositions.length ? (profileData.positionCodeZZ || "") : "",
+                positionCodeAAA: nextPositions.length ? (profileData.positionCodeAAA || "") : "",
+                sourceApplicationId: nextProfile.positions?.[0]?.sourceApplicationId || "",
+                deletedApplicationId: id,
+                revokedAt: firestore.serverTimestamp(),
+                updatedAt: firestore.serverTimestamp()
+              },
+              { merge: true }
+            );
+            if (!nextPositions.length) {
+              clearLocalStaffCache(applicantEmail);
+            } else {
+              refreshLocalStaffCache(applicantEmail, {
+                ...nextProfile,
+                nick: (profileData.nick || "").toString()
+              });
+            }
+          }
+        }
+      }
+
+      await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_APPLICATIONS, id));
+      setMessage(approvalMessageEl, "ลบคำขอสมาชิกสตาฟเรียบร้อยแล้ว", "#047857");
+      return true;
+    } catch (error) {
+      console.error("delete staff application failed - app.staff-access.js", error);
+      const code = (error?.code || "unknown").toString();
+      if (code === "permission-denied") {
+        setMessage(approvalMessageEl, "ไม่มีสิทธิ์ลบคำขอ (permission-denied)", "#b91c1c");
+      } else if (code === "unauthenticated") {
+        setMessage(approvalMessageEl, "เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่", "#b91c1c");
+      } else {
+        setMessage(approvalMessageEl, "ลบคำขอไม่สำเร็จ กรุณาลองใหม่", "#b91c1c");
+      }
+      rowControls.forEach((control) => {
+        control.disabled = false;
+      });
+      return false;
+    }
+  };
+
   const handleAuthOrProfileUpdate = (event) => {
     const detail = event?.detail && typeof event.detail === "object" ? event.detail : null;
     if (detail) {
@@ -7507,7 +7610,7 @@ function initStaffAccessPages() {
         select.value = "pending";
         select.classList.remove("is-approved", "is-rejected");
         select.classList.add("is-pending");
-        void deleteOrgRepresentativeApplication(id);
+        void deleteStaffApplication(id);
         return;
       }
 
@@ -8018,9 +8121,11 @@ function initStaffAccessPages() {
       const saveBtn = approvalDetailBodyEl?.querySelector(".modal-approval-save-position");
       const revertBtn = approvalDetailBodyEl?.querySelector(".modal-approval-revert-pending");
       const rejectBtn = approvalDetailBodyEl?.querySelector(".modal-approval-reject");
+      const deleteBtn = approvalDetailBodyEl?.querySelector(".modal-approval-delete");
       if (saveBtn instanceof HTMLButtonElement) saveBtn.dataset.applicationId = selectedId;
       if (revertBtn instanceof HTMLButtonElement) revertBtn.dataset.applicationId = selectedId;
       if (rejectBtn instanceof HTMLButtonElement) rejectBtn.dataset.applicationId = selectedId;
+      if (deleteBtn instanceof HTMLButtonElement) deleteBtn.dataset.applicationId = selectedId;
     });
 
     approvalDetailModalEl.addEventListener("click", (event) => {
@@ -8098,6 +8203,14 @@ function initStaffAccessPages() {
         if (rejectBtn instanceof HTMLButtonElement) {
           const id = (rejectBtn.dataset.applicationId || "").toString();
           if (id) void revokeApprovedApplication(id, "rejected");
+          return;
+        }
+        const deleteBtn = target.closest(".modal-approval-delete");
+        if (deleteBtn instanceof HTMLButtonElement) {
+          const id = (deleteBtn.dataset.applicationId || "").toString();
+          if (id) void deleteStaffApplication(id).then((ok) => {
+            if (ok) closeApprovalDetailModal();
+          });
           return;
         }
       }

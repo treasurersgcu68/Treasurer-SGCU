@@ -93,6 +93,9 @@ function initBudgetApprovalRequestPage() {
   const SETTINGS_DOC_ID = firestoreDocs.budgetApprovalSettings || "global";
   const BUDGET_REQUEST_LIST_LIMIT = 500;
   const REPRESENTATIVE_APPLICATION_LIST_LIMIT = 100;
+  const NO_OPEN_BUDGET_ROUNDS_MESSAGE = "ยังไม่มีรอบรับคำของบที่เปิดอยู่ จึงยังไม่สามารถยื่นหรือแก้ไขคำขอได้";
+  const NO_APPROVED_REPRESENTATIVE_MESSAGE =
+    "ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลบรายการ หรือเพิ่มคำของบขององค์กรได้";
   let unsubscribeMyRequests = null;
   let unsubscribeOrgBudgetTotals = null;
   let unsubscribeRepresentativeApplications = null;
@@ -110,6 +113,7 @@ function initBudgetApprovalRequestPage() {
   let orgTotalsChartInstance = null;
   let selectedOrgTotalsRoundId = "";
   let budgetRequestDeadline = "";
+  let budgetRequestDeadlineTime = "";
   let isBudgetRequestClosed = false;
   let budgetRoundYear = "";
   let representativeApplicationYear = "";
@@ -422,16 +426,77 @@ function initBudgetApprovalRequestPage() {
     return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   };
 
+  const toDateOnlyText = (value) => {
+    const formatLocalDate = (date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    if (!value) return "";
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return formatLocalDate(value);
+    if (typeof value?.toDate === "function") {
+      const date = value.toDate();
+      return date instanceof Date && !Number.isNaN(date.getTime()) ? formatLocalDate(date) : "";
+    }
+    if (typeof value?.toMillis === "function") {
+      const date = new Date(value.toMillis());
+      return Number.isNaN(date.getTime()) ? "" : formatLocalDate(date);
+    }
+    const text = value.toString().trim();
+    const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+    const parsed = Date.parse(text);
+    if (!Number.isNaN(parsed)) return formatLocalDate(new Date(parsed));
+    return text.length >= 10 ? text.slice(0, 10) : text;
+  };
+
+  const getRoundDeadlineDate = (round = {}) =>
+    toDateOnlyText(
+      round.deadline ||
+      round.budgetRequestDeadline ||
+      round.deadlineDate ||
+      round.dueDate ||
+      round.endDate ||
+      round.closedAt ||
+      round.deadlineAt
+    );
+
+  const readBudgetRoundYear = (item = {}) => {
+    const direct = normalizeAcademicYearText(item.year || item.budgetRoundYear || item.academicYear);
+    if (direct) return direct;
+    const fromLabel = (
+      item.label ||
+      item.name ||
+      item.title ||
+      item.roundName ||
+      item.currentBudgetRoundId ||
+      item.budgetRoundId ||
+      item.id ||
+      ""
+    ).toString().match(/25\d{2}/);
+    return fromLabel ? normalizeAcademicYearText(fromLabel[0]) : "";
+  };
+
+  const readBudgetRoundNo = (item = {}) => {
+    const direct = normalizeRoundName(item.roundNo || item.budgetRoundNo || item.roundName || item.name || item.title);
+    if (direct) {
+      return direct
+        .replace(/^ปี\s*25\d{2}\s*/i, "")
+        .replace(/\s*25\d{2}\s*$/i, "")
+        .trim();
+    }
+    const label = (item.label || item.currentBudgetRoundId || item.budgetRoundId || item.id || "").toString();
+    const match = label.match(/รอบ\s*(.+?)(?:\s*25\d{2})?$/i);
+    return match ? normalizeRoundName(`รอบ ${match[1]}`) : "";
+  };
+
   const getRoundDeadlineTime = (round = {}) => normalizeDeadlineTime(round.deadlineTime || round.budgetRequestDeadlineTime) || "23:59";
 
   const getRoundDeadlineTimestamp = (round = {}) => {
-    const deadline = (round.deadline || round.budgetRequestDeadline || "").toString().trim().slice(0, 10);
+    const deadline = getRoundDeadlineDate(round);
     if (!deadline) return Number.NaN;
     return new Date(`${deadline}T${getRoundDeadlineTime(round)}:59`).getTime();
   };
 
   const formatRoundDeadlineDisplay = (round = {}) => {
-    const dateText = formatDateDisplay(round.deadline || round.budgetRequestDeadline || "");
+    const dateText = formatDateDisplay(getRoundDeadlineDate(round));
     return dateText && dateText !== "-" ? `${dateText} เวลา ${getRoundDeadlineTime(round)} น.` : "-";
   };
 
@@ -468,9 +533,9 @@ function initBudgetApprovalRequestPage() {
   const normalizeBudgetActiveRounds = (value, fallback = {}) => {
     const rows = (Array.isArray(value) ? value : [])
       .map((item) => {
-        const year = normalizeAcademicYearText(item?.year || item?.budgetRoundYear);
-        const roundNo = normalizeRoundName(item?.roundNo || item?.budgetRoundNo);
-        const deadline = (item?.deadline || item?.budgetRequestDeadline || "").toString().trim().slice(0, 10);
+        const year = readBudgetRoundYear(item);
+        const roundNo = readBudgetRoundNo(item);
+        const deadline = getRoundDeadlineDate(item);
         const deadlineTime = normalizeDeadlineTime(item?.deadlineTime || item?.budgetRequestDeadlineTime) || "23:59";
         const id = (item?.id || buildBudgetRoundId(year, roundNo)).toString().trim();
         if (!id || !year || !roundNo || !deadline) return null;
@@ -478,9 +543,9 @@ function initBudgetApprovalRequestPage() {
       })
       .filter(Boolean);
     if (rows.length) return rows;
-    const year = normalizeAcademicYearText(fallback.budgetRoundYear);
-    const roundNo = normalizeRoundName(fallback.budgetRoundNo);
-    const deadline = (fallback.budgetRequestDeadline || "").toString().trim().slice(0, 10);
+    const year = readBudgetRoundYear(fallback);
+    const roundNo = readBudgetRoundNo(fallback);
+    const deadline = getRoundDeadlineDate(fallback);
     const deadlineTime = normalizeDeadlineTime(fallback.budgetRequestDeadlineTime) || "23:59";
     const id = (fallback.currentBudgetRoundId || buildBudgetRoundId(year, roundNo)).toString().trim();
     return id && year && roundNo && deadline
@@ -651,12 +716,7 @@ function initBudgetApprovalRequestPage() {
     setDisplayText(orgTypeDisplayEl, representative?.organizationType || "");
     setDisplayText(orgDeptDisplayEl, representative?.organizationName || "");
     updateBudgetOrgSummary();
-    if (!isBudgetRequestClosed && representativeApplicationsLoaded) {
-      setFormEnabled(!!representative);
-      if (!representative) {
-        setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลบรายการ หรือเพิ่มคำของบขององค์กรได้", "#b91c1c");
-      }
-    }
+    syncBudgetRequestFormAccess();
   };
 
   const populateBudgetOrgTypeOptions = () => {
@@ -751,9 +811,46 @@ function initBudgetApprovalRequestPage() {
     messageEl.style.color = color;
   };
 
+  const syncBudgetRequestFormAccess = () => {
+    if (isBudgetRequestClosed) {
+      setFormMessage(getBudgetRequestClosedMessage("สามารถดูผลได้เท่านั้น"), "#b91c1c");
+      setFormEnabled(false);
+      return;
+    }
+    if (!getOpenBudgetRounds().length) {
+      setFormMessage(NO_OPEN_BUDGET_ROUNDS_MESSAGE, "#b45309");
+      setFormEnabled(false);
+      return;
+    }
+    const hasRepresentative = !!getPrimaryApprovedRepresentative();
+    setFormEnabled(hasRepresentative);
+    if (!representativeApplicationsLoaded && messageEl.textContent.trim() === NO_OPEN_BUDGET_ROUNDS_MESSAGE) {
+      setFormMessage("");
+      return;
+    }
+    if (!hasRepresentative && representativeApplicationsLoaded) {
+      setFormMessage(NO_APPROVED_REPRESENTATIVE_MESSAGE, "#b91c1c");
+      return;
+    }
+    if (
+      hasRepresentative &&
+      [NO_OPEN_BUDGET_ROUNDS_MESSAGE, NO_APPROVED_REPRESENTATIVE_MESSAGE].includes(messageEl.textContent.trim())
+    ) {
+      setFormMessage("");
+    }
+  };
+
+  const getBudgetRequestClosedMessage = (suffix = "") => {
+    const deadlineText = budgetRequestDeadline
+      ? ` (${formatBudgetDeadlineDisplay(budgetRequestDeadline, budgetRequestDeadlineTime)})`
+      : "";
+    return `หมดเขตรับคำของบแล้ว${deadlineText}${suffix ? ` ${suffix}` : ""}`;
+  };
+
   const setBudgetRequestCloseState = (settings = "") => {
     const data = typeof settings === "object" && settings ? settings : { budgetRequestDeadline: settings };
     budgetRequestDeadline = (data.budgetRequestDeadline || "").toString().trim();
+    budgetRequestDeadlineTime = normalizeDeadlineTime(data.budgetRequestDeadlineTime) || "23:59";
     budgetRoundYear = normalizeAcademicYearText(data.budgetRoundYear);
     representativeApplicationYear = normalizeAcademicYearText(
       data.organizationRepresentativeAcademicYear ||
@@ -806,11 +903,11 @@ function initBudgetApprovalRequestPage() {
     }
     if (requestDeadlineDisplayEl) {
       requestDeadlineDisplayEl.textContent = budgetRequestDeadline
-        ? formatBudgetDeadlineDisplay(budgetRequestDeadline, data.budgetRequestDeadlineTime)
+        ? formatBudgetDeadlineDisplay(budgetRequestDeadline, budgetRequestDeadlineTime)
         : "ยังไม่กำหนด";
       requestDeadlineDisplayEl.classList.toggle("is-empty", !budgetRequestDeadline);
     }
-    isBudgetRequestClosed = !openRounds.length;
+    isBudgetRequestClosed = activeBudgetRounds.length > 0 && !openRounds.length;
     if (!budgetRequestDeadline) {
       if (requestDeadlineCaptionEl) {
         requestDeadlineCaptionEl.textContent = openRounds.length
@@ -1745,19 +1842,7 @@ function initBudgetApprovalRequestPage() {
     unsubscribeBudgetSettings = firestore.onSnapshot(docRef, (snap) => {
       const data = snap?.exists?.() ? (snap.data() || {}) : {};
       setBudgetRequestCloseState(data);
-      if (isBudgetRequestClosed) {
-        setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) สามารถดูผลได้เท่านั้น`, "#b91c1c");
-        setFormEnabled(false);
-      } else if (!getOpenBudgetRounds().length) {
-        setFormMessage("ยังไม่มีรอบรับคำของบที่เปิดอยู่ จึงยังไม่สามารถยื่นหรือแก้ไขคำขอได้", "#b45309");
-        setFormEnabled(false);
-      } else {
-        const hasRepresentative = !!getPrimaryApprovedRepresentative();
-        setFormEnabled(hasRepresentative);
-        if (!hasRepresentative && representativeApplicationsLoaded) {
-          setFormMessage("ยังไม่มีสิทธิ์ตัวแทนองค์กรที่อนุมัติแล้ว จึงไม่สามารถดู แก้ไข ลบรายการ หรือเพิ่มคำของบขององค์กรได้", "#b91c1c");
-        }
-      }
+      syncBudgetRequestFormAccess();
       renderMyRequestsRows(latestBudgetRequestRows);
     });
   };
@@ -2043,7 +2128,7 @@ function initBudgetApprovalRequestPage() {
 
   const validateForm = () => {
     if (isBudgetRequestClosed) {
-      setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) สามารถดูผลได้เท่านั้น`, "#b91c1c");
+      setFormMessage(getBudgetRequestClosedMessage("สามารถดูผลได้เท่านั้น"), "#b91c1c");
       return false;
     }
     const selectedRound = findActiveRoundById(requestRoundSelectEl.value);
@@ -2367,7 +2452,7 @@ function initBudgetApprovalRequestPage() {
     const id = (requestId || "").toString().trim();
     if (!id) return;
     if (isBudgetRequestClosed) {
-      setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) ไม่สามารถแก้ไขหรือลบรายการได้`, "#b91c1c");
+      setFormMessage(getBudgetRequestClosedMessage("ไม่สามารถแก้ไขหรือลบรายการได้"), "#b91c1c");
       return;
     }
     const item = latestMyBudgetRequests.find((row) => row.id === id);
@@ -2403,7 +2488,7 @@ function initBudgetApprovalRequestPage() {
     const id = (requestId || "").toString().trim();
     if (!id) return;
     if (isBudgetRequestClosed) {
-      setFormMessage(`หมดเขตรับคำของบแล้ว (${budgetRequestDeadline}) ไม่สามารถแก้ไขหรือลบรายการได้`, "#b91c1c");
+      setFormMessage(getBudgetRequestClosedMessage("ไม่สามารถแก้ไขหรือลบรายการได้"), "#b91c1c");
       return;
     }
     const item = latestMyBudgetRequests.find((row) => row.id === id);

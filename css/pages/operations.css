@@ -2187,6 +2187,29 @@
   min-width: 0;
 }
 
+#contentDocumentsForm.content-admin-form {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+#contentDocumentsForm .budget-staff-form-section {
+  padding: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.72);
+}
+
+#contentDocumentsForm .budget-staff-form-section + .budget-staff-form-section {
+  margin-top: 10px;
+}
+
+#contentDocumentsForm .budget-staff-form-section-title {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .content-documents-actions {
   align-items: center;
   justify-content: flex-end;
@@ -7721,13 +7744,17 @@
   .content-documents-actions {
     display: grid;
     gap: 8px;
+    width: 100%;
+    justify-content: stretch;
+    justify-items: stretch;
   }
 
   .content-documents-actions-group {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     width: 100%;
+    justify-self: stretch;
   }
 
   .content-documents-actions-group[hidden] {
@@ -7735,14 +7762,24 @@
   }
 
   .content-documents-reorder-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 8px;
   }
 
+  .content-documents-reorder-actions .btn-primary,
+  .content-documents-reorder-actions .btn-ghost {
+    width: 100%;
+    min-height: 40px;
+    justify-content: center;
+  }
+
   .content-documents-reorder-actions .btn-primary {
-    order: -1;
+    order: 1;
   }
 
   .content-documents-reorder-status {
+    display: none;
+    width: 100%;
     padding: 2px 0;
     text-align: center;
     white-space: normal;
@@ -7844,12 +7881,13 @@
     width: 100%;
     min-height: 40px;
     padding-inline: 8px;
-    font-size: 0.86rem;
-    white-space: nowrap;
+    font-size: 0.82rem;
+    white-space: normal;
+    line-height: 1.2;
   }
 
   .content-documents-actions .content-documents-reorder-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .content-news-filters {
@@ -8211,27 +8249,33 @@
   }
 
   .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-reorder-actions {
-    grid-template-columns: minmax(0, 1fr) minmax(92px, auto) minmax(120px, auto);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: center;
-    gap: 6px;
-    padding: 6px;
+    justify-items: stretch;
+    gap: 8px;
+    padding: 8px;
     border-radius: 12px;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
   }
 
   .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-reorder-actions .btn-primary,
   .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-reorder-actions .btn-ghost {
-    width: auto;
-    min-height: 38px;
+    width: 100%;
+    min-height: 40px;
     padding-inline: 12px;
+    justify-content: center;
   }
 
   .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-reorder-actions .btn-primary {
-    order: 0;
+    order: 1;
+  }
+
+  .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-reorder-actions .btn-ghost {
+    order: 2;
   }
 
   .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-reorder-status {
-    text-align: left;
+    display: none;
   }
 
   .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-table-wrapper {
@@ -9414,11 +9458,10 @@
 
 @media (max-width: 390px) {
   .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-reorder-actions {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .page-view[data-page="content-documents-staff"][data-documents-reorder-mode="true"] .content-documents-reorder-status {
-    grid-column: 1 / -1;
     text-align: center;
   }
 

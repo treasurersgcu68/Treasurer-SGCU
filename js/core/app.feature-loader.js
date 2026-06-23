@@ -47,22 +47,22 @@
       ],
       "borrow-assets": "js/features/borrow/app.borrow-assets.js?v=20260614-borrow-hard-delete-1",
       "borrow-assets-staff": "js/features/borrow/app.borrow-assets.js?v=20260614-borrow-hard-delete-1",
-      "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
+      "meeting-room-booking": "js/features/booking/app.meeting-room-booking.js?v=20260623-audit-hardening-1",
       "meeting-room-staff": [
-        "js/features/booking/app.meeting-room-booking.js?v=20260504-1",
-        "js/features/booking/app.meeting-room-staff.js?v=20260504-6"
+        "js/features/booking/app.meeting-room-booking.js?v=20260623-audit-hardening-1",
+        "js/features/booking/app.meeting-room-staff.js?v=20260623-audit-hardening-1"
       ],
-      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260613-budget-current-year-org-options-2",
+      "budget-approval-request": "js/features/budget/app.budget-request.js?v=20260623-audit-hardening-1",
       login: [
-        "js/features/staff/app.staff-access.js?v=20260504-1",
-        "js/features/budget/app.budget-request.js?v=20260613-budget-current-year-org-options-2"
+        "js/features/staff/app.staff-access.js?v=20260623-audit-hardening-1",
+        "js/features/budget/app.budget-request.js?v=20260623-audit-hardening-1"
       ],
-      "staff-application": "js/features/staff/app.staff-access.js?v=20260504-1",
+      "staff-application": "js/features/staff/app.staff-access.js?v=20260623-audit-hardening-1",
       "staff-approval": [
-        "js/features/staff/app.staff-access.js?v=20260504-1",
+        "js/features/staff/app.staff-access.js?v=20260623-audit-hardening-1",
         "js/features/budget/app.budget-staff.js?v=20260614-budget-chart-mobile-1"
       ],
-      "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260504-1",
+      "org-representative-approval-staff": "js/features/staff/app.staff-access.js?v=20260623-audit-hardening-1",
       "content-management-staff": [
         "js/features/docs/app.file-links.js?v=20260417-1",
         "js/features/content/app.content-management.js?v=20260506-1"

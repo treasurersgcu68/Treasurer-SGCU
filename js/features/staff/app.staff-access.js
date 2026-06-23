@@ -250,7 +250,7 @@ function initStaffAccessPages() {
     { id: "budget-approval-staff", label: "คำของบประมาณ" },
     { id: "borrow-assets-staff", label: "ยืม-คืนพัสดุ" },
     { id: "meeting-room-staff", label: "ห้องประชุม" },
-    { id: "staff-approval", label: "สมาชิกสตาฟ" },
+    { id: "staff-approval", label: "จัดการสตาฟ" },
     { id: "org-representative-approval-staff", label: "ตัวแทนองค์กร" },
     { id: "content-management-staff", label: "จัดการเนื้อหา" },
     { id: "content-news-staff", label: "ข่าวสาร" },
@@ -4914,6 +4914,18 @@ function initStaffAccessPages() {
           : "บันทึกทะเบียนองค์กรแล้ว และอัปเดต public cache แล้ว",
         "#047857"
       );
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.organization_catalog.upsert",
+        entityType: "organizationCatalogItem",
+        entityId: id,
+        before: previousCatalogItem,
+        after: { id, ...fields },
+        metadata: {
+          secondaryUpdateCount: secondaryUpdates.length,
+          syncedRepresentativeCount
+        },
+        source: "web_app_staff"
+      });
       renderOrgRepresentativeApplications();
     } catch (error) {
       console.error("save organization catalog failed - app.staff-access.js:3789", error);
@@ -4938,6 +4950,7 @@ function initStaffAccessPages() {
     }
     const currentUser = readCurrentUser();
     const updatedBy = (currentUser?.email || getCurrentAuthEmail() || "").toString().trim().toLowerCase();
+    const previousCatalogItem = getRawOrganizationCatalogItemById(id) || null;
     try {
       if (organizationCatalogArchiveBtnEl) organizationCatalogArchiveBtnEl.disabled = true;
       await firestore.updateDoc(
@@ -4953,6 +4966,14 @@ function initStaffAccessPages() {
       await syncPublicOrganizationCatalogCache();
       resetOrganizationCatalogForm();
       setMessage(organizationCatalogFormMessageEl, "ลบออกจากทะเบียนแล้ว และอัปเดต public cache แล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.organization_catalog.archive",
+        entityType: "organizationCatalogItem",
+        entityId: id,
+        before: previousCatalogItem,
+        after: { id, status: "archived" },
+        source: "web_app_staff"
+      });
       renderOrgRepresentativeApplications();
     } catch (error) {
       console.error("archive organization catalog failed - app.staff-access.js:3827", error);
@@ -5008,6 +5029,17 @@ function initStaffAccessPages() {
       refreshOrganizationCatalogAfterImport(items);
       await syncPublicOrganizationCatalogCache();
       setMessage(organizationCatalogImportMessageEl, `อัปโหลดทะเบียนองค์กร ${written.toLocaleString("th-TH")} รายการเข้า Firebase แล้ว และอัปเดต public cache แล้ว`, "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.organization_catalog.import",
+        entityType: "organizationCatalogItem",
+        entityId: "bulk",
+        after: { importedCount: written },
+        metadata: {
+          count: written,
+          idSample: items.map((item) => item.id).filter(Boolean).slice(0, 20)
+        },
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("import organization catalog csv failed - app.staff-access.js:3880", error);
       const code = (error?.code || "").toString();
@@ -6242,6 +6274,15 @@ function initStaffAccessPages() {
         await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_AUTH_EMAIL_ACCESS, previousEmail));
       }
       setMessage(staffAuthAccessMessageEl, "บันทึกสิทธิ์เข้าใช้เรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.auth_access.upsert",
+        entityType: "authEmailAccess",
+        entityId: email,
+        before: previousEntry || null,
+        after: { email, active, startsAt, endsAt, reason },
+        metadata: { previousEmail: previousEmail && previousEmail !== email ? previousEmail : "" },
+        source: "web_app_staff"
+      });
       resetAuthAccessForm();
     } catch (error) {
       console.error("save auth email access failed", error);
@@ -6255,9 +6296,19 @@ function initStaffAccessPages() {
     if (!normalizedEmail || !resolveStore() || !isSuperStaff()) return;
     const ok = window.confirm(`ยืนยันลบสิทธิ์เข้าใช้ของ ${normalizedEmail} ?`);
     if (!ok) return;
+    const previousEntry = currentAuthEmailAccessEntries.find((item) =>
+      normalizeAuthAccessEmail(item.email || item.id || "") === normalizedEmail
+    ) || null;
     try {
       await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_AUTH_EMAIL_ACCESS, normalizedEmail));
       setMessage(staffAuthAccessMessageEl, "ลบสิทธิ์เรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.auth_access.delete",
+        entityType: "authEmailAccess",
+        entityId: normalizedEmail,
+        before: previousEntry,
+        source: "web_app_staff"
+      });
       if (normalizeAuthAccessEmail(staffAuthAccessFields.id?.value || "") === normalizedEmail) {
         resetAuthAccessForm();
       }
@@ -6655,6 +6706,24 @@ function initStaffAccessPages() {
         nextStatus === "rejected" ? "เปลี่ยนเป็นไม่อนุมัติเรียบร้อยแล้ว" : "คืนเป็นรออนุมัติเรียบร้อยแล้ว",
         "#047857"
       );
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.application.revoke",
+        entityType: "staffApplication",
+        entityId: id,
+        before: target,
+        after: {
+          ...target,
+          status: nextStatus,
+          reviewedByUid: "",
+          reviewedByEmail: "",
+          reviewedNote: nextStatus === "rejected"
+            ? "ปรับสถานะเป็นไม่อนุมัติโดยหัวหน้าสตาฟ"
+            : "ยกเลิกอนุมัติโดยหัวหน้าสตาฟ",
+          approvedPosition: "",
+          approvedPositionCode: ""
+        },
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("revoke approved application failed - app.staff-access.js:5175", error);
       const code = (error?.code || "unknown").toString();
@@ -6768,6 +6837,21 @@ function initStaffAccessPages() {
       });
 
       setMessage(approvalMessageEl, "ปรับตำแหน่งเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.application.position_update",
+        entityType: "staffApplication",
+        entityId: id,
+        before: target,
+        after: {
+          ...target,
+          reviewedByUid: reviewerUid,
+          reviewedByEmail: reviewerEmail,
+          reviewedNote: `ปรับตำแหน่งหลังอนุมัติเป็น ${nextPosition} รหัส ${approvedPositionCode}`,
+          approvedPosition: nextPosition,
+          approvedPositionCode
+        },
+        source: "web_app_staff"
+      });
       return true;
     } catch (error) {
       console.error("update approved position failed - app.staff-access.js:5289", error);
@@ -6886,7 +6970,7 @@ function initStaffAccessPages() {
     setMessage(appMessageEl, "กำลังส่งคำขอสมัครสตาฟ...", "#1d4ed8");
 
     try {
-      await firestore.addDoc(
+      const docRef = await firestore.addDoc(
         firestore.collection(firestore.db, COLLECTION_APPLICATIONS),
         payload
       );
@@ -6896,6 +6980,13 @@ function initStaffAccessPages() {
         console.warn("sync staff position catalog after application failed - app.staff-access.js:5412", catalogError);
       }
       setMessage(appMessageEl, "ส่งคำขอสมัครสตาฟเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.application.create",
+        entityType: "staffApplication",
+        entityId: docRef?.id || "",
+        after: payload,
+        source: "web_app"
+      });
       window.setTimeout(() => {
         appFormStatusLocked = false;
         setApplicationAvailabilityByAuth();
@@ -6970,6 +7061,13 @@ function initStaffAccessPages() {
       );
       resetPositionManageForm();
       setMessage(positionManageMessageEl, "ปรับตำแหน่งเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.position.create",
+        entityType: "staffPosition",
+        entityId: id,
+        after: { id, name: safeName, divisionCodeYY, divisionLabel, levelCodeZZ, allowedPages },
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("add position failed - app.staff-access.js:5490", error);
       setMessage(positionManageMessageEl, "ปรับตำแหน่งไม่สำเร็จ", "#b91c1c");
@@ -6999,6 +7097,13 @@ function initStaffAccessPages() {
         resetPositionManageForm();
       }
       setMessage(positionManageMessageEl, "ลบตำแหน่งเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.position.delete",
+        entityType: "staffPosition",
+        entityId: safeId,
+        before: target,
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("remove position failed - app.staff-access.js:5519", error);
       setMessage(positionManageMessageEl, "ลบตำแหน่งไม่สำเร็จ", "#b91c1c");
@@ -7072,6 +7177,14 @@ function initStaffAccessPages() {
       currentEditingPositionId = "";
       resetPositionManageForm();
       setMessage(positionManageMessageEl, "อัปเดตตำแหน่งเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.position.update",
+        entityType: "staffPosition",
+        entityId: safeId,
+        before: target,
+        after: { id: safeId, name: safeName, divisionCodeYY, divisionLabel, levelCodeZZ, allowedPages },
+        source: "web_app_staff"
+      });
       return true;
     } catch (error) {
       console.error("update position failed - app.staff-access.js:5593", error);
@@ -7150,6 +7263,25 @@ function initStaffAccessPages() {
         successText,
         "#047857"
       );
+      const targetOrg = getResolvedOrgRepresentativeOrganization(target);
+      const applicant = getOrgRepresentativeApplicant(target);
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.org_representative.status_update",
+        entityType: "orgRepresentativeApplication",
+        entityId: id,
+        before: target,
+        after: {
+          ...target,
+          status: nextStatus,
+          reviewedByUid: reviewerUid,
+          reviewedByEmail: reviewerEmail,
+          reviewedNote,
+          applicantEmail: applicant.email || target.applicantEmail || "",
+          organizationName: targetOrg.organizationName || ""
+        },
+        metadata: { action, previousStatus: currentStatus },
+        source: "web_app_staff"
+      });
       return true;
     } catch (error) {
       console.error("update organization representative status failed - app.staff-access.js:5671", error);
@@ -7212,6 +7344,14 @@ function initStaffAccessPages() {
         openOrgRepresentativeOrganizationModal(orgKey);
       }
       setMessage(orgRepresentativeMessageEl, "ลบรายชื่อตัวแทนองค์กรเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.org_representative.delete",
+        entityType: "orgRepresentativeApplication",
+        entityId: id,
+        before: target,
+        metadata: { organizationKey: orgKey },
+        source: "web_app_staff"
+      });
       return true;
     } catch (error) {
       console.error("delete organization representative application failed - app.staff-access.js", error);
@@ -7401,6 +7541,25 @@ function initStaffAccessPages() {
         action === "approve" ? "อนุมัติคำขอเรียบร้อยแล้ว" : "ไม่อนุมัติคำขอเรียบร้อยแล้ว",
         "#047857"
       );
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.application.status_update",
+        entityType: "staffApplication",
+        entityId: id,
+        before: [
+          ...currentPendingApplications,
+          ...currentApprovedHistory
+        ].find((item) => (item.id || "").toString() === id) || null,
+        after: {
+          status: action === "approve" ? "approved" : "rejected",
+          reviewedByUid: reviewerUid,
+          reviewedByEmail: reviewerEmail,
+          reviewedNote,
+          approvedPosition: action === "approve" ? approvedPosition : "",
+          approvedPositionCode: action === "approve" ? approvedPositionCode : ""
+        },
+        metadata: { action },
+        source: "web_app_staff"
+      });
       return true;
     } catch (error) {
       console.error("update staff application status failed - app.staff-access.js:5860", error);
@@ -7498,6 +7657,13 @@ function initStaffAccessPages() {
 
       await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_APPLICATIONS, id));
       setMessage(approvalMessageEl, "ลบคำขอสมาชิกสตาฟเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "staff.application.delete",
+        entityType: "staffApplication",
+        entityId: id,
+        before: target || { applicantEmail, applicantName },
+        source: "web_app_staff"
+      });
       return true;
     } catch (error) {
       console.error("delete staff application failed - app.staff-access.js", error);

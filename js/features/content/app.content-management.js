@@ -475,6 +475,17 @@ function initContentManagementStaffPage() {
       await loadNewsItems();
       await syncPublicNewsCache();
       setMessage(`Import ข่าว ${importedCount.toLocaleString("th-TH")} รายการแล้ว และอัปเดต public cache แล้ว`, "success");
+      void window.sgcuAuditLog?.write?.({
+        action: "content.news.import",
+        entityType: "newsItem",
+        entityId: "bulk",
+        after: { importedCount },
+        metadata: {
+          count: importedCount,
+          idSample: rows.map((row) => row.docId).filter(Boolean).slice(0, 20)
+        },
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("Import ข่าว CSV ไม่สำเร็จ - app.content-management.js", error);
       setMessage(error.message || "Import CSV ไม่สำเร็จ", "error");
@@ -1265,6 +1276,14 @@ function initContentDocumentsStaffPage() {
       await loadDocuments();
       await syncPublicDownloadsCache();
       setMessage(`Import เอกสาร ${importedCount.toLocaleString("th-TH")} รายการเข้า Firestore แล้ว และอัปเดต public cache แล้ว`, "success");
+      void window.sgcuAuditLog?.write?.({
+        action: "content.document.import",
+        entityType: "downloadDocument",
+        entityId: "bulk",
+        after: { importedCount },
+        metadata: { count: importedCount },
+        source: "web_app_staff"
+      });
     } catch (error) {
       console.error("Import เอกสารการเงินเข้า Firestore ไม่สำเร็จ - app.content-management.js", error);
       setMessage(error.message || "Import Sheet เข้า Firestore ไม่สำเร็จ", "error");
@@ -1396,6 +1415,17 @@ function initContentDocumentsStaffPage() {
       await loadDocuments();
       await syncPublicDownloadsCache();
       setMessage(successMessage || "บันทึกลำดับแล้ว และอัปเดต public cache แล้ว", "success");
+      void window.sgcuAuditLog?.write?.({
+        action: "content.document.reorder",
+        entityType: "downloadDocument",
+        entityId: "bulk",
+        after: { updates: updates.map((update) => ({ id: update.id, ...update.payload })).slice(0, 50) },
+        metadata: {
+          count: updates.length,
+          idSample: updates.map((update) => update.id).filter(Boolean).slice(0, 20)
+        },
+        source: "web_app_staff"
+      });
       return true;
     } catch (error) {
       console.error("บันทึกลำดับเอกสารการเงินไม่สำเร็จ - app.content-management.js", error);

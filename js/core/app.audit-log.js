@@ -116,6 +116,15 @@
   };
 
   const toDisplayDateTime = (value) => {
+    const date = toDateObject(value);
+    if (!date) return "-";
+    return date.toLocaleString("th-TH", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    });
+  };
+
+  const toDateObject = (value) => {
     const date =
       typeof value?.toDate === "function"
         ? value.toDate()
@@ -124,11 +133,24 @@
           : value
             ? new Date(value)
             : null;
-    if (!date || Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("th-TH", {
-      dateStyle: "medium",
-      timeStyle: "short"
-    });
+    return !date || Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const parseDateBoundary = (value = "", endOfDay = false) => {
+    const text = normalizeText(value);
+    if (!text) return null;
+    const date = new Date(`${text}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const isInDateRange = (item = {}) => {
+    const timestamp = toDateObject(item.timestamp);
+    if (!timestamp) return true;
+    const start = parseDateBoundary(state.startDate, false);
+    const end = parseDateBoundary(state.endDate, true);
+    if (start && timestamp < start) return false;
+    if (end && timestamp > end) return false;
+    return true;
   };
 
   const actionLabel = (action = "") => {
@@ -141,13 +163,17 @@
       "budget.request.create": "เพิ่มคำของบ",
       "budget.request.update": "แก้คำของบ",
       "budget.request.cancel": "ลด/ยกเลิกคำของบ",
+      "budget.request.delete": "ลบคำของบ",
       "borrow.request.create": "ยื่นคำขอยืมพัสดุ",
       "borrow.request.status_update": "อัปเดตสถานะพัสดุ",
       "borrow.request.delete": "ลบคำขอยืมพัสดุ",
       "content.news.create": "เพิ่มข่าว",
       "content.news.update": "แก้ข่าว",
+      "content.news.import": "Import ข่าว",
       "content.document.create": "เพิ่มเอกสาร",
       "content.document.update": "แก้เอกสาร",
+      "content.document.import": "Import เอกสาร",
+      "content.document.reorder": "จัดลำดับเอกสาร",
       "booking.created": "สร้างคำขอจองห้อง",
       "booking.status_updated": "อัปเดตสถานะจองห้อง",
       "booking.status_updated_by_staff": "สตาฟอัปเดตสถานะจองห้อง",
@@ -159,7 +185,22 @@
       "meeting_room.renamed": "แก้ชื่อห้องประชุม",
       "meeting_room.booking_access_updated": "แก้สิทธิ์จองห้อง",
       "meeting_holiday.created": "เพิ่มวันหยุดห้องประชุม",
-      "meeting_holiday.deleted": "ลบวันหยุดห้องประชุม"
+      "meeting_holiday.deleted": "ลบวันหยุดห้องประชุม",
+      "staff.auth_access.upsert": "บันทึกสิทธิ์เข้าใช้ชั่วคราว",
+      "staff.auth_access.delete": "ลบสิทธิ์เข้าใช้ชั่วคราว",
+      "staff.position.create": "เพิ่มตำแหน่งสตาฟ",
+      "staff.position.update": "แก้ตำแหน่งสตาฟ",
+      "staff.position.delete": "ลบตำแหน่งสตาฟ",
+      "staff.application.create": "ส่งคำขอสมัครสตาฟ",
+      "staff.application.status_update": "อัปเดตสถานะคำขอสตาฟ",
+      "staff.application.revoke": "ยกเลิกอนุมัติคำขอสตาฟ",
+      "staff.application.position_update": "ปรับตำแหน่งสตาฟ",
+      "staff.application.delete": "ลบคำขอสตาฟ",
+      "staff.org_representative.status_update": "อัปเดตสถานะตัวแทนองค์กร",
+      "staff.org_representative.delete": "ลบคำขอตัวแทนองค์กร",
+      "staff.organization_catalog.upsert": "บันทึกทะเบียนองค์กร",
+      "staff.organization_catalog.archive": "ลบทะเบียนองค์กร",
+      "staff.organization_catalog.import": "Import ทะเบียนองค์กร"
     };
     return labels[key] || key || "-";
   };
@@ -173,7 +214,12 @@
       downloadDocument: "เอกสาร",
       meetingRoomBooking: "จองห้อง",
       meetingRoom: "ห้องประชุม",
-      meetingRoomHoliday: "วันหยุดห้องประชุม"
+      meetingRoomHoliday: "วันหยุดห้องประชุม",
+      authEmailAccess: "สิทธิ์เข้าใช้ชั่วคราว",
+      staffPosition: "ตำแหน่งสตาฟ",
+      staffApplication: "คำขอสตาฟ",
+      orgRepresentativeApplication: "คำขอตัวแทนองค์กร",
+      organizationCatalogItem: "ทะเบียนองค์กร"
     };
     const type = labels[normalizeText(entityType)] || normalizeText(entityType) || "-";
     const id = normalizeText(entityId);
@@ -280,6 +326,44 @@
       return [normalizeText(data.name), normalizeText(data.category), statusLabel(data.status)].filter(Boolean).join(" | ");
     }
 
+    if (entityType === "authEmailAccess") {
+      const active = data.active === false ? "ปิดใช้งาน" : data.active === true ? "เปิดใช้งาน" : "";
+      return [normalizeText(data.email || item.entityId), active, normalizeText(data.reason)].filter(Boolean).join(" | ");
+    }
+
+    if (entityType === "staffPosition") {
+      return [
+        normalizeText(data.name),
+        normalizeText(data.divisionCodeYY),
+        normalizeText(data.levelCodeZZ)
+      ].filter(Boolean).join(" | ");
+    }
+
+    if (entityType === "staffApplication") {
+      return [
+        normalizeText(data.applicantName || data.applicantEmail),
+        normalizeText(data.approvedPosition || data.requestedPosition),
+        statusLabel(data.status)
+      ].filter(Boolean).join(" | ");
+    }
+
+    if (entityType === "orgRepresentativeApplication") {
+      return [
+        normalizeText(data.applicantEmail || data.email),
+        normalizeText(data.organizationName || data.orgName),
+        statusLabel(data.status)
+      ].filter(Boolean).join(" | ");
+    }
+
+    if (entityType === "organizationCatalogItem") {
+      return [
+        normalizeText(data.formName || data.name),
+        normalizeText(data.group),
+        normalizeText(data.code || data.documentRunCode),
+        statusLabel(data.status)
+      ].filter(Boolean).join(" | ");
+    }
+
     return action ? entityLabel(entityType, item.entityId) : "";
   };
 
@@ -339,7 +423,9 @@
   const state = {
     rows: [],
     filterType: "all",
-    query: ""
+    query: "",
+    startDate: "",
+    endDate: ""
   };
 
   const getTypeGroup = (item = {}) => {
@@ -349,6 +435,7 @@
     if (action.startsWith("borrow.") || entityType === "borrowAssetRequest") return "borrow";
     if (action.startsWith("booking.") || action.startsWith("meeting_") || entityType.startsWith("meetingRoom")) return "booking";
     if (action.startsWith("content.") || entityType === "newsItem" || entityType === "downloadDocument") return "content";
+    if (action.startsWith("staff.") || entityType === "authEmailAccess" || entityType === "staffPosition" || entityType === "orgRepresentativeApplication" || entityType === "organizationCatalogItem") return "staff";
     return "other";
   };
 
@@ -368,6 +455,7 @@
     const query = normalizeText(state.query).toLowerCase();
     return state.rows.filter((item) => {
       if (state.filterType !== "all" && getTypeGroup(item) !== state.filterType) return false;
+      if (!isInDateRange(item)) return false;
       if (query && !getSearchText(item).includes(query)) return false;
       return true;
     });
@@ -459,10 +547,20 @@
     });
 
     const typeFilter = document.getElementById("dashboardAuditLogTypeFilter");
+    const startDateInput = document.getElementById("dashboardAuditLogStartDate");
+    const endDateInput = document.getElementById("dashboardAuditLogEndDate");
     const searchInput = document.getElementById("dashboardAuditLogSearchInput");
     const searchClear = document.getElementById("dashboardAuditLogSearchClear");
     typeFilter?.addEventListener("change", () => {
       state.filterType = normalizeText(typeFilter.value) || "all";
+      renderRows(state.rows);
+    });
+    startDateInput?.addEventListener("change", () => {
+      state.startDate = normalizeText(startDateInput.value);
+      renderRows(state.rows);
+    });
+    endDateInput?.addEventListener("change", () => {
+      state.endDate = normalizeText(endDateInput.value);
       renderRows(state.rows);
     });
     searchInput?.addEventListener("input", () => {
@@ -470,7 +568,13 @@
       renderRows(state.rows);
     });
     searchClear?.addEventListener("click", () => {
+      state.filterType = "all";
+      state.startDate = "";
+      state.endDate = "";
       state.query = "";
+      if (typeFilter) typeFilter.value = "all";
+      if (startDateInput) startDateInput.value = "";
+      if (endDateInput) endDateInput.value = "";
       if (searchInput) searchInput.value = "";
       renderRows(state.rows);
       searchInput?.focus();

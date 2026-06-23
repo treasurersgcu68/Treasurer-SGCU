@@ -80,7 +80,6 @@ function initMeetingRoomBookingApp() {
   const BOOKING_COLLECTION_NAME = firestoreCollections.meetingRoomBookings || "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = firestoreCollections.meetingRooms || "meetingRooms";
   const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
-  const AUDIT_COLLECTION_NAME = firestoreCollections.auditLogs || "auditLogs";
   const USER_BOOKING_LOOKBACK_MONTHS = 1;
   const USER_BOOKING_LOOKAHEAD_MONTHS = 3;
   const DEFAULT_MEETING_ROOMS = [
@@ -1152,28 +1151,16 @@ function initMeetingRoomBookingApp() {
   };
 
   const writeAuditLog = async (action, entityType, entityId, beforeData, afterData, metadata = {}) => {
-    if (!hasFirestore) return;
-    try {
-      const actor = getAuditActor();
-      await firestore.addDoc(
-        firestore.collection(firestore.db, AUDIT_COLLECTION_NAME),
-        {
-          action,
-          entityType,
-          entityId: entityId || "",
-          before: beforeData || null,
-          after: afterData || null,
-          actorUid: actor.actorUid,
-          actorEmail: actor.actorEmail,
-          actorRole: actor.actorRole,
-          source: "web_app",
-          metadata: metadata || {},
-          timestamp: firestore.serverTimestamp()
-        }
-      );
-    } catch (err) {
-      // Keep audit logging non-blocking for booking flow.
-    }
+    const actor = getAuditActor();
+    return window.sgcuAuditLog?.write?.({
+      action,
+      entityType,
+      entityId: entityId || "",
+      before: beforeData || null,
+      after: afterData || null,
+      metadata: { ...(metadata || {}), actorRole: actor.actorRole },
+      source: "web_app"
+    });
   };
 
   const ensureMeetingStateEl = () => {

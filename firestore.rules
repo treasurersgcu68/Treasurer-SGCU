@@ -117,6 +117,152 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
 
+    function validAuditLogSnapshot(value) {
+      return value == null || value is map || value is list;
+    }
+
+    function validAuditLogAction(action) {
+      return action in [
+        "budget.settings.update",
+        "budget.round.delete",
+        "budget.project_codes.run",
+        "budget.project_codes.clear",
+        "budget.request.create",
+        "budget.request.update",
+        "budget.request.cancel",
+        "budget.request.delete",
+        "borrow.request.create",
+        "borrow.request.status_update",
+        "borrow.request.delete",
+        "content.news.create",
+        "content.news.update",
+        "content.news.import",
+        "content.document.create",
+        "content.document.update",
+        "content.document.import",
+        "content.document.reorder",
+        "booking.created",
+        "booking.status_updated",
+        "booking.status_updated_by_staff",
+        "booking.deleted_by_staff",
+        "booking.cancelled_by_requester",
+        "booking.reschedule_requested",
+        "meeting_room.created",
+        "meeting_room.deleted",
+        "meeting_room.renamed",
+        "meeting_room.booking_access_updated",
+        "meeting_holiday.created",
+        "meeting_holiday.deleted",
+        "staff.auth_access.upsert",
+        "staff.auth_access.delete",
+        "staff.position.create",
+        "staff.position.update",
+        "staff.position.delete",
+        "staff.application.create",
+        "staff.application.status_update",
+        "staff.application.revoke",
+        "staff.application.position_update",
+        "staff.application.delete",
+        "staff.org_representative.status_update",
+        "staff.org_representative.delete",
+        "staff.organization_catalog.upsert",
+        "staff.organization_catalog.archive",
+        "staff.organization_catalog.import"
+      ];
+    }
+
+    function validAuditLogEntityType(entityType) {
+      return entityType in [
+        "budgetApprovalRequest",
+        "budgetApprovalSettings",
+        "borrowAssetRequest",
+        "newsItem",
+        "downloadDocument",
+        "meetingRoomBooking",
+        "meetingRoom",
+        "meetingRoomHoliday",
+        "authEmailAccess",
+        "staffPosition",
+        "staffApplication",
+        "orgRepresentativeApplication",
+        "organizationCatalogItem"
+      ];
+    }
+
+    function auditLogActionRequiresStaff(action) {
+      return action in [
+        "budget.settings.update",
+        "budget.round.delete",
+        "budget.project_codes.run",
+        "budget.project_codes.clear",
+        "budget.request.cancel",
+        "borrow.request.status_update",
+        "borrow.request.delete",
+        "content.news.create",
+        "content.news.update",
+        "content.news.import",
+        "content.document.create",
+        "content.document.update",
+        "content.document.import",
+        "content.document.reorder",
+        "booking.status_updated_by_staff",
+        "booking.deleted_by_staff",
+        "meeting_room.created",
+        "meeting_room.deleted",
+        "meeting_room.renamed",
+        "meeting_room.booking_access_updated",
+        "meeting_holiday.created",
+        "meeting_holiday.deleted",
+        "staff.auth_access.upsert",
+        "staff.auth_access.delete",
+        "staff.position.create",
+        "staff.position.update",
+        "staff.position.delete",
+        "staff.application.status_update",
+        "staff.application.revoke",
+        "staff.application.position_update",
+        "staff.application.delete",
+        "staff.org_representative.status_update",
+        "staff.org_representative.delete",
+        "staff.organization_catalog.upsert",
+        "staff.organization_catalog.archive",
+        "staff.organization_catalog.import"
+      ];
+    }
+
+    function validAuditLogCreate() {
+      return request.resource.data.keys().hasOnly([
+          "action",
+          "entityType",
+          "entityId",
+          "before",
+          "after",
+          "actorUid",
+          "actorEmail",
+          "actorDisplayName",
+          "actorRole",
+          "source",
+          "metadata",
+          "timestamp"
+        ]) &&
+        request.resource.data.action is string &&
+        validAuditLogAction(request.resource.data.action) &&
+        request.resource.data.entityType is string &&
+        validAuditLogEntityType(request.resource.data.entityType) &&
+        request.resource.data.entityId is string &&
+        validAuditLogSnapshot(request.resource.data.before) &&
+        validAuditLogSnapshot(request.resource.data.after) &&
+        request.resource.data.actorUid == userUid() &&
+        request.resource.data.actorEmail == userEmail() &&
+        (!("actorDisplayName" in request.resource.data) || request.resource.data.actorDisplayName is string) &&
+        request.resource.data.actorRole is string &&
+        request.resource.data.source in ["web_app", "web_app_staff"] &&
+        (request.resource.data.source != "web_app_staff" || isStaff()) &&
+        (!auditLogActionRequiresStaff(request.resource.data.action) || isStaff()) &&
+        request.resource.data.metadata is map &&
+        request.resource.data.timestamp == request.time;
+    }
+
     match /userProfiles/{uid} {
       allow read: if isOwnerByUid(uid) || isStaff();
       allow create, update: if isOwnerByUid(uid) &&
@@ -330,7 +476,7 @@ service cloud.firestore {
     }
 
     match /auditLogs/{logId} {
-      allow create: if signedIn();
+      allow create: if signedIn() && validAuditLogCreate();
       allow read: if isStaff();
       allow update, delete: if false;
     }

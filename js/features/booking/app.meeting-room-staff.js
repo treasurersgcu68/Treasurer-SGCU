@@ -62,7 +62,6 @@ function initMeetingRoomStaffApproval() {
   const COLLECTION_NAME = firestoreCollections.meetingRoomBookings || "meetingRoomBookings";
   const ROOM_COLLECTION_NAME = firestoreCollections.meetingRooms || "meetingRooms";
   const HOLIDAY_COLLECTION_NAME = firestoreCollections.meetingRoomHolidays || "meetingRoomHolidays";
-  const AUDIT_COLLECTION_NAME = firestoreCollections.auditLogs || "auditLogs";
   const STAFF_REQUEST_STATUSES = new Set(["pending", "cancel_requested", "reschedule_requested"]);
   const STAFF_MEETING_PAGE_SIZE = 50;
   const STAFF_BOOKING_LIST_LIMIT = 1000;
@@ -554,28 +553,16 @@ function initMeetingRoomStaffApproval() {
   };
 
   const writeAuditLog = async (action, entityType, entityId, beforeData, afterData, metadata = {}) => {
-    if (!hasFirestore) return;
-    try {
-      const actor = getAuditActor();
-      await firestore.addDoc(
-        firestore.collection(firestore.db, AUDIT_COLLECTION_NAME),
-        {
-          action,
-          entityType,
-          entityId: entityId || "",
-          before: beforeData || null,
-          after: afterData || null,
-          actorUid: actor.actorUid,
-          actorEmail: actor.actorEmail,
-          actorRole: actor.actorRole,
-          source: "web_app_staff",
-          metadata: metadata || {},
-          timestamp: firestore.serverTimestamp()
-        }
-      );
-    } catch (err) {
-      // Keep audit logging non-blocking for staff actions.
-    }
+    const actor = getAuditActor();
+    return window.sgcuAuditLog?.write?.({
+      action,
+      entityType,
+      entityId: entityId || "",
+      before: beforeData || null,
+      after: afterData || null,
+      metadata: { ...(metadata || {}), actorRole: actor.actorRole },
+      source: "web_app_staff"
+    });
   };
 
   const toDateTime = (date, time) => new Date(`${date}T${time}:00`);

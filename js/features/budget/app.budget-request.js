@@ -2537,6 +2537,13 @@ function initBudgetApprovalRequestPage() {
       updateBudgetOrgSummary();
       renderOrgBudgetTotals(latestOrgBudgetRows, latestOrgBudgetTotalsSource);
       setFormMessage("ลบรายการเรียบร้อยแล้ว", "#047857");
+      void window.sgcuAuditLog?.write?.({
+        action: "budget.request.delete",
+        entityType: "budgetApprovalRequest",
+        entityId: id,
+        before: item,
+        source: "web_app"
+      });
     } catch (error) {
       console.error("delete budget approval request failed - app.budget-request.js:2456", error);
       setFormMessage("ลบรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
@@ -2721,6 +2728,9 @@ function initBudgetApprovalRequestPage() {
     try {
       const payload = buildRequestPayload();
       if (isEditing) {
+        const beforeItem = latestBudgetRequestRows.find((row) => row.id === editingRequestId) ||
+          latestMyBudgetRequests.find((row) => row.id === editingRequestId) ||
+          null;
         await firestore.updateDoc(
           firestore.doc(firestore.db, REQUEST_COLLECTION, editingRequestId),
           {
@@ -2730,8 +2740,16 @@ function initBudgetApprovalRequestPage() {
         );
         clearFormForCreate();
         setFormMessage("บันทึกการแก้ไขคำขอเรียบร้อยแล้ว", "#047857");
+        void window.sgcuAuditLog?.write?.({
+          action: "budget.request.update",
+          entityType: "budgetApprovalRequest",
+          entityId: editingRequestId,
+          before: beforeItem,
+          after: payload,
+          source: "web_app"
+        });
       } else {
-        await firestore.addDoc(
+        const docRef = await firestore.addDoc(
           firestore.collection(firestore.db, REQUEST_COLLECTION),
           {
             ...payload,
@@ -2741,6 +2759,13 @@ function initBudgetApprovalRequestPage() {
         );
         clearFormForCreate();
         setFormMessage("ส่งคำขออนุมัติงบประมาณเรียบร้อยแล้ว", "#047857");
+        void window.sgcuAuditLog?.write?.({
+          action: "budget.request.create",
+          entityType: "budgetApprovalRequest",
+          entityId: docRef?.id || "",
+          after: payload,
+          source: "web_app"
+        });
       }
     } catch (error) {
       console.error("submit budget approval request failed - app.budget-request.js:2661", error);

@@ -4558,11 +4558,25 @@
 
 .dashboard-audit-filter-bar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(360px, 2fr);
-  align-items: end;
+  grid-template-columns: 1fr;
   gap: 12px;
-  margin: 12px 0;
+  align-items: stretch;
+  margin: 0 0 12px;
   width: 100%;
+}
+
+.dashboard-audit-filter-row {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.dashboard-audit-filter-row-primary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-audit-filter-row-search {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .dashboard-audit-filter-bar .filter-group,
@@ -4573,7 +4587,7 @@
 }
 
 .dashboard-audit-filter-bar .filter-search {
-  grid-column: auto;
+  grid-column: 1 / -1;
 }
 
 .table-wrapper.dashboard-audit-table-wrapper {
@@ -7502,6 +7516,12 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;
+  }
+
+  .dashboard-audit-filter-row,
+  .dashboard-audit-filter-row-primary,
+  .dashboard-audit-filter-row-search {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .dashboard-audit-filter-bar .filter-group,

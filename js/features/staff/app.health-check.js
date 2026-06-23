@@ -408,10 +408,15 @@
     if (!("serviceWorker" in navigator)) {
       return makeRow("Service worker", "warn", "browser นี้ไม่รองรับ service worker", "ใช้ browser รุ่นใหม่เมื่อต้องตรวจ cache");
     }
+    const host = (window.location?.hostname || "").toString().toLowerCase();
+    const isLocalDevHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
     try {
       const registration = await withTimeout(navigator.serviceWorker.getRegistration(), CHECK_TIMEOUT_MS);
       const scriptUrl = registration?.active?.scriptURL || registration?.waiting?.scriptURL || registration?.installing?.scriptURL || "";
       if (!registration) {
+        if (isLocalDevHost) {
+          return makeRow("Service worker", "ok", "ปิดใช้งานบน local dev เพื่อกัน cache เก่า", "ไม่ต้องแก้ ถ้าเป็น localhost/127.0.0.1");
+        }
         return makeRow("Service worker", "warn", "ยังไม่มี registration", "รีเฟรชหน้าเว็บหรือ deploy ใหม่ถ้า cache ไม่อัปเดต");
       }
       return makeRow("Service worker", "ok", scriptUrl ? `ลงทะเบียนแล้ว: ${scriptUrl}` : "ลงทะเบียนแล้ว", "");

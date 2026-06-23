@@ -1391,6 +1391,7 @@ function initAuthUI() {
     signOut,
     onAuthStateChanged,
     isAllowedAuthEmail = () => true,
+    isAllowedAuthEmailAsync = async (email) => isAllowedAuthEmail(email),
     getAuthEmailRequirementMessage = () => "บัญชีนี้ไม่ได้รับอนุญาตให้เข้าสู่ระบบ"
   } = window.sgcuAuth;
 
@@ -2291,20 +2292,47 @@ function initAuthUI() {
 
   onAuthStateChanged(auth, (user) => {
     if (user && !isAllowedAuthEmail(user.email)) {
-      const message = getAuthEmailRequirementMessage(user.email);
-      clearAuthSession();
-      signOut(auth).catch((err) => {
-        console.error("auto logout error (email domain not allowed)", err);
+      isAllowedAuthEmailAsync(user.email).then((allowed) => {
+        if (allowed) {
+          const startedAt = resolveSessionStart(user);
+          if (startedAt && Date.now() - startedAt >= sessionMaxAgeMs) {
+            clearAuthSession();
+            signOut(auth).catch((err) => {
+              console.error("auto logout error (session expired) - app.sorting-auth.js", err);
+            });
+            refreshAuthDisplay(null);
+            window.dispatchEvent(
+              new CustomEvent("sgcu:auth-state", {
+                detail: { isAuthenticated: false }
+              })
+            );
+            return;
+          }
+          watchCurrentStaffApproval(user || null);
+          watchCurrentRepresentativeApproval(user || null);
+          refreshAuthDisplay(user);
+          window.dispatchEvent(
+            new CustomEvent("sgcu:auth-state", {
+              detail: { isAuthenticated: true, uid: (user?.uid || "").toString(), email: (user?.email || "").toString().trim().toLowerCase() }
+            })
+          );
+          return;
+        }
+        const message = getAuthEmailRequirementMessage(user.email);
+        clearAuthSession();
+        signOut(auth).catch((err) => {
+          console.error("auto logout error (email domain not allowed)", err);
+        });
+        refreshAuthDisplay(null);
+        if (loginPageStatusEl) {
+          loginPageStatusEl.textContent = message;
+        }
+        window.dispatchEvent(
+          new CustomEvent("sgcu:auth-state", {
+            detail: { isAuthenticated: false }
+          })
+        );
       });
-      refreshAuthDisplay(null);
-      if (loginPageStatusEl) {
-        loginPageStatusEl.textContent = message;
-      }
-      window.dispatchEvent(
-        new CustomEvent("sgcu:auth-state", {
-          detail: { isAuthenticated: false }
-        })
-      );
       return;
     }
     watchCurrentStaffApproval(user || null);
@@ -2405,7 +2433,8 @@ function initAuthUI() {
     signInWithPopup(auth, new GoogleAuthProvider())
       .then(async (credential) => {
         const user = credential?.user || auth.currentUser;
-        if (!isAllowedAuthEmail(user?.email)) {
+        const allowed = await isAllowedAuthEmailAsync(user?.email);
+        if (!allowed) {
           await signOut(auth).catch((err) => {
             console.error("logout error (email domain not allowed)", err);
           });

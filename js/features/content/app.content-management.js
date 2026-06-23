@@ -721,14 +721,25 @@ function initContentDocumentsStaffPage() {
     refresh: document.getElementById("contentDocumentsRefreshBtn"),
     importSheet: document.getElementById("contentDocumentsImportSheetBtn"),
     exportCsv: document.getElementById("contentDocumentsExportBtn"),
+    reorder: document.getElementById("contentDocumentsReorderBtn"),
+    reorderSave: document.getElementById("contentDocumentsReorderSaveBtn"),
+    reorderCancel: document.getElementById("contentDocumentsReorderCancelBtn"),
     archive: document.getElementById("contentDocumentsArchiveBtn"),
     reset: document.getElementById("contentDocumentsResetBtn")
   };
+  const actionGroups = {
+    normal: document.querySelector("[data-documents-normal-actions]"),
+    reorder: document.querySelector("[data-documents-reorder-actions]")
+  };
   const state = {
     items: [],
+    draftItems: [],
     source: "",
     listStatus: "",
     isReordering: false,
+    isReorderMode: false,
+    drag: null,
+    collapsedCategories: new Set(),
     filters: {
       query: "",
       category: "all",
@@ -848,6 +859,8 @@ function initContentDocumentsStaffPage() {
         (a.name || "").localeCompare(b.name || "", "th")
     );
 
+  const getActiveItems = () => state.isReorderMode ? state.draftItems : state.items;
+
   const getOrderedCategories = (items = state.items) => {
     const categoryMap = new Map();
     items.forEach((item) => {
@@ -877,7 +890,7 @@ function initContentDocumentsStaffPage() {
   };
 
   const getDocumentsInCategory = (category) =>
-    sortDocuments(state.items.filter((item) => (item.category || "อื่น ๆ") === category));
+    sortDocuments(getActiveItems().filter((item) => (item.category || "อื่น ๆ") === category));
 
   const setFormDisabled = (disabled) => {
     Array.from(form.elements).forEach((el) => {
@@ -937,7 +950,7 @@ function initContentDocumentsStaffPage() {
   };
 
   const syncFilterOptions = () => {
-    const categories = getOrderedCategories().map((item) => item.category);
+    const categories = getOrderedCategories(state.items).map((item) => item.category);
     const orgs = Array.from(new Set(state.items.map((item) => item.org).filter(Boolean))).sort((a, b) => a.localeCompare(b, "th"));
     syncFilterSelectOptions(filters.category, categories, "ทุกหมวด");
     syncFilterSelectOptions(filters.org, orgs, "ทุกองค์กร");
@@ -946,6 +959,7 @@ function initContentDocumentsStaffPage() {
   };
 
   const getFilteredItems = () => {
+    if (state.isReorderMode) return sortDocuments([...state.draftItems]);
     const query = normalizeFilterText(state.filters.query);
     return state.items.filter((item) => {
       if (state.filters.category !== "all" && item.category !== state.filters.category) return false;
@@ -956,33 +970,37 @@ function initContentDocumentsStaffPage() {
     });
   };
 
+  const getCategoryKey = (category) => category || "อื่น ๆ";
+
+  const isCategoryCollapsed = (category) => state.collapsedCategories.has(getCategoryKey(category));
+
+  const toggleCategoryCollapsed = (category) => {
+    const key = getCategoryKey(category);
+    if (state.collapsedCategories.has(key)) {
+      state.collapsedCategories.delete(key);
+    } else {
+      state.collapsedCategories.add(key);
+    }
+  };
+
   const buildLink = (url, label) => {
     if (!hasLink(url)) return "";
     const href = typeof toDownloadUrl === "function" ? toDownloadUrl(url, label.toLowerCase()) : url;
     return `<a class="content-documents-file-link" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
   };
 
-  const buildOrderControls = (item) => {
-    const isFirestoreSource = state.source === "firestore";
-    const categories = getOrderedCategories();
+  const getDocumentPosition = (item) => {
+    const categories = getOrderedCategories(getActiveItems());
     const categoryIndex = categories.findIndex((entry) => entry.category === item.category);
     const categoryItems = getDocumentsInCategory(item.category || "อื่น ๆ");
     const itemIndex = categoryItems.findIndex((entry) => entry.id === item.id);
-    const disabledAttr = (disabled) => (disabled || !isFirestoreSource || state.isReordering ? " disabled" : "");
-    const title = isFirestoreSource ? "" : " title=\"จัดลำดับได้หลังบันทึกข้อมูลลง Firestore\"";
+    return { categoryIndex, itemIndex };
+  };
+
+  const buildOrderMeta = (item) => {
+    const { categoryIndex, itemIndex } = getDocumentPosition(item);
     return `
-      <div class="content-documents-order-controls"${title}>
-        <div class="content-documents-order-group">
-          <span>หมวด</span>
-          <button type="button" class="content-documents-order-btn" aria-label="ย้ายหมวดขึ้น" data-category-reorder="up" data-category="${esc(item.category || "อื่น ๆ")}"${disabledAttr(categoryIndex <= 0)}>↑</button>
-          <button type="button" class="content-documents-order-btn" aria-label="ย้ายหมวดลง" data-category-reorder="down" data-category="${esc(item.category || "อื่น ๆ")}"${disabledAttr(categoryIndex < 0 || categoryIndex >= categories.length - 1)}>↓</button>
-        </div>
-        <div class="content-documents-order-group">
-          <span>เอกสาร</span>
-          <button type="button" class="content-documents-order-btn" aria-label="ย้ายเอกสารขึ้น" data-document-reorder="up" data-document-id="${esc(item.id)}"${disabledAttr(itemIndex <= 0)}>↑</button>
-          <button type="button" class="content-documents-order-btn" aria-label="ย้ายเอกสารลง" data-document-reorder="down" data-document-id="${esc(item.id)}"${disabledAttr(itemIndex < 0 || itemIndex >= categoryItems.length - 1)}>↓</button>
-        </div>
-      </div>
+      <span class="content-documents-order-index">หมวด ${categoryIndex + 1 || "-"} · รายการ ${itemIndex + 1 || "-"}</span>
     `;
   };
 
@@ -990,37 +1008,94 @@ function initContentDocumentsStaffPage() {
     const visibleItems = getFilteredItems();
     const loadStatus = state.listStatus ? ` · ${state.listStatus}` : "";
     const sourceLabel = state.source === "firestore" ? "Firestore" : "Google Sheet";
-    tableCaption.textContent = `แสดง ${visibleItems.length.toLocaleString("th-TH")} จาก ${state.items.length.toLocaleString("th-TH")} เอกสารจาก ${sourceLabel}${loadStatus}`;
+    const reorderLabel = state.isReorderMode ? " · โหมดจัดลำดับ: ลากหัวหมวด หรือลากเอกสารไปวางในหมวดที่ต้องการ แล้วกดบันทึก" : "";
+    tableCaption.textContent = `แสดง ${visibleItems.length.toLocaleString("th-TH")} จาก ${state.items.length.toLocaleString("th-TH")} เอกสารจาก ${sourceLabel}${loadStatus}${reorderLabel}`;
     if (!state.items.length) {
-      tableBody.innerHTML = `<tr><td colspan="5">ยังไม่มีเอกสารใน Sheet</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="4">ยังไม่มีเอกสารใน Sheet</td></tr>`;
       return;
     }
     if (!visibleItems.length) {
-      tableBody.innerHTML = `<tr><td colspan="5">ไม่พบเอกสารตามตัวกรอง</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="4">ไม่พบเอกสารตามตัวกรอง</td></tr>`;
       return;
     }
-    tableBody.innerHTML = visibleItems
-      .map((item) => {
+    const renderDocumentRow = (item) => {
         const links = [
           buildLink(item.exUrl, "EX"),
           buildLink(item.pdfUrl, "PDF"),
           buildLink(item.docxUrl, "DOCX"),
           buildLink(item.xlsxUrl, "XLSX")
         ].filter(Boolean).join("");
+        const draggableAttr = state.isReorderMode ? ` draggable="true"` : "";
+        const roleAttr = state.isReorderMode ? "" : ` tabindex="0" role="button" aria-label="แก้ไขเอกสาร ${esc(item.name || "")}"`;
+        const reorderPrefix = state.isReorderMode
+          ? `
+            <div class="content-documents-inline-order">
+              <button class="content-documents-drag-handle" type="button" draggable="true" data-document-drag-handle data-document-id="${esc(item.id)}" aria-label="ลากเพื่อจัดลำดับเอกสาร">☰</button>
+              ${buildOrderMeta(item)}
+            </div>
+          `
+          : "";
         return `
-          <tr class="content-documents-row" data-document-id="${esc(item.id)}" tabindex="0" role="button" aria-label="แก้ไขเอกสาร ${esc(item.name || "")}">
+          <tr class="content-documents-row${state.isReorderMode ? " is-reordering" : ""}" data-document-id="${esc(item.id)}" data-category="${esc(item.category || "อื่น ๆ")}"${draggableAttr}${roleAttr}>
             <td>
+              ${reorderPrefix}
               <strong>${esc(item.name)}</strong>
               ${item.desc ? `<small>${esc(item.desc)}</small>` : ""}
             </td>
             <td>${esc(item.category || "-")}</td>
             <td>${esc(item.org || "-")}</td>
             <td><div class="content-documents-file-links">${links || "-"}</div></td>
-            <td>${buildOrderControls(item)}</td>
           </tr>
         `;
-      })
-      .join("");
+    };
+    if (state.isReorderMode) {
+      const categories = getOrderedCategories(state.draftItems);
+      tableBody.innerHTML = categories
+        .map((entry, index) => {
+          const category = entry.category || "อื่น ๆ";
+          const categoryItems = getDocumentsInCategory(category);
+          const collapsed = isCategoryCollapsed(category);
+          const categoryRows = collapsed ? "" : categoryItems.map(renderDocumentRow).join("");
+          return `
+            <tr class="content-documents-category-row${collapsed ? " is-collapsed" : ""}" data-category="${esc(category)}" draggable="true">
+              <td colspan="4">
+                <div class="content-documents-category-control">
+                  <button class="content-documents-drag-handle" type="button" draggable="true" data-category-drag-handle data-category="${esc(category)}" aria-label="ลากเพื่อจัดลำดับหมวด">☰</button>
+                  <div class="content-documents-category-main">
+                    <strong>${esc(category)}</strong>
+                    <span>หมวด ${index + 1} · ${categoryItems.length.toLocaleString("th-TH")} เอกสาร</span>
+                  </div>
+                  <button class="content-documents-category-toggle" type="button" data-category-toggle data-category="${esc(category)}" aria-expanded="${collapsed ? "false" : "true"}">${collapsed ? "แสดง" : "ซ่อน"}</button>
+                </div>
+              </td>
+            </tr>
+            ${categoryRows}
+          `;
+        })
+        .join("");
+      return;
+    }
+    tableBody.innerHTML = visibleItems.map(renderDocumentRow).join("");
+  };
+
+  const syncReorderUi = () => {
+    const inMode = state.isReorderMode;
+    pageEl.dataset.documentsReorderMode = inMode ? "true" : "false";
+    if (actionGroups.normal) actionGroups.normal.hidden = inMode;
+    if (actionGroups.reorder) actionGroups.reorder.hidden = !inMode;
+    if (buttons.reorder) {
+      buttons.reorder.disabled = state.source !== "firestore" || state.isReordering || !state.items.length;
+      buttons.reorder.title = state.source === "firestore" ? "" : "จัดลำดับได้หลังบันทึกข้อมูลลง Firestore";
+    }
+    if (buttons.reorderSave) {
+      buttons.reorderSave.disabled = state.isReordering;
+    }
+    if (buttons.reorderCancel) {
+      buttons.reorderCancel.disabled = state.isReordering;
+    }
+    Object.values(filters).forEach((el) => {
+      if (el && "disabled" in el) el.disabled = inMode;
+    });
   };
 
   const loadDocumentsFromFirestore = async () => {
@@ -1107,9 +1182,14 @@ function initContentDocumentsStaffPage() {
   };
 
   const loadDocuments = async () => {
+    state.isReorderMode = false;
+    state.draftItems = [];
+    state.drag = null;
+    state.collapsedCategories = new Set();
+    syncReorderUi();
     state.listStatus = "";
     tableCaption.textContent = "กำลังโหลดเอกสาร...";
-    tableBody.innerHTML = `<tr><td colspan="5">กำลังโหลดเอกสาร...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="4">กำลังโหลดเอกสาร...</td></tr>`;
     try {
       const firestoreItems = await loadDocumentsFromFirestore();
       if (Array.isArray(firestoreItems) && firestoreItems.length) {
@@ -1122,12 +1202,13 @@ function initContentDocumentsStaffPage() {
         state.listStatus = "โหลดเอกสารจาก Google Sheet แล้ว";
       }
       syncFilterOptions();
+      syncReorderUi();
       renderRows();
       setMessage("");
     } catch (error) {
       console.error("โหลดเอกสารการเงินไม่สำเร็จ - app.content-management.js", error);
       tableCaption.textContent = "โหลดเอกสารไม่สำเร็จ";
-      tableBody.innerHTML = `<tr><td colspan="5">ไม่สามารถโหลดเอกสารจาก Firestore หรือ Google Sheet ได้</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="4">ไม่สามารถโหลดเอกสารจาก Firestore หรือ Google Sheet ได้</td></tr>`;
       setMessage("ตรวจลิงก์ Sheet และสิทธิ์การเผยแพร่ CSV", "error");
     }
   };
@@ -1288,14 +1369,15 @@ function initContentDocumentsStaffPage() {
     const currentUser = auth()?.currentUser;
     if (state.source !== "firestore") {
       setMessage("จัดลำดับได้เมื่อโหลดข้อมูลจาก Firestore เท่านั้น", "error");
-      return;
+      return false;
     }
-    if (!updates.length) return;
+    if (!updates.length) return true;
     if (!firestore.db || !firestore.doc || !firestore.setDoc || !firestore.serverTimestamp) {
       setMessage("ระบบยังไม่พร้อมบันทึกลำดับ", "error");
-      return;
+      return false;
     }
     state.isReordering = true;
+    syncReorderUi();
     renderRows();
     try {
       const editorEmail = currentUser?.email || "";
@@ -1314,56 +1396,161 @@ function initContentDocumentsStaffPage() {
       await loadDocuments();
       await syncPublicDownloadsCache();
       setMessage(successMessage || "บันทึกลำดับแล้ว และอัปเดต public cache แล้ว", "success");
+      return true;
     } catch (error) {
       console.error("บันทึกลำดับเอกสารการเงินไม่สำเร็จ - app.content-management.js", error);
       setMessage(error.message || "บันทึกลำดับไม่สำเร็จ", "error");
       renderRows();
+      return false;
     } finally {
       state.isReordering = false;
+      syncReorderUi();
       renderRows();
     }
   };
 
-  const reorderCategory = async (category, direction) => {
-    const categories = getOrderedCategories();
-    const currentIndex = categories.findIndex((entry) => entry.category === category);
-    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= categories.length) return;
-    const nextCategories = categories.map((entry) => entry.category);
-    const moved = nextCategories[currentIndex];
-    nextCategories[currentIndex] = nextCategories[targetIndex];
-    nextCategories[targetIndex] = moved;
+  const moveDraftCategoryBefore = (category, targetCategory) => {
+    if (!category || !targetCategory || category === targetCategory) return false;
+    const categories = getOrderedCategories(state.draftItems).map((entry) => entry.category);
+    const currentIndex = categories.findIndex((entry) => entry === category);
+    const targetIndex = categories.findIndex((entry) => entry === targetCategory);
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= categories.length) return false;
+    const nextCategories = [...categories];
+    const [moved] = nextCategories.splice(currentIndex, 1);
+    nextCategories.splice(targetIndex, 0, moved);
     const nextOrderByCategory = new Map(nextCategories.map((name, index) => [name, (index + 1) * 10]));
-    const updates = state.items
-      .map((item) => {
-        const nextOrder = nextOrderByCategory.get(item.category || "อื่น ๆ");
-        return isFiniteOrder(nextOrder) && Number(item.categoryOrder) !== nextOrder
-          ? { id: item.id, payload: { categoryOrder: nextOrder } }
-          : null;
-      })
-      .filter(Boolean);
-    await persistOrderUpdates(updates, "บันทึกลำดับหมวดหมู่แล้ว");
+    state.draftItems = state.draftItems.map((item) => ({
+      ...item,
+      categoryOrder: nextOrderByCategory.get(item.category || "อื่น ๆ") || item.categoryOrder
+    }));
+    return true;
   };
 
-  const reorderDocument = async (documentId, direction) => {
-    const item = state.items.find((candidate) => candidate.id === documentId);
-    if (!item) return;
-    const categoryItems = getDocumentsInCategory(item.category || "อื่น ๆ");
-    const currentIndex = categoryItems.findIndex((candidate) => candidate.id === documentId);
-    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= categoryItems.length) return;
-    const nextItems = [...categoryItems];
-    const moved = nextItems[currentIndex];
-    nextItems[currentIndex] = nextItems[targetIndex];
-    nextItems[targetIndex] = moved;
-    const updates = nextItems.map((candidate, index) => ({
-      id: candidate.id,
-      payload: {
-        categoryOrder: getCategoryOrderFor(candidate.category || "อื่น ๆ"),
-        sortOrder: (index + 1) * 10
+  const getDraftCategoryOrderFor = (category) => {
+    const entry = getOrderedCategories(state.draftItems).find((candidate) => candidate.category === category);
+    return entry && Number.isFinite(entry.order) ? entry.order : getCategoryOrderFor(category);
+  };
+
+  const renumberDraftCategory = (items, category) => {
+    const nextCategoryOrder = getDraftCategoryOrderFor(category);
+    const sortedItems = sortDocuments(items.filter((candidate) => (candidate.category || "อื่น ๆ") === category));
+    const nextSortOrderById = new Map(sortedItems.map((candidate, index) => [candidate.id, (index + 1) * 10]));
+    return items.map((candidate) =>
+      (candidate.category || "อื่น ๆ") === category
+        ? {
+            ...candidate,
+            categoryOrder: nextCategoryOrder,
+            sortOrder: nextSortOrderById.get(candidate.id) || candidate.sortOrder
+          }
+        : candidate
+    );
+  };
+
+  const moveDraftDocumentToCategory = (documentId, targetCategory, targetDocumentId = "") => {
+    if (!documentId || !targetCategory) return false;
+    const item = state.draftItems.find((candidate) => candidate.id === documentId);
+    if (!item) return false;
+    const sourceCategory = item.category || "อื่น ๆ";
+    const normalizedTargetCategory = targetCategory || "อื่น ๆ";
+    if (targetDocumentId && targetDocumentId === documentId && sourceCategory === normalizedTargetCategory) return false;
+
+    const categoryOrder = getDraftCategoryOrderFor(normalizedTargetCategory);
+    const allTargetItems = sortDocuments(
+      state.draftItems.filter((candidate) => (candidate.category || "อื่น ๆ") === normalizedTargetCategory)
+    );
+    const targetIndex = targetDocumentId
+      ? allTargetItems.findIndex((candidate) => candidate.id === targetDocumentId)
+      : allTargetItems.length;
+    if (targetDocumentId && targetIndex < 0) return false;
+    const targetItems = allTargetItems.filter((candidate) => candidate.id !== documentId);
+
+    const movedItem = {
+      ...item,
+      category: normalizedTargetCategory,
+      categoryOrder
+    };
+    targetItems.splice(Math.min(targetIndex, targetItems.length), 0, movedItem);
+
+    const targetSortOrderById = new Map(targetItems.map((candidate, index) => [candidate.id, (index + 1) * 10]));
+    let nextDraftItems = state.draftItems.map((candidate) => {
+      if (candidate.id === documentId) {
+        return {
+          ...movedItem,
+          sortOrder: targetSortOrderById.get(documentId) || candidate.sortOrder
+        };
       }
-    }));
-    await persistOrderUpdates(updates, "บันทึกลำดับเอกสารแล้ว");
+      if ((candidate.category || "อื่น ๆ") === normalizedTargetCategory && targetSortOrderById.has(candidate.id)) {
+        return {
+          ...candidate,
+          categoryOrder,
+          sortOrder: targetSortOrderById.get(candidate.id)
+        };
+      }
+      return candidate;
+    });
+    if (sourceCategory !== normalizedTargetCategory) {
+      nextDraftItems = renumberDraftCategory(nextDraftItems, sourceCategory);
+      state.collapsedCategories.delete(getCategoryKey(normalizedTargetCategory));
+    }
+    state.draftItems = nextDraftItems;
+    return true;
+  };
+
+  const enterReorderMode = () => {
+    if (state.source !== "firestore") {
+      setMessage("จัดลำดับได้เมื่อโหลดข้อมูลจาก Firestore เท่านั้น", "error");
+      return;
+    }
+    state.isReorderMode = true;
+    state.draftItems = sortDocuments(state.items.map((item) => ({ ...item })));
+    state.drag = null;
+    state.collapsedCategories = new Set(getOrderedCategories(state.draftItems).map((entry) => getCategoryKey(entry.category)));
+    syncReorderUi();
+    renderRows();
+    setMessage("ลากหัวหมวดเพื่อจัดลำดับหมวด หรือลากเอกสารไปวางบนหัวหมวด/รายการในหมวดปลายทาง", "info");
+  };
+
+  const cancelReorderMode = () => {
+    state.isReorderMode = false;
+    state.draftItems = [];
+    state.drag = null;
+    state.collapsedCategories = new Set();
+    syncReorderUi();
+    renderRows();
+    setMessage("");
+  };
+
+  const saveReorderDraft = async () => {
+    const categories = getOrderedCategories(state.draftItems).map((entry) => entry.category);
+    const categoryOrderByName = new Map(categories.map((category, index) => [category, (index + 1) * 10]));
+    const updates = [];
+    categories.forEach((category) => {
+      getDocumentsInCategory(category).forEach((item, index) => {
+        const nextCategoryOrder = categoryOrderByName.get(category);
+        const nextSortOrder = (index + 1) * 10;
+        const original = state.items.find((candidate) => candidate.id === item.id);
+        const nextCategory = item.category || "อื่น ๆ";
+        const originalCategory = original?.category || "อื่น ๆ";
+        if (!original || originalCategory !== nextCategory || Number(original.categoryOrder) !== nextCategoryOrder || Number(original.sortOrder) !== nextSortOrder) {
+          updates.push({
+            id: item.id,
+            payload: {
+              category: nextCategory,
+              categoryOrder: nextCategoryOrder,
+              sortOrder: nextSortOrder
+            }
+          });
+        }
+      });
+    });
+    const saved = await persistOrderUpdates(updates, "บันทึกลำดับเอกสารการเงินแล้ว");
+    if (saved) {
+      state.isReorderMode = false;
+      state.draftItems = [];
+      state.drag = null;
+      state.collapsedCategories = new Set();
+      syncReorderUi();
+    }
   };
 
   const archiveCurrentItem = async () => {
@@ -1376,20 +1563,16 @@ function initContentDocumentsStaffPage() {
   };
 
   tableBody.addEventListener("click", (event) => {
-    const categoryButton = event.target.closest("[data-category-reorder]");
-    if (categoryButton) {
+    if (state.isReorderMode) {
+      const toggleButton = event.target.closest("[data-category-toggle]");
+      if (toggleButton) {
+        event.preventDefault();
+        toggleCategoryCollapsed(toggleButton.dataset.category || "");
+        renderRows();
+        return;
+      }
+      if (event.target.closest("button, select, a")) return;
       event.preventDefault();
-      const category = categoryButton.dataset.category || "";
-      const direction = categoryButton.dataset.categoryReorder || "";
-      void reorderCategory(category, direction);
-      return;
-    }
-    const documentButton = event.target.closest("[data-document-reorder]");
-    if (documentButton) {
-      event.preventDefault();
-      const documentId = documentButton.dataset.documentId || "";
-      const direction = documentButton.dataset.documentReorder || "";
-      void reorderDocument(documentId, direction);
       return;
     }
     const row = event.target.closest("[data-document-id]");
@@ -1398,6 +1581,7 @@ function initContentDocumentsStaffPage() {
     fillForm(item);
   });
   tableBody.addEventListener("keydown", (event) => {
+    if (state.isReorderMode) return;
     if (event.key !== "Enter" && event.key !== " ") return;
     if (event.target.closest("button, a")) return;
     const row = event.target.closest("[data-document-id]");
@@ -1405,6 +1589,148 @@ function initContentDocumentsStaffPage() {
     event.preventDefault();
     const item = state.items.find((candidate) => candidate.id === row.dataset.documentId);
     fillForm(item);
+  });
+
+  tableBody.addEventListener("dragstart", (event) => {
+    if (!state.isReorderMode || state.isReordering) return;
+    const categoryHandle = event.target.closest("[data-category-drag-handle]");
+    const documentHandle = event.target.closest("[data-document-drag-handle]");
+    if (!categoryHandle && !documentHandle) return;
+    const categoryRow = event.target.closest(".content-documents-category-row");
+    const documentRow = event.target.closest(".content-documents-row");
+    if (categoryHandle && categoryRow) {
+      state.drag = { type: "category", category: categoryRow.dataset.category || "" };
+      categoryRow.classList.add("is-dragging");
+    } else if (documentHandle && documentRow) {
+      state.drag = {
+        type: "document",
+        id: documentRow.dataset.documentId || "",
+        category: documentRow.dataset.category || ""
+      };
+      documentRow.classList.add("is-dragging");
+    }
+    if (state.drag && event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", state.drag.type);
+    }
+  });
+
+  tableBody.addEventListener("dragover", (event) => {
+    if (!state.isReorderMode || !state.drag) return;
+    const categoryRow = event.target.closest(".content-documents-category-row");
+    const documentRow = event.target.closest(".content-documents-row");
+    const canDropCategory = state.drag.type === "category" && categoryRow;
+    const canDropDocument = state.drag.type === "document" && (documentRow || categoryRow);
+    if (!canDropCategory && !canDropDocument) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    tableBody.querySelectorAll(".is-drop-target").forEach((row) => row.classList.remove("is-drop-target"));
+    (categoryRow || documentRow)?.classList.add("is-drop-target");
+  });
+
+  tableBody.addEventListener("dragleave", (event) => {
+    const row = event.target.closest(".content-documents-category-row, .content-documents-row");
+    row?.classList.remove("is-drop-target");
+  });
+
+  const clearReorderDragClasses = () => {
+    tableBody.querySelectorAll(".is-dragging, .is-drop-target").forEach((row) => row.classList.remove("is-dragging", "is-drop-target"));
+  };
+
+  const applyReorderDropTarget = (target) => {
+    tableBody.querySelectorAll(".is-drop-target").forEach((row) => row.classList.remove("is-drop-target"));
+    target?.classList.add("is-drop-target");
+  };
+
+  const resolvePointerDropTarget = (clientX, clientY) => {
+    const element = document.elementFromPoint(clientX, clientY);
+    if (!element || !state.drag) return null;
+    const categoryRow = element.closest(".content-documents-category-row");
+    const documentRow = element.closest(".content-documents-row");
+    if (state.drag.type === "category" && categoryRow) {
+      return { row: categoryRow, category: categoryRow.dataset.category || "" };
+    }
+    if (state.drag.type === "document" && documentRow) {
+      return { row: documentRow, id: documentRow.dataset.documentId || "", category: documentRow.dataset.category || "" };
+    }
+    if (state.drag.type === "document" && categoryRow) {
+      return { row: categoryRow, category: categoryRow.dataset.category || "" };
+    }
+    return null;
+  };
+
+  tableBody.addEventListener("drop", (event) => {
+    if (!state.isReorderMode || !state.drag) return;
+    event.preventDefault();
+    const categoryRow = event.target.closest(".content-documents-category-row");
+    const documentRow = event.target.closest(".content-documents-row");
+    let moved = false;
+    if (state.drag.type === "category" && categoryRow) {
+      moved = moveDraftCategoryBefore(state.drag.category, categoryRow.dataset.category || "");
+    } else if (state.drag.type === "document" && documentRow) {
+      moved = moveDraftDocumentToCategory(state.drag.id, documentRow.dataset.category || "", documentRow.dataset.documentId || "");
+    } else if (state.drag.type === "document" && categoryRow) {
+      moved = moveDraftDocumentToCategory(state.drag.id, categoryRow.dataset.category || "");
+    }
+    state.drag = null;
+    clearReorderDragClasses();
+    if (moved) renderRows();
+  });
+
+  tableBody.addEventListener("dragend", () => {
+    state.drag = null;
+    clearReorderDragClasses();
+  });
+
+  tableBody.addEventListener("pointerdown", (event) => {
+    if (!state.isReorderMode || state.isReordering || event.pointerType === "mouse") return;
+    const handle = event.target.closest("[data-category-drag-handle], [data-document-drag-handle]");
+    if (!handle) return;
+    const categoryRow = handle.closest(".content-documents-category-row");
+    const documentRow = handle.closest(".content-documents-row");
+    if (handle.matches("[data-category-drag-handle]") && categoryRow) {
+      state.drag = { type: "category", category: categoryRow.dataset.category || "", pointer: true };
+      categoryRow.classList.add("is-dragging");
+    } else if (documentRow) {
+      state.drag = {
+        type: "document",
+        id: documentRow.dataset.documentId || "",
+        category: documentRow.dataset.category || "",
+        pointer: true
+      };
+      documentRow.classList.add("is-dragging");
+    }
+    if (!state.drag) return;
+    event.preventDefault();
+    handle.setPointerCapture?.(event.pointerId);
+  });
+
+  tableBody.addEventListener("pointermove", (event) => {
+    if (!state.isReorderMode || !state.drag?.pointer) return;
+    event.preventDefault();
+    const target = resolvePointerDropTarget(event.clientX, event.clientY);
+    applyReorderDropTarget(target?.row || null);
+  });
+
+  tableBody.addEventListener("pointerup", (event) => {
+    if (!state.isReorderMode || !state.drag?.pointer) return;
+    event.preventDefault();
+    const target = resolvePointerDropTarget(event.clientX, event.clientY);
+    let moved = false;
+    if (target && state.drag.type === "category") {
+      moved = moveDraftCategoryBefore(state.drag.category, target.category);
+    } else if (target && state.drag.type === "document") {
+      moved = moveDraftDocumentToCategory(state.drag.id, target.category, target.id || "");
+    }
+    state.drag = null;
+    clearReorderDragClasses();
+    if (moved) renderRows();
+  });
+
+  tableBody.addEventListener("pointercancel", () => {
+    if (!state.drag?.pointer) return;
+    state.drag = null;
+    clearReorderDragClasses();
   });
 
   form.addEventListener("submit", saveDocumentItem);
@@ -1435,6 +1761,9 @@ function initContentDocumentsStaffPage() {
   buttons.refresh?.addEventListener("click", () => void loadDocuments());
   buttons.importSheet?.addEventListener("click", () => void importSheetToFirestore());
   buttons.exportCsv?.addEventListener("click", exportDocumentsCsv);
+  buttons.reorder?.addEventListener("click", enterReorderMode);
+  buttons.reorderSave?.addEventListener("click", () => void saveReorderDraft());
+  buttons.reorderCancel?.addEventListener("click", cancelReorderMode);
   buttons.reset?.addEventListener("click", resetForm);
   buttons.archive?.addEventListener("click", () => void archiveCurrentItem());
 

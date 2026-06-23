@@ -46,6 +46,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const ALLOWED_AUTH_EMAIL_DOMAIN = "chula.ac.th";
+const AUTH_EMAIL_ACCESS_COLLECTION =
+  globalThis.SGCU_APP_CONFIG?.firestore?.collections?.authEmailAccess || "authEmailAccess";
 const AUTH_EMAIL_EXCEPTIONS = new Set([
   "tuwanon.kimchiang@gmail.com"
 ]);
@@ -68,6 +70,43 @@ function isAllowedAuthEmail(email) {
     domain.endsWith(`.${ALLOWED_AUTH_EMAIL_DOMAIN}`) ||
     AUTH_EMAIL_EXCEPTIONS.has(normalized)
   );
+}
+
+function readDateMs(value) {
+  if (!value) return NaN;
+  if (typeof value.toDate === "function") return value.toDate().getTime();
+  if (typeof value.seconds === "number") return value.seconds * 1000;
+  const date = new Date(value);
+  return date.getTime();
+}
+
+function isTemporaryAuthAccessActive(data, email, nowMs = Date.now()) {
+  const normalized = normalizeAuthEmail(email);
+  if (!data || typeof data !== "object" || !normalized) return false;
+  const storedEmail = normalizeAuthEmail(data.email || normalized);
+  const startsAtMs = readDateMs(data.startsAt);
+  const endsAtMs = readDateMs(data.endsAt);
+  return (
+    data.active === true &&
+    storedEmail === normalized &&
+    Number.isFinite(startsAtMs) &&
+    Number.isFinite(endsAtMs) &&
+    startsAtMs <= nowMs &&
+    endsAtMs > nowMs
+  );
+}
+
+async function isAllowedAuthEmailAsync(email) {
+  const normalized = normalizeAuthEmail(email);
+  if (isAllowedAuthEmail(normalized)) return true;
+  if (!normalized) return false;
+  try {
+    const snap = await getDoc(doc(db, AUTH_EMAIL_ACCESS_COLLECTION, normalized));
+    return snap.exists() && isTemporaryAuthAccessActive(snap.data(), normalized);
+  } catch (error) {
+    console.warn("temporary auth email access check failed", error);
+    return false;
+  }
 }
 
 function getAuthEmailRequirementMessage(email) {
@@ -108,7 +147,10 @@ window.sgcuAuth = {
   signInWithEmailAndPassword,
   allowedEmailDomain: ALLOWED_AUTH_EMAIL_DOMAIN,
   allowedEmailExceptions: Array.from(AUTH_EMAIL_EXCEPTIONS),
+  authEmailAccessCollection: AUTH_EMAIL_ACCESS_COLLECTION,
   isAllowedAuthEmail,
+  isAllowedAuthEmailAsync,
+  isTemporaryAuthAccessActive,
   getAuthEmailRequirementMessage
 };
 

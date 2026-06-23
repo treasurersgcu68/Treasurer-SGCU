@@ -29,6 +29,7 @@ const SGCU_APP_CONFIG = {
       organizationCatalog: "organizationCatalog",
       orgStructureMembers: "orgStructureMembers",
       organizationRepresentativeApplications: "organizationRepresentativeApplications",
+      authEmailAccess: "authEmailAccess",
       staffApplications: "staffApplications",
       staffPositionCatalog: "staffPositionCatalog",
       staffPositionCodeCounters: "staffPositionCodeCounters",

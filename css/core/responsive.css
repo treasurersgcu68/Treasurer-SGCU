@@ -1584,6 +1584,167 @@
     word-break: break-word;
   }
 
+  .page-view[data-page="staff-approval"] .staff-approval-main-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .page-view[data-page="staff-approval"] .staff-approval-main-tabs .tab-btn {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 4px;
+    font-size: 12px;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  #staffAuthAccessPanel .panel-header {
+    align-items: stretch;
+  }
+
+  #staffAuthAccessPanel .panel-header,
+  #staffAuthAccessPanel .content-admin-actions {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+  }
+
+  #staffAuthAccessPanel .panel-caption {
+    line-height: 1.4;
+  }
+
+  #staffAuthAccessForm .staff-application-position-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  #staffAuthAccessForm .borrow-form-field {
+    min-width: 0;
+  }
+
+  #staffAuthAccessForm .staff-access-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  #staffAuthAccessForm .staff-access-actions .btn-primary,
+  #staffAuthAccessForm .staff-access-actions .btn-ghost,
+  #staffAuthAccessRefreshBtn {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  #staffAuthAccessProfilePreview {
+    margin: 0;
+    padding: 10px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 10px;
+    background: #ffffff;
+    line-height: 1.5;
+  }
+
+  .staff-auth-access-table-wrapper {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  #staffAuthAccessTable {
+    display: block;
+    min-width: 0;
+    width: 100%;
+    border-collapse: separate;
+  }
+
+  #staffAuthAccessTable thead {
+    display: none;
+  }
+
+  #staffAuthAccessTable tbody {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+  }
+
+  #staffAuthAccessTable tr {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  #staffAuthAccessTable tr[data-auth-access-email] {
+    cursor: pointer;
+  }
+
+  #staffAuthAccessTable td {
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 4px 10px;
+    width: 100%;
+    min-width: 0;
+    padding: 7px 0;
+    border: 0;
+    text-align: left !important;
+    white-space: normal;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  #staffAuthAccessTable td::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  #staffAuthAccessTable td:first-child {
+    display: block;
+    padding: 0 0 10px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  #staffAuthAccessTable td:first-child::before {
+    content: none;
+  }
+
+  #staffAuthAccessTable td:first-child strong {
+    display: block;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  #staffAuthAccessTable .section-text-sm {
+    margin-top: 3px;
+    color: #64748b;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  #staffAuthAccessTable td[colspan] {
+    display: block;
+    padding: 4px 0;
+    text-align: center !important;
+  }
+
+  #staffAuthAccessTable td[colspan]::before {
+    content: none;
+  }
+
   #staffApprovalPendingTable,
   #staffApprovalHistoryTable,
   #staffApprovalPendingTable tbody,

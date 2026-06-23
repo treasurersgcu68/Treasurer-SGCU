@@ -288,9 +288,17 @@
                 <h3 class="panel-title">รายการเอกสารการเงิน</h3>
                 <p id="contentDocumentsTableCaption" class="panel-caption">กำลังโหลดเอกสาร...</p>
               </div>
-              <div class="content-admin-actions">
-                <button id="contentDocumentsRefreshBtn" class="btn-ghost" type="button">รีเฟรช</button>
-                <button id="contentDocumentsExportBtn" class="btn-ghost" type="button">Export CSV</button>
+              <div class="content-admin-actions content-documents-actions" aria-label="เครื่องมือรายการเอกสารการเงิน">
+                <div class="content-documents-actions-group" data-documents-normal-actions>
+                  <button id="contentDocumentsRefreshBtn" class="btn-ghost" type="button">รีเฟรช</button>
+                  <button id="contentDocumentsExportBtn" class="btn-ghost" type="button">Export CSV</button>
+                  <button id="contentDocumentsReorderBtn" class="btn-ghost content-documents-reorder-start" type="button">จัดลำดับ</button>
+                </div>
+                <div class="content-documents-actions-group content-documents-reorder-actions" data-documents-reorder-actions hidden>
+                  <span class="content-documents-reorder-status">กำลังจัดลำดับเอกสาร</span>
+                  <button id="contentDocumentsReorderCancelBtn" class="btn-ghost" type="button">ยกเลิก</button>
+                  <button id="contentDocumentsReorderSaveBtn" class="btn-primary" type="button">บันทึกลำดับ</button>
+                </div>
               </div>
             </div>
 
@@ -339,12 +347,11 @@
                     <th>หมวดหมู่</th>
                     <th>องค์กร</th>
                     <th>ไฟล์</th>
-                    <th>ลำดับ</th>
                   </tr>
                 </thead>
                 <tbody id="contentDocumentsTableBody">
                   <tr>
-                    <td colspan="5">กำลังโหลดเอกสาร...</td>
+                    <td colspan="4">กำลังโหลดเอกสาร...</td>
                   </tr>
                 </tbody>
               </table>

@@ -46,8 +46,26 @@ function initStaffAccessPages() {
   const staffApprovalStaffSectionEl = document.getElementById("staffApprovalStaffSection");
   const staffApprovalMainApprovalTabEl = document.getElementById("staffApprovalMainApprovalTab");
   const staffApprovalMainStructureTabEl = document.getElementById("staffApprovalMainStructureTab");
+  const staffApprovalMainAuthAccessTabEl = document.getElementById("staffApprovalMainAuthAccessTab");
   const staffApprovalMainPanelEl = document.getElementById("staffApprovalMainPanel");
   const staffStructurePanelEl = document.getElementById("staffStructurePanel");
+  const staffAuthAccessPanelEl = document.getElementById("staffAuthAccessPanel");
+  const staffAuthAccessFormEl = document.getElementById("staffAuthAccessForm");
+  const staffAuthAccessTableBodyEl = document.getElementById("staffAuthAccessTableBody");
+  const staffAuthAccessListCaptionEl = document.getElementById("staffAuthAccessListCaption");
+  const staffAuthAccessProfilePreviewEl = document.getElementById("staffAuthAccessProfilePreview");
+  const staffAuthAccessMessageEl = document.getElementById("staffAuthAccessMessage");
+  const staffAuthAccessDeleteBtnEl = document.getElementById("staffAuthAccessDeleteBtn");
+  const staffAuthAccessResetBtnEl = document.getElementById("staffAuthAccessResetBtn");
+  const staffAuthAccessRefreshBtnEl = document.getElementById("staffAuthAccessRefreshBtn");
+  const staffAuthAccessFields = {
+    id: document.getElementById("staffAuthAccessId"),
+    email: document.getElementById("staffAuthAccessEmail"),
+    startsAt: document.getElementById("staffAuthAccessStartsAt"),
+    endsAt: document.getElementById("staffAuthAccessEndsAt"),
+    active: document.getElementById("staffAuthAccessActive"),
+    reason: document.getElementById("staffAuthAccessReason")
+  };
   const orgRepresentativeApprovalSectionEl = document.getElementById("orgRepresentativeApprovalSection");
   const orgRepresentativePanelTitleEl = document.getElementById("orgRepresentativeApprovalPanelTitle");
   const orgRepresentativePanelCaptionEl = document.getElementById("orgRepresentativeApprovalPanelCaption");
@@ -131,6 +149,7 @@ function initStaffAccessPages() {
   const positionManageCancelBtnEl = document.getElementById("staffPositionManageCancelBtn");
   const positionManageMessageEl = document.getElementById("staffPositionManageMessage");
   const positionListEl = document.getElementById("staffPositionList");
+  const positionListPanelEl = document.querySelector(".staff-position-list-panel");
   const positionOptionsDatalistEl = document.getElementById("staffPositionOptionsList");
   const divisionCodeOptionsDatalistEl = document.getElementById("staffDivisionCodeOptionsList");
   const divisionNameOptionsDatalistEl = document.getElementById("staffDivisionNameOptionsList");
@@ -170,6 +189,7 @@ function initStaffAccessPages() {
   const COLLECTION_APPLICATIONS = firestoreCollections.staffApplications || "staffApplications";
   const COLLECTION_ORG_REPRESENTATIVES =
     firestoreCollections.organizationRepresentativeApplications || "organizationRepresentativeApplications";
+  const COLLECTION_AUTH_EMAIL_ACCESS = firestoreCollections.authEmailAccess || "authEmailAccess";
   const COLLECTION_PROFILES = firestoreCollections.staffProfiles || "staffProfiles";
   const COLLECTION_USER_PROFILES = firestoreCollections.userProfiles || "userProfiles";
   const COLLECTION_POSITIONS = firestoreCollections.staffPositionCatalog || "staffPositionCatalog";
@@ -251,12 +271,14 @@ function initStaffAccessPages() {
   let unsubscribeApprovalHistory = null;
   let unsubscribePositionCatalog = null;
   let unsubscribeOrgStructureMembers = null;
+  let unsubscribeAuthEmailAccess = null;
   let unsubscribeOrgRepresentativeApplications = null;
 
   let currentMyApplications = [];
   let currentPendingApplications = [];
   let currentApprovedHistory = [];
   let currentApprovedHistoryGrouped = [];
+  let currentAuthEmailAccessEntries = [];
   let currentOrgRepresentativeApplications = [];
   let currentOrgRepresentativePending = [];
   let currentOrgStructureMembers = [];
@@ -341,28 +363,40 @@ function initStaffAccessPages() {
   };
 
   const syncStaffPositionPanelVisibility = () => {
-    if (!positionManagePanelEl) return;
     const showOrg = currentApprovalType === "org";
-    const showStructure = currentStaffApprovalMainTab === "structure";
-    positionManagePanelEl.style.display = showOrg || showStructure ? "none" : "";
+    const showApproval = currentStaffApprovalMainTab === "approval";
+    const shouldShow = !showOrg && showApproval;
+    if (positionManagePanelEl) positionManagePanelEl.style.display = shouldShow ? "" : "none";
+    if (positionListPanelEl) positionListPanelEl.style.display = shouldShow ? "" : "none";
   };
 
   const setStaffApprovalMainTab = (tab = "approval") => {
-    currentStaffApprovalMainTab = tab === "structure" ? "structure" : "approval";
+    currentStaffApprovalMainTab = ["structure", "auth-access"].includes(tab) ? tab : "approval";
     const showApproval = currentStaffApprovalMainTab === "approval";
+    const showStructure = currentStaffApprovalMainTab === "structure";
+    const showAuthAccess = currentStaffApprovalMainTab === "auth-access";
     if (staffApprovalMainPanelEl) staffApprovalMainPanelEl.hidden = !showApproval;
-    if (staffStructurePanelEl) staffStructurePanelEl.hidden = showApproval;
+    if (staffStructurePanelEl) staffStructurePanelEl.hidden = !showStructure;
+    if (staffAuthAccessPanelEl) staffAuthAccessPanelEl.hidden = !showAuthAccess;
     if (staffApprovalMainApprovalTabEl) {
       staffApprovalMainApprovalTabEl.classList.toggle("is-active", showApproval);
       staffApprovalMainApprovalTabEl.setAttribute("aria-selected", showApproval ? "true" : "false");
     }
     if (staffApprovalMainStructureTabEl) {
-      staffApprovalMainStructureTabEl.classList.toggle("is-active", !showApproval);
-      staffApprovalMainStructureTabEl.setAttribute("aria-selected", showApproval ? "false" : "true");
+      staffApprovalMainStructureTabEl.classList.toggle("is-active", showStructure);
+      staffApprovalMainStructureTabEl.setAttribute("aria-selected", showStructure ? "true" : "false");
+    }
+    if (staffApprovalMainAuthAccessTabEl) {
+      staffApprovalMainAuthAccessTabEl.classList.toggle("is-active", showAuthAccess);
+      staffApprovalMainAuthAccessTabEl.setAttribute("aria-selected", showAuthAccess ? "true" : "false");
     }
     syncStaffPositionPanelVisibility();
-    if (!showApproval) {
+    if (showStructure) {
       startOrgStructureMembersListener();
+    }
+    if (showAuthAccess) {
+      startAuthEmailAccessListener();
+      refreshAuthAccessProfilePreview();
     }
   };
 
@@ -5966,6 +6000,265 @@ function initStaffAccessPages() {
     );
   };
 
+  const normalizeAuthAccessEmail = (value) => (value || "").toString().trim().toLowerCase();
+
+  const toDateInputValue = (value) => {
+    const date = typeof value?.toDate === "function" ? value.toDate() : value ? new Date(value) : null;
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    const offsetMs = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+  };
+
+  const readDateInput = (value) => {
+    const text = (value || "").toString().trim();
+    if (!text) return null;
+    const date = new Date(text);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const readAuthAccessStatus = (entry = {}) => {
+    const nowMs = Date.now();
+    const startsAt = typeof entry.startsAt?.toDate === "function" ? entry.startsAt.toDate() : new Date(entry.startsAt);
+    const endsAt = typeof entry.endsAt?.toDate === "function" ? entry.endsAt.toDate() : new Date(entry.endsAt);
+    if (entry.active !== true) return "ปิดสิทธิ์";
+    if (startsAt instanceof Date && !Number.isNaN(startsAt.getTime()) && startsAt.getTime() > nowMs) return "รอเริ่ม";
+    if (endsAt instanceof Date && !Number.isNaN(endsAt.getTime()) && endsAt.getTime() <= nowMs) return "หมดอายุ";
+    return "ใช้งานได้";
+  };
+
+  const getAuthAccessProfileName = (profile = {}) => {
+    const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim();
+    return getMeaningfulProfileValue(profile.name, fullName, profile.displayName);
+  };
+
+  const renderAuthAccessProfileSummary = (profile = null) => {
+    if (!profile) return '<span class="section-text-sm">ยังไม่พบโปรไฟล์ที่บันทึกไว้</span>';
+    const academic = deriveAcademicProfile(profile, profile.email || "");
+    const rowOne = [
+      getAuthAccessProfileName(profile) || "",
+      profile.nickname || profile.nick ? `ชื่อเล่น ${profile.nickname || profile.nick}` : "",
+      academic.studentId ? `รหัสนิสิต ${academic.studentId}` : ""
+    ].filter(Boolean);
+    const rowTwo = [
+      academic.faculty ? `คณะ ${academic.faculty}` : "",
+      profile.phone ? `โทร ${profile.phone}` : "",
+      profile.lineId ? `Line ${profile.lineId}` : ""
+    ].filter(Boolean);
+    const rows = [rowOne, rowTwo].filter((row) => row.length);
+    return rows.length
+      ? rows.map((row) => `<div>${row.map((line) => `<span>${escapeStaffHtml(line)}</span>`).join(" · ")}</div>`).join("")
+      : '<span class="section-text-sm">พบโปรไฟล์ แต่ยังไม่มีรายละเอียดเพิ่มเติม</span>';
+  };
+
+  const findUserProfileByEmail = async (email) => {
+    const normalizedEmail = normalizeAuthAccessEmail(email);
+    if (!normalizedEmail || !resolveStore() || !firestore.getDocs || !firestore.collection || !firestore.query || !firestore.where) {
+      return null;
+    }
+    const q = firestore.query(
+      firestore.collection(firestore.db, COLLECTION_USER_PROFILES),
+      firestore.where("email", "==", normalizedEmail),
+      ...(firestore.limit ? [firestore.limit(1)] : [])
+    );
+    const snapshot = await firestore.getDocs(q);
+    const docSnap = snapshot?.docs?.[0] || null;
+    return docSnap ? { id: docSnap.id, ...(docSnap.data() || {}) } : null;
+  };
+
+  const refreshAuthAccessProfilePreview = async () => {
+    const email = normalizeAuthAccessEmail(staffAuthAccessFields.email?.value || "");
+    if (!staffAuthAccessProfilePreviewEl) return;
+    if (!email) {
+      staffAuthAccessProfilePreviewEl.textContent = "กรอกอีเมลเพื่อดูข้อมูลโปรไฟล์ที่เคยบันทึกไว้";
+      staffAuthAccessProfilePreviewEl.style.color = "#6b7280";
+      return;
+    }
+    staffAuthAccessProfilePreviewEl.textContent = "กำลังค้นหาโปรไฟล์...";
+    staffAuthAccessProfilePreviewEl.style.color = "#1d4ed8";
+    try {
+      const profile = await findUserProfileByEmail(email);
+      staffAuthAccessProfilePreviewEl.innerHTML = profile
+        ? `พบโปรไฟล์: ${renderAuthAccessProfileSummary(profile)}`
+        : "ยังไม่พบโปรไฟล์ ผู้ใช้จะสร้าง/บันทึกโปรไฟล์ได้หลังได้รับสิทธิ์และเข้าสู่ระบบ";
+      staffAuthAccessProfilePreviewEl.style.color = profile ? "#047857" : "#b45309";
+    } catch (error) {
+      console.warn("auth access profile preview failed", error);
+      staffAuthAccessProfilePreviewEl.textContent = "ค้นหาโปรไฟล์ไม่สำเร็จ";
+      staffAuthAccessProfilePreviewEl.style.color = "#b91c1c";
+    }
+  };
+
+  const resetAuthAccessForm = () => {
+    if (staffAuthAccessFields.id) staffAuthAccessFields.id.value = "";
+    if (staffAuthAccessFields.email) staffAuthAccessFields.email.value = "";
+    if (staffAuthAccessFields.startsAt) staffAuthAccessFields.startsAt.value = toDateInputValue(new Date());
+    if (staffAuthAccessFields.endsAt) staffAuthAccessFields.endsAt.value = toDateInputValue(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    if (staffAuthAccessFields.active) staffAuthAccessFields.active.value = "true";
+    if (staffAuthAccessFields.reason) staffAuthAccessFields.reason.value = "";
+    if (staffAuthAccessDeleteBtnEl) staffAuthAccessDeleteBtnEl.hidden = true;
+    setMessage(staffAuthAccessMessageEl, "");
+    void refreshAuthAccessProfilePreview();
+  };
+
+  const fillAuthAccessForm = (entry = {}) => {
+    if (staffAuthAccessFields.id) staffAuthAccessFields.id.value = entry.id || normalizeAuthAccessEmail(entry.email || "");
+    if (staffAuthAccessFields.email) staffAuthAccessFields.email.value = normalizeAuthAccessEmail(entry.email || entry.id || "");
+    if (staffAuthAccessFields.startsAt) staffAuthAccessFields.startsAt.value = toDateInputValue(entry.startsAt);
+    if (staffAuthAccessFields.endsAt) staffAuthAccessFields.endsAt.value = toDateInputValue(entry.endsAt);
+    if (staffAuthAccessFields.active) staffAuthAccessFields.active.value = entry.active === false ? "false" : "true";
+    if (staffAuthAccessFields.reason) staffAuthAccessFields.reason.value = (entry.reason || "").toString();
+    if (staffAuthAccessDeleteBtnEl) staffAuthAccessDeleteBtnEl.hidden = false;
+    setMessage(staffAuthAccessMessageEl, "โหลดรายการเข้าแบบฟอร์มแล้ว", "#6b7280");
+    void refreshAuthAccessProfilePreview();
+  };
+
+  const renderAuthEmailAccessRows = async () => {
+    if (!staffAuthAccessTableBodyEl) return;
+    if (!currentAuthEmailAccessEntries.length) {
+      staffAuthAccessTableBodyEl.innerHTML = '<tr><td colspan="3">ยังไม่มีรายการสิทธิ์เข้าใช้ชั่วคราว</td></tr>';
+      if (staffAuthAccessListCaptionEl) staffAuthAccessListCaptionEl.textContent = "แสดงผล 0 รายการ";
+      return;
+    }
+    if (staffAuthAccessListCaptionEl) {
+      staffAuthAccessListCaptionEl.textContent = `แสดงผล ${currentAuthEmailAccessEntries.length} รายการ`;
+    }
+    const rows = await Promise.all(currentAuthEmailAccessEntries.map(async (entry) => {
+      const email = normalizeAuthAccessEmail(entry.email || entry.id || "");
+      let profile = null;
+      try {
+        profile = await findUserProfileByEmail(email);
+      } catch (error) {
+        console.warn("auth access row profile lookup failed", error);
+      }
+      return `
+        <tr data-auth-access-email="${escapeStaffHtml(email)}" tabindex="0" role="button" aria-label="แก้ไขสิทธิ์เข้าใช้ของ ${escapeStaffHtml(email)}">
+          <td data-label="บัญชี">
+            <strong>${escapeStaffHtml(email || "-")}</strong>
+            <div class="section-text-sm">${renderAuthAccessProfileSummary(profile)}</div>
+            <div class="section-text-sm">${escapeStaffHtml(readAuthAccessStatus(entry))}</div>
+          </td>
+          <td data-label="ช่วงเวลา">
+            <div>${escapeStaffHtml(formatDateTime(entry.startsAt))}</div>
+            <div class="section-text-sm">ถึง ${escapeStaffHtml(formatDateTime(entry.endsAt))}</div>
+          </td>
+          <td data-label="เหตุผล">${escapeStaffHtml(entry.reason || "-")}</td>
+        </tr>
+      `;
+    }));
+    staffAuthAccessTableBodyEl.innerHTML = rows.join("");
+  };
+
+  const startAuthEmailAccessListener = () => {
+    if (!staffAuthAccessTableBodyEl) return;
+    if (!resolveStore()) {
+      scheduleDeferredBootstrap();
+      return;
+    }
+    if (!getCurrentAuthEmail()) {
+      currentAuthEmailAccessEntries = [];
+      staffAuthAccessTableBodyEl.innerHTML = '<tr><td colspan="3">กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้</td></tr>';
+      if (staffAuthAccessListCaptionEl) staffAuthAccessListCaptionEl.textContent = "ยังไม่ได้เข้าสู่ระบบ";
+      return;
+    }
+    if (typeof unsubscribeAuthEmailAccess === "function") {
+      unsubscribeAuthEmailAccess();
+      unsubscribeAuthEmailAccess = null;
+    }
+    const q = firestore.query(firestore.collection(firestore.db, COLLECTION_AUTH_EMAIL_ACCESS));
+    unsubscribeAuthEmailAccess = firestore.onSnapshot(
+      q,
+      (snapshot) => {
+        currentAuthEmailAccessEntries = sortByTimestampDesc(
+          (snapshot?.docs || []).map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() || {}) })),
+          "updatedAt"
+        );
+        void renderAuthEmailAccessRows();
+      },
+      (error) => {
+        console.error("auth email access listener failed", error);
+        const msg = buildListenerErrorText("โหลดสิทธิ์เข้าใช้ชั่วคราวไม่สำเร็จ", error);
+        staffAuthAccessTableBodyEl.innerHTML = `<tr><td colspan="3">${toSafeText(msg)}</td></tr>`;
+        setMessage(staffAuthAccessMessageEl, msg, "#b91c1c");
+      }
+    );
+  };
+
+  const saveAuthEmailAccess = async (event) => {
+    event?.preventDefault?.();
+    if (!resolveStore()) {
+      setMessage(staffAuthAccessMessageEl, "ระบบฐานข้อมูลยังไม่พร้อมใช้งาน", "#b91c1c");
+      return;
+    }
+    if (!isSuperStaff()) {
+      setMessage(staffAuthAccessMessageEl, "หน้านี้สำหรับหัวหน้าสตาฟเท่านั้น", "#b91c1c");
+      return;
+    }
+    const email = normalizeAuthAccessEmail(staffAuthAccessFields.email?.value || "");
+    const startsAt = readDateInput(staffAuthAccessFields.startsAt?.value || "");
+    const endsAt = readDateInput(staffAuthAccessFields.endsAt?.value || "");
+    const active = (staffAuthAccessFields.active?.value || "true") === "true";
+    const reason = (staffAuthAccessFields.reason?.value || "").toString().trim();
+    if (!email || !email.includes("@")) {
+      setMessage(staffAuthAccessMessageEl, "กรุณากรอกอีเมลให้ถูกต้อง", "#b91c1c");
+      return;
+    }
+    if (!startsAt || !endsAt || startsAt >= endsAt) {
+      setMessage(staffAuthAccessMessageEl, "กรุณากำหนดช่วงเวลาให้ถูกต้อง", "#b91c1c");
+      return;
+    }
+    if (!reason) {
+      setMessage(staffAuthAccessMessageEl, "กรุณาระบุเหตุผล", "#b91c1c");
+      return;
+    }
+    try {
+      const actor = readCurrentUser();
+      const previousEmail = normalizeAuthAccessEmail(staffAuthAccessFields.id?.value || "");
+      const previousEntry = currentAuthEmailAccessEntries.find((item) =>
+        normalizeAuthAccessEmail(item.email || item.id || "") === (previousEmail || email)
+      );
+      await firestore.setDoc(
+        firestore.doc(firestore.db, COLLECTION_AUTH_EMAIL_ACCESS, email),
+        {
+          email,
+          active,
+          startsAt,
+          endsAt,
+          reason,
+          updatedAt: firestore.serverTimestamp(),
+          updatedByEmail: (actor?.email || "").toString().trim().toLowerCase(),
+          createdAt: previousEntry?.createdAt || firestore.serverTimestamp()
+        },
+        { merge: true }
+      );
+      if (previousEmail && previousEmail !== email) {
+        await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_AUTH_EMAIL_ACCESS, previousEmail));
+      }
+      setMessage(staffAuthAccessMessageEl, "บันทึกสิทธิ์เข้าใช้เรียบร้อยแล้ว", "#047857");
+      resetAuthAccessForm();
+    } catch (error) {
+      console.error("save auth email access failed", error);
+      const msg = buildActionErrorText("บันทึกสิทธิ์เข้าใช้ไม่สำเร็จ", error, email);
+      setMessage(staffAuthAccessMessageEl, msg, "#b91c1c");
+    }
+  };
+
+  const deleteAuthEmailAccess = async (email) => {
+    const normalizedEmail = normalizeAuthAccessEmail(email);
+    if (!normalizedEmail || !resolveStore() || !isSuperStaff()) return;
+    const ok = window.confirm(`ยืนยันลบสิทธิ์เข้าใช้ของ ${normalizedEmail} ?`);
+    if (!ok) return;
+    try {
+      await firestore.deleteDoc(firestore.doc(firestore.db, COLLECTION_AUTH_EMAIL_ACCESS, normalizedEmail));
+      setMessage(staffAuthAccessMessageEl, "ลบสิทธิ์เรียบร้อยแล้ว", "#047857");
+      if (normalizeAuthAccessEmail(staffAuthAccessFields.id?.value || "") === normalizedEmail) {
+        resetAuthAccessForm();
+      }
+    } catch (error) {
+      console.error("delete auth email access failed", error);
+      setMessage(staffAuthAccessMessageEl, "ลบสิทธิ์ไม่สำเร็จ", "#b91c1c");
+    }
+  };
+
   const startPositionCatalogListener = () => {
     if (!resolveStore()) {
       positionCatalogLoadState = "loading";
@@ -7257,6 +7550,60 @@ function initStaffAccessPages() {
   if (staffApprovalMainStructureTabEl) {
     staffApprovalMainStructureTabEl.addEventListener("click", () => setStaffApprovalMainTab("structure"));
   }
+  if (staffApprovalMainAuthAccessTabEl) {
+    staffApprovalMainAuthAccessTabEl.addEventListener("click", () => setStaffApprovalMainTab("auth-access"));
+  }
+
+  staffAuthAccessFormEl?.addEventListener("submit", (event) => {
+    void saveAuthEmailAccess(event);
+  });
+  staffAuthAccessDeleteBtnEl?.addEventListener("click", () => {
+    const email = normalizeAuthAccessEmail(staffAuthAccessFields.id?.value || staffAuthAccessFields.email?.value || "");
+    void deleteAuthEmailAccess(email);
+  });
+  staffAuthAccessResetBtnEl?.addEventListener("click", resetAuthAccessForm);
+  staffAuthAccessRefreshBtnEl?.addEventListener("click", () => {
+    if (typeof unsubscribeAuthEmailAccess === "function") {
+      unsubscribeAuthEmailAccess();
+      unsubscribeAuthEmailAccess = null;
+    }
+    startAuthEmailAccessListener();
+  });
+  staffAuthAccessFields.email?.addEventListener("input", () => {
+    const email = normalizeAuthAccessEmail(staffAuthAccessFields.email?.value || "");
+    if (staffAuthAccessFields.email && staffAuthAccessFields.email.value !== email) {
+      staffAuthAccessFields.email.value = email;
+    }
+  });
+  staffAuthAccessFields.email?.addEventListener("blur", () => {
+    void refreshAuthAccessProfilePreview();
+  });
+  staffAuthAccessTableBodyEl?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const rowEl = target.closest("tr[data-auth-access-email]");
+    if (!(rowEl instanceof HTMLElement)) return;
+    const email = normalizeAuthAccessEmail(rowEl.dataset.authAccessEmail || "");
+    const entry = currentAuthEmailAccessEntries.find((item) => normalizeAuthAccessEmail(item.email || item.id || "") === email);
+    if (entry) {
+      fillAuthAccessForm(entry);
+      staffAuthAccessFormEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+  staffAuthAccessTableBodyEl?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const rowEl = target.closest("tr[data-auth-access-email]");
+    if (!(rowEl instanceof HTMLElement)) return;
+    event.preventDefault();
+    const email = normalizeAuthAccessEmail(rowEl.dataset.authAccessEmail || "");
+    const entry = currentAuthEmailAccessEntries.find((item) => normalizeAuthAccessEmail(item.email || item.id || "") === email);
+    if (entry) {
+      fillAuthAccessForm(entry);
+      staffAuthAccessFormEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
 
   if (orgStructureMemberFormEl) {
     orgStructureMemberFormEl.addEventListener("submit", (event) => {
@@ -7897,6 +8244,7 @@ function initStaffAccessPages() {
   startMyApplicationsListener();
   startPendingApplicationsListener();
   startApprovedHistoryListener();
+  resetAuthAccessForm();
   startOrgRepresentativeApplicationsListener();
   setApprovalView("pending");
   setStaffApprovalMainTab("approval");
@@ -7924,7 +8272,8 @@ function initStaffAccessPages() {
       unsubscribeApprovalHistory,
       unsubscribeOrgRepresentativeApplications,
       unsubscribePositionCatalog,
-      unsubscribeOrgStructureMembers
+      unsubscribeOrgStructureMembers,
+      unsubscribeAuthEmailAccess
     ].forEach((unsubscribe) => {
       if (typeof unsubscribe === "function") {
         try {
@@ -7940,6 +8289,7 @@ function initStaffAccessPages() {
     unsubscribeOrgRepresentativeApplications = null;
     unsubscribePositionCatalog = null;
     unsubscribeOrgStructureMembers = null;
+    unsubscribeAuthEmailAccess = null;
   });
 }
 

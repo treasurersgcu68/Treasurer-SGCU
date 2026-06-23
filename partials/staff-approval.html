@@ -27,6 +27,16 @@
               >
                 ทำเนียบรุ่น
               </button>
+              <button
+                id="staffApprovalMainAuthAccessTab"
+                class="tab-btn view-toggle-btn"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="staffAuthAccessPanel"
+              >
+                สิทธิ์เข้าใช้
+              </button>
             </div>
           </div>
 
@@ -193,6 +203,78 @@
               </table>
             </div>
           </section>
+          </div>
+
+          <div id="staffAuthAccessPanel" class="staff-approval-main-panel" role="tabpanel" aria-labelledby="staffApprovalMainAuthAccessTab" hidden>
+            <section class="panel panel-hover staff-access-panel section-appear section-delay-1">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">เพิ่มสิทธิ์เข้าใช้ชั่วคราว</h3>
+                  <p class="panel-caption">ใช้สำหรับบัญชีที่ยังไม่มีอีเมลจุฬา หรือผู้เยี่ยมชมจากหน่วยงานอื่น โดยต้องกำหนดวันเริ่มและวันหมดอายุ</p>
+                </div>
+              </div>
+              <form id="staffAuthAccessForm" class="staff-access-form content-admin-form" autocomplete="off">
+                <input id="staffAuthAccessId" type="hidden" />
+                <div class="staff-application-position-grid budget-staff-form-grid">
+                  <div class="borrow-form-field budget-staff-form-field-full">
+                    <label class="login-label" for="staffAuthAccessEmail">อีเมล</label>
+                    <input id="staffAuthAccessEmail" class="login-input" type="email" placeholder="name@example.com" required />
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="staffAuthAccessStartsAt">เริ่มใช้สิทธิ์</label>
+                    <input id="staffAuthAccessStartsAt" class="login-input" type="datetime-local" required />
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="staffAuthAccessEndsAt">หมดอายุ</label>
+                    <input id="staffAuthAccessEndsAt" class="login-input" type="datetime-local" required />
+                  </div>
+                  <div class="borrow-form-field">
+                    <label class="login-label" for="staffAuthAccessActive">สถานะ</label>
+                    <select id="staffAuthAccessActive" class="login-input">
+                      <option value="true">active</option>
+                      <option value="false">inactive</option>
+                    </select>
+                  </div>
+                  <div class="borrow-form-field budget-staff-form-field-full">
+                    <label class="login-label" for="staffAuthAccessReason">เหตุผล</label>
+                    <input id="staffAuthAccessReason" class="login-input" type="text" maxlength="240" placeholder="นิสิตใหม่รออีเมลจุฬา / ดูงานจากมหาวิทยาลัยอื่น" required />
+                  </div>
+                </div>
+                <div id="staffAuthAccessProfilePreview" class="section-text-sm staff-access-status" aria-live="polite">กรอกอีเมลเพื่อดูข้อมูลโปรไฟล์ที่เคยบันทึกไว้</div>
+                <div class="staff-access-actions budget-staff-form-actions">
+                  <button id="staffAuthAccessSubmitBtn" class="btn-primary" type="submit">บันทึกสิทธิ์</button>
+                  <button id="staffAuthAccessDeleteBtn" class="btn-ghost" type="button" hidden>ลบรายการนี้</button>
+                  <button id="staffAuthAccessResetBtn" class="btn-ghost" type="button">ล้างฟอร์ม</button>
+                </div>
+                <div id="staffAuthAccessMessage" class="section-text-sm staff-access-status" aria-live="polite"></div>
+              </form>
+            </section>
+
+            <section class="panel panel-hover staff-access-panel section-appear section-delay-1">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">รายการสิทธิ์เข้าใช้ชั่วคราว</h3>
+                  <p id="staffAuthAccessListCaption" class="panel-caption">กำลังโหลดรายการ...</p>
+                </div>
+                <div class="content-admin-actions">
+                  <button id="staffAuthAccessRefreshBtn" class="btn-ghost" type="button">รีเฟรช</button>
+                </div>
+              </div>
+              <div class="project-table-wrapper budget-staff-table-wrapper staff-auth-access-table-wrapper">
+                <table id="staffAuthAccessTable" class="budget-staff-requests-table content-admin-table staff-auth-access-table">
+                  <thead>
+                    <tr>
+                      <th>บัญชี</th>
+                      <th>ช่วงเวลา</th>
+                      <th>เหตุผล</th>
+                    </tr>
+                  </thead>
+                  <tbody id="staffAuthAccessTableBody">
+                    <tr><td colspan="3">กำลังโหลดรายการ...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </div>
 
           <div id="staffApprovalMainPanel" class="staff-approval-main-panel" role="tabpanel" aria-labelledby="staffApprovalMainApprovalTab">

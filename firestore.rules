@@ -16,7 +16,28 @@ service cloud.firestore {
       return rawAuthEmail().matches(".*@([^@]+\\.)?chula\\.ac\\.th$") ||
         rawAuthEmail() in [
           "tuwanon.kimchiang@gmail.com"
-        ];
+        ] ||
+        hasValidTemporaryAuthEmailAccess(rawAuthEmail());
+    }
+
+    function authEmailAccessPath(email) {
+      return /databases/$(database)/documents/authEmailAccess/$(email);
+    }
+
+    function validTemporaryAuthEmailAccessData(data) {
+      return data.active == true &&
+        data.email == rawAuthEmail() &&
+        data.startsAt is timestamp &&
+        data.endsAt is timestamp &&
+        data.startsAt <= request.time &&
+        data.endsAt > request.time;
+    }
+
+    function hasValidTemporaryAuthEmailAccess(email) {
+      return request.auth != null &&
+        email is string &&
+        exists(authEmailAccessPath(email)) &&
+        validTemporaryAuthEmailAccessData(get(authEmailAccessPath(email)).data);
     }
 
     function userEmail() {
@@ -102,6 +123,13 @@ service cloud.firestore {
         request.resource.data.uid == userUid() &&
         request.resource.data.email == userEmail();
       allow delete: if false;
+    }
+
+    match /authEmailAccess/{email} {
+      allow get: if request.auth != null &&
+        email == rawAuthEmail() &&
+        hasValidTemporaryAuthEmailAccess(email);
+      allow list, create, update, delete: if isHeadStaff();
     }
 
     match /staffProfiles/{email} {

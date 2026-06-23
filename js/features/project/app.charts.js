@@ -127,9 +127,10 @@ function initCharts(ctxKey = activeProjectStatusContext) {
           makeStackDataset("โครงการที่อนุมัติแล้ว", "#fbbf24", 1),
           makeStackDataset("โครงการที่วันเลยจัดแล้ว", "#f97316", 2),
           makeStackDataset("โครงการที่เลยกำหนดส่งปิดแล้ว", "#ef4444", 3),
-          makeStackDataset("โครงการที่ปิดแล้ว", "#22c55e", 4),
-          makeStackDataset("ยกเลิกโครงการ", "#6b7280", 5),
-          makeStackDataset("ไม่ส่งปิดโครงการ", "#111827", 6)
+          makeStackDataset("ปิดโครงการแล้ว (ฝั่งนิสิต)", "#86efac", 4),
+          makeStackDataset("ปิดโครงการสมบูรณ์", "#22c55e", 5),
+          makeStackDataset("ยกเลิกโครงการ", "#6b7280", 6),
+          makeStackDataset("ไม่ส่งปิดโครงการ", "#111827", 7)
         ]
       },
       options: {
@@ -418,7 +419,8 @@ function updateClosureStatusChart(filtered) {
     if (mainStatus !== "อนุมัติโครงการ" && mainStatus !== "ยกเลิกโครงการ") {
       return "pending";
     }
-    if (isProjectClosed(p)) return "green";
+    if (isProjectFullyClosed(p)) return "greenDark";
+    if (isProjectStudentClosed(p)) return "greenLight";
 
     const d =
       typeof p.daysToDeadline === "number" && !isNaN(p.daysToDeadline)
@@ -434,7 +436,8 @@ function updateClosureStatusChart(filtered) {
     yellow: 0,
     orange: 0,
     red: 0,
-    green: 0,
+    greenLight: 0,
+    greenDark: 0,
     gray: 0,
     black: 0
   });
@@ -451,7 +454,8 @@ function updateClosureStatusChart(filtered) {
     const yellowData = [];
     const orangeData = [];
     const redData = [];
-    const greenData = [];
+    const greenLightData = [];
+    const greenDarkData = [];
     const grayData = [];
     const blackData = [];
 
@@ -461,7 +465,8 @@ function updateClosureStatusChart(filtered) {
       yellowData.push(stats.yellow);
       orangeData.push(stats.orange);
       redData.push(stats.red);
-      greenData.push(stats.green);
+      greenLightData.push(stats.greenLight);
+      greenDarkData.push(stats.greenDark);
       grayData.push(stats.gray);
       blackData.push(stats.black);
     });
@@ -471,9 +476,10 @@ function updateClosureStatusChart(filtered) {
     budgetByMonthChart.data.datasets[1].data = yellowData;
     budgetByMonthChart.data.datasets[2].data = orangeData;
     budgetByMonthChart.data.datasets[3].data = redData;
-    budgetByMonthChart.data.datasets[4].data = greenData;
-    budgetByMonthChart.data.datasets[5].data = grayData;
-    budgetByMonthChart.data.datasets[6].data = blackData;
+    budgetByMonthChart.data.datasets[4].data = greenLightData;
+    budgetByMonthChart.data.datasets[5].data = greenDarkData;
+    budgetByMonthChart.data.datasets[6].data = grayData;
+    budgetByMonthChart.data.datasets[7].data = blackData;
 
     updateClosureXAxisMax();
     resizeClosureChart(labels.length);

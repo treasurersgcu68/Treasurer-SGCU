@@ -95,6 +95,16 @@ function isProjectClosed(project) {
   );
 }
 
+function isProjectFullyClosed(project) {
+  if (isProjectCancelled(project) || isProjectNoClose(project)) return false;
+  const decree = (project?.statusCloseDecree || project?.closeStatusDecree || "").toString().trim();
+  return decree === "โครงการรับเงินแล้ว" || decree === "โครงการคืนเงินแล้ว";
+}
+
+function isProjectStudentClosed(project) {
+  return isProjectClosed(project) && !isProjectFullyClosed(project);
+}
+
 function isProjectCancelled(project) {
   const main = (project?.statusMain || project?.approvalStatus || "").toString().trim();
   const close = (project?.statusClose || "").toString().trim();

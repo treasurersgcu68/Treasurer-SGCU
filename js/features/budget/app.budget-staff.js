@@ -1638,30 +1638,72 @@
       : budgetActiveRounds.filter((round) => round.id === roundFilter);
     if (selectedRounds.length) {
       if (selectedGroup) {
-        const groupAmount = selectedRounds.reduce((sum, round) => sum + Number(round.budgetGroupCeilings?.[selectedGroup] || 0), 0);
-        if (groupAmount > 0) {
+        const groupAmounts = selectedRounds.map((round) => Number(round.budgetGroupCeilings?.[selectedGroup] || 0));
+        const groupAmount = groupAmounts.reduce((sum, amount) => sum + amount, 0);
+        const missingCount = groupAmounts.filter((amount) => amount <= 0).length;
+        if (groupAmount > 0 && !missingCount) {
           return {
             amount: groupAmount,
-            label: `${roundFilter === "all" ? "เพดานย่อยรวมทุกรอบ" : "เพดานย่อย"} ${selectedGroup}`
+            label: `${roundFilter === "all" ? "เพดานย่อยรวมทุกรอบ" : "เพดานย่อย"} ${selectedGroup}`,
+            complete: true
           };
         }
+        return {
+          amount: groupAmount,
+          label: `${roundFilter === "all" ? "เพดานย่อยรวมทุกรอบ" : "เพดานย่อย"} ${selectedGroup}`,
+          complete: false,
+          missingCount,
+          message: roundFilter === "all"
+            ? `ยังมี ${missingCount.toLocaleString("th-TH")} รอบที่ยังไม่ได้กำหนดเพดานย่อยของ ${selectedGroup} จึงยังไม่สามารถคำนวณคำแนะนำรวมทุกรอบได้`
+            : `ยังไม่ได้กำหนดเพดานย่อยของ ${selectedGroup} สำหรับรอบนี้`
+        };
       }
-      const roundAmount = selectedRounds.reduce((sum, round) => sum + Number(round.budgetCeiling || 0), 0);
+      const roundAmounts = selectedRounds.map((round) => Number(round.budgetCeiling || 0));
+      const roundAmount = roundAmounts.reduce((sum, amount) => sum + amount, 0);
+      const missingCount = roundAmounts.filter((amount) => amount <= 0).length;
+      if (missingCount) {
+        return {
+          amount: roundAmount,
+          label: roundFilter === "all" ? "เพดานรวมทุกรอบ" : `เพดาน ${selectedRounds[0]?.label || ""}`.trim(),
+          complete: false,
+          missingCount,
+          message: roundFilter === "all"
+            ? `ยังมี ${missingCount.toLocaleString("th-TH")} รอบที่ยังไม่ได้กำหนดเพดานงบ จึงยังไม่สามารถคำนวณคำแนะนำรวมทุกรอบได้`
+            : "ยังไม่ได้กำหนดเพดานงบสำหรับรอบนี้"
+        };
+      }
       return {
         amount: roundAmount,
-        label: roundFilter === "all" ? "เพดานรวมทุกรอบ" : `เพดาน ${selectedRounds[0]?.label || ""}`.trim()
+        label: roundFilter === "all" ? "เพดานรวมทุกรอบ" : `เพดาน ${selectedRounds[0]?.label || ""}`.trim(),
+        complete: true
       };
     }
     if (selectedGroup && Number(budgetGroupCeilings[selectedGroup] || 0) > 0) {
       return {
         amount: Number(budgetGroupCeilings[selectedGroup] || 0),
-        label: `เพดานย่อย ${selectedGroup}`
+        label: `เพดานย่อย ${selectedGroup}`,
+        complete: true
       };
     }
     return {
       amount: Number(budgetCeiling || 0),
-      label: "เพดานรวม"
+      label: "เพดานรวม",
+      complete: Number(budgetCeiling || 0) > 0,
+      message: "กำหนดเพดานงบเพื่อให้ระบบคำนวณคำแนะนำ"
     };
+  };
+
+  const getOrgSummaryGroupCeiling = (group = "") => {
+    const groupName = normalizeText(group);
+    if (!groupName) return 0;
+    const roundFilter = normalizeText(orgSummaryRoundEl.value) || "all";
+    const selectedRounds = roundFilter === "all"
+      ? budgetActiveRounds
+      : budgetActiveRounds.filter((round) => round.id === roundFilter);
+    const roundGroupAmount = selectedRounds.reduce((sum, round) =>
+      sum + Number(round.budgetGroupCeilings?.[groupName] || 0), 0);
+    if (roundGroupAmount > 0) return roundGroupAmount;
+    return Number(budgetGroupCeilings[groupName] || 0);
   };
 
   const updateSummary = () => {
@@ -1670,7 +1712,8 @@
     const requestedSum = activeRows.reduce((sum, item) => sum + Number(item.estimatedExpense || 0), 0);
     const approvedSum = activeRows.reduce((sum, item) => sum + Number(item.approvedAmount || 0), 0);
     const selectedCeiling = getSelectedOverviewCeiling();
-    const effectiveCeiling = selectedCeiling.amount;
+    const hasCompleteCeiling = selectedCeiling.complete !== false && Number(selectedCeiling.amount || 0) > 0;
+    const effectiveCeiling = hasCompleteCeiling ? selectedCeiling.amount : 0;
     const reductionNeeded = effectiveCeiling > 0 ? Math.max(requestedSum - effectiveCeiling, 0) : 0;
     const reductionPercent = requestedSum > 0 ? (reductionNeeded * 100) / requestedSum : 0;
     const remainingCeiling = effectiveCeiling > 0 ? Math.max(effectiveCeiling - requestedSum, 0) : 0;
@@ -1679,10 +1722,14 @@
     projectCountEl.textContent = activeRows.length.toLocaleString("th-TH");
     requestedTotalEl.textContent = formatMoney(requestedSum);
     approvedTotalEl.textContent = formatMoney(approvedSum);
-    ceilingTotalEl.textContent = effectiveCeiling > 0 ? formatMoney(effectiveCeiling) : "ยังไม่กำหนด";
+    ceilingTotalEl.textContent = effectiveCeiling > 0
+      ? formatMoney(effectiveCeiling)
+      : Number(selectedCeiling.amount || 0) > 0
+        ? `ขาด ${Number(selectedCeiling.missingCount || 0).toLocaleString("th-TH")} รอบ`
+        : "ยังไม่กำหนด";
     reductionNeededEl.textContent = formatMoney(reductionNeeded);
-    if (effectiveCeiling <= 0) {
-      reductionCaptionEl.textContent = "กำหนดเพดานงบเพื่อให้ระบบคำนวณคำแนะนำ";
+    if (!hasCompleteCeiling) {
+      reductionCaptionEl.textContent = selectedCeiling.message || "กำหนดเพดานงบเพื่อให้ระบบคำนวณคำแนะนำ";
     } else if (reductionNeeded > 0) {
       reductionCaptionEl.textContent = `${selectedCeiling.label}: ต้องลด ${formatMoney(reductionNeeded)} บาท (${reductionPercent.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%) ให้เหลือไม่เกิน ${formatMoney(effectiveCeiling)} บาท`;
     } else {
@@ -1742,7 +1789,8 @@
     });
     return Array.from(grouped.values()).map((row) => ({
       ...row,
-      difference: Math.max(row.requested - row.approved - row.reviewing, 0)
+      difference: Math.max(row.requested - row.approved - row.reviewing, 0),
+      ceiling: getOrgSummaryGroupCeiling(row.summaryLevel === "group" ? row.organizationName : row.organizationType)
     }));
   };
 
@@ -1858,6 +1906,64 @@
 
     const isCompactChart = window.matchMedia?.("(max-width: 720px)")?.matches;
     const yAxisLabelWidth = isCompactChart ? 92 : 170;
+    const hasBudgetCeilingMarkers = rows.some((row) => Number(row.ceiling || 0) > 0);
+    const getBudgetStackRightRadius = (ctx) => {
+      const i = ctx.dataIndex;
+      const datasetIndex = ctx.datasetIndex;
+      const chart = ctx.chart;
+      const datasets = chart?.data?.datasets || [];
+      const currentValue = Number(datasets[datasetIndex]?.data?.[i] || 0);
+      const stackName = datasets[datasetIndex]?.stack;
+      const hasRightSegment = datasets.some((dataset, index) =>
+        index > datasetIndex &&
+        dataset?.stack === stackName &&
+        chart.isDatasetVisible(index) &&
+        Number(dataset?.data?.[i] || 0) > 0
+      );
+      const isRight = currentValue > 0 && !hasRightSegment;
+      return {
+        topLeft: 0,
+        bottomLeft: 0,
+        topRight: isRight ? 8 : 0,
+        bottomRight: isRight ? 8 : 0
+      };
+    };
+    const budgetCeilingMarkerPlugin = {
+      id: "budgetCeilingMarker",
+      afterDatasetsDraw(chart) {
+        const xScale = chart.scales.x;
+        const yScale = chart.scales.y;
+        if (!xScale || !yScale) return;
+        const { ctx, chartArea } = chart;
+        const barMeta = chart.getDatasetMeta(1);
+        ctx.save();
+        rows.forEach((row, index) => {
+          const ceiling = Number(row.ceiling || 0);
+          if (!Number.isFinite(ceiling) || ceiling <= 0) return;
+          const x = xScale.getPixelForValue(ceiling);
+          if (x < chartArea.left || x > chartArea.right) return;
+          const element = barMeta?.data?.[index];
+          const centerY = element?.y ?? yScale.getPixelForValue(index);
+          const height = Math.max(18, (element?.height || 22) + 6);
+          const top = Math.max(chartArea.top, centerY - height / 2);
+          const bottom = Math.min(chartArea.bottom, centerY + height / 2);
+          const isOver = Number(row.requested || 0) > ceiling;
+          ctx.strokeStyle = isOver ? "#dc2626" : "#334155";
+          ctx.fillStyle = isOver ? "#dc2626" : "#334155";
+          ctx.lineWidth = 2;
+          ctx.setLineDash(isOver ? [] : [4, 3]);
+          ctx.beginPath();
+          ctx.moveTo(x, top);
+          ctx.lineTo(x, bottom);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.arc(x, top, 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+    };
 
     chartInstance = new window.Chart(chartCanvasEl.getContext("2d"), {
       type: "bar",
@@ -1876,7 +1982,7 @@
             data: rows.map((row) => row.approved),
             backgroundColor: "#34d399",
             stack: "budget-total",
-            borderRadius: 0,
+            borderRadius: getBudgetStackRightRadius,
             borderSkipped: false
           },
           {
@@ -1884,7 +1990,7 @@
             data: rows.map((row) => row.reviewing),
             backgroundColor: "#facc15",
             stack: "budget-total",
-            borderRadius: 0,
+            borderRadius: getBudgetStackRightRadius,
             borderSkipped: false
           },
           {
@@ -1892,7 +1998,7 @@
             data: rows.map((row) => row.difference),
             backgroundColor: "#fbcfe8",
             stack: "budget-total",
-            borderRadius: { topRight: 8, bottomRight: 8 },
+            borderRadius: getBudgetStackRightRadius,
             borderSkipped: false
           }
         ]
@@ -1938,6 +2044,7 @@
                   `ยอดอนุมัติรวม: ${formatMoney(row?.approved || 0)} บาท`,
                   `กำลังพิจารณา: ${formatMoney(row?.reviewing || 0)} บาท`,
                   `ส่วนที่ยังไม่อนุมัติ: ${formatMoney(row?.difference || 0)} บาท`,
+                  Number(row?.ceiling || 0) > 0 ? `เพดานงบ: ${formatMoney(row.ceiling)} บาท` : "เพดานงบ: ยังไม่กำหนด",
                   `โครงการ ${Number(row?.projects || 0).toLocaleString("th-TH")} รายการ`
                 ];
               }
@@ -1955,6 +2062,11 @@
         scales: {
           x: {
             stacked: true,
+            suggestedMax: Math.max(
+              0,
+              ...rows.map((row) => Number(row.requested || 0)),
+              ...rows.map((row) => Number(row.ceiling || 0))
+            ),
             ticks: {
               maxTicksLimit: isCompactChart ? 3 : 5,
               padding: isCompactChart ? 8 : 3,
@@ -1979,8 +2091,12 @@
             }
           }
         }
-      }
+      },
+      plugins: [budgetCeilingMarkerPlugin]
     });
+    if (hasBudgetCeilingMarkers) {
+      orgSummaryCaptionEl.textContent = `${orgSummaryCaptionEl.textContent} • เส้นขีดคือเพดานงบ`;
+    }
     resizeBudgetOrgSummaryChart(rows);
   };
 

@@ -8483,6 +8483,17 @@
 
 @media (max-width: 480px) {
   .cards.budget-staff-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .budget-staff-summary-card.is-ceiling,
+  .budget-staff-summary-card.is-reduction {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 360px) {
+  .cards.budget-staff-summary-cards {
     grid-template-columns: 1fr;
   }
 }

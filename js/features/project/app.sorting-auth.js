@@ -1088,6 +1088,12 @@ function getAllowedStaffPagesByProfile(profile) {
   );
 }
 
+function hasNavigableStaffPages(profile) {
+  if (!profile) return false;
+  const pages = getAllowedStaffPagesByProfile(profile);
+  return Array.from(pages).some((page) => page !== "login");
+}
+
 function getAllowedPagesForCurrentState() {
   const publicAllowed = new Set(["home", "about", "project-status", "news", "financial-docs", "login"]);
   const isAffairsProfile = currentUserProfileType === "affairs";
@@ -1235,14 +1241,18 @@ function getModeMappedPage(currentPage, mode) {
 }
 
 function applyStaffViewMode() {
-  const staffMode = !!staffAuthUser && staffViewMode === "staff";
+  const canShowStaffMode = hasNavigableStaffPages(staffAuthUser);
+  if (!canShowStaffMode && staffViewMode === "staff") {
+    staffViewMode = "normal";
+  }
+  const staffMode = canShowStaffMode && staffViewMode === "staff";
   const suppressStaffApplicationRedirect = window.__sgcuStaffApplicationFlowActive === true;
   updateNavVisibility(isUserAuthenticated);
   syncRoleNavContainers();
   updateNavForStaff(staffMode ? staffAuthUser : null);
 
   if (staffModeToggleEl) {
-    staffModeToggleEl.style.display = staffAuthUser ? "flex" : "none";
+    staffModeToggleEl.style.display = canShowStaffMode ? "flex" : "none";
   }
   staffModeBtns.forEach((btn) => {
     btn.classList.toggle("is-active", btn.dataset.staffMode === staffViewMode);
@@ -1770,6 +1780,14 @@ function initAuthUI() {
           positions: remotePositions
         };
 
+        if ((auth.currentUser?.email || "").toString().trim().toLowerCase() === normalizedEmail) {
+          refreshAuthDisplay(auth.currentUser);
+        }
+      } else if (!STAFF_HEAD_OVERRIDES.has(normalizedEmail)) {
+        if (staffEmails instanceof Set) {
+          staffEmails.delete(normalizedEmail);
+        }
+        delete staffProfilesByEmail[normalizedEmail];
         if ((auth.currentUser?.email || "").toString().trim().toLowerCase() === normalizedEmail) {
           refreshAuthDisplay(auth.currentUser);
         }

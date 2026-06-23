@@ -2449,11 +2449,11 @@ function initBudgetApprovalRequestPage() {
       latestBudgetRequestRows = latestBudgetRequestRows.filter((row) => row.id !== id);
       latestOrgBudgetRows = latestOrgBudgetRows.filter((row) => row.id !== id);
       renderMyRequestsRows(latestBudgetRequestRows);
-      updateOrgBudgetSummaryCards();
+      updateBudgetOrgSummary();
       renderOrgBudgetTotals(latestOrgBudgetRows, latestOrgBudgetTotalsSource);
       setFormMessage("ลบรายการเรียบร้อยแล้ว", "#047857");
     } catch (error) {
-      console.error("delete budget approval request failed - app.budget-request.js:2421", error);
+      console.error("delete budget approval request failed - app.budget-request.js:2456", error);
       setFormMessage("ลบรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "#b91c1c");
     }
   };
@@ -2564,7 +2564,7 @@ function initBudgetApprovalRequestPage() {
       setRepresentativeApplicationMessage("ส่งคำขอสมัครเป็นตัวแทนองค์กรเรียบร้อยแล้ว", "#047857");
       window.setTimeout(closeRepresentativeModal, 650);
     } catch (error) {
-      console.error("submit organization representative application failed - app.budget-request.js:2532", error);
+      console.error("submit organization representative application failed - app.budget-request.js:2567", error);
       const code = (error?.code || "unknown").toString();
       if (code === "permission-denied") {
         setRepresentativeApplicationMessage("ไม่สามารถส่งคำขอได้: บัญชีนี้ไม่มีสิทธิ์เขียนข้อมูล (permission-denied)", "#b91c1c");
@@ -2658,7 +2658,7 @@ function initBudgetApprovalRequestPage() {
         setFormMessage("ส่งคำขออนุมัติงบประมาณเรียบร้อยแล้ว", "#047857");
       }
     } catch (error) {
-      console.error("submit budget approval request failed - app.budget-request.js:2626", error);
+      console.error("submit budget approval request failed - app.budget-request.js:2661", error);
       const code = (error?.code || "unknown").toString();
       if (code === "permission-denied") {
         setFormMessage("ไม่สามารถส่งคำขอได้: บัญชีนี้ไม่มีสิทธิ์เขียนข้อมูล (permission-denied)", "#b91c1c");

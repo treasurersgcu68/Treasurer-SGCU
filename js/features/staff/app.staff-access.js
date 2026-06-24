@@ -1569,7 +1569,7 @@ function initStaffAccessPages() {
   const deriveAcademicProfileFromStudentId = (rawStudentId, referenceValue = new Date()) => {
     const studentId = (rawStudentId || "").toString().trim();
     if (!/^\d{10}$/.test(studentId)) return { studentId: "", faculty: "", year: "" };
-    const facultyCode = studentId.slice(7, 9);
+    const facultyCode = studentId.slice(-2);
     const faculty = STUDENT_FACULTY_MAP[facultyCode] || "";
     const entryPrefix = Number(studentId.slice(0, 2));
     const currentAcademicBE = getCurrentAcademicYearBE(referenceValue);

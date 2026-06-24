@@ -1503,6 +1503,19 @@ function initAuthUI() {
   const STAFF_PROFILE_COLLECTION = firestoreCollections.staffProfiles || "staffProfiles";
   const remoteStaffProfileLoadingEmails = new Set();
 
+  function normalizeAccountEmail(email) {
+    const normalized = (email || "").toString().trim().toLowerCase();
+    const match = normalized.match(/^(\d{10})@(student|alumni)\.chula\.ac\.th$/);
+    return match ? `${match[1]}@student.chula.ac.th` : normalized;
+  }
+
+  function isAlumniChulaEmail(email) {
+    return /^\d{10}@alumni\.chula\.ac\.th$/i.test((email || "").toString().trim());
+  }
+
+  window.sgcuNormalizeAccountEmail = normalizeAccountEmail;
+  window.sgcuIsAlumniChulaEmail = isAlumniChulaEmail;
+
   function canUseRemoteProfileStore() {
     return !!(
       profileStore.db &&
@@ -1829,6 +1842,8 @@ function initAuthUI() {
           ...(profileData || {}),
           uid: (firebaseUser?.uid || "").toString(),
           email: (firebaseUser?.email || "").toString().trim().toLowerCase(),
+          authEmail: (firebaseUser?.email || "").toString().trim().toLowerCase(),
+          accountEmail: normalizeAccountEmail(firebaseUser?.email || ""),
           updatedAt: profileStore.serverTimestamp()
         },
         { merge: true }
@@ -1848,17 +1863,36 @@ function initAuthUI() {
       const raw = rawPrimary || rawLegacy;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
-      if (!rawPrimary && rawLegacy) {
-        writeLoginProfiles(parsed);
+      const profiles = parsed && typeof parsed === "object" ? parsed : {};
+      const normalizedProfiles = {};
+      Object.entries(profiles).forEach(([key, value]) => {
+        const canonicalKey = normalizeAccountEmail(key);
+        if (!canonicalKey) return;
+        normalizedProfiles[canonicalKey] = {
+          ...(normalizedProfiles[canonicalKey] || {}),
+          ...(value && typeof value === "object" ? value : {})
+        };
+      });
+      const originalKeys = Object.keys(profiles).sort();
+      const normalizedKeys = Object.keys(normalizedProfiles).sort();
+      const hasCanonicalKeyChange = originalKeys.length !== normalizedKeys.length ||
+        originalKeys.some((key, index) => key !== normalizedKeys[index]);
+      if ((!rawPrimary && rawLegacy) || hasCanonicalKeyChange) {
+        writeLoginProfiles(normalizedProfiles);
       }
-      return parsed && typeof parsed === "object" ? parsed : {};
+      return normalizedProfiles;
     } catch (err) {
       return {};
     }
   }
 
   function writeLoginProfiles(profiles) {
-    const safeProfiles = profiles || {};
+    const safeProfiles = {};
+    Object.entries(profiles || {}).forEach(([key, value]) => {
+      const canonicalKey = normalizeAccountEmail(key);
+      if (!canonicalKey) return;
+      safeProfiles[canonicalKey] = value && typeof value === "object" ? value : {};
+    });
     try {
       window.localStorage?.setItem(
         LOGIN_PROFILE_STORAGE_KEY,
@@ -1989,6 +2023,54 @@ function initAuthUI() {
     renderLoginProfileTypeTabs();
   }
 
+  function deriveLoginProfileStudentMeta(rawStudentId, options = {}) {
+    const studentId = (rawStudentId || "").toString().trim();
+    const digits = studentId.replace(/\D/g, "");
+    if (digits.length < 10) return { faculty: "", year: "" };
+
+    const code = digits.slice(-2);
+    const faculty = loginProfileFacultyMap[code] || "";
+    const entryYearSuffix = digits.slice(0, 2);
+    const entryYear = 2500 + Number(entryYearSuffix);
+    const academicYearBE = Number(
+      typeof getCurrentAcademicYearBE === "function"
+        ? getCurrentAcademicYearBE()
+        : (() => {
+            const now = new Date();
+            const yearCE = now.getFullYear();
+            const month = now.getMonth() + 1;
+            return (month >= 6 ? yearCE : yearCE - 1) + 543;
+          })()
+    );
+    const yearLevel = Number.isFinite(entryYear) && Number.isFinite(academicYearBE)
+      ? academicYearBE - entryYear + 1
+      : NaN;
+    const year = isAlumniChulaEmail(options.email || options.authEmail)
+      ? "นิสิตเก่า"
+      : Number.isFinite(yearLevel) && yearLevel >= 1 && yearLevel <= 8
+      ? String(yearLevel)
+      : "";
+    return { faculty, year };
+  }
+
+  function normalizeLoginProfileAcademicFields(profile) {
+    const safeProfile = profile && typeof profile === "object" ? profile : {};
+    const profileType = (safeProfile.profileType || "student").toString().trim().toLowerCase();
+    if (profileType === "affairs") return safeProfile;
+
+    const studentId = (safeProfile.studentId || "").toString().trim();
+    if (!studentId) return safeProfile;
+
+    const derived = deriveLoginProfileStudentMeta(studentId, {
+      email: safeProfile.authEmail || safeProfile.email || ""
+    });
+    return {
+      ...safeProfile,
+      faculty: derived.faculty || safeProfile.faculty || "",
+      year: derived.year || safeProfile.year || ""
+    };
+  }
+
   function updateLoginProfileStudentMeta() {
     if (!loginProfileStudentIdEl || !loginProfileFacultyEl || !loginProfileYearEl) return;
     const rawValue = loginProfileStudentIdEl.value || "";
@@ -2010,22 +2092,15 @@ function initAuthUI() {
       return;
     }
 
-    const code = digits.slice(-2);
-    const label = loginProfileFacultyMap[code];
+    const derived = deriveLoginProfileStudentMeta(digits, {
+      email: auth?.currentUser?.email || ""
+    });
+    const label = derived.faculty;
     loginProfileFacultyEl.value = label ? label : "";
     if (loginProfileFacultyWarningEl) loginProfileFacultyWarningEl.hidden = !!label;
 
-    const entryYearSuffix = digits.slice(0, 2);
-    const entryYear = 2500 + Number(entryYearSuffix);
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const academicYear = (now.getMonth() + 1 >= 8) ? currentYear : currentYear - 1;
-    const academicYearBE = academicYear + 543;
-    const yearLevel = Number.isFinite(entryYear)
-      ? academicYearBE - entryYear + 1
-      : NaN;
-    const isValidYearLevel = yearLevel >= 1 && yearLevel <= 8;
-    loginProfileYearEl.value = isValidYearLevel ? String(yearLevel) : "";
+    const isValidYearLevel = !!derived.year;
+    loginProfileYearEl.value = derived.year || "";
     if (loginProfileYearWarningEl) loginProfileYearWarningEl.hidden = isValidYearLevel;
   }
 
@@ -2049,7 +2124,12 @@ function initAuthUI() {
   }
 
   function applyLoginProfileToFields(profile, firebaseUser) {
-    const safeProfile = profile && typeof profile === "object" ? profile : {};
+    const authEmail = (firebaseUser?.email || profile?.authEmail || profile?.email || "").toString().trim().toLowerCase();
+    const safeProfile = normalizeLoginProfileAcademicFields({
+      ...(profile || {}),
+      authEmail,
+      email: normalizeAccountEmail(authEmail || profile?.email || "")
+    });
     const storedType = (safeProfile.profileType || "").toString().trim().toLowerCase();
     const hasSavedData = hasSavedLoginProfileData(safeProfile);
     const resolvedType = storedType === "affairs" || storedType === "student"
@@ -2074,7 +2154,8 @@ function initAuthUI() {
       loginProfileNicknameEl.value = (safeProfile.nickname || "").toString();
     }
     if (loginProfileStudentIdEl) {
-      loginProfileStudentIdEl.value = (safeProfile.studentId || "").toString();
+      const emailStudentId = authEmail.match(/^(\d{10})@(student|alumni)\.chula\.ac\.th$/)?.[1] || "";
+      loginProfileStudentIdEl.value = (safeProfile.studentId || emailStudentId || "").toString();
     }
     if (loginProfilePhoneEl) {
       loginProfilePhoneEl.value = (safeProfile.phone || "").toString();
@@ -2092,8 +2173,9 @@ function initAuthUI() {
   function loadLoginProfileByUser(firebaseUser, options = {}) {
     const forceReload = !!options.forceReload;
     const forceRemote = !!options.forceRemote;
-    const email = (firebaseUser?.email || "").toString().trim().toLowerCase();
-    if (!email) {
+    const authEmail = (firebaseUser?.email || "").toString().trim().toLowerCase();
+    const email = normalizeAccountEmail(authEmail);
+    if (!authEmail || !email) {
       loginProfileLoadedForEmail = "";
       clearLoginProfileFields();
       return;
@@ -2102,8 +2184,24 @@ function initAuthUI() {
       return;
     }
 
-    const profile = readLoginProfiles()[email] || {};
+    const localProfiles = readLoginProfiles();
+    const profile = normalizeLoginProfileAcademicFields({
+      ...(localProfiles[email] || {}),
+      authEmail,
+      email
+    });
     const hasLocalProfile = hasSavedLoginProfileData(profile);
+    if (hasLocalProfile) {
+      localProfiles[email] = {
+        ...(localProfiles[email] || {}),
+        ...profile,
+        authEmail,
+        email,
+        accountEmail: email,
+        updatedAt: localProfiles[email]?.updatedAt || Date.now()
+      };
+      writeLoginProfiles(localProfiles);
+    }
     setFirstLoginPromptVisible(!hasLocalProfile);
     applyLoginProfileToFields(profile, firebaseUser);
     if (hasLocalProfile) {
@@ -2118,26 +2216,36 @@ function initAuthUI() {
 
     const currentSeq = ++loginProfileLoadSeq;
     void readRemoteLoginProfile(firebaseUser).then((remoteProfile) => {
-      const currentEmail = (auth.currentUser?.email || "").toString().trim().toLowerCase();
+      const currentEmail = normalizeAccountEmail(auth.currentUser?.email || "");
       if (!remoteProfile || currentSeq !== loginProfileLoadSeq || currentEmail !== email) return;
-      applyLoginProfileToFields(remoteProfile, firebaseUser);
-      setFirstLoginPromptVisible(!hasSavedLoginProfileData(remoteProfile));
+      const normalizedRemoteProfile = normalizeLoginProfileAcademicFields({
+        ...remoteProfile,
+        authEmail,
+        email,
+        accountEmail: email
+      });
+      applyLoginProfileToFields(normalizedRemoteProfile, firebaseUser);
+      setFirstLoginPromptVisible(!hasSavedLoginProfileData(normalizedRemoteProfile));
       const cached = readLoginProfiles();
       cached[email] = {
         ...(cached[email] || {}),
-        ...remoteProfile,
+        ...normalizedRemoteProfile,
+        authEmail,
+        email,
+        accountEmail: email,
         updatedAt: Date.now()
       };
       writeLoginProfiles(cached);
       window.dispatchEvent(new CustomEvent("sgcu:user-profile-updated", {
-        detail: { email, profile: cached[email] }
+        detail: { email, authEmail, accountEmail: email, profile: cached[email] }
       }));
     });
   }
 
   async function saveLoginProfile(firebaseUser) {
-    const email = (firebaseUser?.email || "").toString().trim().toLowerCase();
-    if (!email) {
+    const authEmail = (firebaseUser?.email || "").toString().trim().toLowerCase();
+    const email = normalizeAccountEmail(authEmail);
+    if (!authEmail || !email) {
       setLoginProfileStatus("กรุณาเข้าสู่ระบบก่อนบันทึกข้อมูลผู้ใช้", "#b91c1c");
       return false;
     }
@@ -2195,6 +2303,9 @@ function initAuthUI() {
     profiles[email] = {
       ...existing,
       profileType,
+      authEmail,
+      email,
+      accountEmail: email,
       firstName,
       lastName,
       nickname,
@@ -2209,7 +2320,7 @@ function initAuthUI() {
     setFirstLoginPromptVisible(false);
     applyStaffViewMode();
     window.dispatchEvent(new CustomEvent("sgcu:user-profile-updated", {
-      detail: { email, profile: profiles[email] }
+      detail: { email, authEmail, accountEmail: email, profile: profiles[email] }
     }));
     if (loginProfileSaveBtnEl) loginProfileSaveBtnEl.disabled = true;
     const remoteResult = await writeRemoteLoginProfile(firebaseUser, profiles[email]);

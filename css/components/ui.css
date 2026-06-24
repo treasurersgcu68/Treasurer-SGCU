@@ -384,6 +384,13 @@
   margin: 8px 0 14px;
 }
 
+.project-calendar-filter-toolbar {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 10px;
+  align-items: end;
+  margin: 0 0 12px;
+}
+
 .calendar-controls {
   display: flex;
   gap: 8px;

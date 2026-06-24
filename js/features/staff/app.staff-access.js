@@ -491,7 +491,8 @@ function initStaffAccessPages() {
     window.__sgcuStaffApplicationFlowActive = true;
     prefillApplicationForm();
     const currentUserEmail = getCurrentAuthEmail();
-    const localProfile = currentUserEmail ? (readLoginProfiles()[currentUserEmail] || {}) : {};
+    const currentAccountEmail = normalizeAccountEmail(currentUserEmail);
+    const localProfile = currentAccountEmail ? (readLoginProfiles()[currentAccountEmail] || {}) : {};
     const profileType = ((localProfile.profileType || window.currentUserProfileType || "student").toString().trim().toLowerCase() === "affairs")
       ? "affairs"
       : "student";
@@ -941,17 +942,17 @@ function initStaffAccessPages() {
       const facultyEl = document.getElementById("staffApprovalDetailFaculty");
       const yearEl = document.getElementById("staffApprovalDetailYear");
       const effectiveEmail = ((profile?.email || applicantEmail || item?.applicantEmail || "").toString().trim().toLowerCase());
-      const fallback = deriveAcademicProfile(profile || {}, effectiveEmail);
+      const fallback = deriveAcademicProfile(profile || {}, effectiveEmail, item.createdAt || item.updatedAt || approvedAt);
       const studentId = getMeaningfulProfileValue(profile?.studentId, fallback.studentId, "-");
       const faculty = getMeaningfulProfileValue(profile?.faculty, fallback.faculty, "-");
-      const year = getMeaningfulProfileValue(profile?.year, fallback.year, "-");
+      const year = getMeaningfulProfileValue(fallback.year, profile?.year, "-");
       if (studentIdEl) studentIdEl.textContent = studentId;
       if (facultyEl) facultyEl.textContent = faculty;
       if (yearEl) yearEl.textContent = year;
     };
 
     const localProfiles = readLoginProfiles();
-    fillAcademicFields(localProfiles[applicantEmail] || {});
+    fillAcademicFields(localProfiles[normalizeAccountEmail(applicantEmail)] || {});
 
     if (
       firestore?.db &&
@@ -1107,6 +1108,22 @@ function initStaffAccessPages() {
     const currentUserEmail = (readCurrentUser()?.email || "").toString().trim().toLowerCase();
     if (currentUserEmail) return currentUserEmail;
     return (lastKnownAuthState.email || "").toString().trim().toLowerCase();
+  };
+
+  const normalizeAccountEmail = (email) => {
+    if (typeof window.sgcuNormalizeAccountEmail === "function") {
+      return window.sgcuNormalizeAccountEmail(email);
+    }
+    const normalized = (email || "").toString().trim().toLowerCase();
+    const match = normalized.match(/^(\d{10})@(student|alumni)\.chula\.ac\.th$/);
+    return match ? `${match[1]}@student.chula.ac.th` : normalized;
+  };
+
+  const isAlumniChulaEmail = (email) => {
+    if (typeof window.sgcuIsAlumniChulaEmail === "function") {
+      return window.sgcuIsAlumniChulaEmail(email);
+    }
+    return /^\d{10}@alumni\.chula\.ac\.th$/i.test((email || "").toString().trim());
   };
 
   const normalizeRoleCode = (role) => {
@@ -1504,10 +1521,17 @@ function initStaffAccessPages() {
     });
   };
 
-  const getCurrentAcademicYearBE = () => {
-    const now = new Date();
-    const yearCE = now.getFullYear();
-    const month = now.getMonth() + 1;
+  const parseAcademicReferenceDate = (value) => {
+    if (!value) return new Date();
+    const source = value && typeof value === "object" && value.date !== undefined ? value.date : value;
+    const date = typeof source?.toDate === "function" ? source.toDate() : new Date(source);
+    return date instanceof Date && !Number.isNaN(date.getTime()) ? date : null;
+  };
+
+  const getCurrentAcademicYearBE = (referenceValue = new Date()) => {
+    const referenceDate = parseAcademicReferenceDate(referenceValue) || new Date();
+    const yearCE = referenceDate.getFullYear();
+    const month = referenceDate.getMonth() + 1;
     const academicYearCE = month >= 6 ? yearCE : yearCE - 1;
     return academicYearCE + 543;
   };
@@ -1516,8 +1540,8 @@ function initStaffAccessPages() {
 
   const getAcademicYearFromTimestamp = (value) => {
     if (!value) return "";
-    const date = typeof value?.toDate === "function" ? value.toDate() : new Date(value);
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    const date = parseAcademicReferenceDate(value);
+    if (!date) return "";
     const yearCE = date.getFullYear();
     const month = date.getMonth() + 1;
     return String((month >= 6 ? yearCE : yearCE - 1) + 543);
@@ -1542,35 +1566,40 @@ function initStaffAccessPages() {
     return "";
   };
 
-  const deriveAcademicProfileFromStudentId = (rawStudentId) => {
+  const deriveAcademicProfileFromStudentId = (rawStudentId, referenceValue = new Date()) => {
     const studentId = (rawStudentId || "").toString().trim();
     if (!/^\d{10}$/.test(studentId)) return { studentId: "", faculty: "", year: "" };
     const facultyCode = studentId.slice(7, 9);
     const faculty = STUDENT_FACULTY_MAP[facultyCode] || "";
     const entryPrefix = Number(studentId.slice(0, 2));
-    const currentAcademicBE = getCurrentAcademicYearBE();
+    const currentAcademicBE = getCurrentAcademicYearBE(referenceValue);
     const entryAcademicBE = Number.isFinite(entryPrefix) ? 2500 + entryPrefix : NaN;
     const yearLevel = Number.isFinite(entryAcademicBE)
       ? currentAcademicBE - entryAcademicBE + 1
       : NaN;
-    const year = Number.isFinite(yearLevel) && yearLevel >= 1 && yearLevel <= 8 ? String(yearLevel) : "";
+    const year = isAlumniChulaEmail(referenceValue?.email || referenceValue?.authEmail)
+      ? "นิสิตเก่า"
+      : Number.isFinite(yearLevel) && yearLevel >= 1 && yearLevel <= 8 ? String(yearLevel) : "";
     return { studentId, faculty, year };
   };
 
-  const deriveAcademicProfileFromEmail = (email) => {
+  const deriveAcademicProfileFromEmail = (email, referenceValue = new Date()) => {
     const normalizedEmail = (email || "").toString().trim().toLowerCase();
     const localPart = normalizedEmail.split("@")[0] || "";
-    return deriveAcademicProfileFromStudentId(localPart);
+    return deriveAcademicProfileFromStudentId(localPart, referenceValue);
   };
 
-  const deriveAcademicProfile = (profile = {}, email = "") => {
+  const deriveAcademicProfile = (profile = {}, email = "", referenceValue = new Date()) => {
     const explicitStudentId = getMeaningfulProfileValue(profile?.studentId);
-    const fromStudentId = deriveAcademicProfileFromStudentId(explicitStudentId);
-    const fromEmail = deriveAcademicProfileFromEmail(email);
+    const referenceContext = referenceValue && typeof referenceValue === "object" && !Array.isArray(referenceValue)
+      ? { ...referenceValue, email }
+      : { date: referenceValue, email };
+    const fromStudentId = deriveAcademicProfileFromStudentId(explicitStudentId, referenceContext);
+    const fromEmail = deriveAcademicProfileFromEmail(email, referenceContext);
     return {
       studentId: getMeaningfulProfileValue(explicitStudentId, fromEmail.studentId),
       faculty: getMeaningfulProfileValue(profile?.faculty, fromStudentId.faculty, fromEmail.faculty),
-      year: getMeaningfulProfileValue(profile?.year, fromStudentId.year, fromEmail.year)
+      year: getMeaningfulProfileValue(fromStudentId.year, fromEmail.year, profile?.year)
     };
   };
 
@@ -2190,7 +2219,16 @@ function initStaffAccessPages() {
       const raw = rawPrimary || rawLegacy;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : {};
+      const profiles = parsed && typeof parsed === "object" ? parsed : {};
+      return Object.entries(profiles).reduce((acc, [key, value]) => {
+        const canonicalKey = normalizeAccountEmail(key);
+        if (!canonicalKey) return acc;
+        acc[canonicalKey] = {
+          ...(acc[canonicalKey] || {}),
+          ...(value && typeof value === "object" ? value : {})
+        };
+        return acc;
+      }, {});
     } catch (_) {
       return {};
     }
@@ -2424,7 +2462,8 @@ function initStaffAccessPages() {
 
   const renderApplicationPositionSelect = () => {
     const currentUserEmail = getCurrentAuthEmail();
-    const localProfile = currentUserEmail ? (readLoginProfiles()[currentUserEmail] || {}) : {};
+    const currentAccountEmail = normalizeAccountEmail(currentUserEmail);
+    const localProfile = currentAccountEmail ? (readLoginProfiles()[currentAccountEmail] || {}) : {};
     const profileType = ((localProfile.profileType || window.currentUserProfileType || "student").toString().trim().toLowerCase() === "affairs")
       ? "affairs"
       : "student";
@@ -2795,7 +2834,8 @@ function initStaffAccessPages() {
         faculty: applicant.faculty || requester.faculty || item.faculty || "",
         year: applicant.year || requester.year || item.year || ""
       },
-      email
+      email,
+      item.createdAt || item.reviewedAt || item.updatedAt
     );
     const displayName = (applicant.displayName || requester.displayName || item.applicantName || email || "-").toString();
     return {
@@ -2805,7 +2845,7 @@ function initStaffAccessPages() {
       lineId: (applicant.lineId || requester.lineId || "").toString(),
       studentId: getMeaningfulProfileValue(applicant.studentId, requester.studentId, item.studentId, academic.studentId),
       faculty: getMeaningfulProfileValue(applicant.faculty, requester.faculty, item.faculty, academic.faculty),
-      year: getMeaningfulProfileValue(applicant.year, requester.year, item.year, academic.year)
+      year: getMeaningfulProfileValue(academic.year, applicant.year, requester.year, item.year)
     };
   };
 
@@ -5921,17 +5961,17 @@ function initStaffAccessPages() {
       const facultyEl = document.getElementById("orgRepresentativeDetailFaculty");
       const yearEl = document.getElementById("orgRepresentativeDetailYear");
       const effectiveEmail = ((profile?.email || applicantEmail || "").toString().trim().toLowerCase());
-      const fallback = deriveAcademicProfile(profile || {}, effectiveEmail);
+      const fallback = deriveAcademicProfile(profile || {}, effectiveEmail, item.createdAt || item.reviewedAt || item.updatedAt);
       const studentId = getMeaningfulProfileValue(profile?.studentId, applicant.studentId, fallback.studentId) || "-";
       const faculty = getMeaningfulProfileValue(profile?.faculty, applicant.faculty, fallback.faculty) || "-";
-      const year = getMeaningfulProfileValue(profile?.year, applicant.year, fallback.year) || "-";
+      const year = getMeaningfulProfileValue(fallback.year, profile?.year, applicant.year) || "-";
       if (studentIdEl) studentIdEl.textContent = studentId;
       if (facultyEl) facultyEl.textContent = faculty;
       if (yearEl) yearEl.textContent = year;
     };
 
     const localProfiles = readLoginProfiles();
-    fillAcademicFields(localProfiles[applicantEmail] || {});
+    fillAcademicFields(localProfiles[normalizeAccountEmail(applicantEmail)] || {});
 
     if (firestore?.db && firestore?.doc && firestore?.getDoc) {
       const fetchByUid = applicantUid
@@ -6919,7 +6959,8 @@ function initStaffAccessPages() {
     }
 
     const currentUserEmail = (user.email || "").toString().trim().toLowerCase();
-    const localProfile = currentUserEmail ? (readLoginProfiles()[currentUserEmail] || {}) : {};
+    const currentAccountEmail = normalizeAccountEmail(currentUserEmail);
+    const localProfile = currentAccountEmail ? (readLoginProfiles()[currentAccountEmail] || {}) : {};
     const profileType = ((localProfile.profileType || window.currentUserProfileType || "student").toString().trim().toLowerCase() === "affairs")
       ? "affairs"
       : "student";
@@ -6953,6 +6994,8 @@ function initStaffAccessPages() {
       requestType: "staff_application",
       applicantUid: (user.uid || "").toString(),
       applicantEmail,
+      accountEmail: currentAccountEmail,
+      authEmail: applicantEmail,
       applicantName,
       applicantNick,
       applicantDisplayName: (user.displayName || "").toString().trim(),

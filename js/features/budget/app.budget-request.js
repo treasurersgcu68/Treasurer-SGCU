@@ -118,6 +118,22 @@ function initBudgetApprovalRequestPage() {
   let budgetRoundYear = "";
   let representativeApplicationYear = "";
   let budgetRoundNo = "";
+
+  const normalizeAccountEmail = (email) => {
+    if (typeof window.sgcuNormalizeAccountEmail === "function") {
+      return window.sgcuNormalizeAccountEmail(email);
+    }
+    const normalized = (email || "").toString().trim().toLowerCase();
+    const match = normalized.match(/^(\d{10})@(student|alumni)\.chula\.ac\.th$/);
+    return match ? `${match[1]}@student.chula.ac.th` : normalized;
+  };
+
+  const isAlumniChulaEmail = (email) => {
+    if (typeof window.sgcuIsAlumniChulaEmail === "function") {
+      return window.sgcuIsAlumniChulaEmail(email);
+    }
+    return /^\d{10}@alumni\.chula\.ac\.th$/i.test((email || "").toString().trim());
+  };
   let currentBudgetRoundId = "";
   let activeBudgetRounds = [];
 
@@ -963,17 +979,24 @@ function initBudgetApprovalRequestPage() {
     return date instanceof Date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
   };
 
-  const getCurrentAcademicYearBE = () => {
-    const now = new Date();
-    const yearCE = now.getFullYear();
-    const month = now.getMonth() + 1;
+  const parseAcademicReferenceDate = (value) => {
+    if (!value) return new Date();
+    const source = value && typeof value === "object" && value.date !== undefined ? value.date : value;
+    const date = typeof source?.toDate === "function" ? source.toDate() : new Date(source);
+    return date instanceof Date && !Number.isNaN(date.getTime()) ? date : null;
+  };
+
+  const getCurrentAcademicYearBE = (referenceValue = new Date()) => {
+    const referenceDate = parseAcademicReferenceDate(referenceValue) || new Date();
+    const yearCE = referenceDate.getFullYear();
+    const month = referenceDate.getMonth() + 1;
     return (month >= 6 ? yearCE : yearCE - 1) + 543;
   };
 
   const getAcademicYearFromTimestamp = (value) => {
     if (!value) return "";
-    const date = typeof value?.toDate === "function" ? value.toDate() : new Date(value);
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    const date = parseAcademicReferenceDate(value);
+    if (!date) return "";
     const yearCE = date.getFullYear();
     const month = date.getMonth() + 1;
     return String((month >= 6 ? yearCE : yearCE - 1) + 543);
@@ -987,6 +1010,30 @@ function initBudgetApprovalRequestPage() {
 
   const isCurrentRepresentativeAcademicYear = (item = {}) =>
     getRepresentativeAcademicYear(item) === String(getCurrentAcademicYearBE());
+
+  const deriveStudentYearFromId = (studentId, referenceValue = new Date()) => {
+    const digits = (studentId || "").toString().trim().replace(/\D/g, "");
+    if (!/^\d{10}$/.test(digits)) return "";
+    const entryPrefix = Number(digits.slice(0, 2));
+    const entryAcademicBE = Number.isFinite(entryPrefix) ? 2500 + entryPrefix : NaN;
+    const referenceAcademicBE = getCurrentAcademicYearBE(referenceValue);
+    const yearLevel = Number.isFinite(entryAcademicBE)
+      ? referenceAcademicBE - entryAcademicBE + 1
+      : NaN;
+    return isAlumniChulaEmail(referenceValue?.email || referenceValue?.authEmail)
+      ? "นิสิตเก่า"
+      : Number.isFinite(yearLevel) && yearLevel >= 1 && yearLevel <= 8 ? String(yearLevel) : "";
+  };
+
+  const normalizeProfileAcademicSnapshot = (profile = {}, referenceValue = new Date()) => {
+    const safeProfile = profile && typeof profile === "object" ? profile : {};
+    const studentId = (safeProfile.studentId || "").toString().trim();
+    const email = (safeProfile.authEmail || safeProfile.email || readCurrentUserEmail()).toString().trim().toLowerCase();
+    return {
+      ...safeProfile,
+      year: deriveStudentYearFromId(studentId, { date: referenceValue, email }) || (safeProfile.year || "").toString()
+    };
+  };
 
   const isRepresentativeApplicationAcademicYear = (item = {}) =>
     getRepresentativeAcademicYear(item) === getRepresentativeApplicationAcademicYear();
@@ -1363,6 +1410,8 @@ function initBudgetApprovalRequestPage() {
 
   const readCurrentUserEmail = () =>
     (window.sgcuAuth?.auth?.currentUser?.email || "").toString().trim().toLowerCase();
+
+  const readCurrentAccountEmail = () => normalizeAccountEmail(readCurrentUserEmail());
 
   const renderMyRequestsRows = (rows) => {
     const sourceRows = Array.isArray(rows) ? rows : [];
@@ -1775,14 +1824,15 @@ function initBudgetApprovalRequestPage() {
 
     const representative = getPrimaryApprovedRepresentative();
     const representativeOrgType = normalizeOrgText(representative?.organizationType);
-    const queryScope = representativeOrgType ? `org:${representativeOrgType}` : `email:${email}`;
+    const accountEmail = normalizeAccountEmail(email);
+    const queryScope = representativeOrgType ? `org:${representativeOrgType}` : `account:${accountEmail}`;
     latestMyRequestsQueryScope = queryScope;
     myRequestsCaptionEl.textContent = "กำลังโหลดรายการ...";
     const listQuery = firestore.query(
       firestore.collection(firestore.db, REQUEST_COLLECTION),
       representativeOrgType
         ? firestore.where("organizationType", "==", representativeOrgType)
-        : firestore.where("requester.email", "==", email),
+        : firestore.where("requester.accountEmail", "==", accountEmail),
       ...(firestore.limit ? [firestore.limit(BUDGET_REQUEST_LIST_LIMIT)] : [])
     );
     unsubscribeMyRequests = firestore.onSnapshot(
@@ -1938,9 +1988,10 @@ function initBudgetApprovalRequestPage() {
         populateBudgetOrgTypeOptions();
         populateBudgetOrgDeptOptions();
         const representative = getPrimaryApprovedRepresentative();
+        const accountEmail = normalizeAccountEmail(email);
         const nextQueryScope = representative?.organizationType
           ? `org:${normalizeOrgText(representative.organizationType)}`
-          : `email:${email}`;
+          : `account:${accountEmail}`;
         if (nextQueryScope !== latestMyRequestsQueryScope) {
           subscribeMyRequests();
         } else {
@@ -1982,6 +2033,7 @@ function initBudgetApprovalRequestPage() {
 
   const readLocalLoginProfileByEmail = (email) => {
     const normalized = (email || "").toString().trim().toLowerCase();
+    const accountEmail = normalizeAccountEmail(normalized);
     if (!normalized) return {};
 
     try {
@@ -1998,8 +2050,10 @@ function initBudgetApprovalRequestPage() {
           // ignore localStorage write errors
         }
       }
-      const profile = byEmail[normalized];
-      return profile && typeof profile === "object" ? profile : {};
+      const profile = byEmail[accountEmail] || byEmail[normalized];
+      return profile && typeof profile === "object"
+        ? { ...profile, authEmail: normalized, accountEmail, email: accountEmail }
+        : {};
     } catch (_) {
       return {};
     }
@@ -2038,7 +2092,8 @@ function initBudgetApprovalRequestPage() {
   const validateRepresentativeProfile = () => {
     const user = readCurrentUser();
     const email = (user?.email || "").toString().trim().toLowerCase();
-    const profile = readLocalLoginProfileByEmail(email);
+    const accountEmail = normalizeAccountEmail(email);
+    const profile = normalizeProfileAcademicSnapshot(readLocalLoginProfileByEmail(email));
     const missingFields = getRepresentativeProfileMissingFields(profile);
     if (!missingFields.length) return true;
 
@@ -2052,7 +2107,8 @@ function initBudgetApprovalRequestPage() {
   const buildRequestPayload = () => {
     const user = readCurrentUser();
     const email = (user?.email || "").toString().trim().toLowerCase();
-    const profile = readLocalLoginProfileByEmail(email);
+    const accountEmail = normalizeAccountEmail(email);
+    const profile = normalizeProfileAcademicSnapshot(readLocalLoginProfileByEmail(email));
     const editingItem = editingRequestId
       ? latestBudgetRequestRows.find((item) => item.id === editingRequestId)
       : null;
@@ -2067,6 +2123,8 @@ function initBudgetApprovalRequestPage() {
       })
       : {
         email,
+        accountEmail,
+        authEmail: email,
         uid: (user?.uid || "").toString(),
         displayName: resolveRequesterDisplayName(user, profile),
         profileType: (profile?.profileType || "").toString(),
@@ -2107,6 +2165,7 @@ function initBudgetApprovalRequestPage() {
     return {
       requestType: "budget_approval",
       status: "pending",
+      accountEmail,
       organizationType,
       organizationName,
       representative: representativePayload,
@@ -2282,7 +2341,8 @@ function initBudgetApprovalRequestPage() {
   const buildRepresentativePayload = () => {
     const user = readCurrentUser();
     const email = (user?.email || "").toString().trim().toLowerCase();
-    const profile = readLocalLoginProfileByEmail(email);
+    const accountEmail = normalizeAccountEmail(email);
+    const profile = normalizeProfileAcademicSnapshot(readLocalLoginProfileByEmail(email));
     const selectedOrgType = normalizeOrgText(representativeOrgTypeEl?.value);
     const selectedOrgName = normalizeOrgText(representativeOrgDeptEl?.value);
     const selectedCatalogItem = findBudgetOrgCatalogItemBySelection(selectedOrgType, selectedOrgName);
@@ -2299,6 +2359,7 @@ function initBudgetApprovalRequestPage() {
     return {
       requestType: "organization_representative",
       status: "pending",
+      accountEmail,
       academicYear: getRepresentativeApplicationAcademicYear(),
       organizationType: selectedOrg.organizationType,
       organizationName: selectedOrg.organizationName,
@@ -2316,6 +2377,8 @@ function initBudgetApprovalRequestPage() {
       requestedLevelCodeZZ: "REP",
       requester: {
         email,
+        accountEmail,
+        authEmail: email,
         uid: (user?.uid || "").toString(),
         displayName: resolveRequesterDisplayName(user, profile),
         profileType: (profile?.profileType || "").toString(),
@@ -2328,6 +2391,8 @@ function initBudgetApprovalRequestPage() {
       },
       applicant: {
         email,
+        accountEmail,
+        authEmail: email,
         uid: (user?.uid || "").toString(),
         displayName: resolveRequesterDisplayName(user, profile),
         profileType: (profile?.profileType || "").toString(),

@@ -260,6 +260,32 @@
 
           <!-- ================= CALENDAR VIEW ================= -->
           <div id="calendarView" style="display:none; margin-top:12px;">
+            <!-- Filters (ปี / ฝ่าย / สถานะ) -->
+            <div class="calendar-filter-bar project-calendar-filter-toolbar">
+              <div class="filter-group">
+                <label for="calendarYearSelect">ปีการศึกษา</label>
+                <select id="calendarYearSelect">
+                  <option value="all">ทุกปีการศึกษา</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="calendarOrgSelect">ฝ่าย / ชมรม</label>
+                <select id="calendarOrgSelect">
+                  <option value="all">ทุกฝ่าย / ทุกชมรม</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="calendarStatusSelect">สถานะโครงการ</label>
+                <select id="calendarStatusSelect">
+                  <option value="all">ทุกสถานะ</option>
+                  <option value="pending">อยู่ระหว่างดำเนินการ</option>
+                  <option value="approved">อนุมัติโครงการแล้ว</option>
+                  <option value="closed">ปิดโครงการแล้ว</option>
+                  <option value="cancelled">ยกเลิกโครงการ</option>
+                </select>
+              </div>
+            </div>
+
             <section class="panel section-appear section-delay-1">
               <header class="panel-header">
                 <div>
@@ -279,32 +305,6 @@
                   </button>
                 </div>
               </header>
-
-              <!-- Filters (ปี / ฝ่าย / สถานะ) -->
-              <div class="calendar-filter-bar">
-                <div class="filter-group">
-                  <label for="calendarYearSelect">ปีการศึกษา</label>
-                  <select id="calendarYearSelect">
-                    <option value="all">ทุกปีการศึกษา</option>
-                  </select>
-                </div>
-                <div class="filter-group">
-                  <label for="calendarOrgSelect">ฝ่าย / ชมรม</label>
-                  <select id="calendarOrgSelect">
-                    <option value="all">ทุกฝ่าย / ทุกชมรม</option>
-                  </select>
-              </div>
-              <div class="filter-group">
-                <label for="calendarStatusSelect">สถานะโครงการ</label>
-                <select id="calendarStatusSelect">
-                  <option value="all">ทุกสถานะ</option>
-                    <option value="pending">อยู่ระหว่างดำเนินการ</option>
-                    <option value="approved">อนุมัติโครงการแล้ว</option>
-                    <option value="closed">ปิดโครงการแล้ว</option>
-                    <option value="cancelled">ยกเลิกโครงการ</option>
-                  </select>
-                </div>
-              </div>
 
               <div class="calendar-grid-scroll">
                 <!-- Skeleton ระหว่างโหลดปฏิทิน -->

@@ -75,6 +75,22 @@ function initBorrowAssetsApp() {
   const LEGACY_BORROW_PROFILE_STORAGE_KEY = "sgcu_borrow_profile_by_email_v1";
   const USER_PROFILE_COLLECTION = firestoreCollections.userProfiles || "userProfiles";
 
+  const normalizeAccountEmail = (email) => {
+    if (typeof window.sgcuNormalizeAccountEmail === "function") {
+      return window.sgcuNormalizeAccountEmail(email);
+    }
+    const normalized = (email || "").toString().trim().toLowerCase();
+    const match = normalized.match(/^(\d{10})@(student|alumni)\.chula\.ac\.th$/);
+    return match ? `${match[1]}@student.chula.ac.th` : normalized;
+  };
+
+  const isAlumniChulaEmail = (email) => {
+    if (typeof window.sgcuIsAlumniChulaEmail === "function") {
+      return window.sgcuIsAlumniChulaEmail(email);
+    }
+    return /^\d{10}@alumni\.chula\.ac\.th$/i.test((email || "").toString().trim());
+  };
+
   const USE_CSV_ASSET_CATALOG =
     typeof borrowAssetConfig.useCsvAssetCatalog === "boolean"
       ? borrowAssetConfig.useCsvAssetCatalog
@@ -325,15 +341,43 @@ function initBorrowAssetsApp() {
   };
 
   const OTHER_ORG_VALUE = "__other__";
-  const getBorrowAcademicYearBE = () => {
-    if (typeof getCurrentAcademicYearBE === "function") {
-      const year = Number(getCurrentAcademicYearBE());
-      if (Number.isFinite(year)) return String(year);
-    }
-    const now = new Date();
-    const yearCE = now.getFullYear();
-    const month = now.getMonth() + 1;
+  const parseBorrowAcademicReferenceDate = (value) => {
+    if (!value) return new Date();
+    if (typeof value === "number" && Number.isFinite(value)) return new Date(value);
+    const source = value && typeof value === "object" && value.date !== undefined ? value.date : value;
+    const date = typeof source?.toDate === "function" ? source.toDate() : new Date(source);
+    return date instanceof Date && !Number.isNaN(date.getTime()) ? date : null;
+  };
+
+  const getBorrowAcademicYearBE = (referenceValue = new Date()) => {
+    const referenceDate = parseBorrowAcademicReferenceDate(referenceValue) || new Date();
+    const yearCE = referenceDate.getFullYear();
+    const month = referenceDate.getMonth() + 1;
     return String((month >= 6 ? yearCE : yearCE - 1) + 543);
+  };
+
+  const deriveBorrowStudentYearFromId = (studentId, referenceValue = new Date()) => {
+    const digits = (studentId || "").toString().trim().replace(/\D/g, "");
+    if (!/^\d{10}$/.test(digits)) return "";
+    const entryPrefix = Number(digits.slice(0, 2));
+    const entryAcademicBE = Number.isFinite(entryPrefix) ? 2500 + entryPrefix : NaN;
+    const referenceAcademicBE = Number(getBorrowAcademicYearBE(referenceValue));
+    const yearLevel = Number.isFinite(entryAcademicBE) && Number.isFinite(referenceAcademicBE)
+      ? referenceAcademicBE - entryAcademicBE + 1
+      : NaN;
+    return isAlumniChulaEmail(referenceValue?.email || referenceValue?.authEmail)
+      ? "นิสิตเก่า"
+      : Number.isFinite(yearLevel) && yearLevel >= 1 && yearLevel <= 8 ? String(yearLevel) : "";
+  };
+
+  const normalizeBorrowProfileAcademicSnapshot = (profile = {}, referenceValue = new Date()) => {
+    const safeProfile = profile && typeof profile === "object" ? profile : {};
+    const studentId = (safeProfile.studentId || "").toString().trim();
+    const email = (safeProfile.authEmail || readCurrentUserEmail()).toString().trim().toLowerCase();
+    return {
+      ...safeProfile,
+      year: deriveBorrowStudentYearFromId(studentId, { date: referenceValue, email }) || (safeProfile.year || "").toString()
+    };
   };
 
   const updateBorrowAcademicYearDisplay = () => {
@@ -682,6 +726,15 @@ function initBorrowAssetsApp() {
   const readCurrentUserEmail = () =>
     (window.sgcuAuth?.auth?.currentUser?.email || "").toString().trim().toLowerCase();
 
+  const readCurrentAccountEmail = () => normalizeAccountEmail(readCurrentUserEmail());
+
+  const matchesCurrentAccountEmail = (email, accountEmail = "") => {
+    const currentAccount = readCurrentAccountEmail();
+    if (!currentAccount) return false;
+    return normalizeAccountEmail(accountEmail || email) === currentAccount ||
+      normalizeAccountEmail(email) === currentAccount;
+  };
+
   const readBorrowProfiles = () => {
     try {
       const rawPrimary = window.localStorage?.getItem(BORROW_PROFILE_STORAGE_KEY);
@@ -689,14 +742,24 @@ function initBorrowAssetsApp() {
       const raw = rawPrimary || rawLegacy;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
+      const profiles = parsed && typeof parsed === "object" ? parsed : {};
+      const normalizedProfiles = Object.entries(profiles).reduce((acc, [key, value]) => {
+        const canonicalKey = normalizeAccountEmail(key);
+        if (!canonicalKey) return acc;
+        acc[canonicalKey] = {
+          ...(acc[canonicalKey] || {}),
+          ...(value && typeof value === "object" ? value : {})
+        };
+        return acc;
+      }, {});
       if (!rawPrimary && rawLegacy) {
         try {
-          window.localStorage?.setItem(BORROW_PROFILE_STORAGE_KEY, JSON.stringify(parsed || {}));
+          window.localStorage?.setItem(BORROW_PROFILE_STORAGE_KEY, JSON.stringify(normalizedProfiles));
         } catch (_) {
           // ignore local cache write errors
         }
       }
-      return parsed && typeof parsed === "object" ? parsed : {};
+      return normalizedProfiles;
     } catch (_) {
       return {};
     }
@@ -712,15 +775,16 @@ function initBorrowAssetsApp() {
 
   const applyBorrowProfileToForm = (profile) => {
     if (!profile || typeof profile !== "object") return;
+    const snapshotProfile = normalizeBorrowProfileAcademicSnapshot(profile);
     activeBorrowProfile = {
-      firstName: (profile.firstName || "").toString().trim(),
-      lastName: (profile.lastName || "").toString().trim(),
-      nickname: (profile.nickname || "").toString().trim(),
-      studentId: (profile.studentId || "").toString().trim(),
-      faculty: (profile.faculty || "").toString().trim(),
-      year: (profile.year || "").toString().trim(),
-      phone: (profile.phone || "").toString().trim(),
-      lineId: (profile.lineId || "").toString().trim()
+      firstName: (snapshotProfile.firstName || "").toString().trim(),
+      lastName: (snapshotProfile.lastName || "").toString().trim(),
+      nickname: (snapshotProfile.nickname || "").toString().trim(),
+      studentId: (snapshotProfile.studentId || "").toString().trim(),
+      faculty: (snapshotProfile.faculty || "").toString().trim(),
+      year: (snapshotProfile.year || "").toString().trim(),
+      phone: (snapshotProfile.phone || "").toString().trim(),
+      lineId: (snapshotProfile.lineId || "").toString().trim()
     };
     const fullName = [activeBorrowProfile.firstName, activeBorrowProfile.lastName].filter(Boolean).join(" ");
     setBorrowProfileText(borrowProfileFullNameEl, fullName);
@@ -737,7 +801,7 @@ function initBorrowAssetsApp() {
   };
 
   const restoreBorrowProfileForCurrentUser = () => {
-    const email = (currentUserEmail || "").toString().trim().toLowerCase();
+    const email = normalizeAccountEmail(currentUserEmail || "");
     if (!email) {
       activeBorrowProfile = null;
       setBorrowProfileText(borrowProfileFullNameEl, "");
@@ -762,7 +826,7 @@ function initBorrowAssetsApp() {
   };
 
   const getBorrowProfileForSubmit = async () => {
-    const email = (currentUserEmail || "").toString().trim().toLowerCase();
+    const email = normalizeAccountEmail(currentUserEmail || "");
     if (!email) return null;
     if (activeBorrowProfile && activeBorrowProfile.firstName && activeBorrowProfile.lastName) {
       return activeBorrowProfile;
@@ -794,9 +858,12 @@ function initBorrowAssetsApp() {
       const data = snap.data() || {};
       if (!data || typeof data !== "object") return null;
       const profiles = readBorrowProfiles();
-      profiles[email] = {
-        ...(profiles[email] || {}),
+      const accountEmail = normalizeAccountEmail(email);
+      profiles[accountEmail] = {
+        ...(profiles[accountEmail] || {}),
         ...data,
+        authEmail: email,
+        accountEmail,
         updatedAt: Date.now()
       };
       try {
@@ -805,7 +872,7 @@ function initBorrowAssetsApp() {
       } catch (_) {
         // ignore local cache write errors
       }
-      return profiles[email];
+      return profiles[accountEmail];
     } catch (_) {
       return null;
     }
@@ -1097,7 +1164,7 @@ function initBorrowAssetsApp() {
     }
     const mine = borrowRequests
       .filter((item) => !item.isDeleted)
-      .filter((item) => (item.requesterEmail || "").toString().trim().toLowerCase() === currentUserEmail);
+      .filter((item) => matchesCurrentAccountEmail(item.requesterEmail, item.accountEmail));
     const pending = mine.filter((item) => item.status === STATUS_PENDING).length;
     const borrowed = mine.filter((item) => item.status === STATUS_APPROVED || item.status === STATUS_RECEIVED).length;
     const overdue = mine.filter((item) => buildBorrowFollowupMeta(item).overdue).length;
@@ -1410,12 +1477,12 @@ function initBorrowAssetsApp() {
   };
 
   const buildBorrowNotificationMap = (list = []) => {
-    const email = (currentUserEmail || "").toString().trim().toLowerCase();
+    const email = readCurrentAccountEmail();
     const map = new Map();
     if (!email) return map;
     list
       .filter((item) => !item.isDeleted)
-      .filter((item) => (item.requesterEmail || "").toString().trim().toLowerCase() === email)
+      .filter((item) => matchesCurrentAccountEmail(item.requesterEmail, item.accountEmail))
       .forEach((item) => {
         const key = getBorrowNotificationKey(item);
         if (key.endsWith(":")) return;
@@ -1628,7 +1695,7 @@ function initBorrowAssetsApp() {
   const getMyBorrowRequestRows = () =>
     borrowRequests
       .filter((item) => !item.isDeleted)
-      .filter((item) => currentUserEmail && (item.requesterEmail || "").toString().trim().toLowerCase() === currentUserEmail)
+      .filter((item) => currentUserEmail && matchesCurrentAccountEmail(item.requesterEmail, item.accountEmail))
       .sort((a, b) => (b.submittedAtMs || 0) - (a.submittedAtMs || 0));
 
   const getStaffBorrowVisibleRows = () =>
@@ -2090,10 +2157,10 @@ function initBorrowAssetsApp() {
       renderEmptyState("กรุณาเข้าสู่ระบบด้วยอีเมลจุฬาฯ เพื่อดูสถานะคำขอของตนเอง");
       return;
     }
-    const normalizedCurrentEmail = currentUserEmail.toString().trim().toLowerCase();
+    const normalizedCurrentEmail = readCurrentAccountEmail();
     const list = borrowRequests
       .filter((item) => !item.isDeleted)
-      .filter((item) => (item.requesterEmail || "").toString().trim().toLowerCase() === normalizedCurrentEmail)
+      .filter((item) => matchesCurrentAccountEmail(item.requesterEmail, item.accountEmail))
       .sort((a, b) => (b.submittedAtMs || 0) - (a.submittedAtMs || 0));
     if (!list.length) {
       if (myRequestsLoadState === "loading") {
@@ -3139,6 +3206,9 @@ function initBorrowAssetsApp() {
     const safeData = data && typeof data === "object" ? data : {};
     const createdAtMs = timestampToMillis(data.createdAt) || Number(data.submittedAtMs) || 0;
     const updatedAtMs = timestampToMillis(data.updatedAt) || createdAtMs;
+    const studentId = (safeData.studentId || "").toString().trim();
+    const yearAtSubmit = deriveBorrowStudentYearFromId(studentId, createdAtMs || safeData.createdAt || new Date()) ||
+      (safeData.year || "").toString().trim();
     const rawAssets = Array.isArray(safeData.assets) ? safeData.assets : [];
     const assets = rawAssets
       .map((asset) => {
@@ -3159,12 +3229,13 @@ function initBorrowAssetsApp() {
       isDeleted: normalizeDeletedFlag(safeData.isDeleted),
       sourceCollection: BORROW_REQUEST_COLLECTION,
       requesterEmail: (safeData.requesterEmail || "").toString().trim().toLowerCase(),
+      accountEmail: normalizeAccountEmail(safeData.accountEmail || safeData.requesterEmail || ""),
       firstName: (safeData.firstName || "").toString().trim(),
       lastName: (safeData.lastName || "").toString().trim(),
       nickname: (safeData.nickname || "").toString().trim(),
-      studentId: (safeData.studentId || "").toString().trim(),
+      studentId,
       faculty: (safeData.faculty || "").toString().trim(),
-      year: (safeData.year || "").toString().trim(),
+      year: yearAtSubmit,
       phone: (safeData.phone || "").toString().trim(),
       lineId: (safeData.lineId || "").toString().trim(),
       academicYear: (safeData.academicYear || safeData.schoolYear || "").toString().trim(),
@@ -3443,6 +3514,7 @@ function initBorrowAssetsApp() {
       returnDate: borrowReturnDate?.value || "",
       assets: assetsResult.items,
       requesterEmail: currentUserEmail,
+      accountEmail: readCurrentAccountEmail(),
       status: STATUS_PENDING,
       staffNote: "",
       createdDate: toYmd(new Date()),

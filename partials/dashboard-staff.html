@@ -397,6 +397,21 @@
             </div>
           </div>
 
+          <div id="systemHealthSummary" class="system-health-summary system-data-main-panel" data-system-data-panel="health" aria-live="polite">
+            <div class="system-health-summary-card">
+              <span class="system-health-summary-label">ผ่าน</span>
+              <strong id="systemHealthOkCount">0</strong>
+            </div>
+            <div class="system-health-summary-card">
+              <span class="system-health-summary-label">ควรตรวจต่อ</span>
+              <strong id="systemHealthWarnCount">0</strong>
+            </div>
+            <div class="system-health-summary-card">
+              <span class="system-health-summary-label">ผิดปกติ</span>
+              <strong id="systemHealthErrorCount">0</strong>
+            </div>
+          </div>
+
           <section class="panel section-appear section-delay-1 system-health-panel system-data-main-panel" data-system-data-panel="health">
             <header class="panel-header">
               <div>
@@ -408,20 +423,6 @@
                 <button id="systemHealthRunBtn" class="btn-primary" type="button">ตรวจระบบ</button>
               </div>
             </header>
-            <div id="systemHealthSummary" class="system-health-summary" aria-live="polite">
-              <div class="system-health-summary-card">
-                <span class="system-health-summary-label">ผ่าน</span>
-                <strong id="systemHealthOkCount">0</strong>
-              </div>
-              <div class="system-health-summary-card">
-                <span class="system-health-summary-label">ควรตรวจต่อ</span>
-                <strong id="systemHealthWarnCount">0</strong>
-              </div>
-              <div class="system-health-summary-card">
-                <span class="system-health-summary-label">ผิดปกติ</span>
-                <strong id="systemHealthErrorCount">0</strong>
-              </div>
-            </div>
             <div id="systemHealthStatus" class="form-message" hidden></div>
             <div class="table-wrapper system-health-table-wrapper">
               <table id="systemHealthTable" class="system-health-table">

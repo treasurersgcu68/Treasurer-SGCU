@@ -4657,28 +4657,33 @@
 .system-health-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 14px 0;
+  gap: 16px;
+  margin-top: 18px;
 }
 
 .system-health-summary-card {
   display: grid;
-  gap: 4px;
+  gap: 8px;
+  align-content: start;
   min-width: 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 8px;
-  background: #f8fafc;
+  min-height: 104px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
 .system-health-summary-label {
   color: #64748b;
-  font-size: 0.86rem;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .system-health-summary-card strong {
-  color: #0f172a;
-  font-size: 1.55rem;
+  color: #1f2937;
+  font-size: 28px;
+  font-weight: 800;
   line-height: 1.1;
 }
 

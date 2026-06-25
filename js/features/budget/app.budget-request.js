@@ -2162,12 +2162,22 @@ function initBudgetApprovalRequestPage() {
         };
     const selectedRound = findActiveRoundById(requestRoundSelectEl.value);
 
+    const selectedOrg = getResolvedRepresentativeOrganization({
+      organizationType,
+      organizationName
+    });
+
     return {
       requestType: "budget_approval",
       status: "pending",
       accountEmail,
-      organizationType,
-      organizationName,
+      organizationType: selectedOrg.organizationType || organizationType,
+      organizationName: selectedOrg.organizationName || organizationName,
+      organizationId: selectedOrg.organizationId || "",
+      organizationCatalogId: selectedOrg.organizationId || "",
+      baseOrganizationId: selectedOrg.baseOrganizationId || "",
+      organizationCode: selectedOrg.organizationCode || "",
+      organizationDocumentRunCode: selectedOrg.organizationDocumentRunCode || "",
       representative: representativePayload,
       projectName: projectNameEl.value.trim(),
       description: descriptionEl.value.trim(),

@@ -901,6 +901,43 @@
       : Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "th"));
   };
 
+  const stripOrgDocumentRunCodeYear = (value = "") =>
+    normalizeText(value)
+      .replace(/^(?:อบจ(?:\.(?:กฬ|พฒ|วชก|ศป))?\.?)\s*/u, "")
+      .replace(/\s*\/\s*\d{4}\s*$/u, "");
+
+  const normalizeOrgMatchValue = (value = "") =>
+    normalizeText(value).toLowerCase().replace(/\s+/g, " ");
+
+  const resolveStaffSelectedOrg = (orgType = "", orgName = "", academicYear = "") => {
+    const type = normalizeText(orgType);
+    const name = normalizeText(orgName);
+    const typeKey = normalizeOrgMatchValue(type);
+    const nameKey = normalizeOrgMatchValue(name);
+    const item = getOrgFilterRows().find((row) =>
+      normalizeOrgMatchValue(row?.group || row?.organizationType || row?.orgGroup) === typeKey &&
+      normalizeOrgMatchValue(getOrgCatalogNameForYear(row, academicYear)) === nameKey
+    );
+    if (!item) {
+      return {
+        organizationType: type,
+        organizationName: name,
+        organizationId: "",
+        baseOrganizationId: "",
+        organizationCode: "",
+        organizationDocumentRunCode: ""
+      };
+    }
+    return {
+      organizationType: normalizeText(item?.group || item?.organizationType || item?.orgGroup) || type,
+      organizationName: getOrgCatalogNameForYear(item, academicYear) || name,
+      organizationId: normalizeText(item?.id || item?.organizationId || item?.organizationCatalogId),
+      baseOrganizationId: normalizeText(item?.baseOrganizationId || item?.baseOrgId || item?.rootOrganizationId || item?.legacyOrganizationId || item?.id),
+      organizationCode: getOrgCatalogCodeForYear(item, academicYear),
+      organizationDocumentRunCode: stripOrgDocumentRunCodeYear(item?.documentRunCode || item?.runCode || item?.organizationDocumentRunCode)
+    };
+  };
+
   const appendSelectOption = (selectEl, value, label = value) => {
     const opt = document.createElement("option");
     opt.value = value;
@@ -1489,9 +1526,15 @@
 
   const readFormPayload = () => {
     const selectedRound = getSelectedStaffRound();
+    const selectedOrg = resolveStaffSelectedOrg(orgTypeInputEl.value, orgNameInputEl.value, selectedRound.year);
     return {
-      organizationType: normalizeText(orgTypeInputEl.value),
-      organizationName: normalizeText(orgNameInputEl.value),
+      organizationType: selectedOrg.organizationType || normalizeText(orgTypeInputEl.value),
+      organizationName: selectedOrg.organizationName || normalizeText(orgNameInputEl.value),
+      organizationId: selectedOrg.organizationId || "",
+      organizationCatalogId: selectedOrg.organizationId || "",
+      baseOrganizationId: selectedOrg.baseOrganizationId || "",
+      organizationCode: selectedOrg.organizationCode || "",
+      organizationDocumentRunCode: selectedOrg.organizationDocumentRunCode || "",
       projectName: normalizeText(projectNameInputEl.value),
       description: normalizeText(descriptionInputEl.value),
       activityLocation: normalizeText(activityLocationInputEl.value),
@@ -2676,6 +2719,8 @@
     rows.forEach((item) => {
       const name = normalizeText(item?.name);
       const code = normalizeText(item?.code).toUpperCase();
+      const id = normalizeText(item?.id || item?.organizationId || item?.organizationCatalogId);
+      const baseId = normalizeText(item?.baseOrganizationId || item?.baseOrgId || item?.rootOrganizationId || item?.legacyOrganizationId || item?.id);
       const codeByAcademicYear = item?.codeByAcademicYear && typeof item.codeByAcademicYear === "object"
         ? item.codeByAcademicYear
         : {};
@@ -2685,10 +2730,55 @@
         if (name && academicYear && normalizedCode) {
           map.set(`${name}||${academicYear}`, normalizedCode);
         }
+        if (id && academicYear && normalizedCode) map.set(`id:${id}||${academicYear}`, normalizedCode);
+        if (baseId && academicYear && normalizedCode) map.set(`base:${baseId}||${academicYear}`, normalizedCode);
       });
       if (name && code) map.set(name, code);
+      if (id && code) map.set(`id:${id}`, code);
+      if (baseId && code) map.set(`base:${baseId}`, code);
     });
     return map;
+  };
+
+  const normalizeProjectCodePrefix = (value = "") => {
+    const code = normalizeText(value).toUpperCase();
+    if (!code) return "";
+    return code
+      .replace(/-(?:YYY|XXX)$/u, "")
+      .replace(/\.(?:YYY|XXX)$/u, "");
+  };
+
+  const resolveProjectCodeOrg = (row = {}, academicYear = "", orgCodeMap = new Map()) => {
+    const orgName = normalizeText(row.organizationName);
+    const orgTypeKey = normalizeOrgMatchValue(row.organizationType);
+    const orgNameKey = normalizeOrgMatchValue(orgName);
+    const catalogItem = orgTypeKey && orgNameKey
+      ? getOrgFilterRows().find((item) =>
+        normalizeOrgMatchValue(item?.group || item?.organizationType || item?.orgGroup) === orgTypeKey &&
+        normalizeOrgMatchValue(getOrgCatalogNameForYear(item, academicYear)) === orgNameKey
+      )
+      : null;
+    const orgId = normalizeText(row.organizationId || row.organizationCatalogId);
+    const baseOrgId = normalizeText(row.baseOrganizationId || row.baseOrgId || row.rootOrganizationId);
+    const savedCode = normalizeProjectCodePrefix(row.organizationCode);
+    const resolvedOrgId = orgId || normalizeText(catalogItem?.id || catalogItem?.organizationId || catalogItem?.organizationCatalogId);
+    const resolvedBaseOrgId = baseOrgId || normalizeText(catalogItem?.baseOrganizationId || catalogItem?.baseOrgId || catalogItem?.rootOrganizationId || catalogItem?.legacyOrganizationId || catalogItem?.id);
+    const resolvedCode = savedCode || normalizeProjectCodePrefix(getOrgCatalogCodeForYear(catalogItem, academicYear));
+    const code = normalizeProjectCodePrefix(
+      resolvedCode ||
+      (resolvedOrgId && orgCodeMap.get(`id:${resolvedOrgId}||${academicYear}`)) ||
+      (resolvedBaseOrgId && orgCodeMap.get(`base:${resolvedBaseOrgId}||${academicYear}`)) ||
+      orgCodeMap.get(`${orgName}||${academicYear}`) ||
+      (resolvedOrgId && orgCodeMap.get(`id:${resolvedOrgId}`)) ||
+      (resolvedBaseOrgId && orgCodeMap.get(`base:${resolvedBaseOrgId}`)) ||
+      orgCodeMap.get(orgName)
+    ) || "ORG";
+    const keyPart = resolvedCode || (resolvedOrgId && `id:${resolvedOrgId}`) || (resolvedBaseOrgId && `base:${resolvedBaseOrgId}`) || orgName;
+    return {
+      name: orgName,
+      code,
+      key: `${keyPart || "ORG"}||${academicYear}`
+    };
   };
 
   const getProjectCodeSequence = (value) => {
@@ -2705,13 +2795,22 @@
     return projects.filter((project) => normalizeAcademicYearText(project?.year) === year);
   };
 
+  const resolveExactProjectSourceConfigForYear = async (academicYear) => {
+    const year = normalizeAcademicYearText(academicYear);
+    if (!year || typeof loadProjectSourceConfigs !== "function") return null;
+    const sources = await loadProjectSourceConfigs();
+    return Array.isArray(sources)
+      ? sources.find((source) => normalizeAcademicYearText(source?.year) === year) || null
+      : null;
+  };
+
   const loadProjectStatusRowsForYear = async (academicYear) => {
     const year = normalizeAcademicYearText(academicYear);
     if (!year) return [];
 
     try {
       if (
-        typeof resolveProjectSourceConfig !== "function" ||
+        typeof loadProjectSourceConfigs !== "function" ||
         typeof isPublishedHtmlSheetUrl !== "function" ||
         typeof loadRowsFromPublishedHtmlWorkbook !== "function" ||
         typeof fetchTextWithProgress !== "function" ||
@@ -2721,8 +2820,8 @@
         return getLoadedProjectRowsForYear(year);
       }
 
-      const sourceConfig = await resolveProjectSourceConfig(year);
-      const projectUrl = normalizeText(sourceConfig?.projectUrl || SHEET_CSV_URL);
+      const sourceConfig = await resolveExactProjectSourceConfigForYear(year);
+      const projectUrl = normalizeText(sourceConfig?.projectUrl);
       if (!projectUrl) return getLoadedProjectRowsForYear(year);
 
       let rows = [];
@@ -2736,7 +2835,8 @@
       }
 
       if (!Array.isArray(rows) || rows.length < 2) return getLoadedProjectRowsForYear(year);
-      return extractProjectsFromRows(rows.slice(2), rows[1] || [], year);
+      return extractProjectsFromRows(rows.slice(2), rows[1] || [], year)
+        .filter((project) => normalizeAcademicYearText(project?.year) === year);
     } catch (error) {
       console.error("load project status rows for budget codes failed - app.budget-staff.js", error);
       return getLoadedProjectRowsForYear(year);
@@ -2775,11 +2875,11 @@
       requestRows.forEach((row) => {
         const status = normalizeText(row.status || "pending").toLowerCase();
         if (status === "cancelled" || status === "rejected") return;
-        const orgName = normalizeText(row.organizationName);
-        if (!orgName) return;
         const academicYear = normalizeAcademicYearText(row.budgetRoundYear);
         if (academicYear !== currentYear) return;
-        const key = `${orgName}||${academicYear}`;
+        const org = resolveProjectCodeOrg(row, academicYear, orgCodeMap);
+        if (!org.name && !org.code) return;
+        const key = org.key;
         const list = byOrgYear.get(key) || [];
         list.push(row);
         byOrgYear.set(key, list);
@@ -2787,8 +2887,10 @@
 
       const updates = [];
       for (const [key, rows] of byOrgYear.entries()) {
-        const [orgName, academicYear] = key.split("||");
-        const code = orgCodeMap.get(`${orgName}||${academicYear}`) || orgCodeMap.get(orgName) || "ORG";
+        const [, academicYear] = key.split("||");
+        const firstOrg = resolveProjectCodeOrg(rows[0], academicYear, orgCodeMap);
+        const orgName = firstOrg.name;
+        const code = firstOrg.code;
         const sortedRows = rows
           .sort((a, b) => {
             const da = getDateOnlyTime(a.operationEndDate);

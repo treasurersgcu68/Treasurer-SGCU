@@ -932,7 +932,6 @@ function resolveStaffDivisionCodeYY(profile) {
     if (positionText.includes("หาทุนและสิทธิประโยชน์")) return "03";
     if (positionText.includes("กายภาพและพัสดุ")) return "04";
     if (positionText.includes("สำนักบริหารกิจการนิสิต")) return "09";
-    if (positionText.includes("เหรัญญิก")) return "00";
   }
   return "";
 }
@@ -965,7 +964,6 @@ function resolveDivisionCodeYYFromPositionLabel(positionText) {
   if (text.includes("หาทุนและสิทธิประโยชน์")) return "03";
   if (text.includes("กายภาพและพัสดุ")) return "04";
   if (text.includes("สำนักบริหารกิจการนิสิต")) return "09";
-  if (text.includes("เหรัญญิก")) return "00";
   return "";
 }
 
@@ -1017,28 +1015,52 @@ function isCurrentRepresentativeAcademicYear(item = {}) {
 
 function isHeadStaffProfile(profile) {
   const positionText = (profile?.position || "").toString().trim().replace(/\s+/g, " ");
-  if (positionText.includes("เหรัญญิก")) return true;
+  if (positionText === "เหรัญญิก" || positionText === "เลขานุการฝ่ายเหรัญญิก") return true;
   if (hasStaffRoleToken(profile?.role, "0")) return true;
   const yyList = resolveStaffDivisionCodesYY(profile);
   return yyList.includes("00");
 }
 
-function normalizeAllowedStaffPages(pages, fallbackYY = "") {
-  const list = Array.isArray(pages)
-    ? pages.map((item) => {
-        const page = (item || "").toString().trim();
-        return page === "project-status-staff" ? "treasurer-handover-staff" : page;
-      }).filter(Boolean)
-    : [];
-  const filtered = Array.from(new Set(list.filter((page) => STAFF_PAGE_OPTIONS.includes(page))));
-  return filtered.length ? filtered : Array.from(getAllowedStaffPagesByYY(fallbackYY));
+function flattenAllowedStaffPageValues(pages) {
+  if (Array.isArray(pages)) return pages.flatMap((item) => flattenAllowedStaffPageValues(item));
+  if (typeof pages === "string") {
+    const text = pages.trim();
+    if (!text) return [];
+    if (text === "*" || text.toLowerCase() === "all") return STAFF_PAGE_OPTIONS;
+    return text.split(/[,;|\n]+/).map((item) => item.trim()).filter(Boolean);
+  }
+  if (pages && typeof pages === "object") {
+    const picked = ["id", "page", "pageId", "value", "name", "label", "route"]
+      .map((key) => pages[key])
+      .filter((item) => item !== undefined && item !== null && item !== "");
+    const truthyKeys = Object.entries(pages)
+      .filter(([, enabled]) => enabled === true || enabled === "true" || enabled === 1 || enabled === "1")
+      .map(([key]) => key);
+    return [...picked, ...truthyKeys].flatMap((item) => flattenAllowedStaffPageValues(item));
+  }
+  return [];
 }
 
-function getAllowedStaffPagesByYY(yy, roleValue = "") {
+function normalizeAllowedStaffPages(pages, fallbackYY = "") {
+  const list = flattenAllowedStaffPageValues(pages)
+    .map((item) => {
+        const page = (item || "").toString().trim();
+        return page === "project-status-staff" ? "treasurer-handover-staff" : page;
+      })
+    .filter(Boolean);
+  const filtered = Array.from(new Set(list.filter((page) => STAFF_PAGE_OPTIONS.includes(page))));
+  return filtered.length ? filtered : Array.from(getFallbackAllowedStaffPagesByYY(fallbackYY));
+}
+
+function getDefaultAllowedStaffPagesByYY(yy, roleValue = "") {
   const normalizedYY = normalizeDivisionCodeYY(yy);
   if (normalizedYY === "00") {
     return new Set(["treasurer-handover-staff", "dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"]);
   }
+  return new Set(["login"]);
+}
+
+function getFallbackAllowedStaffPagesByYY(yy) {
   return new Set(["login"]);
 }
 
@@ -1047,7 +1069,7 @@ function getAllowedStaffPagesByYYList(yyList = [], roleValue = "") {
   if (!list.length) return new Set(["login"]);
   const merged = new Set();
   list.forEach((yy) => {
-    getAllowedStaffPagesByYY(yy, roleValue).forEach((page) => merged.add(page));
+    getDefaultAllowedStaffPagesByYY(yy, roleValue).forEach((page) => merged.add(page));
   });
   return merged;
 }
@@ -1070,6 +1092,8 @@ function getAllowedStaffPagesByProfile(profile) {
   if (isHeadStaffProfile(profile)) return new Set(STAFF_FULL_ACCESS_PAGES);
 
   const merged = new Set();
+  normalizeAllowedStaffPages(profile?.allowedPages, profile?.divisionCodeYY || profile?.positionCodeYY || "")
+    .forEach((page) => merged.add(page));
   const positions = Array.isArray(profile?.positions) ? profile.positions : [];
   positions.forEach((entry) => {
     const yy = normalizeDivisionCodeYY(entry?.yy || entry?.positionCodeYY || entry?.divisionCodeYY || "");
@@ -1105,7 +1129,6 @@ function getAllowedPagesForCurrentState() {
   const protectedAllowed = [
     "borrow-assets",
     "meeting-room-booking",
-    "budget-approval-staff",
     "staff-application"
   ];
   protectedAllowed.forEach((page) => allowed.add(page));
@@ -1120,7 +1143,6 @@ function getAllowedPagesForCurrentState() {
 
   if (staffAuthUser && staffViewMode === "staff") {
     const yyAllowed = getAllowedStaffPagesByProfile(staffAuthUser);
-    yyAllowed.add("treasurer-handover-staff");
     if (isHeadStaffProfile(staffAuthUser)) {
       yyAllowed.add("staff-approval");
       yyAllowed.add("org-representative-approval-staff");
@@ -1130,7 +1152,6 @@ function getAllowedPagesForCurrentState() {
       yyAllowed.add("dashboard-staff");
       yyAllowed.add("system-data-staff");
     }
-    yyAllowed.add("budget-approval-staff");
     if (!isHeadStaffProfile(staffAuthUser)) {
       yyAllowed.delete("staff-approval");
       yyAllowed.delete("org-representative-approval-staff");
@@ -1181,6 +1202,7 @@ function getStaffProfileByEmail(email) {
       divisionCodesYY: ["00"],
       positionCodeYY: "00",
       positionCode: (profile.positionCode || "").toString(),
+      allowedPages: normalizeAllowedStaffPages(profile.allowedPages, "00"),
       positions: Array.isArray(profile.positions) ? profile.positions : []
     };
   }
@@ -1205,6 +1227,7 @@ function getStaffProfileByEmail(email) {
     divisionCodesYY: mergedYY.length ? mergedYY : resolveStaffDivisionCodesYY(profile),
     positionCodeYY: effectiveYY,
     positionCode: (profile.positionCode || "").toString(),
+    allowedPages: normalizeAllowedStaffPages(profile.allowedPages, effectiveYY),
     positions: Array.isArray(profile.positions) ? profile.positions : []
   };
 }
@@ -1790,6 +1813,7 @@ function initAuthUI() {
           positionCode: remotePositionCode,
           divisionCodeYY: remoteDivisionCodeYY,
           positionCodeYY: remoteDivisionCodeYY,
+          allowedPages: normalizeAllowedStaffPages(data.allowedPages, remoteDivisionCodeYY),
           positions: remotePositions
         };
 

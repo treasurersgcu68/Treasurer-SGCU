@@ -1833,7 +1833,7 @@
     return Array.from(grouped.values()).map((row) => ({
       ...row,
       difference: Math.max(row.requested - row.approved - row.reviewing, 0),
-      ceiling: getOrgSummaryGroupCeiling(row.summaryLevel === "group" ? row.organizationName : row.organizationType)
+      ceiling: row.summaryLevel === "group" ? getOrgSummaryGroupCeiling(row.organizationName) : 0
     }));
   };
 
@@ -1993,7 +1993,7 @@
           const isOver = Number(row.requested || 0) > ceiling;
           ctx.strokeStyle = isOver ? "#dc2626" : "#334155";
           ctx.fillStyle = isOver ? "#dc2626" : "#334155";
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 1.5;
           ctx.setLineDash(isOver ? [] : [4, 3]);
           ctx.beginPath();
           ctx.moveTo(x, top);
@@ -2001,7 +2001,7 @@
           ctx.stroke();
           ctx.setLineDash([]);
           ctx.beginPath();
-          ctx.arc(x, top, 3, 0, Math.PI * 2);
+          ctx.arc(x, top, 2.5, 0, Math.PI * 2);
           ctx.fill();
         });
         ctx.restore();

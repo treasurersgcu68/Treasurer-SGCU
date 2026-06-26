@@ -1184,7 +1184,7 @@ function initStaffAccessPages() {
       });
     }
     const positionText = normalizePositionText(profile.position || "");
-    return yyList.has("00") || positionText.includes("เหรัญญิก");
+    return yyList.has("00") || positionText === "เหรัญญิก" || positionText === "เลขานุการฝ่ายเหรัญญิก";
   };
 
   const toSafeText = (value) =>
@@ -1321,10 +1321,6 @@ function initStaffAccessPages() {
     return id || "-";
   };
   const getDefaultAllowedPagesByYY = (yy) => {
-    const code = normalizeCode2(yy);
-    if (code === "00") {
-      return ["dashboard-staff", "system-data-staff", "borrow-assets-staff", "meeting-room-staff", "budget-approval-staff", "content-management-staff", "content-news-staff", "content-documents-staff", "staff-approval", "org-representative-approval-staff", "login"];
-    }
     return ["login"];
   };
   const normalizeAllowedPages = (pages, fallbackYY = "") => {
@@ -1405,8 +1401,7 @@ function initStaffAccessPages() {
     if (normalized.includes("หาทุนและสิทธิประโยชน์")) return "03";
     if (normalized.includes("กายภาพและพัสดุ")) return "04";
     if (normalized.includes("สำนักบริหารกิจการนิสิต")) return "09";
-    if (normalized.includes("เหรัญญิก")) return "00";
-    return "00";
+    return "";
   };
 
   const resolveLevelCodeZZ = (positionText) => {
@@ -6011,6 +6006,7 @@ function initStaffAccessPages() {
         divisionCodeYY: normalizeCode2(profile?.divisionCodeYY || profile?.positionCodeYY || primary?.yy || ""),
         positionCodeYY: normalizeCode2(profile?.positionCodeYY || profile?.divisionCodeYY || primary?.yy || ""),
         positionCode: (profile?.positionCode || primary?.code || "").toString().trim(),
+        allowedPages: normalizeAllowedPages(readAllowedPagesInput(profile || {}), profile?.divisionCodeYY || profile?.positionCodeYY || primary?.yy || ""),
         positions: normalizedPositions
       };
     }

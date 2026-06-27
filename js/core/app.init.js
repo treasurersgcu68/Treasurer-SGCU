@@ -1432,6 +1432,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (typeof shouldLoadProjectDataForPage === "function" && shouldLoadProjectDataForPage(page)) {
+      const projectStatusCtxKey = page === "project-status" ? "public" : "staff";
+      if (typeof ensureProjectStatusChartShell === "function") {
+        void ensureProjectStatusChartShell(projectStatusCtxKey).catch((error) => {
+          console.warn("project status chart shell failed to initialize - app.init.js", error);
+        });
+      }
       if (page === "project-status" && !projectsLoaded) {
         setLoading(true, "public");
         setProjectDataLoadState("info", "กำลังโหลดข้อมูลโครงการ...");

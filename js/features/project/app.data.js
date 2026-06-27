@@ -856,6 +856,16 @@ function ensureProjectStatusInitialized(ctxKey = activeProjectStatusContext) {
   }
 }
 
+async function ensureProjectStatusChartShell(ctxKey = activeProjectStatusContext) {
+  await window.sgcuVendorLoader?.ensureChart?.();
+  const ctx = projectStatusContexts[ctxKey];
+  if (!ctx || ctx.chartsInitialized) return;
+
+  setActiveProjectStatusContext(ctxKey);
+  initCharts(ctxKey);
+  ctx.chartsInitialized = true;
+}
+
 async function ensureProjectStatusChartsReady(ctxKey = activeProjectStatusContext) {
   await window.sgcuVendorLoader?.ensureChart?.();
   const ctx = projectStatusContexts[ctxKey];

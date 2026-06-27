@@ -491,7 +491,10 @@ async function retryProjectDataLoad() {
   projectsLoadPromise = null;
   projectSourceLoadPromise = null;
   Object.values(projectStatusContexts || {}).forEach((ctx) => {
-    if (ctx) ctx.isInitialized = false;
+    if (ctx) {
+      ctx.isInitialized = false;
+      ctx.chartsInitialized = false;
+    }
   });
   lastProjectStatusRefreshSignatureByContext.public = "";
   lastProjectStatusRefreshSignatureByContext.staff = "";
@@ -500,8 +503,8 @@ async function retryProjectDataLoad() {
 
   try {
     await ensureProjectDataLoaded();
-    ensureProjectStatusInitialized("public");
-    ensureProjectStatusInitialized("staff");
+    await ensureProjectStatusChartsReady("public");
+    await ensureProjectStatusChartsReady("staff");
     refreshProjectStatus("public");
     refreshProjectStatus("staff");
   } catch (err) {
@@ -523,7 +526,10 @@ async function forceRefreshProjectData(ctxKey = activeProjectStatusContext) {
   projectsLoadPromise = null;
   projectSourceLoadPromise = null;
   Object.values(projectStatusContexts || {}).forEach((ctx) => {
-    if (ctx) ctx.isInitialized = false;
+    if (ctx) {
+      ctx.isInitialized = false;
+      ctx.chartsInitialized = false;
+    }
     if (ctx?.projectRefreshDataBtn) ctx.projectRefreshDataBtn.disabled = true;
   });
   lastProjectStatusRefreshSignatureByContext.public = "";
@@ -544,12 +550,12 @@ async function forceRefreshProjectData(ctxKey = activeProjectStatusContext) {
     await loadOrgFilters();
     await window.sgcuVendorLoader?.ensureChart?.();
 
-    ["public", "staff"].forEach((key) => {
-      ensureProjectStatusInitialized(key);
+    for (const key of ["public", "staff"]) {
+      await ensureProjectStatusChartsReady(key);
       refreshProjectFiltersForContext(key, selectedProjectSourceYear);
       refreshProjectStatus(key);
       refreshProjectCalendarForContext(key);
-    });
+    }
     renderHomeKpis();
     projectsLoaded = true;
     setProjectDataLoadState();
@@ -835,16 +841,26 @@ async function ensureProjectDataLoaded() {
 
 function ensureProjectStatusInitialized(ctxKey = activeProjectStatusContext) {
   const ctx = projectStatusContexts[ctxKey];
-  if (!ctx || ctx.isInitialized) return;
+  if (!ctx) return;
 
   setActiveProjectStatusContext(ctxKey);
-  initOrgTypeOptions();                       // เติม options ประเภทองค์กร
-  initOrgOptions();                           // เติมรายชื่อองค์กร
-  if (typeof Chart !== "undefined") {
-    initCharts(ctxKey);                       // สร้างกราฟ Chart.js
+  if (!ctx.isInitialized) {
+    initOrgTypeOptions();                       // เติม options ประเภทองค์กร
+    initOrgOptions();                           // เติมรายชื่อองค์กร
+    initCalendar(ctxKey);                       // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
+    ctx.isInitialized = true;
   }
-  initCalendar(ctxKey);                       // สร้างปฏิทินจาก projects (ใช้วันที่คอลัมน์ M แล้ว)
-  ctx.isInitialized = true;
+  if (typeof Chart !== "undefined" && !ctx.chartsInitialized) {
+    initCharts(ctxKey);                       // สร้างกราฟ Chart.js
+    ctx.chartsInitialized = true;
+  }
+}
+
+async function ensureProjectStatusChartsReady(ctxKey = activeProjectStatusContext) {
+  await window.sgcuVendorLoader?.ensureChart?.();
+  const ctx = projectStatusContexts[ctxKey];
+  if (ctx) ctx.chartsInitialized = false;
+  ensureProjectStatusInitialized(ctxKey);
 }
 
 function getFallbackProjects() {

@@ -560,6 +560,26 @@
     return '<span class="badge badge-pending">รออนุมัติ</span>';
   };
 
+  const isExcludedFromBudgetOrgChart = (item) => {
+    const statusValues = [
+      item?.status,
+      item?.approvalStatus,
+      item?.requestStatus,
+      item?.budgetStatus,
+      statusLabel(item?.status)
+    ];
+    const status = statusValues
+      .map((value) => normalizeText(value).toLowerCase().replace(/\s+/g, ""))
+      .join("|");
+    return (
+      status.includes("cancel") ||
+      status.includes("reject") ||
+      status.includes("ยกเลิก") ||
+      status.includes("เลื่อน") ||
+      status.includes("ไม่อนุมัติ")
+    );
+  };
+
   const formatDate = (value) => {
     const dateText = toDateOnlyText(value);
     if (!dateText) return "-";
@@ -1818,21 +1838,25 @@
         projects: 0,
         pending: 0,
         requested: 0,
+        activeRequested: 0,
         approved: 0,
         reviewing: 0
       };
       const requestedAmount = Number(item.estimatedExpense || 0);
       const approvedAmount = Number(item.approvedAmount || 0);
       row.projects += 1;
-      if (status === "pending") row.pending += 1;
-      if (status === "reviewing") row.reviewing += Math.max(requestedAmount - approvedAmount, 0);
       row.requested += requestedAmount;
-      row.approved += approvedAmount;
+      if (!isExcludedFromBudgetOrgChart(item)) {
+        row.activeRequested += requestedAmount;
+        if (status === "pending") row.pending += 1;
+        if (status === "reviewing") row.reviewing += Math.max(requestedAmount - approvedAmount, 0);
+        row.approved += approvedAmount;
+      }
       grouped.set(key, row);
     });
     return Array.from(grouped.values()).map((row) => ({
       ...row,
-      difference: Math.max(row.requested - row.approved - row.reviewing, 0),
+      difference: Math.max(row.activeRequested - row.approved - row.reviewing, 0),
       ceiling: row.summaryLevel === "group" ? getOrgSummaryGroupCeiling(row.organizationName) : 0
     }));
   };
@@ -2084,6 +2108,7 @@
                 const row = rows[items?.[0]?.dataIndex || 0];
                 return [
                   `ยอดขอรวม: ${formatMoney(row?.requested || 0)} บาท`,
+                  `ยอดที่ใช้พิจารณา: ${formatMoney(row?.activeRequested || 0)} บาท`,
                   `ยอดอนุมัติรวม: ${formatMoney(row?.approved || 0)} บาท`,
                   `กำลังพิจารณา: ${formatMoney(row?.reviewing || 0)} บาท`,
                   `ส่วนที่ยังไม่อนุมัติ: ${formatMoney(row?.difference || 0)} บาท`,

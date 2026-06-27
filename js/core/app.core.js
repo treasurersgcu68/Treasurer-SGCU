@@ -143,6 +143,7 @@ let projectSearchClearBtn;
 let budgetByMonthChart;
 let statusPieChart;
 let trendLineChart;
+let projectBudgetComparisonChart;
 let closureRateDonutChart;
 let approvalRateDonutChart;
 let kpiOnTimeDonutChart;
@@ -500,6 +501,8 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     budgetChartCanvas: get("budgetByMonthChart"),
     statusPieCanvas: get("statusPieChart"),
     trendLineCanvas: get("trendLineChart"),
+    projectBudgetComparisonCanvas: get("projectBudgetComparisonChart"),
+    projectBudgetComparisonCaptionEl: get("projectBudgetComparisonCaption"),
     calendarYearSelectEl: get("calendarYearSelect"),
     calendarOrgSelectEl: get("calendarOrgSelect"),
     calendarStatusSelectEl: get("calendarStatusSelect"),
@@ -513,6 +516,8 @@ function buildProjectStatusContext(suffix = "", key = "public") {
     budgetByMonthChart: null,
     statusPieChart: null,
     trendLineChart: null,
+    projectBudgetComparisonChart: null,
+    chartsInitialized: false,
     currentSort: { key: null, direction: "asc" },
     currentCalendarDate: new Date(),
     isInitialized: false
@@ -573,6 +578,7 @@ function setActiveProjectStatusContext(key) {
   budgetByMonthChart = ctx.budgetByMonthChart;
   statusPieChart = ctx.statusPieChart;
   trendLineChart = ctx.trendLineChart;
+  projectBudgetComparisonChart = ctx.projectBudgetComparisonChart;
   currentSort = ctx.currentSort;
   currentCalendarDate = ctx.currentCalendarDate;
   calendarYearSelectEl = ctx.calendarYearSelectEl;
@@ -586,6 +592,7 @@ function setActiveProjectStatusContext(key) {
   budgetByMonthChart = ctx.budgetByMonthChart || null;
   statusPieChart = ctx.statusPieChart || null;
   trendLineChart = ctx.trendLineChart || null;
+  projectBudgetComparisonChart = ctx.projectBudgetComparisonChart || null;
 }
 
 function syncChartsToContext(key) {
@@ -594,6 +601,7 @@ function syncChartsToContext(key) {
   ctx.budgetByMonthChart = budgetByMonthChart;
   ctx.statusPieChart = statusPieChart;
   ctx.trendLineChart = trendLineChart;
+  ctx.projectBudgetComparisonChart = projectBudgetComparisonChart;
 }
 
 /* Initialize Hamburger Menu (Accessibility Fix) */

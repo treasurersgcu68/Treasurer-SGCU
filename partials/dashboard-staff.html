@@ -216,82 +216,42 @@
                 </div>
               </article>
 
-              <article class="chart-card">
-                <header class="chart-header">
-                  <h3 class="chart-title">เปรียบเทียบรายเดือน</h3>
-                  <p class="chart-caption" id="kpiMonthlyCaption">กำลังเตรียมข้อมูล</p>
-                </header>
-                <div class="chart-inner">
-                  <canvas id="homeKpiChart" height="140"></canvas>
-                </div>
-              </article>
-            </div>
-
-            <div class="dashboard-charts-grid" style="margin-top:12px;">
-              <article class="chart-card">
-                <div class="calendar-heatmap-header">
-                  <h4 class="calendar-heatmap-title">Heat map วันปฏิบัติงานวันสุดท้าย</h4>
-                </div>
-                <div class="heatmap-year">
-                  <div id="homeHeatmapMonths" class="heatmap-axis heatmap-axis-months"></div>
-                  <div class="heatmap-body">
-                    <div class="heatmap-axis heatmap-axis-days" aria-hidden="true">
-                      <span>อา</span>
-                      <span>จ</span>
-                      <span>อ</span>
-                      <span>พ</span>
-                      <span>พฤ</span>
-                      <span>ศ</span>
-                      <span>ส</span>
+              <article class="dashboard-card dashboard-debt-summary-card dashboard-debt-combined-card">
+                <div class="dashboard-card-header">
+                  <div>
+                    <h4 class="dashboard-card-title">สรุปหนี้สโมสร</h4>
+                    <div class="dashboard-debt-summary-total">
+                      <span class="metric-label">ยอดหนี้ค้างส่งเอกสาร</span>
+                      <span id="clubDebtTotalStaff" class="metric-value dashboard-debt-amount">0</span>
+                      <span id="clubDebtCaptionStaff" class="metric-caption">-</span>
                     </div>
-                    <div id="homeHeatmap" class="heatmap-year-grid"></div>
+                  </div>
+                  <div class="tabs dashboard-debt-toggle" role="tablist" aria-label="เลือกมุมมองหนี้สโมสร">
+                    <button class="tab-btn view-toggle-btn is-active" type="button" data-dashboard-debt-view="summary" role="tab" aria-selected="true">
+                      ตามองค์กร
+                    </button>
+                    <button class="tab-btn view-toggle-btn" type="button" data-dashboard-debt-view="age" role="tab" aria-selected="false">
+                      อายุหนี้
+                    </button>
                   </div>
                 </div>
-                <div class="calendar-heatmap-legend" aria-hidden="true">
-                  <span class="heatmap-legend-label">น้อย</span>
-                  <span class="heatmap-legend-swatch heat-1"></span>
-                  <span class="heatmap-legend-swatch heat-2"></span>
-                  <span class="heatmap-legend-swatch heat-3"></span>
-                  <span class="heatmap-legend-swatch heat-4"></span>
-                  <span class="heatmap-legend-swatch heat-5"></span>
-                  <span class="heatmap-legend-label">มาก</span>
+                <div data-dashboard-debt-panel="summary">
+                  <p id="clubDebtSummaryChartCaptionStaff" class="chart-caption"></p>
+                  <div id="clubDebtSummaryChartInnerStaff" class="chart-inner club-debt-chart-inner">
+                    <canvas id="clubDebtSummaryChartStaff"></canvas>
+                  </div>
+                </div>
+                <div data-dashboard-debt-panel="age" hidden>
+                  <p id="clubDebtAgeCaptionStaff" class="metric-caption"></p>
+                  <div class="donut-wrap club-debt-age-donut-wrap">
+                    <canvas id="clubDebtAgeChartStaff"></canvas>
+                  </div>
+                  <div id="clubDebtAgeLegendStaff" class="club-debt-age-legend" aria-label="คำอธิบายสีอายุหนี้"></div>
                 </div>
               </article>
             </div>
 
             <div class="dashboard-lower" style="margin-top:12px;">
-              <div class="dashboard-debt-row">
-                <article class="dashboard-card dashboard-debt-summary-card">
-                  <div class="dashboard-card-header">
-                    <div>
-                      <h4 class="dashboard-card-title">สรุปหนี้สโมสร</h4>
-                      <div class="dashboard-debt-summary-total">
-                        <span class="metric-label">ยอดหนี้ค้างส่งเอกสาร</span>
-                        <span id="clubDebtTotalStaff" class="metric-value dashboard-debt-amount">0</span>
-                        <span id="clubDebtCaptionStaff" class="metric-caption">-</span>
-                      </div>
-                    </div>
-                  </div>
-                  <p id="clubDebtSummaryChartCaptionStaff" class="chart-caption">แสดงผล 0 องค์กร</p>
-                  <div id="clubDebtSummaryChartInnerStaff" class="chart-inner club-debt-chart-inner">
-                    <canvas id="clubDebtSummaryChartStaff"></canvas>
-                  </div>
-                </article>
-
-                <article class="dashboard-card dashboard-debt-age-card">
-                  <div class="dashboard-card-header">
-                    <div>
-                      <h4 class="dashboard-card-title">อายุหนี้</h4>
-                      <p id="clubDebtAgeCaptionStaff" class="metric-caption">แยกตามจำนวนวันที่เลยกำหนดส่งเอกสาร</p>
-                    </div>
-                  </div>
-                  <div class="donut-wrap club-debt-age-donut-wrap">
-                    <canvas id="clubDebtAgeChartStaff"></canvas>
-                  </div>
-                  <div id="clubDebtAgeLegendStaff" class="club-debt-age-legend" aria-label="คำอธิบายสีอายุหนี้"></div>
-                </article>
-              </div>
-
               <article class="dashboard-card dashboard-card-wide">
                 <div class="dashboard-card-header">
                   <h4 class="dashboard-card-title">ติดตามการปิดโครงการ</h4>
@@ -334,6 +294,61 @@
                       <!-- JS ใส่ข้อมูล -->
                     </tbody>
                   </table>
+                </div>
+              </article>
+
+              <article class="chart-card dashboard-budget-comparison-card dashboard-card-wide">
+                <header class="chart-header">
+                  <div>
+                    <h3 class="chart-title">เปรียบเทียบงบประมาณ</h3>
+                    <p class="chart-caption" id="dashboardBudgetComparisonCaption">กำลังเตรียมข้อมูล</p>
+                  </div>
+                  <div class="tabs dashboard-budget-comparison-toggle" role="tablist" aria-label="เลือกมุมมองเปรียบเทียบงบประมาณ">
+                    <button class="tab-btn view-toggle-btn is-active" type="button" data-dashboard-budget-view="monthly" role="tab" aria-selected="true">
+                      รายเดือน
+                    </button>
+                    <button class="tab-btn view-toggle-btn" type="button" data-dashboard-budget-view="org" role="tab" aria-selected="false">
+                      องค์กร
+                    </button>
+                  </div>
+                </header>
+                <p class="chart-caption dashboard-budget-view-caption" id="kpiMonthlyCaption">กำลังเตรียมข้อมูล</p>
+                <p class="chart-caption dashboard-budget-view-caption" id="projectBudgetComparisonCaptionStaff" hidden></p>
+                <div class="chart-inner" data-dashboard-budget-panel="monthly">
+                  <canvas id="homeKpiChart" height="140"></canvas>
+                </div>
+                <div class="chart-inner project-budget-comparison-chart-inner" data-dashboard-budget-panel="org" hidden>
+                  <canvas id="projectBudgetComparisonChartStaff"></canvas>
+                </div>
+              </article>
+
+              <article class="chart-card dashboard-card-wide">
+                <div class="calendar-heatmap-header">
+                  <h4 class="calendar-heatmap-title">Heat map วันปฏิบัติงานวันสุดท้าย</h4>
+                </div>
+                <div class="heatmap-year">
+                  <div id="homeHeatmapMonths" class="heatmap-axis heatmap-axis-months"></div>
+                  <div class="heatmap-body">
+                    <div class="heatmap-axis heatmap-axis-days" aria-hidden="true">
+                      <span>อา</span>
+                      <span>จ</span>
+                      <span>อ</span>
+                      <span>พ</span>
+                      <span>พฤ</span>
+                      <span>ศ</span>
+                      <span>ส</span>
+                    </div>
+                    <div id="homeHeatmap" class="heatmap-year-grid"></div>
+                  </div>
+                </div>
+                <div class="calendar-heatmap-legend" aria-hidden="true">
+                  <span class="heatmap-legend-label">น้อย</span>
+                  <span class="heatmap-legend-swatch heat-1"></span>
+                  <span class="heatmap-legend-swatch heat-2"></span>
+                  <span class="heatmap-legend-swatch heat-3"></span>
+                  <span class="heatmap-legend-swatch heat-4"></span>
+                  <span class="heatmap-legend-swatch heat-5"></span>
+                  <span class="heatmap-legend-label">มาก</span>
                 </div>
               </article>
             </div>

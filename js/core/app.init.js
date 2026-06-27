@@ -966,12 +966,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  const finishProjectStatusPageLoad = (page) => {
+  const finishProjectStatusPageLoad = async (page) => {
     if (page === "project-status") {
-      ensureProjectStatusInitialized("public");
+      if (typeof ensureProjectStatusChartsReady === "function") {
+        await ensureProjectStatusChartsReady("public");
+      } else {
+        ensureProjectStatusInitialized("public");
+      }
       refreshProjectStatus("public");
     } else {
-      ensureProjectStatusInitialized("staff");
+      if (typeof ensureProjectStatusChartsReady === "function") {
+        await ensureProjectStatusChartsReady("staff");
+      } else {
+        ensureProjectStatusInitialized("staff");
+      }
       refreshProjectStatus("staff");
     }
     if (typeof window.syncProjectMobileActionBar === "function") {
@@ -983,7 +991,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await ensureProjectDataLoaded();
     const activePage = document.querySelector(".page-view.active")?.dataset.page || "";
     if (activePage !== page) return;
-    finishProjectStatusPageLoad(page);
+    await finishProjectStatusPageLoad(page);
   };
 
   const scrollPageToTop = (page, behavior = "smooth") => {

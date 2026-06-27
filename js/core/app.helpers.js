@@ -83,6 +83,8 @@ function formatMoney(value) {
   });
 }
 
+const PROJECT_PENDING_APPROVAL_STATUS = "รอการอนุมัติ";
+
 function isProjectClosed(project) {
   if (isProjectCancelled(project) || isProjectNoClose(project)) return false;
   const close = (project?.statusClose || "").toString().trim();

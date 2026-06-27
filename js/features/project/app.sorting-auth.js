@@ -102,10 +102,18 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   if (!Array.isArray(projects)) return;
 
   setActiveProjectStatusContext(ctxKey);
+  const ctx = projectStatusContexts[ctxKey];
+  let didInitializeCharts = false;
+  if (ctx && typeof Chart !== "undefined" && !ctx.chartsInitialized && typeof initCharts === "function") {
+    initCharts(ctxKey);
+    ctx.chartsInitialized = true;
+    didInitializeCharts = true;
+  }
   if (typeof initOrgTypeOptions === "function") initOrgTypeOptions();
   if (typeof initOrgOptions === "function") initOrgOptions();
   const signature = buildProjectStatusRefreshSignature(ctxKey);
   if (
+    !didInitializeCharts &&
     lastProjectStatusRefreshSignatureByContext[ctxKey] === signature &&
     lastProjectStatusProjectsRefByContext[ctxKey] === projects
   ) {
@@ -119,6 +127,7 @@ function refreshProjectStatus(ctxKey = activeProjectStatusContext) {
   updateDashboardInsights(filtered, summary);
   updateTable(filtered);
   updateClosureStatusChart(filtered);
+  updateProjectBudgetComparisonChart(filtered);
   updateApprovedBudgetPie(filtered);
   updateTrendLineChart(filtered);
   if (ctxKey === "staff") {

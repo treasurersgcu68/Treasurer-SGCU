@@ -7,7 +7,7 @@ function openProjectModal(project) {
   const yearStr = project.year ? `ปีการศึกษา ${project.year}` : "-";
   const orgName = project.orgName || "-";
   const orgGroup = project.orgGroup || "-";
-  const approveStatus = project.approvalStatus || project.statusMain || "-";
+  const approveStatus = project.approvalStatus || project.statusMain || PROJECT_PENDING_APPROVAL_STATUS;
   const canDownloadPdf = shouldShowPdfDownload(project);
 
   // title + badge ด้านบน

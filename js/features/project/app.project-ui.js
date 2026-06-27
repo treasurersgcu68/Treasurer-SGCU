@@ -333,7 +333,7 @@ function getClubDebtSummaryScope(sourceProjects) {
       : getFallbackOrgs(orgGroupFilter);
     return {
       labels,
-      unit: "องค์กร",
+      unit: "ฝ่าย / ชมรม",
       resolveLabel: (project) => {
         const org = (project.orgName || "").toString().trim() || "(ไม่ระบุฝ่าย/ชมรม)";
         return labels.length && !labels.includes(org) ? null : org;
@@ -343,7 +343,7 @@ function getClubDebtSummaryScope(sourceProjects) {
 
   return {
     labels: [orgFilter],
-    unit: "องค์กร",
+    unit: "ฝ่าย / ชมรม",
     resolveLabel: (project) => {
       const org = (project.orgName || "").toString().trim() || "(ไม่ระบุฝ่าย/ชมรม)";
       return org === orgFilter ? org : null;
@@ -398,6 +398,7 @@ function updateClubDebtSummary(filtered) {
   const ageLegendEl = document.getElementById("clubDebtAgeLegendStaff");
 
   if (!totalEl && !captionEl && !chartCaptionEl && !chartCanvasEl && !ageCaptionEl && !ageCanvasEl && !ageLegendEl) return;
+  initDashboardDebtToggle();
 
   const { rows, unit } = buildClubDebtSummaryRows(filtered);
   const totalDebt = rows.reduce((sum, row) => sum + row.totalDebt, 0);
@@ -409,16 +410,47 @@ function updateClubDebtSummary(filtered) {
   }
   if (captionEl) {
     captionEl.textContent = activeDebtRows.length
-      ? `${projectCount.toLocaleString("th-TH")} โครงการ จาก ${activeDebtRows.length.toLocaleString("th-TH")} ${unit}ที่มีหนี้`
+      ? `แสดงผล ${projectCount.toLocaleString("th-TH")} โครงการ จาก ${activeDebtRows.length.toLocaleString("th-TH")} ${unit}ที่มีหนี้`
       : "ไม่มีรายการที่เข้าเงื่อนไข";
   }
   if (chartCaptionEl) {
-    chartCaptionEl.textContent = activeDebtRows.length
-      ? `แสดงผล ${activeDebtRows.length.toLocaleString("th-TH")} ${unit}ที่มีหนี้ ตามตัวเลือกหน้าภาพรวม`
-      : "ยังไม่มีรายการหนี้ตามตัวเลือกหน้าภาพรวม";
+    chartCaptionEl.textContent = "";
   }
   updateClubDebtSummaryChart(activeDebtRows, chartCanvasEl, chartInnerEl);
   updateClubDebtAgeChart(filtered, ageCanvasEl, ageCaptionEl, ageLegendEl);
+}
+
+function initDashboardDebtToggle() {
+  const root = document.querySelector('.page-view[data-page="dashboard-staff"]');
+  if (!root || root.dataset.dashboardDebtToggleReady === "true") return;
+  const btns = Array.from(root.querySelectorAll("[data-dashboard-debt-view]"));
+  const panels = Array.from(root.querySelectorAll("[data-dashboard-debt-panel]"));
+  if (!btns.length || !panels.length) return;
+
+  const setView = (view) => {
+    const nextView = view === "age" ? "age" : "summary";
+    btns.forEach((btn) => {
+      const isActive = btn.dataset.dashboardDebtView === nextView;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    panels.forEach((panel) => {
+      panel.hidden = panel.dataset.dashboardDebtPanel !== nextView;
+    });
+    window.requestAnimationFrame(() => {
+      if (nextView === "age") {
+        clubDebtAgeChart?.resize?.();
+      } else {
+        clubDebtSummaryChart?.resize?.();
+      }
+    });
+  };
+
+  btns.forEach((btn) => {
+    btn.addEventListener("click", () => setView(btn.dataset.dashboardDebtView));
+  });
+  root.dataset.dashboardDebtToggleReady = "true";
+  setView("summary");
 }
 
 function buildClubDebtAgeBuckets(sourceProjects) {
@@ -469,9 +501,7 @@ function updateClubDebtAgeChart(filtered, chartCanvasEl, captionEl, legendEl) {
   const ageColors = totalDebt > 0 ? activeColors : emptyColors;
 
   if (captionEl) {
-    captionEl.textContent = activeBuckets.length
-      ? `${totalProjects.toLocaleString("th-TH")} โครงการ แยกตามวันที่เลยกำหนด`
-      : "ยังไม่มีรายการหนี้ค้างส่งเอกสาร";
+    captionEl.textContent = "";
   }
   renderClubDebtAgeLegend(buckets, ageColors, legendEl);
 
@@ -1128,6 +1158,49 @@ function updateDonutChart(existingChart, canvasEl, percent, color, tooltipLines 
   });
 }
 
+function initDashboardBudgetComparisonToggle() {
+  const root = document.querySelector('.page-view[data-page="dashboard-staff"]');
+  if (!root || root.dataset.dashboardBudgetToggleReady === "true") return;
+  const btns = Array.from(root.querySelectorAll("[data-dashboard-budget-view]"));
+  const panels = Array.from(root.querySelectorAll("[data-dashboard-budget-panel]"));
+  const monthlyCaptionEl = root.querySelector("#kpiMonthlyCaption");
+  const orgCaptionEl = root.querySelector("#projectBudgetComparisonCaptionStaff");
+  const summaryCaptionEl = root.querySelector("#dashboardBudgetComparisonCaption");
+  if (!btns.length || !panels.length) return;
+
+  const setView = (view) => {
+    const nextView = view === "org" ? "org" : "monthly";
+    btns.forEach((btn) => {
+      const isActive = btn.dataset.dashboardBudgetView === nextView;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    panels.forEach((panel) => {
+      panel.hidden = panel.dataset.dashboardBudgetPanel !== nextView;
+    });
+    if (monthlyCaptionEl) monthlyCaptionEl.hidden = nextView !== "monthly";
+    if (orgCaptionEl) orgCaptionEl.hidden = nextView !== "org";
+    if (summaryCaptionEl) {
+      summaryCaptionEl.textContent = nextView === "org"
+        ? "เปรียบเทียบงบที่อนุมัติและใช้จริงตามองค์กร"
+        : "เปรียบเทียบงบที่อนุมัติและใช้จริงตามเดือน";
+    }
+    window.requestAnimationFrame(() => {
+      if (nextView === "org") {
+        projectBudgetComparisonChart?.resize?.();
+      } else {
+        homeKpiChart?.resize?.();
+      }
+    });
+  };
+
+  btns.forEach((btn) => {
+    btn.addEventListener("click", () => setView(btn.dataset.dashboardBudgetView));
+  });
+  root.dataset.dashboardBudgetToggleReady = "true";
+  setView("monthly");
+}
+
 function renderHomeHeatmap(sourceProjects = projects, container = homeHeatmapEl, monthsRow = homeHeatmapMonthsEl) {
   if (!container || !monthsRow) return;
 
@@ -1243,6 +1316,7 @@ function renderHomeHeatmap(sourceProjects = projects, container = homeHeatmapEl,
 }
 
 function renderHomeKpis(sourceProjects = projects) {
+  initDashboardBudgetComparisonToggle();
   const data = Array.isArray(sourceProjects) ? sourceProjects : projects;
   if (!data || !data.length) return;
 
@@ -1525,6 +1599,7 @@ function statusMainToBadgeClass(statusMain) {
     "ยกเลิกโครงการ"
   ];
   const pendingStatuses = [
+    PROJECT_PENDING_APPROVAL_STATUS,
     "ส่งขออนุมัติกิจการนิสิต",
     "ผ่านที่ประชุมนายกหรืออนุกรรมการ",
     "ผ่านสภารับหลักการ",
@@ -1598,8 +1673,14 @@ function getDisplayStatusForList(project) {
 
   // ถ้ายังไม่เลยกำหนด (หรือไม่มีข้อมูลวัน) → ใช้ H และสีตามเดิม
   if (d === null || d >= 0) {
+    if (!baseStatus) {
+      return {
+        text: PROJECT_PENDING_APPROVAL_STATUS,
+        badgeClass: statusMainToBadgeClass(PROJECT_PENDING_APPROVAL_STATUS)
+      };
+    }
     return {
-      text: baseStatus || "-",
+      text: baseStatus,
       badgeClass: statusMainToBadgeClass(baseStatus)
     };
   }
@@ -1623,8 +1704,8 @@ function getDisplayStatusForList(project) {
 
   // fallback ถ้า AR/AS ว่าง ให้กลับไปใช้ H
   return {
-    text: baseStatus || "-",
-    badgeClass: statusMainToBadgeClass(baseStatus)
+    text: baseStatus || PROJECT_PENDING_APPROVAL_STATUS,
+    badgeClass: statusMainToBadgeClass(baseStatus || PROJECT_PENDING_APPROVAL_STATUS)
   };
 }
 

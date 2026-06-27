@@ -73,7 +73,8 @@ function initCharts(ctxKey = activeProjectStatusContext) {
   const budgetCanvas = ctx.budgetChartCanvas;
   const statusCanvas = ctx.statusPieCanvas;
   const trendCanvas = ctx.trendLineCanvas;
-  if (!budgetCanvas && !statusCanvas && !trendCanvas) return;
+  const projectBudgetComparisonCanvas = ctx.projectBudgetComparisonCanvas;
+  if (!budgetCanvas && !statusCanvas && !trendCanvas && !projectBudgetComparisonCanvas) return;
 
   if (ctx.budgetByMonthChart) {
     ctx.budgetByMonthChart.destroy();
@@ -87,10 +88,18 @@ function initCharts(ctxKey = activeProjectStatusContext) {
     ctx.trendLineChart.destroy();
     ctx.trendLineChart = null;
   }
+  if (ctx.projectBudgetComparisonChart) {
+    ctx.projectBudgetComparisonChart.destroy();
+    ctx.projectBudgetComparisonChart = null;
+    projectBudgetComparisonChart = null;
+  }
 
   const budgetCtx = budgetCanvas ? budgetCanvas.getContext("2d") : null;
   const statusCtx = statusCanvas ? statusCanvas.getContext("2d") : null;
   const trendCtx = trendCanvas ? trendCanvas.getContext("2d") : null;
+  const projectBudgetComparisonCtx = projectBudgetComparisonCanvas
+    ? projectBudgetComparisonCanvas.getContext("2d")
+    : null;
   const isMobileChart = window.matchMedia("(max-width: 720px)").matches;
   const closureYAxisWidth = isMobileChart ? 118 : 170;
   const makeStackDataset = (label, backgroundColor, datasetIndex) => ({
@@ -123,7 +132,7 @@ function initCharts(ctxKey = activeProjectStatusContext) {
       data: {
         labels: [],
         datasets: [
-          makeStackDataset("ยังไม่อนุมัติ", "#d1d5db", 0),
+          makeStackDataset(PROJECT_PENDING_APPROVAL_STATUS, "#d1d5db", 0),
           makeStackDataset("โครงการที่อนุมัติแล้ว", "#fbbf24", 1),
           makeStackDataset("โครงการที่วันเลยจัดแล้ว", "#f97316", 2),
           makeStackDataset("โครงการที่เลยกำหนดส่งปิดแล้ว", "#ef4444", 3),
@@ -320,6 +329,108 @@ function initCharts(ctxKey = activeProjectStatusContext) {
     });
   }
 
+  if (projectBudgetComparisonCtx) {
+    projectBudgetComparisonChart = new Chart(projectBudgetComparisonCtx, {
+      type: "bar",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "งบที่อนุมัติ",
+            data: [],
+            backgroundColor: "#f9a8d4",
+            borderSkipped: false,
+            borderRadius: { topLeft: 0, bottomLeft: 0, topRight: 8, bottomRight: 8 },
+            barPercentage: 0.78,
+            categoryPercentage: 0.72
+          },
+          {
+            label: "งบที่ใช้จริง",
+            data: [],
+            backgroundColor: "#34d399",
+            borderSkipped: false,
+            borderRadius: { topLeft: 0, bottomLeft: 0, topRight: 8, bottomRight: 8 },
+            barPercentage: 0.78,
+            categoryPercentage: 0.72
+          }
+        ]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              font: { size: 11 },
+              usePointStyle: true,
+              boxWidth: 10,
+              boxHeight: 10
+            }
+          },
+          tooltip: {
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            titleColor: "#111827",
+            bodyColor: "#374151",
+            borderColor: "#e5e7eb",
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 6,
+            bodyFont: { family: "'Kanit', sans-serif", size: 12 },
+            callbacks: {
+              label: (item) => `${item.dataset.label}: ${formatMoney(Number(item.raw || 0))} บาท`,
+              afterBody: (items) => {
+                const row = projectBudgetComparisonChart?.$projectBudgetRows?.[items?.[0]?.dataIndex || 0];
+                if (!row) return [];
+                return [
+                  `ประเภทองค์กร: ${row.orgGroup || "-"}`,
+                  `จำนวนโครงการ: ${Number(row.projectCount || 0).toLocaleString("th-TH")} โครงการ`,
+                  `งบอนุมัติ: ${formatMoney(row.approved)} บาท`,
+                  `ใช้จริง: ${formatMoney(row.actual)} บาท`,
+                  `คงเหลือ: ${formatMoney(row.remaining)} บาท`,
+                  `% การใช้รวม: ${row.usagePercentText}`
+                ];
+              }
+            }
+          },
+          externalAxisLabels: {
+            y: {
+              enabled: true,
+              width: isMobileChart ? 118 : 210,
+              gap: 8,
+              formatter: (label) => getProjectBudgetAxisWrappedLabel(label)
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              maxTicksLimit: isMobileChart ? 3 : 6,
+              font: { size: isMobileChart ? 11 : 12 },
+              callback: (value) => Number(value || 0).toLocaleString("th-TH")
+            }
+          },
+          y: {
+            afterFit(scale) {
+              scale.width = isMobileChart ? 118 : 210;
+            },
+            ticks: {
+              display: false,
+              autoSkip: false,
+              padding: 6,
+              callback(value) {
+                return getProjectBudgetAxisWrappedLabel(this.getLabelForValue(value));
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
   syncChartsToContext(ctxKey);
 }
 
@@ -342,6 +453,148 @@ function resizeClosureChart(numLabels) {
   container.style.height = newHeight + "px";
 
   if (budgetByMonthChart) budgetByMonthChart.resize();
+}
+
+function getProjectBudgetAxisWrappedLabel(label) {
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  return wrapChartAxisLabel(label, isMobile ? 18 : 30, isMobile ? 3 : 2);
+}
+
+function getProjectBudgetStackRadius(ctx) {
+  const i = ctx.dataIndex;
+  const datasetIndex = ctx.datasetIndex;
+  const chart = ctx.chart;
+  const datasets = chart?.data?.datasets || [];
+  const currentValue = Number(datasets[datasetIndex]?.data?.[i] || 0);
+  const hasRightSegment = datasets.some((dataset, index) =>
+    index > datasetIndex &&
+    dataset?.stack === datasets[datasetIndex]?.stack &&
+    chart.isDatasetVisible(index) &&
+    Number(dataset?.data?.[i] || 0) > 0
+  );
+  const isRight = currentValue > 0 && !hasRightSegment;
+  return {
+    topLeft: 0,
+    bottomLeft: 0,
+    topRight: isRight ? 8 : 0,
+    bottomRight: isRight ? 8 : 0
+  };
+}
+
+function resizeProjectBudgetComparisonChart(numLabels) {
+  const canvas = projectStatusContexts[activeProjectStatusContext]?.projectBudgetComparisonCanvas;
+  if (!canvas) return;
+  const container = canvas.parentElement;
+  if (!container) return;
+
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  const labels = projectBudgetComparisonChart?.data?.labels || [];
+  const maxWrappedLines = labels.reduce((max, label) => {
+    return Math.max(max, getWrappedLineCount(getProjectBudgetAxisWrappedLabel(label)));
+  }, 1);
+  const baseHeight = isMobile ? 360 : 300;
+  const perLabel = isMobile
+    ? Math.max(38, 22 + maxWrappedLines * 14)
+    : Math.max(30, 16 + maxWrappedLines * 13);
+  container.style.height = `${Math.max(baseHeight, numLabels * perLabel)}px`;
+
+  if (projectBudgetComparisonChart) projectBudgetComparisonChart.resize();
+}
+
+function updateProjectBudgetComparisonChart(filtered) {
+  const chart = projectBudgetComparisonChart;
+  const ctx = projectStatusContexts[activeProjectStatusContext] || {};
+  const captionEl = ctx.projectBudgetComparisonCaptionEl;
+  if (!chart) return;
+
+  const createBudgetSummaryRow = (name, orgGroup = "") => ({
+    name,
+    orgGroup,
+    projectCount: 0,
+    approved: 0,
+    actual: 0,
+    remaining: 0,
+    over: 0
+  });
+
+  const addProjectToBudgetSummary = (row, project) => {
+    const actual = Number(project.actualBudget ?? 0) || 0;
+    const remainingFromSheet = Number(project.remainingBudget);
+    const remaining = Number.isFinite(remainingFromSheet) && remainingFromSheet > 0
+      ? Math.max(remainingFromSheet, 0)
+      : 0;
+    const approved = actual + remaining;
+    const over = Math.max(actual - approved, 0);
+    const orgGroup = (project.orgGroup || "").toString().trim();
+
+    row.projectCount += 1;
+    row.approved += approved;
+    row.actual += actual;
+    row.remaining += remaining;
+    row.over += over;
+    if (!row.orgGroup && orgGroup) row.orgGroup = orgGroup;
+  };
+
+  const orgGroupFilter = orgTypeSelect?.value || "all";
+  const orgFilter = orgSelect?.value || "all";
+  const isGlobalView = orgGroupFilter === "all" && orgFilter === "all";
+  const grouped = new Map();
+
+  if (isGlobalView) {
+    const baseGroups = getChartOrgGroups();
+    baseGroups.forEach((group) => {
+      grouped.set(group, createBudgetSummaryRow(group, group));
+    });
+    (Array.isArray(filtered) ? filtered : []).forEach((project) => {
+      const groupName = baseGroups.includes(project.orgGroup) ? project.orgGroup : "";
+      if (!groupName) return;
+      addProjectToBudgetSummary(grouped.get(groupName), project);
+    });
+  } else {
+    const allowedOrgs = orgFilter === "all" ? getOrgsByGroup(orgGroupFilter) : [orgFilter];
+    allowedOrgs.forEach((org) => {
+      grouped.set(org, createBudgetSummaryRow(org, orgGroupFilter === "all" ? "" : orgGroupFilter));
+    });
+    (Array.isArray(filtered) ? filtered : []).forEach((project) => {
+      const orgName = (project.orgName || "").toString().trim() || "(ไม่ระบุฝ่าย / ชมรม)";
+      if (allowedOrgs.length && !allowedOrgs.includes(orgName)) return;
+      if (!grouped.has(orgName)) {
+        grouped.set(orgName, createBudgetSummaryRow(orgName, project.orgGroup || ""));
+      }
+      addProjectToBudgetSummary(grouped.get(orgName), project);
+    });
+  }
+
+  const rows = Array.from(grouped.values())
+    .map((row) => {
+      const usagePercent = row.approved > 0 ? (row.actual / row.approved) * 100 : null;
+      return {
+        ...row,
+        usedWithinBudget: Math.min(row.actual, row.approved || row.actual),
+        usagePercent,
+        usagePercentText: Number.isFinite(usagePercent) ? `${usagePercent.toFixed(2)}%` : "-"
+      };
+    });
+
+  const visibleRows = rows;
+  chart.$projectBudgetRows = visibleRows;
+  chart.data.labels = visibleRows.map((row) => row.name);
+  chart.data.datasets[0].data = visibleRows.map((row) => row.approved);
+  chart.data.datasets[1].data = visibleRows.map((row) => row.actual);
+
+  const maxValue = Math.max(
+    0,
+    ...visibleRows.map((row) => row.approved),
+    ...visibleRows.map((row) => row.actual)
+  );
+  chart.options.scales.x.suggestedMax = maxValue > 0 ? maxValue * 1.08 : undefined;
+
+  if (captionEl) {
+    captionEl.textContent = "";
+  }
+
+  resizeProjectBudgetComparisonChart(visibleRows.length || 1);
+  chart.update("none");
 }
 
 function getNiceProjectCountAxisMax(maxTotal) {
@@ -411,7 +664,7 @@ function updateClosureStatusChart(filtered) {
   if (!budgetByMonthChart) return;
 
   const closureTrackedProjects = filtered.filter((p) =>
-    ((p.statusMain || "").trim()) !== "" || isProjectNoClose(p)
+    ((p.statusMain || "").trim()) !== "" || isProjectNoClose(p) || !isProjectTerminalWithoutClosure(p)
   );
 
   const isNoCloseSubmission = (p) => isProjectNoClose(p);

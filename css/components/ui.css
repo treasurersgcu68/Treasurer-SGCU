@@ -765,8 +765,8 @@
   align-items: flex-start;
 }
 
-.dashboard-debt-age-card .dashboard-card-header {
-  align-items: flex-start;
+.dashboard-debt-toggle {
+  flex: 0 0 auto;
 }
 
 .club-debt-age-donut-wrap {
@@ -825,7 +825,13 @@
   }
 
   .dashboard-debt-summary-card .dashboard-card-header {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 6px;
+  }
+
+  .dashboard-debt-toggle {
+    inline-size: 100%;
   }
 
   .dashboard-debt-summary-card .metric-caption {
@@ -1456,6 +1462,7 @@ th.sortable.sort-desc::after {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 12px;
+  min-width: 0;
 }
 
 .chart-card {
@@ -1464,6 +1471,7 @@ th.sortable.sort-desc::after {
   background: #ffffff;
   border: 1px solid #f3e8ff;
   box-shadow: 0 6px 18px rgba(148, 163, 184, 0.2);
+  min-width: 0;
 }
 
 .chart-header {
@@ -1490,6 +1498,18 @@ th.sortable.sort-desc::after {
   color: #6b7280;
 }
 
+.dashboard-budget-comparison-card .chart-header {
+  align-items: flex-start;
+}
+
+.dashboard-budget-comparison-toggle {
+  flex: 0 0 auto;
+}
+
+.dashboard-budget-view-caption {
+  margin: -2px 0 8px;
+}
+
 .calendar-heatmap-title {
   font-size: 13px;
   font-weight: 600;
@@ -1504,6 +1524,7 @@ th.sortable.sort-desc::after {
 .chart-inner canvas {
   position: relative;
   z-index: 1;
+  max-width: 100%;
 }
 
 .status-pie-center-text {
